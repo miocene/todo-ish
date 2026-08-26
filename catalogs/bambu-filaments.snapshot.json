@@ -1,0 +1,1859 @@
+{
+  "entries": [
+    {
+      "id": "bambu-abs-filament-40601",
+      "family": "ABS",
+      "color": "Azure",
+      "productCode": "40601",
+      "swatch": "https://store.bblcdn.eu/s8/default/151dc3b19cdb4c9eab2cb5d283ab9c04/aafe7b43b40641d4b8a111aa26c8eb04.media"
+    },
+    {
+      "id": "bambu-abs-filament-40500",
+      "family": "ABS",
+      "color": "Bambu Green",
+      "productCode": "40500",
+      "swatch": "https://store.bblcdn.eu/s8/default/83df8717108d423eba9bc09ad8f40525/3ee4dd48e6db461a82125f5e6c57ec9f.media"
+    },
+    {
+      "id": "bambu-abs-filament-40101",
+      "family": "ABS",
+      "color": "Black",
+      "productCode": "40101",
+      "swatch": "https://store.bblcdn.eu/s8/default/7aa8622394de4a038f8ed4042435b4ee/c46ab8ddcfaf43aaa68ea23f8ec21367.media"
+    },
+    {
+      "id": "bambu-abs-filament-40600",
+      "family": "ABS",
+      "color": "Blue",
+      "productCode": "40600",
+      "swatch": "https://store.bblcdn.eu/s8/default/95562511dc1d4f188466893be24cfbda/0c2aef92cc4d4e509bbfc1b477bdb4c8.media"
+    },
+    {
+      "id": "bambu-abs-filament-40602",
+      "family": "ABS",
+      "color": "Navy Blue",
+      "productCode": "40602",
+      "swatch": "https://store.bblcdn.eu/s8/default/2f077d0baec7407c8ddec8307a45a9a7/425caf237fd44c4493617bd11b15a57c.media"
+    },
+    {
+      "id": "bambu-abs-filament-40502",
+      "family": "ABS",
+      "color": "Olive",
+      "productCode": "40502",
+      "swatch": "https://store.bblcdn.eu/s8/default/0a217a8e96974db9ace1eb92e42dd7f8/c79c0361ff3d46a681b9b64c4b4a6334.media"
+    },
+    {
+      "id": "bambu-abs-filament-40300",
+      "family": "ABS",
+      "color": "Orange",
+      "productCode": "40300",
+      "swatch": "https://store.bblcdn.eu/s8/default/bb531e6c5cf84f6eb8ec23ead4b04693/84f5f85de8894faf81d7ce5129c70211.media"
+    },
+    {
+      "id": "bambu-abs-filament-40200",
+      "family": "ABS",
+      "color": "Red",
+      "productCode": "40200",
+      "swatch": "https://store.bblcdn.eu/s8/default/c397f91d6153447786efc2599e19e744/2ee4f4ced1064bb98b4ee6bec52d86ac.media"
+    },
+    {
+      "id": "bambu-abs-filament-40102",
+      "family": "ABS",
+      "color": "Silver",
+      "productCode": "40102",
+      "swatch": "https://store.bblcdn.eu/s8/default/0ddfc5279b314871b713ee4c1f64fde9/522789b7d815491293c866621998b103.media"
+    },
+    {
+      "id": "bambu-abs-filament-40402",
+      "family": "ABS",
+      "color": "Tangerine Yellow",
+      "productCode": "40402",
+      "swatch": "https://store.bblcdn.eu/s8/default/23b8135593c24d829996d3364842b932/c3a543a16e0d4869aa547cb1104af70b.media"
+    },
+    {
+      "id": "bambu-abs-filament-40100",
+      "family": "ABS",
+      "color": "White",
+      "productCode": "40100",
+      "swatch": "https://store.bblcdn.eu/s8/default/cba080c5a6fc4d0b8cac448c7d7d416e/47a50b15242d40298bc1beb1b8abaca4.media"
+    },
+    {
+      "id": "bambu-abs-gf-41101",
+      "family": "ABS-GF",
+      "color": "Black",
+      "productCode": "41101",
+      "swatch": "https://store.bblcdn.eu/s8/default/d1620a67141747a79c5687a1cc0d18a0/691a57e4645a4f2f985f76dbc04a09c6.media"
+    },
+    {
+      "id": "bambu-abs-gf-41600",
+      "family": "ABS-GF",
+      "color": "Blue",
+      "productCode": "41600",
+      "swatch": "https://store.bblcdn.eu/s8/default/aadfcc0c730a43228dd962469e70f89b/0547439bac3a498897d150bb548733db.media"
+    },
+    {
+      "id": "bambu-abs-gf-41102",
+      "family": "ABS-GF",
+      "color": "Gray",
+      "productCode": "41102",
+      "swatch": "https://store.bblcdn.eu/s8/default/c8d2a8918d31477795ddc1e04be85aff/632fe0415a314fe1bae0fc0dc3d71b1e.media"
+    },
+    {
+      "id": "bambu-abs-gf-41300",
+      "family": "ABS-GF",
+      "color": "Orange",
+      "productCode": "41300",
+      "swatch": "https://store.bblcdn.eu/s8/default/2c9d6e2721cd4db1aa6a3341d606ee41/29c9e24ed11f48c2b6eaf8c30cbc2dac.media"
+    },
+    {
+      "id": "bambu-abs-gf-41200",
+      "family": "ABS-GF",
+      "color": "Red",
+      "productCode": "41200",
+      "swatch": "https://store.bblcdn.eu/s8/default/e4dd2c20baa84f80984741f50d9f1f87/c637c8c1435849e3846a3c778449e26c.media"
+    },
+    {
+      "id": "bambu-abs-gf-41100",
+      "family": "ABS-GF",
+      "color": "White",
+      "productCode": "41100",
+      "swatch": "https://store.bblcdn.eu/s8/default/965aa7a2faef412da9d8e2c4b0c84718/5aa3e36ed0a84903abe2cd76e0940201.media"
+    },
+    {
+      "id": "bambu-asa-filament-45101",
+      "family": "ASA",
+      "color": "Black",
+      "productCode": "45101",
+      "swatch": "https://store.bblcdn.eu/s8/default/e84878a0e381455ab6ff4b90ce7860b6/11d6469b590e4b8080ca5bd3f2385e22.media"
+    },
+    {
+      "id": "bambu-asa-filament-45600",
+      "family": "ASA",
+      "color": "Blue",
+      "productCode": "45600",
+      "swatch": "https://store.bblcdn.eu/s8/default/2bbd63b7ac6041be82120f46a22693a7/08592504ef0c4ed4a3054fac903bf20f.media"
+    },
+    {
+      "id": "bambu-asa-filament-45102",
+      "family": "ASA",
+      "color": "Gray",
+      "productCode": "45102",
+      "swatch": "https://store.bblcdn.eu/s8/default/bf06ff5739d24cd9a821873f88630e2a/7e5829465d8a48b39c5ad1d103db0b5e.media"
+    },
+    {
+      "id": "bambu-asa-filament-45500",
+      "family": "ASA",
+      "color": "Green",
+      "productCode": "45500",
+      "swatch": "https://store.bblcdn.eu/s8/default/74d99fbb500d4e56b170eb33d53e8e64/cb784d59ca1d48cea42f9c2e545854b7.media"
+    },
+    {
+      "id": "bambu-asa-filament-45200",
+      "family": "ASA",
+      "color": "Red",
+      "productCode": "45200",
+      "swatch": "https://store.bblcdn.eu/s8/default/a0641e0a35554c19817d6c30fac1297c/1e6d5f24fcc14949a25332fbbd52f7f2.media"
+    },
+    {
+      "id": "bambu-asa-filament-45100",
+      "family": "ASA",
+      "color": "White",
+      "productCode": "45100",
+      "swatch": "https://store.bblcdn.eu/s8/default/1af069aa61ea47a3ad94c95b1d6ca00b/12007d17a7d9416abc87a01a8a299869.media"
+    },
+    {
+      "id": "bambu-asa-aero-46100",
+      "family": "ASA Aero",
+      "color": "White",
+      "productCode": "46100",
+      "swatch": "https://store.bblcdn.eu/s8/default/07508842a9674c8b87891ead3b0ab324/0d502f24d1084ba7a4c208146c744004.media"
+    },
+    {
+      "id": "bambu-asa-cf-46101",
+      "family": "ASA-CF",
+      "color": "Black",
+      "productCode": "46101",
+      "swatch": "https://store.bblcdn.eu/s8/default/7c12ee8840c24942bb8d520b390242ee/9c63f51935424e08b10123d0dfbcaf57.jpg"
+    },
+    {
+      "id": "bambu-pa6-cf-72100",
+      "family": "PA6-CF",
+      "color": "Black",
+      "productCode": "72100",
+      "swatch": "https://store.bblcdn.eu/s8/default/33a7a1c9e06f48f3bcc0207dd0b4ccf0/46e6b8f7f1b34a28a1a0959cfc8b1230.media"
+    },
+    {
+      "id": "bambu-pa6-gf-72104",
+      "family": "PA6-GF",
+      "color": "Black",
+      "productCode": "72104",
+      "swatch": "https://store.bblcdn.eu/s8/default/cef4fa5d882a44858a3bfc5b92a004a2/24cbdc622b014d92a07a590e0915002c.media"
+    },
+    {
+      "id": "bambu-pa6-gf-72600",
+      "family": "PA6-GF",
+      "color": "Blue",
+      "productCode": "72600",
+      "swatch": "https://store.bblcdn.eu/s8/default/407f4e77d8814bb8a6345fdb4a749cd7/402ca4dba3a840bc85c90268db4a8081.media"
+    },
+    {
+      "id": "bambu-pa6-gf-72800",
+      "family": "PA6-GF",
+      "color": "Brown",
+      "productCode": "72800",
+      "swatch": "https://store.bblcdn.eu/s8/default/1f25f56aee784b88bf76d4606004cbfd/7c301d0a271d40b399baaf56da56b19f.media"
+    },
+    {
+      "id": "bambu-pa6-gf-72103",
+      "family": "PA6-GF",
+      "color": "Gray",
+      "productCode": "72103",
+      "swatch": "https://store.bblcdn.eu/s8/default/a0163a4900684c31b0be393291606213/1aade7aafccf457098ec72ffe450cf76.media"
+    },
+    {
+      "id": "bambu-pa6-gf-72500",
+      "family": "PA6-GF",
+      "color": "Lime",
+      "productCode": "72500",
+      "swatch": "https://store.bblcdn.eu/s8/default/11b47435b1cc484ea2bb0ae1a376a783/103232d16b984293845b85f4f6ceec76.media"
+    },
+    {
+      "id": "bambu-pa6-gf-72200",
+      "family": "PA6-GF",
+      "color": "Orange",
+      "productCode": "72200",
+      "swatch": "https://store.bblcdn.eu/s8/default/90969eac76614c2aac5a5ae09c84bae5/38a010b92f494649bdcac81b80203514.media"
+    },
+    {
+      "id": "bambu-pa6-gf-72102",
+      "family": "PA6-GF",
+      "color": "White",
+      "productCode": "72102",
+      "swatch": "https://store.bblcdn.eu/s8/default/b95b9d69709e4eebb997aaf5f01a5db2/fa837382dde340d89ac6c329cd7b5ba9.media"
+    },
+    {
+      "id": "bambu-pa6-gf-72400",
+      "family": "PA6-GF",
+      "color": "Yellow",
+      "productCode": "72400",
+      "swatch": "https://store.bblcdn.eu/s8/default/a250f9e31e2d42ff81b4c90dfb749e99/9f802388489f4520bed20d7febe77867.media"
+    },
+    {
+      "id": "bambu-paht-cf-70100",
+      "family": "PAHT-CF",
+      "color": "Black",
+      "productCode": "70100",
+      "swatch": "https://store.bblcdn.eu/s8/default/ae2f4b900f634810981ba1f4b570c232/29243a133dac440096c77b68bbbc8ec9.media"
+    },
+    {
+      "id": "bambu-pc-filament-60101",
+      "family": "PC",
+      "color": "Black",
+      "productCode": "60101",
+      "swatch": "https://store.bblcdn.eu/s8/default/54622ed1fa194510bdf087e496b6cec7/80c0fdb3cc4642348aafb0ac4cb9a1a6.media"
+    },
+    {
+      "id": "bambu-pc-filament-60102",
+      "family": "PC",
+      "color": "Clear Black",
+      "productCode": "60102",
+      "swatch": "https://store.bblcdn.eu/s8/default/26fe68c6173d46139ee8571032014d5b/4fcef33534954555b649c63e981ba667.media"
+    },
+    {
+      "id": "bambu-pc-filament-60103",
+      "family": "PC",
+      "color": "Transparent",
+      "productCode": "60103",
+      "swatch": "https://store.bblcdn.eu/s8/default/6aec7a89256d42508bebc4eb46fbd7c0/469f4456c6e5449282e739eb8ca7108b.media"
+    },
+    {
+      "id": "bambu-pc-filament-60100",
+      "family": "PC",
+      "color": "White",
+      "productCode": "60100",
+      "swatch": "https://store.bblcdn.eu/s8/default/302ba1b7354a4c65b04c2ea8438dcf7a/bf4e492f67dd4ef991be8d427d3313d6.media"
+    },
+    {
+      "id": "bambu-pc-fr-63100",
+      "family": "PC FR",
+      "color": "Black",
+      "productCode": "63100",
+      "swatch": "https://store.bblcdn.eu/s8/default/1f6ccf76d87d44329c6a4ef0b17b8475/c77c831a3d1b4d70845e860b277044f9.png"
+    },
+    {
+      "id": "bambu-pc-fr-63102",
+      "family": "PC FR",
+      "color": "Gray",
+      "productCode": "63102",
+      "swatch": "https://store.bblcdn.eu/s8/default/834120e90003410fadde0726cba8eadd/f4d4c5abbc8242c294d255ce5da4f467.png"
+    },
+    {
+      "id": "bambu-pc-fr-63101",
+      "family": "PC FR",
+      "color": "White",
+      "productCode": "63101",
+      "swatch": "https://store.bblcdn.eu/s8/default/05924eb585cd45768eb99470dfb3d774/948510dcfbf4499f945fe6528ada710e.png"
+    },
+    {
+      "id": "bambu-pet-cf-71100",
+      "family": "PET-CF",
+      "color": "Black",
+      "productCode": "71100",
+      "swatch": "https://store.bblcdn.eu/s8/default/b1c465ef65254387a69aa547bd18327d/17ff5ee26cf84b03b7f5649fe96bb637.media"
+    },
+    {
+      "id": "bambu-petg-basic-30105",
+      "family": "PETG Basic",
+      "color": "Black",
+      "productCode": "30105",
+      "swatch": "https://store.bblcdn.eu/s8/default/41287fdd7bbb42beb4a84be3f1c6e617/balck.jpg"
+    },
+    {
+      "id": "bambu-petg-basic-30403",
+      "family": "PETG Basic",
+      "color": "Dark Beige",
+      "productCode": "30403",
+      "swatch": "https://store.bblcdn.eu/s8/default/1c9744aa5c9e4d43be9266a441d7a9b2/Dark_Beige.jpg"
+    },
+    {
+      "id": "bambu-petg-basic-30800",
+      "family": "PETG Basic",
+      "color": "Dark Brown",
+      "productCode": "30800",
+      "swatch": "https://store.bblcdn.eu/s8/default/09fe2696c08c4d8a81647cc1f036c1e3/Rectangle_4615.jpg"
+    },
+    {
+      "id": "bambu-petg-basic-30107",
+      "family": "PETG Basic",
+      "color": "Gray",
+      "productCode": "30107",
+      "swatch": "https://store.bblcdn.eu/s8/default/f85c821e8df0430a8ee3ea45ba55d5b6/Rectangle_4611.jpg"
+    },
+    {
+      "id": "bambu-petg-basic-30502",
+      "family": "PETG Basic",
+      "color": "Green",
+      "productCode": "30502",
+      "swatch": "https://store.bblcdn.eu/s8/default/515a0c916d3945c789deada6486ec2da/Green.jpg"
+    },
+    {
+      "id": "bambu-petg-basic-30108",
+      "family": "PETG Basic",
+      "color": "Misty Blue",
+      "productCode": "30108",
+      "swatch": "https://store.bblcdn.eu/s8/default/c5d86162b09c4e34842a18bada5f48af/Misty_Blue.jpg"
+    },
+    {
+      "id": "bambu-petg-basic-30604",
+      "family": "PETG Basic",
+      "color": "Navy Blue",
+      "productCode": "30604",
+      "swatch": "https://store.bblcdn.eu/s8/default/3aece5ae9a8241ef873f995c922862da/Navy_Blue.jpg"
+    },
+    {
+      "id": "bambu-petg-basic-30301",
+      "family": "PETG Basic",
+      "color": "Orange",
+      "productCode": "30301",
+      "swatch": "https://store.bblcdn.eu/s8/default/95a645e64f4041fc97ed524e7dc2912c/Orange.jpg"
+    },
+    {
+      "id": "bambu-petg-basic-30503",
+      "family": "PETG Basic",
+      "color": "Pine Green",
+      "productCode": "30503",
+      "swatch": "https://store.bblcdn.eu/s8/default/49e6d59d20434e00ad4df4130d94178a/Pine_Green.jpg"
+    },
+    {
+      "id": "bambu-petg-basic-30201",
+      "family": "PETG Basic",
+      "color": "Red",
+      "productCode": "30201",
+      "swatch": "https://store.bblcdn.eu/s8/default/69923db36ddd4dfa9009c5a3c040f191/Rectangle_4612.jpg"
+    },
+    {
+      "id": "bambu-petg-basic-30603",
+      "family": "PETG Basic",
+      "color": "Reflex Blue",
+      "productCode": "30603",
+      "swatch": "https://store.bblcdn.eu/s8/default/20e2b765efd44400a0bae2b9797a5ecf/Rectangle_4614.jpg"
+    },
+    {
+      "id": "bambu-petg-basic-30106",
+      "family": "PETG Basic",
+      "color": "White",
+      "productCode": "30106",
+      "swatch": "https://store.bblcdn.eu/s8/default/9bf28782fd43453d8b895e606a89e2fe/Rectangle_4610.jpg"
+    },
+    {
+      "id": "bambu-petg-basic-30402",
+      "family": "PETG Basic",
+      "color": "Yellow",
+      "productCode": "30402",
+      "swatch": "https://store.bblcdn.eu/s8/default/0872badbedab4d6d917f5f45eba78e18/Rectangle_4613.jpg"
+    },
+    {
+      "id": "bambu-petg-hf-33102",
+      "family": "PETG HF",
+      "color": "Black",
+      "productCode": "33102",
+      "swatch": "https://store.bblcdn.eu/s8/default/1bb0282854794998a139f29d0d387a63/0cf39d0e4c6c43b38fef498561894508.png"
+    },
+    {
+      "id": "bambu-petg-hf-33600",
+      "family": "PETG HF",
+      "color": "Blue",
+      "productCode": "33600",
+      "swatch": "https://store.bblcdn.eu/s8/default/7f4aee6488464606adc9407e561f0fdf/a3478612f8b24e47b12a3d86116de7a6.png"
+    },
+    {
+      "id": "bambu-petg-hf-33401",
+      "family": "PETG HF",
+      "color": "Cream",
+      "productCode": "33401",
+      "swatch": "https://store.bblcdn.eu/s8/default/74667b6e77ab41a48bcbbf0e5a7e962f/61202de96c7c49ccab34f0cc001157ee.png"
+    },
+    {
+      "id": "bambu-petg-hf-33103",
+      "family": "PETG HF",
+      "color": "Dark Gray",
+      "productCode": "33103",
+      "swatch": "https://store.bblcdn.eu/s8/default/c89fcdccf52c404890aa18993518e4f2/1607ecea09a94ff7b3d985685aa31d54.png"
+    },
+    {
+      "id": "bambu-petg-hf-33502",
+      "family": "PETG HF",
+      "color": "Forest Green",
+      "productCode": "33502",
+      "swatch": "https://store.bblcdn.eu/s8/default/5f6969efa7f841939df281ae95b39aee/616eb09aec544622963c5f1a9fb6424a.png"
+    },
+    {
+      "id": "bambu-petg-hf-33101",
+      "family": "PETG HF",
+      "color": "Gray",
+      "productCode": "33101",
+      "swatch": "https://store.bblcdn.eu/s8/default/b2509840152946cdab0a00a33d547a89/9a7dade47ad44a37a39325b7363a0370.png"
+    },
+    {
+      "id": "bambu-petg-hf-33500",
+      "family": "PETG HF",
+      "color": "Green",
+      "productCode": "33500",
+      "swatch": "https://store.bblcdn.eu/s8/default/588b1b3e034c4c5e8b3f6b5113a0feee/aee675e95734414ca1e9b6f83ba6e7cf.png"
+    },
+    {
+      "id": "bambu-petg-hf-33601",
+      "family": "PETG HF",
+      "color": "Lake Blue",
+      "productCode": "33601",
+      "swatch": "https://store.bblcdn.eu/s8/default/72e16e5692b5401ca97a6ce9da43d054/26cf49afc41b4a8eb01f53084a0aba3c.png"
+    },
+    {
+      "id": "bambu-petg-hf-33501",
+      "family": "PETG HF",
+      "color": "Lime Green",
+      "productCode": "33501",
+      "swatch": "https://store.bblcdn.eu/s8/default/d3c00a54204b49f3b12e0e110c33e037/38812377e81940668994d607c5af121f.png"
+    },
+    {
+      "id": "bambu-petg-hf-33300",
+      "family": "PETG HF",
+      "color": "Orange",
+      "productCode": "33300",
+      "swatch": "https://store.bblcdn.eu/s8/default/b3ab037dbc6e42cb873300a5103d9af5/bfa461028ea3467aa362bbe369a84500.png"
+    },
+    {
+      "id": "bambu-petg-hf-33801",
+      "family": "PETG HF",
+      "color": "Peanut Brown",
+      "productCode": "33801",
+      "swatch": "https://store.bblcdn.eu/s8/default/c95a9e82756444ffb6402ec505112b7f/99c7222bb9d644df8f46109bb1a099da.png"
+    },
+    {
+      "id": "bambu-petg-hf-33200",
+      "family": "PETG HF",
+      "color": "Red",
+      "productCode": "33200",
+      "swatch": "https://store.bblcdn.eu/s8/default/6ddeb4867db04235bac50fc165c43356/6f6460b12d9348e99b5070a8284c0409.png"
+    },
+    {
+      "id": "bambu-petg-hf-33100",
+      "family": "PETG HF",
+      "color": "White",
+      "productCode": "33100",
+      "swatch": "https://store.bblcdn.eu/s8/default/d757dad66404470eb30affe7212416c9/d0124e2bbb174c8ba1bad0675d35e37a.png"
+    },
+    {
+      "id": "bambu-petg-hf-33400",
+      "family": "PETG HF",
+      "color": "Yellow",
+      "productCode": "33400",
+      "swatch": "https://store.bblcdn.eu/s8/default/f9ebeec3a3b74dafb47bdbac48f23e4f/884a185a0d6e4b58a9c055dcfabe7174.png"
+    },
+    {
+      "id": "bambu-petg-translucent-32800",
+      "family": "PETG Translucent",
+      "color": "Brown",
+      "productCode": "32800",
+      "swatch": "https://store.bblcdn.eu/s8/default/cf4c552add2b42d8af2f06dd6e01d78c/62a0a80a60d4438d9cdf6624bdef3643.media"
+    },
+    {
+      "id": "bambu-petg-translucent-32101",
+      "family": "PETG Translucent",
+      "color": "Clear",
+      "productCode": "32101",
+      "swatch": "https://store.bblcdn.eu/s8/default/bb8907b1705c4973b8057e276b1f6a2f/daf1de2327714f57bd6aa32670d329cc.media"
+    },
+    {
+      "id": "bambu-petg-translucent-32100",
+      "family": "PETG Translucent",
+      "color": "Gray",
+      "productCode": "32100",
+      "swatch": "https://store.bblcdn.eu/s8/default/8f14129f76104a16a4eac6bbb7d02112/ad3609015eb94c1bbca999caf63e20f6.media"
+    },
+    {
+      "id": "bambu-petg-translucent-32600",
+      "family": "PETG Translucent",
+      "color": "Light Blue",
+      "productCode": "32600",
+      "swatch": "https://store.bblcdn.eu/s8/default/3e2776e64a4640dfb572caf2ac1fd630/342df5a8028045e49ad43889ca05d3a7.media"
+    },
+    {
+      "id": "bambu-petg-translucent-32500",
+      "family": "PETG Translucent",
+      "color": "Olive",
+      "productCode": "32500",
+      "swatch": "https://store.bblcdn.eu/s8/default/ff85e19d9a4e45b1b8c81bc24852d560/e0a9f45779d04ae28677449c1ff03d44.media"
+    },
+    {
+      "id": "bambu-petg-translucent-32300",
+      "family": "PETG Translucent",
+      "color": "Orange",
+      "productCode": "32300",
+      "swatch": "https://store.bblcdn.eu/s8/default/8adb0ea798614425b07f5af8cdb0f10b/5f5b2ce4c11b4a7bb6a577d658fb2c8b.media"
+    },
+    {
+      "id": "bambu-petg-translucent-32200",
+      "family": "PETG Translucent",
+      "color": "Pink",
+      "productCode": "32200",
+      "swatch": "https://store.bblcdn.eu/s8/default/bb7cda59f3a243d9a386aadcb0ca3a75/042c27699ca7449ba6b4adc1d0b54b00.media"
+    },
+    {
+      "id": "bambu-petg-translucent-32700",
+      "family": "PETG Translucent",
+      "color": "Purple",
+      "productCode": "32700",
+      "swatch": "https://store.bblcdn.eu/s8/default/fb002a9b2dfd449396f97453c252a69f/d7588868519f40ed9286d9230e2f3ae1.media"
+    },
+    {
+      "id": "bambu-petg-translucent-32501",
+      "family": "PETG Translucent",
+      "color": "Teal",
+      "productCode": "32501",
+      "swatch": "https://store.bblcdn.eu/s8/default/4d2eb3faa6ea4da2bf16856f1c9b8c71/0f982290866445e2aa2a0e87f3999f85.media"
+    },
+    {
+      "id": "bambu-petg-cf-31100",
+      "family": "PETG-CF",
+      "color": "Black",
+      "productCode": "31100",
+      "swatch": "https://store.bblcdn.eu/s8/default/53428fd0e1ed47b58a85419833cbd459/9f03b9781c284c09be231865f7cfb990.media"
+    },
+    {
+      "id": "bambu-petg-cf-31200",
+      "family": "PETG-CF",
+      "color": "Brick Red",
+      "productCode": "31200",
+      "swatch": "https://store.bblcdn.eu/s8/default/efd0a16adf684bb7a76380e2c1ce83ea/48e578423f6042a0b8111b2f3464dfbe.media"
+    },
+    {
+      "id": "bambu-petg-cf-31600",
+      "family": "PETG-CF",
+      "color": "Indigo Blue",
+      "productCode": "31600",
+      "swatch": "https://store.bblcdn.eu/s8/default/56bf8685f243407eb10a78a6b5390254/72085c88e6d94d999318eefb3e6f5388.media"
+    },
+    {
+      "id": "bambu-petg-cf-31500",
+      "family": "PETG-CF",
+      "color": "Malachite Green",
+      "productCode": "31500",
+      "swatch": "https://store.bblcdn.eu/s8/default/93daea73aa694cab9e34414afda81cd2/5eee321d82af45d49d78231c35f26463.media"
+    },
+    {
+      "id": "bambu-petg-cf-31101",
+      "family": "PETG-CF",
+      "color": "Titan Gray",
+      "productCode": "31101",
+      "swatch": "https://store.bblcdn.eu/s8/default/e368d237c5ed431daa63eb1ba511a178/cd5a08e91c9f4b0cad48965fcdf52e05.media"
+    },
+    {
+      "id": "bambu-petg-cf-31700",
+      "family": "PETG-CF",
+      "color": "Violet Purple",
+      "productCode": "31700",
+      "swatch": "https://store.bblcdn.eu/s8/default/d90968d25f5a4f8fa3d8ce9a6c4dbfe5/df944d36a3af47e88a492c94e57b5661.media"
+    },
+    {
+      "id": "bambu-pla-aero-14104",
+      "family": "PLA Aero",
+      "color": "Gray",
+      "productCode": "14104",
+      "swatch": "https://store.bblcdn.eu/s8/default/ddb9ace40d9a49b886a51c979b69e1ec/173c55194eba466fa2aab8bbe39d8dd8.png"
+    },
+    {
+      "id": "bambu-pla-aero-14102",
+      "family": "PLA Aero",
+      "color": "White",
+      "productCode": "14102",
+      "swatch": "https://store.bblcdn.eu/s8/default/226f9c1f95ee401da61fbb21615bb146/44060da195d940bfaac1cfe3cc7c848e.media"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10501",
+      "family": "PLA Basic",
+      "color": "Bambu Green",
+      "productCode": "10501",
+      "swatch": "https://store.bblcdn.eu/s8/default/2be1d6005e8b47309787ce5ca8d6b1b1/7044786b85d44df9bbe872c6e5d87518.media"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10201",
+      "family": "PLA Basic",
+      "color": "Beige",
+      "productCode": "10201",
+      "swatch": "https://store.bblcdn.eu/s8/default/cae88d517bac44b89fd1e895342c10b8/fa231273753d477b9d99afa19761f820.media"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10101",
+      "family": "PLA Basic",
+      "color": "Black",
+      "productCode": "10101",
+      "swatch": "https://store.bblcdn.eu/s8/default/3e8da2bfb48c44f5a65bf3f8f723f6ba/352e8e214fb4462ba7e6b1381c32fe9f.media"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10601",
+      "family": "PLA Basic",
+      "color": "Blue",
+      "productCode": "10601",
+      "swatch": "https://store.bblcdn.eu/s8/default/d992a2843093493eb39af6cb476fbe1d/0cbb7037758240b4873f9a90ab4dbe10.media"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10602",
+      "family": "PLA Basic",
+      "color": "Blue Grey",
+      "productCode": "10602",
+      "swatch": "https://store.bblcdn.eu/s8/default/adb9eb251460438498b46618a1784f0b/4e3637d99a73483bab1ce84fd7628a36.media"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10503",
+      "family": "PLA Basic",
+      "color": "Bright Green",
+      "productCode": "10503",
+      "swatch": "https://store.bblcdn.eu/s8/default/752c149f51c4444096a9d1ec68d98787/5578164bff51480a9c550ef390348ec1.png"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10801",
+      "family": "PLA Basic",
+      "color": "Bronze",
+      "productCode": "10801",
+      "swatch": "https://store.bblcdn.eu/s8/default/0bafa7cc770b4dc08baf9c2d5ee89f60/8b75222ce246480184025993a40b948b.media"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10800",
+      "family": "PLA Basic",
+      "color": "Brown",
+      "productCode": "10800",
+      "swatch": "https://store.bblcdn.eu/s8/default/7a90b883708248e3be71e3055a05d18b/ae017fb32657451aaa0eecec9ad1b748.media"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10604",
+      "family": "PLA Basic",
+      "color": "Cobalt Blue",
+      "productCode": "10604",
+      "swatch": "https://store.bblcdn.eu/s8/default/2d8f3b0e1c5d49d89948daabdf195bb1/abd43099726847d6b189bec773ef1833.png"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10802",
+      "family": "PLA Basic",
+      "color": "Cocoa Brown",
+      "productCode": "10802",
+      "swatch": "https://store.bblcdn.eu/s8/default/b723f31901004aeb8d94630217720cb5/91d13e7d3dd54a89948200e82353998f.png"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10603",
+      "family": "PLA Basic",
+      "color": "Cyan",
+      "productCode": "10603",
+      "swatch": "https://store.bblcdn.eu/s8/default/f3c29d42ffd84019bd9bd5dd010c20ed/d665a3540d334035abc278b0b80e4898.media"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10105",
+      "family": "PLA Basic",
+      "color": "Dark Gray",
+      "productCode": "10105",
+      "swatch": "https://store.bblcdn.eu/s8/default/ad0d5d8c16b246f58fde8a3866ac9fa7/03aedbaaff8943f892b58438f98cac89.png"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10401",
+      "family": "PLA Basic",
+      "color": "Gold",
+      "productCode": "10401",
+      "swatch": "https://store.bblcdn.eu/s8/default/3f8a303a66f2473f97dce2b8e6a32ae4/969f0c8921214ece8dbced65341fcbce.media"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10103",
+      "family": "PLA Basic",
+      "color": "Gray",
+      "productCode": "10103",
+      "swatch": "https://store.bblcdn.eu/s8/default/b8bb9d54dbfc4d4da37326cc026315ef/d870efeaced648c6a3f390db1f55f725.media"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10204",
+      "family": "PLA Basic",
+      "color": "Hot Pink",
+      "productCode": "10204",
+      "swatch": "https://store.bblcdn.eu/s8/default/f312337e9b054b3dbc562c4ce84bd9a3/ed844344991348f79a91dfe9aeba362e.png"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10701",
+      "family": "PLA Basic",
+      "color": "Indigo Purple",
+      "productCode": "10701",
+      "swatch": "https://store.bblcdn.eu/s8/default/70a2bd250ad54d568038e40e41c6c058/d65aebf923b840af881f23286fb7d9b3.png"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10100",
+      "family": "PLA Basic",
+      "color": "Jade White",
+      "productCode": "10100",
+      "swatch": "https://store.bblcdn.eu/s8/default/b210e083969f441d9f765d73775c33ee/Rectangle_1279.jpg"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10104",
+      "family": "PLA Basic",
+      "color": "Light Gray",
+      "productCode": "10104",
+      "swatch": "https://store.bblcdn.eu/s8/default/a9303ce2d77d446ba232266663653ffb/b7c9db2942374e2793d9865461076ac4.png"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10202",
+      "family": "PLA Basic",
+      "color": "Magenta",
+      "productCode": "10202",
+      "swatch": "https://store.bblcdn.eu/s8/default/4ad6ec1b6d5d4feead844261b2ca659a/e09bc62c304443d8b33302b42f8ef2ca.media"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10205",
+      "family": "PLA Basic",
+      "color": "Maroon Red",
+      "productCode": "10205",
+      "swatch": "https://store.bblcdn.eu/s8/default/49e16540bef940e49c1fbf1e07c59f7b/6ddd230906194a7fa5403e2cc1d7ae77.png"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10502",
+      "family": "PLA Basic",
+      "color": "Mistletoe Green",
+      "productCode": "10502",
+      "swatch": "https://store.bblcdn.eu/s8/default/01f4a69705be47d28ebb9e64138511c1/21f4f3191dfd4fd58f68fdb8b2be4ec4.media"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10300",
+      "family": "PLA Basic",
+      "color": "Orange",
+      "productCode": "10300",
+      "swatch": "https://store.bblcdn.eu/s8/default/933af893081d4049b671b88bb73dbe5d/3b7d85f463734924842171fab890a603.media"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10203",
+      "family": "PLA Basic",
+      "color": "Pink",
+      "productCode": "10203",
+      "swatch": "https://store.bblcdn.eu/s8/default/6686f81c9d744c7dbb5c2656613cfa58/16d81c82e3ac470c9abccfdda3e98ded.media"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10301",
+      "family": "PLA Basic",
+      "color": "Pumpkin Orange",
+      "productCode": "10301",
+      "swatch": "https://store.bblcdn.eu/s8/default/c2df3a9ff9c246468f0e23237ee3389c/ff733c26d9be457fb44ee270f2720827.png"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10700",
+      "family": "PLA Basic",
+      "color": "Purple",
+      "productCode": "10700",
+      "swatch": "https://store.bblcdn.eu/s8/default/588956a2685f49fca7a83d05bbc55fde/8324030333a34c54b8472e5682d19f3f.media"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10200",
+      "family": "PLA Basic",
+      "color": "Red",
+      "productCode": "10200",
+      "swatch": "https://store.bblcdn.eu/s8/default/ca98847eca2d4d3b9bedcbf1567f9069/377d91b1263f40968ca1973b0d2839e4.media"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10102",
+      "family": "PLA Basic",
+      "color": "Silver",
+      "productCode": "10102",
+      "swatch": "https://store.bblcdn.eu/s8/default/651ec57a4b894ac0abae064c8e3ff73a/8b789e9f61b14b54a248f813ea523191.media"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10402",
+      "family": "PLA Basic",
+      "color": "Sunflower Yellow",
+      "productCode": "10402",
+      "swatch": "https://store.bblcdn.eu/s8/default/570aa349cd6c4a3894325a8eeb3537eb/f84eee46ecb848e69c2e6a5c197a9958.png"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10605",
+      "family": "PLA Basic",
+      "color": "Turquoise",
+      "productCode": "10605",
+      "swatch": "https://store.bblcdn.eu/s8/default/37c33cefed344e838b6061da9cb2931e/9f0327d603c345ac99fcb795cc783dff.png"
+    },
+    {
+      "id": "bambu-pla-basic-filament-10400",
+      "family": "PLA Basic",
+      "color": "Yellow",
+      "productCode": "10400",
+      "swatch": "https://store.bblcdn.eu/s8/default/aaff6c730b9f4a6f8b872a8ab5dbceef/3b0e7a2600f44088b06cb185a3f87e04.media"
+    },
+    {
+      "id": "bambu-pla-basic-gradient-10900",
+      "family": "PLA Basic Gradient",
+      "color": "Arctic Whisper",
+      "productCode": "10900",
+      "swatch": "https://store.bblcdn.eu/s8/default/08b74ec3ec1947db973dc9f598c86815/efdbc3bf2ca74b2587a5db232d467b98.media"
+    },
+    {
+      "id": "bambu-pla-basic-gradient-10905",
+      "family": "PLA Basic Gradient",
+      "color": "Blueberry Bubblegum",
+      "productCode": "10905",
+      "swatch": "https://store.bblcdn.eu/s8/default/34d80fb6de46406fb6aca47aefb441ab/08482814a898436781578e1c09753d30.jpg"
+    },
+    {
+      "id": "bambu-pla-basic-gradient-10907",
+      "family": "PLA Basic Gradient",
+      "color": "Cotton Candy Cloud",
+      "productCode": "10907",
+      "swatch": "https://store.bblcdn.eu/s8/default/93e5dc5762b0493da92fe1060113fc67/cbf0d5d248d34251b14cc4cc7368b1d6.jpg"
+    },
+    {
+      "id": "bambu-pla-basic-gradient-10906",
+      "family": "PLA Basic Gradient",
+      "color": "Dusk Glare",
+      "productCode": "10906",
+      "swatch": "https://store.bblcdn.eu/s8/default/6f996ee15dba4fbb85808bedffba0dcf/af05eb76bdc34640a8ce9a226dda64a8.png"
+    },
+    {
+      "id": "bambu-pla-basic-gradient-10904",
+      "family": "PLA Basic Gradient",
+      "color": "Mint Lime",
+      "productCode": "10904",
+      "swatch": "https://store.bblcdn.eu/s8/default/de291383a023463498e4bbd1ddffe273/b2cd66c02e9c4f8296b02adb6f0b8c3d.jpg"
+    },
+    {
+      "id": "bambu-pla-basic-gradient-10902",
+      "family": "PLA Basic Gradient",
+      "color": "Ocean to Meadow",
+      "productCode": "10902",
+      "swatch": "https://store.bblcdn.eu/s8/default/87c1753461b14fd89b3bbecf9c5643d0/c4c45c8388594ca3bb9dd615ffa694fc.media"
+    },
+    {
+      "id": "bambu-pla-basic-gradient-10903",
+      "family": "PLA Basic Gradient",
+      "color": "Pink Citrus",
+      "productCode": "10903",
+      "swatch": "https://store.bblcdn.eu/s8/default/a135cf4c8ab54558915f0d735515a245/524cd0a1c2064deea57e7affdfa7c964.jpg"
+    },
+    {
+      "id": "bambu-pla-basic-gradient-10901",
+      "family": "PLA Basic Gradient",
+      "color": "Solar Breeze",
+      "productCode": "10901",
+      "swatch": "https://store.bblcdn.eu/s8/default/10bde563d06a41feb120eda5bbbec54b/21d2138bdb664740bc095f3834a7ff6a.media"
+    },
+    {
+      "id": "bambu-pla-cmyk-lithophane",
+      "family": "PLA CMYK Lithophane",
+      "color": "Catalog listing",
+      "productCode": "",
+      "swatch": "#D8D6D0"
+    },
+    {
+      "id": "bambu-pla-galaxy-13203",
+      "family": "PLA Galaxy",
+      "color": "Brown",
+      "productCode": "13203",
+      "swatch": "https://store.bblcdn.eu/s8/default/e647bbcb0a214c5db96b9f4936836a24/7fe708d10da24cb3b94cb79f555232ad.media"
+    },
+    {
+      "id": "bambu-pla-galaxy-13503",
+      "family": "PLA Galaxy",
+      "color": "Green",
+      "productCode": "13503",
+      "swatch": "https://store.bblcdn.eu/s8/default/57686d2cf81b4ff08fb07b2b5c8f4755/96e4800d3fd04fcca23518ed098f08ec.media"
+    },
+    {
+      "id": "bambu-pla-galaxy-13504",
+      "family": "PLA Galaxy",
+      "color": "Nebulae",
+      "productCode": "13504",
+      "swatch": "https://store.bblcdn.eu/s8/default/09aef67c0181434fab1e1627b2d1c7d2/19f856ded60b42b7a333c32851e0cd7f.media"
+    },
+    {
+      "id": "bambu-pla-galaxy-13602",
+      "family": "PLA Galaxy",
+      "color": "Purple",
+      "productCode": "13602",
+      "swatch": "https://store.bblcdn.eu/s8/default/631c6f833ece4c36a32a14a24bc466d1/17e0a4768d1d4318bd18651a6d605945.media"
+    },
+    {
+      "id": "bambu-pla-glow-15600",
+      "family": "PLA Glow",
+      "color": "Glow Blue",
+      "productCode": "15600",
+      "swatch": "https://store.bblcdn.eu/s8/default/5173a82d5fbc4014b47b126fc9740ae9/b5e3453464cc482e918e6b61391394c7.media"
+    },
+    {
+      "id": "bambu-pla-glow-15500",
+      "family": "PLA Glow",
+      "color": "Glow Green",
+      "productCode": "15500",
+      "swatch": "https://store.bblcdn.eu/s8/default/0d61c4e6649f43a08810d7334442470b/0592e39f21c74879a6cd329646c157d5.media"
+    },
+    {
+      "id": "bambu-pla-glow-15300",
+      "family": "PLA Glow",
+      "color": "Glow Orange",
+      "productCode": "15300",
+      "swatch": "https://store.bblcdn.eu/s8/default/76764897bf6c4929b171b3fc48149d0a/a07dd6ee6ba740ebaf06dbbc66b9066d.media"
+    },
+    {
+      "id": "bambu-pla-glow-15200",
+      "family": "PLA Glow",
+      "color": "Glow Pink",
+      "productCode": "15200",
+      "swatch": "https://store.bblcdn.eu/s8/default/5bea440572a74bfc8ea8446b547541cb/5b9adaddb9114bea9758d6353c61b4bd.media"
+    },
+    {
+      "id": "bambu-pla-glow-15400",
+      "family": "PLA Glow",
+      "color": "Glow Yellow",
+      "productCode": "15400",
+      "swatch": "https://store.bblcdn.eu/s8/default/c9c4c0bca3c24e74ab96b8bb2e544e9b/c2f53cafa52442cdb4e4a2ebf10443a4.media"
+    },
+    {
+      "id": "bambu-pla-marble-13201",
+      "family": "PLA Marble",
+      "color": "Red Granite",
+      "productCode": "13201",
+      "swatch": "https://store.bblcdn.eu/s8/default/d2ccc1b56bca4c368a33b7ac2d983d55/e307b76c7c9f46b5a8c8782feb9ff23e.media"
+    },
+    {
+      "id": "bambu-pla-marble-13103",
+      "family": "PLA Marble",
+      "color": "White Marble",
+      "productCode": "13103",
+      "swatch": "https://store.bblcdn.eu/s8/default/71cbf6802e4e4505a848b52b7b2c9487/8cf690c4676c41c68f0ca540f84785a5.media"
+    },
+    {
+      "id": "bambu-pla-matte-11502",
+      "family": "PLA Matte",
+      "color": "Apple Green",
+      "productCode": "11502",
+      "swatch": "https://store.bblcdn.eu/s8/default/3b3b0d30e490435c945fb283606ad774/Rectangle_4539.png"
+    },
+    {
+      "id": "bambu-pla-matte-11102",
+      "family": "PLA Matte",
+      "color": "Ash Gray",
+      "productCode": "11102",
+      "swatch": "https://store.bblcdn.eu/s8/default/d18055ca338e4c35a51b48351dac19a2/bac67500773d4a7fbd285fbfc2aaa9a7.media"
+    },
+    {
+      "id": "bambu-pla-matte-11103",
+      "family": "PLA Matte",
+      "color": "Bone White",
+      "productCode": "11103",
+      "swatch": "https://store.bblcdn.eu/s8/default/fe1aeb8b3e2d49679beb1843cf87d048/Rectangle_4535.png"
+    },
+    {
+      "id": "bambu-pla-matte-11803",
+      "family": "PLA Matte",
+      "color": "Caramel",
+      "productCode": "11803",
+      "swatch": "https://store.bblcdn.eu/s8/default/855926931a7f4e3fbcf7d7bc003a64c1/Rectangle_4541.png"
+    },
+    {
+      "id": "bambu-pla-matte-11101",
+      "family": "PLA Matte",
+      "color": "Charcoal",
+      "productCode": "11101",
+      "swatch": "https://store.bblcdn.eu/s8/default/c0dc18dc3dc7497986cae565172fb258/9873c26227394682ab9270a8e0868f0f.media"
+    },
+    {
+      "id": "bambu-pla-matte-11602",
+      "family": "PLA Matte",
+      "color": "Dark Blue",
+      "productCode": "11602",
+      "swatch": "https://store.bblcdn.eu/s8/default/1ac27cb3f8584843b25a64cee769437f/353e1dc2aced4c808db0c85d394bbee6.media"
+    },
+    {
+      "id": "bambu-pla-matte-11801",
+      "family": "PLA Matte",
+      "color": "Dark Brown",
+      "productCode": "11801",
+      "swatch": "https://store.bblcdn.eu/s8/default/9f6adf23212a4ef694f90e9afe9820e5/926ff77d477d4f6c9fcb8c76fdefa7b2.media"
+    },
+    {
+      "id": "bambu-pla-matte-11802",
+      "family": "PLA Matte",
+      "color": "Dark Chocolate",
+      "productCode": "11802",
+      "swatch": "https://store.bblcdn.eu/s8/default/c242d340094d4275baae53041edb0ed3/Rectangle_4536.png"
+    },
+    {
+      "id": "bambu-pla-matte-11501",
+      "family": "PLA Matte",
+      "color": "Dark Green",
+      "productCode": "11501",
+      "swatch": "https://store.bblcdn.eu/s8/default/5bccf7ad0e604ea691343a0bf0cc2dee/cf87d8d749a64146abd1f02c4a9a79ad.media"
+    },
+    {
+      "id": "bambu-pla-matte-11202",
+      "family": "PLA Matte",
+      "color": "Dark Red",
+      "productCode": "11202",
+      "swatch": "https://store.bblcdn.eu/s8/default/dfdf2e6ed6324710b3fcd01b58827a60/16a6cddd38c5427fbe0c043acf4fdec4.media"
+    },
+    {
+      "id": "bambu-pla-matte-11401",
+      "family": "PLA Matte",
+      "color": "Desert Tan",
+      "productCode": "11401",
+      "swatch": "https://store.bblcdn.eu/s8/default/2ab2e16d82ac493f9bab6ec350a57dd9/d05a32c4b098422db92848e2b4d9c90e.media"
+    },
+    {
+      "id": "bambu-pla-matte-11500",
+      "family": "PLA Matte",
+      "color": "Grass Green",
+      "productCode": "11500",
+      "swatch": "https://store.bblcdn.eu/s8/default/4b4ed908276a4420b6eda1a6efb5247a/f375a162834a4dd6ad40b3d3cd2bd23b.media"
+    },
+    {
+      "id": "bambu-pla-matte-11601",
+      "family": "PLA Matte",
+      "color": "Ice Blue",
+      "productCode": "11601",
+      "swatch": "https://store.bblcdn.eu/s8/default/7b34b82fdf2f4abdbc25bf4f0f99fc0a/c07627cfd70f4ccfa787d4d12dad6d4b.media"
+    },
+    {
+      "id": "bambu-pla-matte-11100",
+      "family": "PLA Matte",
+      "color": "Ivory White",
+      "productCode": "11100",
+      "swatch": "https://store.bblcdn.eu/s8/default/13f15616297b468a9437ad1f7f3ec3fe/c8693a709e0442f384bad600d03fe0c3.media"
+    },
+    {
+      "id": "bambu-pla-matte-11800",
+      "family": "PLA Matte",
+      "color": "Latte Brown",
+      "productCode": "11800",
+      "swatch": "https://store.bblcdn.eu/s8/default/5fe8df3185354f88badf20e5067437fb/80e94033ac314bb58c08c48a93156c8b.media"
+    },
+    {
+      "id": "bambu-pla-matte-11400",
+      "family": "PLA Matte",
+      "color": "Lemon Yellow",
+      "productCode": "11400",
+      "swatch": "https://store.bblcdn.eu/s8/default/b9a35f57b62940239231925123ea510f/147b2c8c833e4625a552584ce4ac94e2.media"
+    },
+    {
+      "id": "bambu-pla-matte-11700",
+      "family": "PLA Matte",
+      "color": "Lilac purple",
+      "productCode": "11700",
+      "swatch": "https://store.bblcdn.eu/s8/default/3766ff856c9f46da87f998ebb643e5d7/47be9dad231d4e7c9d84086cd677e8dd.media"
+    },
+    {
+      "id": "bambu-pla-matte-11300",
+      "family": "PLA Matte",
+      "color": "Mandarin Orange",
+      "productCode": "11300",
+      "swatch": "https://store.bblcdn.eu/s8/default/c0ae19a4dde1487792bc8faf27a698d4/50858ad786c3414daaacb1f29eead215.media"
+    },
+    {
+      "id": "bambu-pla-matte-11600",
+      "family": "PLA Matte",
+      "color": "Marine Blue",
+      "productCode": "11600",
+      "swatch": "https://store.bblcdn.eu/s8/default/c948001284044939b0e8565b687537a8/c3f24581020141108a78632680271e09.media"
+    },
+    {
+      "id": "bambu-pla-matte-11104",
+      "family": "PLA Matte",
+      "color": "Nardo Gray",
+      "productCode": "11104",
+      "swatch": "https://store.bblcdn.eu/s8/default/d2a8851055cb4ba4b53f022a6eddf451/Rectangle_4543.png"
+    },
+    {
+      "id": "bambu-pla-matte-11204",
+      "family": "PLA Matte",
+      "color": "Plum",
+      "productCode": "11204",
+      "swatch": "https://store.bblcdn.eu/s8/default/01c4128b7a004c56a71b81d433b08292/Rectangle_4537.png"
+    },
+    {
+      "id": "bambu-pla-matte-11201",
+      "family": "PLA Matte",
+      "color": "Sakura Pink",
+      "productCode": "11201",
+      "swatch": "https://store.bblcdn.eu/s8/default/9bab85655c1445308fbcb56b92b21e5e/a54f8229fa6e4c2eb714c34972fa6a82.media"
+    },
+    {
+      "id": "bambu-pla-matte-11200",
+      "family": "PLA Matte",
+      "color": "Scarlet Red",
+      "productCode": "11200",
+      "swatch": "https://store.bblcdn.eu/s8/default/8e0c8191b01441069edefe00fc405e59/e97d6f747715417d8c2d5c0aeb2554f0.media"
+    },
+    {
+      "id": "bambu-pla-matte-11603",
+      "family": "PLA Matte",
+      "color": "Sky Blue",
+      "productCode": "11603",
+      "swatch": "https://store.bblcdn.eu/s8/default/20daf96cbd434d05b910847f7663c82c/Rectangle_4540.png"
+    },
+    {
+      "id": "bambu-pla-matte-11203",
+      "family": "PLA Matte",
+      "color": "Terracotta",
+      "productCode": "11203",
+      "swatch": "https://store.bblcdn.eu/s8/default/e32d2b8704b74e1b9e0e1529496eb3d2/Rectangle_4542.png"
+    },
+    {
+      "id": "bambu-pla-metal-13600",
+      "family": "PLA Metal",
+      "color": "Cobalt Blue Metallic",
+      "productCode": "13600",
+      "swatch": "https://store.bblcdn.eu/s8/default/3263007b286f4a198797cce5685254cc/8d1ec911a43946e1a97b442017261ccd.media"
+    },
+    {
+      "id": "bambu-pla-metal-13800",
+      "family": "PLA Metal",
+      "color": "Copper Brown Metallic",
+      "productCode": "13800",
+      "swatch": "https://store.bblcdn.eu/s8/default/b2c10d8d5b6f4a42a55f4134469f853f/9f7141496119453cbae5a3907f091160.media"
+    },
+    {
+      "id": "bambu-pla-metal-13400",
+      "family": "PLA Metal",
+      "color": "Iridium Gold Metallic",
+      "productCode": "13400",
+      "swatch": "https://store.bblcdn.eu/s8/default/436b53d9dd0340b9b12d26a645aeacb0/21b4435c285f410babb7d9ea128772fb.media"
+    },
+    {
+      "id": "bambu-pla-metal-13100",
+      "family": "PLA Metal",
+      "color": "Iron Gray Metallic",
+      "productCode": "13100",
+      "swatch": "https://store.bblcdn.eu/s8/default/d80430b687384d0597a6eb3633019744/6dab560f37444f11ba7aada8028a87ed.media"
+    },
+    {
+      "id": "bambu-pla-metal-13500",
+      "family": "PLA Metal",
+      "color": "Oxide Green Metallic",
+      "productCode": "13500",
+      "swatch": "https://store.bblcdn.eu/s8/default/44c5e288987645a98e3f3a10a791e991/a20693d2087846bba5d3afe4b8a77645.media"
+    },
+    {
+      "id": "bambu-pla-pure-17101",
+      "family": "PLA Pure",
+      "color": "Absolute Black",
+      "productCode": "17101",
+      "swatch": "https://store.bblcdn.eu/s8/default/9f20ac0521274da7806a446f642a903f/Absolute_Black.jpg"
+    },
+    {
+      "id": "bambu-pla-pure-17300",
+      "family": "PLA Pure",
+      "color": "Apricot",
+      "productCode": "17300",
+      "swatch": "https://store.bblcdn.eu/s8/default/d0036c0776ea4bc9a935c05121153a48/Apricot.jpg"
+    },
+    {
+      "id": "bambu-pla-pure-17600",
+      "family": "PLA Pure",
+      "color": "Baby Blue",
+      "productCode": "17600",
+      "swatch": "https://store.bblcdn.eu/s8/default/514dd4f98c374efd8d2ac5acada16361/Baby_Blue.jpg"
+    },
+    {
+      "id": "bambu-pla-pure-17200",
+      "family": "PLA Pure",
+      "color": "Milky Pink",
+      "productCode": "17200",
+      "swatch": "https://store.bblcdn.eu/s8/default/25028ea0011c47c99d6229c285050389/Milky_Pink.jpg"
+    },
+    {
+      "id": "bambu-pla-pure-17100",
+      "family": "PLA Pure",
+      "color": "Pure White",
+      "productCode": "17100",
+      "swatch": "https://store.bblcdn.eu/s8/default/5939cb6c15514a7bb404738123d817c2/Pure_White.jpg"
+    },
+    {
+      "id": "bambu-pla-silk-multi-color-13909",
+      "family": "PLA Silk Multi-Color",
+      "color": "Aurora Purple",
+      "productCode": "13909",
+      "swatch": "https://store.bblcdn.eu/s8/default/9928f7b385954581b9350c3682b7dc78/Rectangle_1281.jpg"
+    },
+    {
+      "id": "bambu-pla-silk-multi-color-13904",
+      "family": "PLA Silk Multi-Color",
+      "color": "Blue Hawaii",
+      "productCode": "13904",
+      "swatch": "https://store.bblcdn.eu/s8/default/689cc2105f3a4528abbcc0a5ae56586f/d275ffb45cd14a06b326a537658a9552.png"
+    },
+    {
+      "id": "bambu-pla-silk-multi-color-13912",
+      "family": "PLA Silk Multi-Color",
+      "color": "Dawn Radiance",
+      "productCode": "13912",
+      "swatch": "https://store.bblcdn.eu/s8/default/47cc04e877834c6ebcaaeb798acbc759/Rectangle_1275.jpg"
+    },
+    {
+      "id": "bambu-pla-silk-multi-color-13901",
+      "family": "PLA Silk Multi-Color",
+      "color": "Gilded Rose",
+      "productCode": "13901",
+      "swatch": "https://store.bblcdn.eu/s8/default/d7b6c30916be47e68770f07faf0169db/eaaea21887664e6f81e86f7770c715db.png"
+    },
+    {
+      "id": "bambu-pla-silk-multi-color-13902",
+      "family": "PLA Silk Multi-Color",
+      "color": "Midnight Blaze",
+      "productCode": "13902",
+      "swatch": "https://store.bblcdn.eu/s8/default/6790d0aa09a34d079b294ff9017f52e2/a01f676d2cd7473bbc32b56c99883dc3.png"
+    },
+    {
+      "id": "bambu-pla-silk-multi-color-13913",
+      "family": "PLA Silk Multi-Color",
+      "color": "Mystic Magenta",
+      "productCode": "13913",
+      "swatch": "https://store.bblcdn.eu/s8/default/71e690ea461146f59c4f01497aa9f19f/Group_1123863520.png"
+    },
+    {
+      "id": "bambu-pla-silk-multi-color-13903",
+      "family": "PLA Silk Multi-Color",
+      "color": "Neon City",
+      "productCode": "13903",
+      "swatch": "https://store.bblcdn.eu/s8/default/4f3872334cb242c0bdf3b48f2a467aa8/19dea022e4a2446e9d72293f4457e818.png"
+    },
+    {
+      "id": "bambu-pla-silk-multi-color-13916",
+      "family": "PLA Silk Multi-Color",
+      "color": "Phantom Blue",
+      "productCode": "13916",
+      "swatch": "https://store.bblcdn.eu/s8/default/735170bd43e44e72af64389165207eae/Group_1123863521.png"
+    },
+    {
+      "id": "bambu-pla-silk-multi-color-13906",
+      "family": "PLA Silk Multi-Color",
+      "color": "South Beach",
+      "productCode": "13906",
+      "swatch": "https://store.bblcdn.eu/s8/default/e519f37783c54e14b94f0d596ab524ea/Rectangle_1274.jpg"
+    },
+    {
+      "id": "bambu-pla-silk-multi-color-13905",
+      "family": "PLA Silk Multi-Color",
+      "color": "Velvet Eclipse",
+      "productCode": "13905",
+      "swatch": "https://store.bblcdn.eu/s8/default/95da7b74b4354d21807cca353548cbdf/Velvet_Eclipse.png"
+    },
+    {
+      "id": "bambu-pla-silk-upgrade-13603",
+      "family": "PLA Silk+",
+      "color": "Baby Blue",
+      "productCode": "13603",
+      "swatch": "https://store.bblcdn.eu/s8/default/7eef94f45be644ae9c529bf6b2824f13/7d8ebe300b2f401b9050108f73f5b031.png"
+    },
+    {
+      "id": "bambu-pla-silk-upgrade-13604",
+      "family": "PLA Silk+",
+      "color": "Blue",
+      "productCode": "13604",
+      "swatch": "https://store.bblcdn.eu/s8/default/b2ff6b218e814c7cba4a78a4a3a8a549/a8ca2a3c76ed4b9aa59cbe9252a257da.png"
+    },
+    {
+      "id": "bambu-pla-silk-upgrade-13506",
+      "family": "PLA Silk+",
+      "color": "Candy Green",
+      "productCode": "13506",
+      "swatch": "https://store.bblcdn.eu/s8/default/6d659bdc365d43d5a689aca52cf211d3/acece968b6744a20987536468921111c.png"
+    },
+    {
+      "id": "bambu-pla-silk-upgrade-13205",
+      "family": "PLA Silk+",
+      "color": "Candy Red",
+      "productCode": "13205",
+      "swatch": "https://store.bblcdn.eu/s8/default/1d2b4d742ead4aeeaa1185ab88ae62d5/74d0884c3c3e48deb606dff285cb9c50.png"
+    },
+    {
+      "id": "bambu-pla-silk-upgrade-13404",
+      "family": "PLA Silk+",
+      "color": "Champagne",
+      "productCode": "13404",
+      "swatch": "https://store.bblcdn.eu/s8/default/0a03a1258242473885101cd4220a7701/7b2acb3c9bbe45b88dda6135f77828ba.png"
+    },
+    {
+      "id": "bambu-pla-silk-upgrade-13405",
+      "family": "PLA Silk+",
+      "color": "Gold",
+      "productCode": "13405",
+      "swatch": "https://store.bblcdn.eu/s8/default/8a62583b9687403d91508c4ff13d42f0/e3138a7f12ff424a9f033dae1ecc3e5b.png"
+    },
+    {
+      "id": "bambu-pla-silk-upgrade-13507",
+      "family": "PLA Silk+",
+      "color": "Mint",
+      "productCode": "13507",
+      "swatch": "https://store.bblcdn.eu/s8/default/1f650bec1f394120bf03afe4ce78886a/0315945587e04863be19889a3fcb308e.png"
+    },
+    {
+      "id": "bambu-pla-silk-upgrade-13207",
+      "family": "PLA Silk+",
+      "color": "Pink",
+      "productCode": "13207",
+      "swatch": "https://store.bblcdn.eu/s8/default/1b0a3b1d81cb46d88cbbae26567f380c/c78393158aba4d519ae220102d177a5e.png"
+    },
+    {
+      "id": "bambu-pla-silk-upgrade-13702",
+      "family": "PLA Silk+",
+      "color": "Purple",
+      "productCode": "13702",
+      "swatch": "https://store.bblcdn.eu/s8/default/b5d3a92199c84d889016ef028c34c359/48b55cfca8ad4fe7bf2c6ad634bdd591.png"
+    },
+    {
+      "id": "bambu-pla-silk-upgrade-13206",
+      "family": "PLA Silk+",
+      "color": "Rose Gold",
+      "productCode": "13206",
+      "swatch": "https://store.bblcdn.eu/s8/default/5ae1b7fc98774ef6a95e48cbf993678d/cc16fe6653384ba8be2339ea007fceb5.png"
+    },
+    {
+      "id": "bambu-pla-silk-upgrade-13109",
+      "family": "PLA Silk+",
+      "color": "Silver",
+      "productCode": "13109",
+      "swatch": "https://store.bblcdn.eu/s8/default/4fcd190101a947159250365cc5e714a8/07d108b79a8a4b2bbf2e1087381a720b.png"
+    },
+    {
+      "id": "bambu-pla-silk-upgrade-13108",
+      "family": "PLA Silk+",
+      "color": "Titan Gray",
+      "productCode": "13108",
+      "swatch": "https://store.bblcdn.eu/s8/default/01639b1f1b074e578fa213c6cba99e27/8508648cec13489ab718c418b5f1f6fc.png"
+    },
+    {
+      "id": "bambu-pla-silk-upgrade-13110",
+      "family": "PLA Silk+",
+      "color": "White",
+      "productCode": "13110",
+      "swatch": "https://store.bblcdn.eu/s8/default/b4a0b444bd344a40bbec2e4a5f67feda/5710aedc075446f694ec8a393a779be2.png"
+    },
+    {
+      "id": "bambu-pla-sparkle-13501",
+      "family": "PLA Sparkle",
+      "color": "Alpine Green Sparkle",
+      "productCode": "13501",
+      "swatch": "https://store.bblcdn.eu/s8/default/f0955c7412074aa6b4f4e5c72333b48d/8246b8e6a11e49868ad15c121c6613f1.media"
+    },
+    {
+      "id": "bambu-pla-sparkle-13402",
+      "family": "PLA Sparkle",
+      "color": "Classic Gold Sparkle",
+      "productCode": "13402",
+      "swatch": "https://store.bblcdn.eu/s8/default/af54eca37af046ae9bebe5429e2aa079/fa6f82dee4bb4abaa5d35ba0336e8cc2.media"
+    },
+    {
+      "id": "bambu-pla-sparkle-13200",
+      "family": "PLA Sparkle",
+      "color": "Crimson Red Sparkle",
+      "productCode": "13200",
+      "swatch": "https://store.bblcdn.eu/s8/default/df2ac024466c49a5b666ff156f2f101a/7ce5463b91f942489dccfe3660ac8167.media"
+    },
+    {
+      "id": "bambu-pla-sparkle-13101",
+      "family": "PLA Sparkle",
+      "color": "Onyx Black Sparkle",
+      "productCode": "13101",
+      "swatch": "https://store.bblcdn.eu/s8/default/60b6e1eeb25c4517bea7b6df291bcc10/39cb6cb6eeee4eb088b240625c54450d.media"
+    },
+    {
+      "id": "bambu-pla-sparkle-13700",
+      "family": "PLA Sparkle",
+      "color": "Royal Purple Sparkle",
+      "productCode": "13700",
+      "swatch": "https://store.bblcdn.eu/s8/default/54f2484ecba64dd79bdac525f039681b/dbd75d2187f24cdcb31a6e19399189ff.media"
+    },
+    {
+      "id": "bambu-pla-sparkle-13102",
+      "family": "PLA Sparkle",
+      "color": "Slate Gray Sparkle",
+      "productCode": "13102",
+      "swatch": "https://store.bblcdn.eu/s8/default/080598cf79e74874bbbcceaf61a48c3c/fa9db10ecf7a4587a7e242b069b41cda.media"
+    },
+    {
+      "id": "bambu-pla-tough-upgrade-12104",
+      "family": "PLA Tough+",
+      "color": "Black",
+      "productCode": "12104",
+      "swatch": "https://store.bblcdn.eu/s8/default/40cfd5555aaf4fcd912a7e3b1cfe9521/Rectangle_4551.jpg"
+    },
+    {
+      "id": "bambu-pla-tough-upgrade-12601",
+      "family": "PLA Tough+",
+      "color": "Cyan",
+      "productCode": "12601",
+      "swatch": "https://store.bblcdn.eu/s8/default/7133271dce5c43299467fdfcd8341781/Rectangle_4557.jpg"
+    },
+    {
+      "id": "bambu-pla-tough-upgrade-12105",
+      "family": "PLA Tough+",
+      "color": "Gray",
+      "productCode": "12105",
+      "swatch": "https://store.bblcdn.eu/s8/default/cefcc276644e4729b1485b20a8808a20/Rectangle_4553.jpg"
+    },
+    {
+      "id": "bambu-pla-tough-upgrade-12301",
+      "family": "PLA Tough+",
+      "color": "Orange",
+      "productCode": "12301",
+      "swatch": "https://store.bblcdn.eu/s8/default/2583cecf166043838df6e1c6afac7e1a/Rectangle_4558.jpg"
+    },
+    {
+      "id": "bambu-pla-tough-upgrade-12106",
+      "family": "PLA Tough+",
+      "color": "Silver",
+      "productCode": "12106",
+      "swatch": "https://store.bblcdn.eu/s8/default/876324c5b4ad4a9eb5159e99e92b1da0/Rectangle_4555.jpg"
+    },
+    {
+      "id": "bambu-pla-tough-upgrade-12107",
+      "family": "PLA Tough+",
+      "color": "White",
+      "productCode": "12107",
+      "swatch": "https://store.bblcdn.eu/s8/default/c757eaf2c8b64cd7879faa893e842399/Rectangle_4554_(1).jpg"
+    },
+    {
+      "id": "bambu-pla-tough-upgrade-12401",
+      "family": "PLA Tough+",
+      "color": "Yellow",
+      "productCode": "12401",
+      "swatch": "https://store.bblcdn.eu/s8/default/6d1a64544c3a45cca6050b3ce186b7b4/Rectangle_4556.jpg"
+    },
+    {
+      "id": "bambu-pla-translucent-13611",
+      "family": "PLA Translucent",
+      "color": "Blue",
+      "productCode": "13611",
+      "swatch": "https://store.bblcdn.eu/s8/default/e339c483a76a463db6e541dcdf25b467/Rectangle_4550.png"
+    },
+    {
+      "id": "bambu-pla-translucent-13211",
+      "family": "PLA Translucent",
+      "color": "Cherry Pink",
+      "productCode": "13211",
+      "swatch": "https://store.bblcdn.eu/s8/default/04edf5805efc4e709df8fcfbabab45cd/Rectangle_4556.png"
+    },
+    {
+      "id": "bambu-pla-translucent-13610",
+      "family": "PLA Translucent",
+      "color": "Ice Blue",
+      "productCode": "13610",
+      "swatch": "https://store.bblcdn.eu/s8/default/9ae8ab0306a34e5a885329afa11105ee/Rectangle_4557.png"
+    },
+    {
+      "id": "bambu-pla-translucent-13711",
+      "family": "PLA Translucent",
+      "color": "Lavender",
+      "productCode": "13711",
+      "swatch": "https://store.bblcdn.eu/s8/default/5dc9fd2e71a54485bab1f7bd64e407f4/Rectangle_4558.png"
+    },
+    {
+      "id": "bambu-pla-translucent-13510",
+      "family": "PLA Translucent",
+      "color": "Light Jade",
+      "productCode": "13510",
+      "swatch": "https://store.bblcdn.eu/s8/default/26733b7f84884d3a8a9a02fbe93f0f15/Rectangle_4554.png"
+    },
+    {
+      "id": "bambu-pla-translucent-13410",
+      "family": "PLA Translucent",
+      "color": "Mellow Yellow",
+      "productCode": "13410",
+      "swatch": "https://store.bblcdn.eu/s8/default/d5bf6db92b904951ae16a4764f3d4a65/Rectangle_4555.png"
+    },
+    {
+      "id": "bambu-pla-translucent-13301",
+      "family": "PLA Translucent",
+      "color": "Orange",
+      "productCode": "13301",
+      "swatch": "https://store.bblcdn.eu/s8/default/ba91117386604ce686888209cfed7a48/Rectangle_4552.png"
+    },
+    {
+      "id": "bambu-pla-translucent-13710",
+      "family": "PLA Translucent",
+      "color": "Purple",
+      "productCode": "13710",
+      "swatch": "https://store.bblcdn.eu/s8/default/dbddbaf02b1d47f1802c6f5da239e45f/Rectangle_4551.png"
+    },
+    {
+      "id": "bambu-pla-translucent-13210",
+      "family": "PLA Translucent",
+      "color": "Red",
+      "productCode": "13210",
+      "swatch": "https://store.bblcdn.eu/s8/default/4f8bc79c49c1428f8203f78ef91e63e8/Rectangle_4553.png"
+    },
+    {
+      "id": "bambu-pla-translucent-13612",
+      "family": "PLA Translucent",
+      "color": "Teal",
+      "productCode": "13612",
+      "swatch": "https://store.bblcdn.eu/s8/default/eb07aa46141a4cafbaf9358d41e145b7/Rectangle_4549.png"
+    },
+    {
+      "id": "bambu-pla-wood-13107",
+      "family": "PLA Wood",
+      "color": "Black Walnut",
+      "productCode": "13107",
+      "swatch": "https://store.bblcdn.eu/s8/default/d3b30a14375c45c1a48861bc02fd0624/55bfe8a8f9e64d0ebd78df70a08296bd.png"
+    },
+    {
+      "id": "bambu-pla-wood-13505",
+      "family": "PLA Wood",
+      "color": "Classic Birch",
+      "productCode": "13505",
+      "swatch": "https://store.bblcdn.eu/s8/default/bdca56b541c14abca6deffa609738f7b/362e740e8fc745acb359536feee5436e.png"
+    },
+    {
+      "id": "bambu-pla-wood-13801",
+      "family": "PLA Wood",
+      "color": "Clay Brown",
+      "productCode": "13801",
+      "swatch": "https://store.bblcdn.eu/s8/default/567c635b642640e0aa222ab2c7933649/fbf033665a5b477db42f657a2c2ef47f.png"
+    },
+    {
+      "id": "bambu-pla-wood-13403",
+      "family": "PLA Wood",
+      "color": "Ochre Yellow",
+      "productCode": "13403",
+      "swatch": "https://store.bblcdn.eu/s8/default/9bbcb88264f1430fa387df051b1a2e61/4443eb627f9b4aff8d4c2efc69a32629.png"
+    },
+    {
+      "id": "bambu-pla-wood-13204",
+      "family": "PLA Wood",
+      "color": "Rosewood",
+      "productCode": "13204",
+      "swatch": "https://store.bblcdn.eu/s8/default/c107303c663c4e6e9b875ca276d3aaa6/8675a05674774cddb53c006e799e4098.png"
+    },
+    {
+      "id": "bambu-pla-wood-13106",
+      "family": "PLA Wood",
+      "color": "White Oak",
+      "productCode": "13106",
+      "swatch": "https://store.bblcdn.eu/s8/default/360b956c17944bbf82e4c04d0556a676/b18bddd9eebe462ba7eaf2d1eda47048.png"
+    },
+    {
+      "id": "bambu-pla-cf-14100",
+      "family": "PLA-CF",
+      "color": "Black",
+      "productCode": "14100",
+      "swatch": "https://store.bblcdn.eu/s8/default/bfb2235906374c6eb5fcc2bc9ecbed26/b2d934cd445b4367a75ff49a809f263e.media"
+    },
+    {
+      "id": "bambu-pla-cf-14200",
+      "family": "PLA-CF",
+      "color": "Burgundy Red",
+      "productCode": "14200",
+      "swatch": "https://store.bblcdn.eu/s8/default/596c04d60f95416a9885c6670e7e9183/cb83cbc2c0ce4b9ba880fae0fe3da6d3.media"
+    },
+    {
+      "id": "bambu-pla-cf-14700",
+      "family": "PLA-CF",
+      "color": "Iris Purple",
+      "productCode": "14700",
+      "swatch": "https://store.bblcdn.eu/s8/default/e222a0552d7d4dec843295de90e082c4/f083b00e1558419aa16d73b02e9ae91e.media"
+    },
+    {
+      "id": "bambu-pla-cf-14600",
+      "family": "PLA-CF",
+      "color": "Jeans Blue",
+      "productCode": "14600",
+      "swatch": "https://store.bblcdn.eu/s8/default/0e251f457480441fa49c71368a902d83/2810ecde580944ed9bba6c9ca6d3dcfe.media"
+    },
+    {
+      "id": "bambu-pla-cf-14101",
+      "family": "PLA-CF",
+      "color": "Lava Gray",
+      "productCode": "14101",
+      "swatch": "https://store.bblcdn.eu/s8/default/3a2fe762573b4668b96f529d258fcb6b/427503a66a8a4b2e8f0749fef1b2f3e9.media"
+    },
+    {
+      "id": "bambu-pla-cf-14500",
+      "family": "PLA-CF",
+      "color": "Matcha Green",
+      "productCode": "14500",
+      "swatch": "https://store.bblcdn.eu/s8/default/14b0ea9964f64ae3a847639890a7d979/7a48a6eb3abb4680b9e96f203978a6a0.media"
+    },
+    {
+      "id": "bambu-pla-cf-14601",
+      "family": "PLA-CF",
+      "color": "Royal Blue",
+      "productCode": "14601",
+      "swatch": "https://store.bblcdn.eu/s8/default/c250f41e5beb48bb8ddccee80171ffbb/87dfd4142d2e4ac6bd01b74a47692eaa.media"
+    },
+    {
+      "id": "bambu-ppa-cf-73100",
+      "family": "PPA-CF",
+      "color": "Black",
+      "productCode": "73100",
+      "swatch": "https://store.bblcdn.eu/s8/default/5f581de11c474d67bd4946fe6cc60c13/7cfdb177192f451593ece1786f3a381c.jpg"
+    },
+    {
+      "id": "bambu-pps-cf",
+      "family": "PPS-CF",
+      "color": "Catalog listing",
+      "productCode": "",
+      "swatch": "#D8D6D0"
+    },
+    {
+      "id": "bambu-pva-66400",
+      "family": "PVA",
+      "color": "Clear",
+      "productCode": "66400",
+      "swatch": "https://store.bblcdn.eu/s8/default/b1431ed54175415aab7ae913455e71d1/2a113e2842a442629567232310d75ade.media"
+    },
+    {
+      "id": "bambu-support-for-abs-66100",
+      "family": "Support for ABS",
+      "color": "White",
+      "productCode": "66100",
+      "swatch": "https://store.bblcdn.eu/s8/default/7190f27322d04254a790b1b55781cc20/56216897fca242faa45e618244e16cdd.png"
+    },
+    {
+      "id": "bambu-support-for-pa-pet-65500",
+      "family": "Support for PA/PET",
+      "color": "Green",
+      "productCode": "65500",
+      "swatch": "https://store.bblcdn.eu/s8/default/b19911514360445ea469e686b7552acf/ff0c1b546ad043979ff5ce8b2bd7c6f7.media"
+    },
+    {
+      "id": "bambu-support-for-pla-new-65104",
+      "family": "Support for PLA (New Version)",
+      "color": "White",
+      "productCode": "65104",
+      "swatch": "https://store.bblcdn.eu/s8/default/4501127bc96c49f8a4eda34675879f3e/Rectangle_1274.png"
+    },
+    {
+      "id": "bambu-support-for-pla-petg-65103",
+      "family": "Support for PLA/PETG",
+      "color": "Black",
+      "productCode": "65103",
+      "swatch": "https://store.bblcdn.eu/s8/default/a259bcc4d341421dae7d02af51929700/c86239646dd94b0a92bfac7c6fc3e7d3.png"
+    },
+    {
+      "id": "bambu-support-for-pla-petg-65102",
+      "family": "Support for PLA/PETG",
+      "color": "Nature",
+      "productCode": "65102",
+      "swatch": "https://store.bblcdn.eu/s8/default/040a31fb55494e6eb93b9871a7a8737c/450b2b2431104c62ad28fb6131f20220.png"
+    },
+    {
+      "id": "bambu-tpu-85a-tpu-90a-51103",
+      "family": "TPU 85A / TPU 90A",
+      "color": "Black",
+      "productCode": "51103",
+      "swatch": "https://store.bblcdn.eu/s8/default/4e861e7219984f8095bd411736cfdb5e/BLACK.jpg"
+    },
+    {
+      "id": "bambu-tpu-85a-tpu-90a-51107",
+      "family": "TPU 85A / TPU 90A",
+      "color": "Black",
+      "productCode": "51107",
+      "swatch": "https://store.bblcdn.eu/s8/default/6f2945d2c9ea4c1ca877325a1b6f3d20/Black.png"
+    },
+    {
+      "id": "bambu-tpu-85a-tpu-90a-51901",
+      "family": "TPU 85A / TPU 90A",
+      "color": "Blaze",
+      "productCode": "51901",
+      "swatch": "https://store.bblcdn.eu/s8/default/f7d84d83b9334afdb89e307acad360c2/BLAZE.jpg"
+    },
+    {
+      "id": "bambu-tpu-85a-tpu-90a-51800",
+      "family": "TPU 85A / TPU 90A",
+      "color": "Cocoa Brown",
+      "productCode": "51800",
+      "swatch": "https://store.bblcdn.eu/s8/default/cd1b12b69e34453bac218a6db4ff3fc2/Cocoa_Brown.png"
+    },
+    {
+      "id": "bambu-tpu-85a-tpu-90a-51601",
+      "family": "TPU 85A / TPU 90A",
+      "color": "Crystal Blue",
+      "productCode": "51601",
+      "swatch": "https://store.bblcdn.eu/s8/default/a06dc6f5af204e31adbe8a73611204fe/Crystal_Blue.png"
+    },
+    {
+      "id": "bambu-tpu-85a-tpu-90a-51900",
+      "family": "TPU 85A / TPU 90A",
+      "color": "Frozen",
+      "productCode": "51900",
+      "swatch": "https://store.bblcdn.eu/s8/default/29165cb52e4a474ca0b775793ca0d1ef/FROZEN.jpg"
+    },
+    {
+      "id": "bambu-tpu-85a-tpu-90a-51700",
+      "family": "TPU 85A / TPU 90A",
+      "color": "Grape Jelly",
+      "productCode": "51700",
+      "swatch": "https://store.bblcdn.eu/s8/default/dadf79be25174af7906fbbeb596e3ec3/Grape_Jelly.png"
+    },
+    {
+      "id": "bambu-tpu-85a-tpu-90a-51500",
+      "family": "TPU 85A / TPU 90A",
+      "color": "Light Cyan",
+      "productCode": "51500",
+      "swatch": "https://store.bblcdn.eu/s8/default/061f4efc231041ca84da65180ff617e7/LIGHT_CYAN.jpg"
+    },
+    {
+      "id": "bambu-tpu-85a-tpu-90a-51501",
+      "family": "TPU 85A / TPU 90A",
+      "color": "Lime Green",
+      "productCode": "51501",
+      "swatch": "https://store.bblcdn.eu/s8/default/e07f0620d94c4c979728eceb891ad17d/Lime_Green.png"
+    },
+    {
+      "id": "bambu-tpu-85a-tpu-90a-51305",
+      "family": "TPU 85A / TPU 90A",
+      "color": "Neon Orange",
+      "productCode": "51305",
+      "swatch": "https://store.bblcdn.eu/s8/default/77255e2a8a0a44cfb4dc877838537db7/NEON_ORANGE.jpg"
+    },
+    {
+      "id": "bambu-tpu-85a-tpu-90a-51106",
+      "family": "TPU 85A / TPU 90A",
+      "color": "Quicksilver",
+      "productCode": "51106",
+      "swatch": "https://store.bblcdn.eu/s8/default/ab3f3055517e4d0ea0ab3eec0d9f370e/Quicksilver.jpg"
+    },
+    {
+      "id": "bambu-tpu-85a-tpu-90a-51201",
+      "family": "TPU 85A / TPU 90A",
+      "color": "Rose Beige/Flesh",
+      "productCode": "51201",
+      "swatch": "https://store.bblcdn.eu/s8/default/8b691842d3254f6c8d204758cca0438c/Flesh.png"
+    },
+    {
+      "id": "bambu-tpu-85a-tpu-90a-51105",
+      "family": "TPU 85A / TPU 90A",
+      "color": "White",
+      "productCode": "51105",
+      "swatch": "https://store.bblcdn.eu/s8/default/a9ee18c8ed8b4a908b6dbd3280df8844/WHITE.jpg"
+    },
+    {
+      "id": "bambu-tpu-95a-hf-51100",
+      "family": "TPU 95A HF",
+      "color": "Black",
+      "productCode": "51100",
+      "swatch": "https://store.bblcdn.eu/s8/default/b3dcbc8950f747458bc81fe2b4b85704/6c00c3fb2a5b4267913b5fa09b2092cf.media"
+    },
+    {
+      "id": "bambu-tpu-95a-hf-51600",
+      "family": "TPU 95A HF",
+      "color": "Blue",
+      "productCode": "51600",
+      "swatch": "https://store.bblcdn.eu/s8/default/a51ec9216eb5468da03154b77b554a41/ec223ae1407c4c8d85763da803f86d3c.media"
+    },
+    {
+      "id": "bambu-tpu-95a-hf-51101",
+      "family": "TPU 95A HF",
+      "color": "Gray",
+      "productCode": "51101",
+      "swatch": "https://store.bblcdn.eu/s8/default/7a35764424a84f97949cae9d16e1eb1b/0dd0d24a2c12482e9e9c5ee8dd1e4d80.media"
+    },
+    {
+      "id": "bambu-tpu-95a-hf-51200",
+      "family": "TPU 95A HF",
+      "color": "Red",
+      "productCode": "51200",
+      "swatch": "https://store.bblcdn.eu/s8/default/b34d902756b148fb969d23b9365cc278/6da700ce7ba244dca2d677bf2b456880.media"
+    },
+    {
+      "id": "bambu-tpu-95a-hf-51102",
+      "family": "TPU 95A HF",
+      "color": "White",
+      "productCode": "51102",
+      "swatch": "https://store.bblcdn.eu/s8/default/a411f3122c8e49fc827439886715f77f/56a0c5fbcaba433ab446292169114622.media"
+    },
+    {
+      "id": "bambu-tpu-95a-hf-51400",
+      "family": "TPU 95A HF",
+      "color": "Yellow",
+      "productCode": "51400",
+      "swatch": "https://store.bblcdn.eu/s8/default/d78f03f702294abfb10502762eb67341/e95a1f33bb46426da4291d5c4935f4af.media"
+    },
+    {
+      "id": "bambu-tpu-for-ams-53101",
+      "family": "TPU for AMS",
+      "color": "Black",
+      "productCode": "53101",
+      "swatch": "https://store.bblcdn.eu/s8/default/7a422e9195454723a1b0b2d4ad883480/74b4aac572d94f2eb9549b373b81d2de.png"
+    },
+    {
+      "id": "bambu-tpu-for-ams-53600",
+      "family": "TPU for AMS",
+      "color": "Blue",
+      "productCode": "53600",
+      "swatch": "https://store.bblcdn.eu/s8/default/70aac7f988544f14b974c1e2f6d6849f/aebcae996dbc40cc9da5b6c56d89f5a2.png"
+    },
+    {
+      "id": "bambu-tpu-for-ams-53102",
+      "family": "TPU for AMS",
+      "color": "Gray",
+      "productCode": "53102",
+      "swatch": "https://store.bblcdn.eu/s8/default/28ffdbefdf7d4e8381482e7ab65dfbac/f54e34180dd9440892af8672b97e9053.png"
+    },
+    {
+      "id": "bambu-tpu-for-ams-53500",
+      "family": "TPU for AMS",
+      "color": "Neon Green",
+      "productCode": "53500",
+      "swatch": "https://store.bblcdn.eu/s8/default/d9177e5d08be43f09e914e112dbda4c3/73c2d4e71d6f410bbff974c6190df5c3.png"
+    },
+    {
+      "id": "bambu-tpu-for-ams-53200",
+      "family": "TPU for AMS",
+      "color": "Red",
+      "productCode": "53200",
+      "swatch": "https://store.bblcdn.eu/s8/default/67dcafcbc3f74ec390390f17f1387bc8/fb974724c8b6463c94fb44297ceaefbc.png"
+    },
+    {
+      "id": "bambu-tpu-for-ams-53100",
+      "family": "TPU for AMS",
+      "color": "White",
+      "productCode": "53100",
+      "swatch": "https://store.bblcdn.eu/s8/default/44dc05b8ee0b4bb483177c4e314c81be/e624e072198e49b9ae55b5878b70c8b6.png"
+    },
+    {
+      "id": "bambu-tpu-for-ams-53400",
+      "family": "TPU for AMS",
+      "color": "Yellow",
+      "productCode": "53400",
+      "swatch": "https://store.bblcdn.eu/s8/default/c6786e7fcb2544d1ab3cd0490c3c7529/15f99cffb2164acd9a52a891735a85c8.png"
+    }
+  ]
+}

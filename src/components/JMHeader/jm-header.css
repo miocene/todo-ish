@@ -1,0 +1,45 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  block-size: var(--size-header);
+  background: color-mix(in srgb, var(--color-bg-default) 92%, transparent);
+  backdrop-filter: blur(var(--blur-m));
+
+  .button {
+    margin-left: auto;
+  }
+}
+
+.header__brand {
+  display: inline-flex;
+  align-items: baseline;
+  line-height: 1.2;
+  border-radius: var(--radius-control);
+  outline-offset: var(--space-3);
+}
+
+.header__brand-main,
+.header__brand-ish {
+  font-size: 24px;
+}
+
+.header__brand-main {
+  font-weight: var(--font-weight-bold);
+}
+
+.header__brand-ish {
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+/* TODO: replace with real avatar */
+.header__avatar {
+  inline-size: 32px;
+  block-size: 32px;
+  background: var(--ink);
+  border-radius: 50%;
+}

@@ -1,0 +1,97 @@
+.calendar {
+  display: grid;
+  grid-template-columns: var(--size-control) minmax(0, 1fr) var(--size-control);
+  align-items: center;
+  margin-block-end: var(--space-8);
+  padding: var(--space-2) var(--space-5);
+  
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-card);
+}
+
+.calendar__days {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.calendar__days::before {
+  position: absolute;
+  z-index: 0;
+  inset-block-start: anchor(top);
+  inset-inline-start: anchor(left);
+  inline-size: anchor-size(width);
+  block-size: anchor-size(height);
+  content: "";
+  background: var(--color-bg-selection);
+  border-radius: calc(var(--radius-card) - var(--space-2));
+  position-anchor: --done-calendar-day;
+}
+
+.calendar__day {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-2);
+  background: transparent;
+  padding: var(--space-4) var(--space-5);
+
+  small {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+  }
+
+  strong {
+    font-size: 24px;
+    line-height: 1;
+    color: var(--color-text-default);
+  }
+}
+
+.calendar__day--selected {
+  anchor-name: --done-calendar-day;
+}
+
+.calendar__days:has(.calendar__day:not(.calendar__day--selected):is(:hover, :focus-visible))
+  .calendar__day--selected {
+  anchor-name: none;
+}
+
+.calendar__day:not(.calendar__day--selected):is(:hover, :focus-visible) {
+  anchor-name: --done-calendar-day;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .calendar__days::before {
+    transition:
+      inset-block-start 180ms ease,
+      inset-inline-start 180ms ease,
+      inline-size 180ms ease,
+      block-size 180ms ease,
+      opacity 100ms ease;
+  }
+}
+
+@media (width <= 720px) {
+  .calendar {
+    grid-template-columns: var(--size-control) minmax(0, 1fr) var(--size-control);
+    margin-block-end: var(--space-5);
+  }
+
+  .calendar__day small {
+    font-size: 10px;
+  }
+
+  .calendar__day strong {
+    font-size: 20px;
+  }
+}
+
+@media (width <= 460px) {
+  .calendar__day small {
+    display: none;
+  }
+}

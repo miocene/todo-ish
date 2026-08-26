@@ -1,0 +1,8 @@
+node_modules
+dist
+.venv
+.ruff_cache
+playwright-report
+test-results
+catalogs/*.snapshot.json
+yarn.lock
