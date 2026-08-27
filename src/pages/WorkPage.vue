@@ -30,7 +30,7 @@ function requestedDate() {
 }
 
 export default {
-  name: "CalendarPage",
+  name: "WorkPage",
   data() {
     const today = localDate();
     return {
@@ -161,12 +161,11 @@ export default {
   --calendar-muted: #70757a;
   --calendar-surface: #fff;
 
-  position: fixed;
-  inset: 0;
   display: grid;
   grid-template-columns: clamp(48px, 6vw, 80px) minmax(0, 1fr) clamp(48px, 6vw, 80px);
   grid-template-rows: auto minmax(0, 1fr);
-  min-inline-size: 320px;
+  block-size: 100%;
+  min-inline-size: 0;
   overflow: hidden;
   color: #202124;
   background: #f8f9fa;

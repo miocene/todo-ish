@@ -7,7 +7,8 @@ RUN corepack enable \
   && yarn install --frozen-lockfile --ignore-scripts \
   && yarn cache clean
 
-COPY index.html normalisation.css style.css variables.css vite.config.js ./
+COPY index.html vite.config.js ./
+COPY styles ./styles
 COPY src ./src
 
 RUN yarn build

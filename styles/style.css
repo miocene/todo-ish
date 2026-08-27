@@ -1,0 +1,53 @@
+@import url("./variables.css");
+@import url("./normalisation.css");
+
+html {
+  background: var(--color-bg-default);
+}
+
+body {
+  inline-size: min(640px, calc(100% - var(--space-8)));
+  color: var(--color-text-default);
+  font: var(--font-weight-normal) 16px/1.4 var(--font-default);
+}
+
+#app {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  block-size: 100dvh;
+}
+
+#main-content {
+  min-block-size: 0;
+  overflow: auto;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-default);
+  font-weight: var(--font-weight-bold);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+
+  /* TODO: add tansition */
+}
+
+.skip-link {
+  position: fixed;
+  inset-block-start: var(--space-3);
+  inset-inline-start: var(--space-3);
+  z-index: 2;
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-bg-surface);
+  background: var(--color-text-default);
+  border-radius: var(--radius-control);
+  transform: translateY(calc(-100% - var(--space-4)));
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}

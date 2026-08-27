@@ -1,17 +1,17 @@
 import { createRouter, createWebHistory } from "vue-router";
 
-const CalendarPage = () => import("../pages/CalendarPage.vue");
+const WorkPage = () => import("../pages/WorkPage.vue");
 
 export const routes = [
   {
     path: "/",
-    name: "calendar",
-    component: CalendarPage,
-    meta: { title: "Calendar" },
+    name: "work",
+    component: WorkPage,
+    meta: { title: "Work" },
   },
   {
     path: "/:pathMatch(.*)*",
-    redirect: { name: "calendar" },
+    redirect: { name: "work" },
   },
 ];
 
