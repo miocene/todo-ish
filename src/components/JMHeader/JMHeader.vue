@@ -16,14 +16,12 @@ export default {
       <span class="jm-header__logo-main">ToDo</span><span class="jm-header__logo-suffix">-ish</span>
     </RouterLink>
 
-    <div class="jm-header__actions">
-      <button class="jm-header__button" type="button" aria-label="Search" @click="$emit('search')">
-        <JMIcon name="search" />
-      </button>
+    <button class="jm-header__button" type="button" aria-label="Search" @click="$emit('search')">
+      <JMIcon name="search" />
+    </button>
 
-      <button class="jm-header__button" type="button" aria-label="Profile" @click="$emit('profile')">
-        <JMIcon name="user" />
-      </button>
-    </div>
+    <button class="jm-header__button" type="button" aria-label="Profile" @click="$emit('profile')">
+      <JMIcon name="user" />
+    </button>
   </header>
 </template>

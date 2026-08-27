@@ -21,6 +21,8 @@
 .jm-header__logo-main,
 .jm-header__logo-suffix {
   font-size: 1.25rem;
+
+  /* TODO */
 }
 
 .jm-header__logo-main {
@@ -30,12 +32,6 @@
 .jm-header__logo-suffix {
   color: var(--color-text-secondary);
   font-style: italic;
-}
-
-.jm-header__actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
 }
 
 .jm-header__button {
