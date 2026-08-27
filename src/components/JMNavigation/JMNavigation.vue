@@ -1,20 +1,21 @@
 <script>
 import { RouterLink } from "vue-router";
+import JMIcon from "../JMIcon/JMIcon.vue";
 import "./jm-navigation.css";
 
 const navigationItems = [
-  { label: "Work", to: { name: "work" } },
-  { label: "Chores" },
-  { label: "Todo lists" },
-  { label: "Shopping cart" },
-  { label: "3D printing" },
-  { label: "Cross stitch" },
-  { label: "Catalog" },
+  { icon: "work", label: "Work", to: { name: "work" } },
+  { icon: "chores", label: "Chores" },
+  { icon: "todo", label: "Todo lists" },
+  { icon: "shopping", label: "Shopping cart" },
+  { icon: "printer", label: "3D printing" },
+  { icon: "yarn", label: "Cross stitch" },
+  { icon: "catalog", label: "Catalog" },
 ];
 
 export default {
   name: "JMNavigation",
-  components: { RouterLink },
+  components: { JMIcon, RouterLink },
   data() {
     return { navigationItems };
   },
@@ -31,10 +32,12 @@ export default {
           exact-active-class="jm-navigation__link--active"
           :to="item.to"
         >
-          {{ item.label }}
+          <JMIcon :name="item.icon" />
+          <span>{{ item.label }}</span>
         </RouterLink>
         <span v-else class="jm-navigation__link jm-navigation__link--disabled" aria-disabled="true">
-          {{ item.label }}
+          <JMIcon :name="item.icon" />
+          <span>{{ item.label }}</span>
         </span>
       </li>
     </ul>

@@ -25,6 +25,11 @@ test("the root page is the empty three-day work calendar", async ({ page }) => {
     "Cross stitch",
     "Catalog",
   ]);
+  expect(
+    await navigation
+      .locator("use")
+      .evaluateAll((icons) => icons.map((icon) => icon.getAttribute("href").split("#").at(-1))),
+  ).toEqual(["icon-work", "icon-chores", "icon-todo", "icon-shopping", "icon-printer", "icon-yarn", "icon-catalog"]);
   await expect(navigation.getByRole("link", { name: "Work" })).toHaveAttribute("aria-current", "page");
   await expect(navigation.locator('[aria-disabled="true"]')).toHaveCount(6);
   await expect(page.locator(".week-day")).toHaveCount(3);
