@@ -1,5 +1,5 @@
 <script>
-import JMIcon from "../components/JMIcon/JMIcon.vue";
+import JMButton from "../components/JMButton/JMButton.vue";
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -33,7 +33,7 @@ function requestedDate() {
 
 export default {
   name: "WorkPage",
-  components: { JMIcon },
+  components: { JMButton },
   data() {
     const today = localDate();
     return {
@@ -112,17 +112,12 @@ export default {
 <template>
   <section class="calendar-experiment" aria-label="Three-day calendar">
     <div class="calendar-toolbar">
-      <button class="today-button" type="button" @click="goToday">Today</button>
+      <JMButton text="Today" view="secondary" @click="goToday" />
     </div>
 
-    <button
-      class="week-control week-control--previous"
-      type="button"
-      aria-label="Previous three days"
-      @click="changeRange(-1)"
-    >
-      <JMIcon name="arrow-left" />
-    </button>
+    <div class="week-control week-control--previous">
+      <JMButton aria-label="Previous three days" icon-name="arrow-left" view="secondary" @click="changeRange(-1)" />
+    </div>
 
     <div class="week-stage" aria-live="polite">
       <Transition :name="transitionName" :css="transitionsReady">
@@ -146,9 +141,9 @@ export default {
       </Transition>
     </div>
 
-    <button class="week-control week-control--next" type="button" aria-label="Next three days" @click="changeRange(1)">
-      <JMIcon name="arrow-right" />
-    </button>
+    <div class="week-control week-control--next">
+      <JMButton aria-label="Next three days" icon-name="arrow-right" view="secondary" @click="changeRange(1)" />
+    </div>
   </section>
 </template>
 
@@ -156,7 +151,6 @@ export default {
 .calendar-experiment {
   --calendar-accent: #1967d2;
   --calendar-border: #dadce0;
-  --calendar-control: #3c4043;
   --calendar-muted: #70757a;
   --calendar-surface: #fff;
 
@@ -180,19 +174,6 @@ export default {
   background: var(--calendar-surface);
   border: 1px solid var(--calendar-border);
   border-block-start: 0;
-}
-
-.today-button {
-  padding: 8px 16px;
-  color: var(--calendar-accent);
-  font-weight: 500;
-  background: var(--calendar-surface);
-  border: 1px solid var(--calendar-border);
-  border-radius: 6px;
-}
-
-.today-button:is(:hover, :focus-visible) {
-  background: #eef3fb;
 }
 
 .week-stage {
@@ -286,20 +267,6 @@ export default {
   z-index: 2;
   align-self: center;
   justify-self: center;
-  display: grid;
-  place-items: center;
-  inline-size: 44px;
-  block-size: 44px;
-  color: var(--calendar-control);
-  background: var(--calendar-surface);
-  border: 1px solid var(--calendar-border);
-  border-radius: 50%;
-  box-shadow: 0 1px 3px rgb(60 64 67 / 20%);
-  transition:
-    background-color 140ms ease,
-    box-shadow 140ms ease,
-    opacity 140ms ease,
-    transform 140ms ease;
 }
 
 .week-control--previous {
@@ -310,18 +277,6 @@ export default {
 .week-control--next {
   grid-column: 3;
   grid-row: 2;
-}
-
-.week-control:not(:disabled):is(:hover, :focus-visible) {
-  background: #eef3fb;
-  box-shadow: 0 2px 6px rgb(60 64 67 / 28%);
-  transform: scale(1.05);
-}
-
-.week-control:disabled {
-  opacity: 0.28;
-  cursor: not-allowed;
-  box-shadow: none;
 }
 
 .range-next-enter-active,
@@ -350,18 +305,12 @@ export default {
     grid-template-columns: 42px minmax(0, 1fr) 42px;
   }
 
-  .week-control {
-    inline-size: 34px;
-    block-size: 34px;
-  }
-
   .week-day__heading {
     padding-inline: 2px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .week-control,
   .range-next-enter-active,
   .range-next-leave-active,
   .range-previous-enter-active,

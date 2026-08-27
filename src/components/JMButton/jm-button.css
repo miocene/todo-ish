@@ -1,0 +1,45 @@
+.jm-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-block-size: var(--size-control);
+  padding-inline: var(--space-3);
+  color: var(--jm-button-text);
+  background: var(--jm-button-background);
+  border: none;
+  border-radius: var(--radius-control);
+  corner-shape: var(--corner-shape-default);
+}
+
+.jm-button--primary {
+  --jm-button-background: var(--control-primary-background);
+  --jm-button-background-hover: var(--control-primary-background-hover);
+  --jm-button-text: var(--control-primary-text);
+  --jm-button-text-hover: var(--control-primary-text-hover);
+}
+
+.jm-button--secondary {
+  --jm-button-background: var(--control-secondary-background);
+  --jm-button-background-hover: var(--control-secondary-background-hover);
+  --jm-button-text: var(--control-secondary-text);
+  --jm-button-text-hover: var(--control-secondary-text-hover);
+}
+
+.jm-button--ghost {
+  --jm-button-background: var(--control-ghost-background);
+  --jm-button-background-hover: var(--control-ghost-background-hover);
+  --jm-button-text: var(--control-ghost-text);
+  --jm-button-text-hover: var(--control-ghost-text-hover);
+}
+
+.jm-button:not(:disabled):is(:hover, :focus-visible) {
+  color: var(--jm-button-text-hover);
+  background: var(--jm-button-background-hover);
+}
+
+.jm-button:disabled {
+  /* TODO */
+  opacity: 0.55;
+  cursor: not-allowed;
+}

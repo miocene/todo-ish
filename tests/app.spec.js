@@ -10,6 +10,7 @@ test("the root page is the empty three-day work calendar", async ({ page }) => {
   await expect(header.getByRole("link", { name: "ToDo-ish, Work" })).toBeVisible();
   const searchButton = header.getByRole("button", { name: "Search" });
   const profileButton = header.getByRole("button", { name: "Profile" });
+  await expect(header.locator(".jm-button")).toHaveCount(2);
   await expect(searchButton).toBeVisible();
   await expect(searchButton.locator("use")).toHaveAttribute("href", /#icon-search$/);
   await expect(profileButton).toBeVisible();
@@ -59,6 +60,9 @@ test("the work page navigates in three-day ranges", async ({ page }) => {
 
   const nextButton = page.getByRole("button", { name: "Next three days" });
   const previousButton = page.getByRole("button", { name: "Previous three days" });
+  await expect(page.getByRole("button", { name: "Today" })).toHaveClass(/jm-button/);
+  await expect(nextButton).toHaveClass(/jm-button/);
+  await expect(previousButton).toHaveClass(/jm-button/);
   await expect(nextButton.locator("use")).toHaveAttribute("href", /#icon-arrow-right$/);
   await expect(previousButton.locator("use")).toHaveAttribute("href", /#icon-arrow-left$/);
 

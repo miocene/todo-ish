@@ -34,7 +34,13 @@ for (const removedRootPath of [
 
 assert.deepEqual(readdirSync(new URL("src/pages/", root)).sort(), ["WorkPage.vue"]);
 assert.deepEqual(readdirSync(new URL("src/app/", root)).sort(), ["router.js"]);
-assert.deepEqual(readdirSync(new URL("src/components/", root)).sort(), ["JMHeader", "JMIcon", "JMNavigation"]);
+assert.deepEqual(readdirSync(new URL("src/components/", root)).sort(), [
+  "JMButton",
+  "JMHeader",
+  "JMIcon",
+  "JMNavigation",
+]);
+assert.deepEqual(readdirSync(new URL("src/components/JMButton/", root)).sort(), ["JMButton.vue", "jm-button.css"]);
 assert.deepEqual(readdirSync(new URL("src/components/JMHeader/", root)).sort(), ["JMHeader.vue", "jm-header.css"]);
 assert.deepEqual(readdirSync(new URL("src/components/JMIcon/", root)).sort(), [
   "JMIcon.vue",
@@ -87,6 +93,7 @@ const clientSource = [
   "src/App.vue",
   "src/main.js",
   "src/app/router.js",
+  "src/components/JMButton/JMButton.vue",
   "src/components/JMHeader/JMHeader.vue",
   "src/components/JMIcon/JMIcon.vue",
   "src/components/JMNavigation/JMNavigation.vue",

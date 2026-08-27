@@ -33,19 +33,3 @@
   color: var(--color-text-secondary);
   font-style: italic;
 }
-
-.jm-header__button {
-  display: grid;
-  place-items: center;
-  min-inline-size: var(--size-control);
-  min-block-size: var(--size-control);
-  padding: 0;
-  color: var(--control-ghost-text);
-  background: var(--control-ghost-background);
-  border-radius: var(--radius-control);
-}
-
-.jm-header__button:is(:hover, :focus-visible) {
-  color: var(--control-ghost-text-hover);
-  background: var(--color-bg-selection);
-}

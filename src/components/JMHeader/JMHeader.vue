@@ -1,11 +1,11 @@
 <script>
 import { RouterLink } from "vue-router";
-import JMIcon from "../JMIcon/JMIcon.vue";
+import JMButton from "../JMButton/JMButton.vue";
 import "./jm-header.css";
 
 export default {
   name: "JMHeader",
-  components: { JMIcon, RouterLink },
+  components: { JMButton, RouterLink },
   emits: ["profile", "search"],
 };
 </script>
@@ -16,12 +16,8 @@ export default {
       <span class="jm-header__logo-main">ToDo</span><span class="jm-header__logo-suffix">-ish</span>
     </RouterLink>
 
-    <button class="jm-header__button" type="button" aria-label="Search" @click="$emit('search')">
-      <JMIcon name="search" />
-    </button>
+    <JMButton aria-label="Search" icon-name="search" view="ghost" @click="$emit('search')" />
 
-    <button class="jm-header__button" type="button" aria-label="Profile" @click="$emit('profile')">
-      <JMIcon name="user" />
-    </button>
+    <JMButton aria-label="Profile" icon-name="user" view="ghost" @click="$emit('profile')" />
   </header>
 </template>
