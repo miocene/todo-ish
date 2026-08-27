@@ -8,8 +8,12 @@ test("the root page is the empty three-day work calendar", async ({ page }) => {
   const header = page.locator("#app > .jm-header");
   await expect(header).toBeVisible();
   await expect(header.getByRole("link", { name: "ToDo-ish, Work" })).toBeVisible();
-  await expect(header.getByRole("button", { name: "Search" })).toBeVisible();
-  await expect(header.getByRole("button", { name: "Profile" })).toBeVisible();
+  const searchButton = header.getByRole("button", { name: "Search" });
+  const profileButton = header.getByRole("button", { name: "Profile" });
+  await expect(searchButton).toBeVisible();
+  await expect(searchButton.locator("use")).toHaveAttribute("href", /#icon-search$/);
+  await expect(profileButton).toBeVisible();
+  await expect(profileButton.locator("use")).toHaveAttribute("href", /#icon-user$/);
   const navigation = page.locator("#app > .jm-navigation");
   await expect(navigation).toBeVisible();
   await expect(navigation.locator(".jm-navigation__item")).toHaveText([
@@ -46,11 +50,16 @@ test("the work page navigates in three-day ranges", async ({ page }) => {
     "2026-08-28",
   ]);
 
-  await page.getByRole("button", { name: "Next three days" }).click();
+  const nextButton = page.getByRole("button", { name: "Next three days" });
+  const previousButton = page.getByRole("button", { name: "Previous three days" });
+  await expect(nextButton.locator("use")).toHaveAttribute("href", /#icon-arrow-right$/);
+  await expect(previousButton.locator("use")).toHaveAttribute("href", /#icon-arrow-left$/);
+
+  await nextButton.click();
   await expect(page).toHaveURL(/\/#date=2026-08-30$/);
   await expect(page.locator(".week-day__heading").first()).toHaveAttribute("datetime", "2026-08-29");
 
-  await page.getByRole("button", { name: "Previous three days" }).click();
+  await previousButton.click();
   await expect(page).toHaveURL(/\/#date=2026-08-27$/);
 });
 

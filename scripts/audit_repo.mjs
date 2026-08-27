@@ -34,8 +34,47 @@ for (const removedRootPath of [
 
 assert.deepEqual(readdirSync(new URL("src/pages/", root)).sort(), ["WorkPage.vue"]);
 assert.deepEqual(readdirSync(new URL("src/app/", root)).sort(), ["router.js"]);
-assert.deepEqual(readdirSync(new URL("src/components/", root)).sort(), ["JMHeader", "JMNavigation"]);
+assert.deepEqual(readdirSync(new URL("src/components/", root)).sort(), ["JMHeader", "JMIcon", "JMNavigation"]);
 assert.deepEqual(readdirSync(new URL("src/components/JMHeader/", root)).sort(), ["JMHeader.vue", "jm-header.css"]);
+assert.deepEqual(readdirSync(new URL("src/components/JMIcon/", root)).sort(), [
+  "JMIcon.vue",
+  "icons.svg",
+  "jm-icon.css",
+]);
+const iconSprite = read("src/components/JMIcon/icons.svg");
+const iconNames = [...iconSprite.matchAll(/<symbol id="icon-([^"]+)"/g)].map(([, name]) => name);
+assert.deepEqual(iconNames, [
+  "chevron-up",
+  "chevron-right",
+  "chevron-down",
+  "chevron-left",
+  "check",
+  "work",
+  "user",
+  "spinner",
+  "pto",
+  "chores",
+  "todo",
+  "shopping",
+  "sick-leave",
+  "work-trip",
+  "printer",
+  "weekend",
+  "yarn",
+  "holiday",
+  "catalog",
+  "grip",
+  "remove",
+  "conference",
+  "arrow-left",
+  "arrow-right",
+  "arrow-up",
+  "arrow-down",
+  "search",
+  "close",
+]);
+assert.doesNotMatch(iconSprite, /#333333/i);
+assert.doesNotMatch(iconSprite, /id="icon-profile"/);
 assert.deepEqual(readdirSync(new URL("src/components/JMNavigation/", root)).sort(), [
   "JMNavigation.vue",
   "jm-navigation.css",
@@ -49,6 +88,7 @@ const clientSource = [
   "src/main.js",
   "src/app/router.js",
   "src/components/JMHeader/JMHeader.vue",
+  "src/components/JMIcon/JMIcon.vue",
   "src/components/JMNavigation/JMNavigation.vue",
   "src/pages/WorkPage.vue",
 ]

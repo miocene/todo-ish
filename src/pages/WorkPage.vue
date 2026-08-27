@@ -1,4 +1,6 @@
 <script>
+import JMIcon from "../components/JMIcon/JMIcon.vue";
+
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 function localDate(value = new Date()) {
@@ -31,6 +33,7 @@ function requestedDate() {
 
 export default {
   name: "WorkPage",
+  components: { JMIcon },
   data() {
     const today = localDate();
     return {
@@ -118,9 +121,7 @@ export default {
       aria-label="Previous three days"
       @click="changeRange(-1)"
     >
-      <svg aria-hidden="true" viewBox="0 0 24 24">
-        <path d="m14.5 5-7 7 7 7" />
-      </svg>
+      <JMIcon name="arrow-left" />
     </button>
 
     <div class="week-stage" aria-live="polite">
@@ -146,9 +147,7 @@ export default {
     </div>
 
     <button class="week-control week-control--next" type="button" aria-label="Next three days" @click="changeRange(1)">
-      <svg aria-hidden="true" viewBox="0 0 24 24">
-        <path d="m9.5 5 7 7-7 7" />
-      </svg>
+      <JMIcon name="arrow-right" />
     </button>
   </section>
 </template>
@@ -325,16 +324,6 @@ export default {
   box-shadow: none;
 }
 
-.week-control svg {
-  inline-size: 22px;
-  block-size: 22px;
-  fill: none;
-  stroke: currentcolor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2;
-}
-
 .range-next-enter-active,
 .range-next-leave-active,
 .range-previous-enter-active,
@@ -364,11 +353,6 @@ export default {
   .week-control {
     inline-size: 34px;
     block-size: 34px;
-  }
-
-  .week-control svg {
-    inline-size: 18px;
-    block-size: 18px;
   }
 
   .week-day__heading {

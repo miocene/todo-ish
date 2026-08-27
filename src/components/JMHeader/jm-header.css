@@ -2,16 +2,12 @@
   position: sticky;
   inset-block-start: 0;
   z-index: 1;
-  min-block-size: var(--size-header);
-  background: color-mix(in srgb, var(--color-bg-default) 92%, transparent);
-  backdrop-filter: blur(var(--blur-m));
-}
-
-.jm-header__inner {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  min-block-size: inherit;
+  min-block-size: var(--size-header);
+  background: color-mix(in srgb, var(--color-bg-default) 92%, transparent);
+  backdrop-filter: blur(var(--blur-m));
 }
 
 .jm-header__logo {
@@ -56,14 +52,4 @@
 .jm-header__button:is(:hover, :focus-visible) {
   color: var(--control-ghost-text-hover);
   background: var(--color-bg-selection);
-}
-
-.jm-header__button svg {
-  inline-size: 1.25rem;
-  block-size: 1.25rem;
-  fill: none;
-  stroke: currentcolor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.8;
 }
