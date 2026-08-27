@@ -5,12 +5,12 @@ import "./jm-navigation.css";
 
 const navigationItems = [
   { icon: "work", label: "Work", to: { name: "work" } },
-  { icon: "chores", label: "Chores" },
-  { icon: "todo", label: "Todo lists" },
-  { icon: "shopping", label: "Shopping cart" },
-  { icon: "printer", label: "3D printing" },
-  { icon: "yarn", label: "Cross stitch" },
-  { icon: "catalog", label: "Catalog" },
+  { icon: "chores", label: "Chores", to: { name: "chores" } },
+  { icon: "todo", label: "Todo lists", to: { name: "todos" } },
+  { icon: "shopping", label: "Shopping cart", to: { name: "shopping" } },
+  { icon: "printer", label: "3D printing", to: { name: "printing" } },
+  { icon: "yarn", label: "Cross stitch", to: { name: "cross-stitch" } },
+  { icon: "catalog", label: "Catalog", to: { name: "catalog" } },
 ];
 
 export default {
@@ -26,19 +26,10 @@ export default {
   <nav class="jm-navigation" aria-label="Primary">
     <ul class="jm-navigation__list" role="list">
       <li v-for="item in navigationItems" :key="item.label" class="jm-navigation__item">
-        <RouterLink
-          v-if="item.to"
-          class="jm-navigation__link"
-          exact-active-class="jm-navigation__link--active"
-          :to="item.to"
-        >
+        <RouterLink class="jm-navigation__link" exact-active-class="jm-navigation__link--active" :to="item.to">
           <JMIcon :name="item.icon" />
           <span class="jm-navigation__label">{{ item.label }}</span>
         </RouterLink>
-        <span v-else class="jm-navigation__link jm-navigation__link--disabled" aria-disabled="true">
-          <JMIcon :name="item.icon" />
-          <span class="jm-navigation__label">{{ item.label }}</span>
-        </span>
       </li>
     </ul>
   </nav>

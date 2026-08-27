@@ -32,7 +32,7 @@ for (const removedRootPath of [
   assert.ok(!exists(removedRootPath), `${removedRootPath} should live under backend, not at the repository root`);
 }
 
-assert.deepEqual(readdirSync(new URL("src/pages/", root)).sort(), ["WorkPage.vue"]);
+assert.deepEqual(readdirSync(new URL("src/pages/", root)).sort(), ["PlaceholderPage.vue", "WorkPage.vue"]);
 assert.deepEqual(readdirSync(new URL("src/app/", root)).sort(), ["router.js"]);
 assert.deepEqual(readdirSync(new URL("src/components/", root)).sort(), [
   "JMButton",
@@ -97,6 +97,7 @@ const clientSource = [
   "src/components/JMHeader/JMHeader.vue",
   "src/components/JMIcon/JMIcon.vue",
   "src/components/JMNavigation/JMNavigation.vue",
+  "src/pages/PlaceholderPage.vue",
   "src/pages/WorkPage.vue",
 ]
   .map(read)
@@ -126,4 +127,4 @@ assert.match(
 );
 assert.match(read("backend/deploy/raspberry-pi/web/Dockerfile"), /COPY styles \.\/styles/);
 
-console.log("Repository audit passed · work-only client · catalog server preserved");
+console.log("Repository audit passed · routed client · catalog server preserved");

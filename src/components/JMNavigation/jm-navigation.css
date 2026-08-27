@@ -29,7 +29,7 @@
   corner-shape: var(--corner-shape-default);
 }
 
-.jm-navigation__link:not(.jm-navigation__link--disabled):is(:hover, :focus-visible) {
+.jm-navigation__link:is(:hover, :focus-visible) {
   color: var(--color-text-default);
   background: var(--color-bg-selection);
 }
@@ -37,11 +37,6 @@
 .jm-navigation__link--active {
   color: var(--color-text-default);
   background: var(--color-bg-selection);
-}
-
-.jm-navigation__link--disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
 }
 
 .jm-navigation__label {

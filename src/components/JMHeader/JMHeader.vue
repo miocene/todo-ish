@@ -6,7 +6,7 @@ import "./jm-header.css";
 export default {
   name: "JMHeader",
   components: { JMButton, RouterLink },
-  emits: ["profile", "search"],
+  emits: ["search"],
 };
 </script>
 
@@ -18,6 +18,6 @@ export default {
 
     <JMButton aria-label="Search" icon-name="search" view="ghost" @click="$emit('search')" />
 
-    <JMButton aria-label="Profile" icon-name="user" view="ghost" @click="$emit('profile')" />
+    <JMButton aria-label="Profile" icon-name="user" view="ghost" @click="$router.push({ name: 'profile' })" />
   </header>
 </template>

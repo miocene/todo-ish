@@ -2,6 +2,15 @@
 import JMButton from "../components/JMButton/JMButton.vue";
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const WEEKDAY_FORMATTER = new Intl.DateTimeFormat("en", { weekday: "short" });
+const DAY_FORMATTER = new Intl.DateTimeFormat("en", { day: "numeric" });
+const MONTH_FORMATTER = new Intl.DateTimeFormat("en", { month: "short" });
+const LABEL_FORMATTER = new Intl.DateTimeFormat("en", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+});
 
 function localDate(value = new Date()) {
   if (typeof value === "string") return new Date(`${value}T12:00:00`);
@@ -26,40 +35,44 @@ function isIsoDate(value) {
   return !Number.isNaN(date.valueOf()) && isoDate(date) === value;
 }
 
-function requestedDate() {
-  const value = new URLSearchParams(window.location.hash.slice(1)).get("date");
-  return isIsoDate(value) ? localDate(value) : localDate();
+function requestedDate(value, fallback = new Date()) {
+  return isIsoDate(value) ? localDate(value) : localDate(fallback);
 }
 
 export default {
   name: "WorkPage",
   components: { JMButton },
   data() {
-    const today = localDate();
     return {
-      focusDate: requestedDate(),
-      today,
+      midnightTimer: undefined,
+      today: localDate(),
       transitionName: "range-next",
-      transitionsReady: false,
     };
   },
+  watch: {
+    "$route.query.date": {
+      immediate: true,
+      handler: "handleDateQueryChange",
+    },
+  },
   computed: {
+    focusDate() {
+      return requestedDate(this.$route.query.date, this.today);
+    },
+    todayIso() {
+      return isoDate(this.today);
+    },
     days() {
       return Array.from({ length: 3 }, (_, index) => {
         const date = shiftDays(this.focusDate, index - 1);
+        const iso = isoDate(date);
         return {
-          date,
-          iso: isoDate(date),
-          weekday: new Intl.DateTimeFormat("en", { weekday: "short" }).format(date),
-          day: new Intl.DateTimeFormat("en", { day: "numeric" }).format(date),
-          month: new Intl.DateTimeFormat("en", { month: "short" }).format(date),
-          label: new Intl.DateTimeFormat("en", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          }).format(date),
-          today: isoDate(date) === isoDate(this.today),
+          iso,
+          weekday: WEEKDAY_FORMATTER.format(date),
+          day: DAY_FORMATTER.format(date),
+          month: MONTH_FORMATTER.format(date),
+          label: LABEL_FORMATTER.format(date),
+          today: iso === this.todayIso,
         };
       });
     },
@@ -71,33 +84,35 @@ export default {
     },
   },
   mounted() {
-    window.addEventListener("hashchange", this.syncRangeFromUrl);
-    window.addEventListener("popstate", this.syncRangeFromUrl);
-    this.syncRangeFromUrl();
-    this.$nextTick(() => {
-      this.transitionsReady = true;
-    });
+    this.scheduleTodayRefresh();
   },
   beforeUnmount() {
-    window.removeEventListener("hashchange", this.syncRangeFromUrl);
-    window.removeEventListener("popstate", this.syncRangeFromUrl);
+    window.clearTimeout(this.midnightTimer);
   },
   methods: {
-    writeDateHash(date, replace) {
-      const url = new URL(window.location.href);
-      url.hash = `date=${isoDate(date)}`;
-      if (url.href === window.location.href) return;
-      window.history[replace ? "replaceState" : "pushState"](window.history.state, "", url);
+    handleDateQueryChange(value, previousValue) {
+      const date = requestedDate(value, this.today);
+      if (previousValue !== undefined) {
+        const previousDate = requestedDate(previousValue, this.today);
+        if (date < previousDate) this.transitionName = "range-previous";
+        if (date > previousDate) this.transitionName = "range-next";
+      }
+      this.normalizeDateQuery(value, date);
     },
-    navigateToRange(value, { replace = false } = {}) {
+    normalizeDateQuery(value, date = requestedDate(value, this.today)) {
+      if (value === undefined || (isIsoDate(value) && isoDate(date) !== this.todayIso)) return;
+      const query = { ...this.$route.query };
+      delete query.date;
+      this.$router.replace({ name: "work", query, hash: this.$route.hash });
+    },
+    navigateToRange(value) {
       const date = localDate(value);
-      if (date < this.focusDate) this.transitionName = "range-previous";
-      if (date > this.focusDate) this.transitionName = "range-next";
-      this.focusDate = date;
-      this.writeDateHash(date, replace);
-    },
-    syncRangeFromUrl() {
-      this.navigateToRange(requestedDate(), { replace: true });
+      const dateIso = isoDate(date);
+      const query = { ...this.$route.query };
+      if (dateIso === this.todayIso) delete query.date;
+      else query.date = dateIso;
+      if (query.date === this.$route.query.date && !this.$route.hash) return;
+      this.$router.push({ name: "work", query });
     },
     changeRange(amount) {
       this.navigateToRange(shiftDays(this.focusDate, amount * 3));
@@ -105,12 +120,27 @@ export default {
     goToday() {
       this.navigateToRange(this.today);
     },
+    scheduleTodayRefresh() {
+      const now = new Date();
+      const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      this.midnightTimer = window.setTimeout(
+        () => {
+          this.today = localDate();
+          this.normalizeDateQuery(this.$route.query.date);
+          this.scheduleTodayRefresh();
+        },
+        nextMidnight.getTime() - now.getTime() + 100,
+      );
+    },
   },
 };
 </script>
 
 <template>
-  <section class="calendar-experiment" aria-label="Three-day calendar">
+  <section class="calendar-experiment" aria-labelledby="work-page-title">
+    <h1 id="work-page-title" class="calendar-experiment__title">Work</h1>
+    <p class="calendar-experiment__status" aria-live="polite" aria-atomic="true">{{ rangeLabel }}</p>
+
     <div class="calendar-toolbar">
       <JMButton text="Today" view="secondary" @click="goToday" />
     </div>
@@ -119,16 +149,10 @@ export default {
       <JMButton aria-label="Previous three days" icon-name="arrow-left" view="secondary" @click="changeRange(-1)" />
     </div>
 
-    <div class="week-stage" aria-live="polite">
-      <Transition :name="transitionName" :css="transitionsReady">
+    <div class="week-stage">
+      <Transition :name="transitionName">
         <div :key="rangeKey" class="week-grid" role="group" :aria-label="rangeLabel">
-          <section
-            v-for="day in days"
-            :key="day.iso"
-            class="week-day"
-            :class="{ 'week-day--today': day.today }"
-            :aria-label="day.label"
-          >
+          <div v-for="day in days" :key="day.iso" class="week-day" :class="{ 'week-day--today': day.today }">
             <time class="week-day__heading" :datetime="day.iso">
               <span class="week-day__weekday">{{ day.weekday }}</span>
               <span class="week-day__date">
@@ -136,7 +160,7 @@ export default {
                 <small>{{ day.month }}</small>
               </span>
             </time>
-          </section>
+          </div>
         </div>
       </Transition>
     </div>
@@ -163,6 +187,19 @@ export default {
   color: #202124;
   background: #f8f9fa;
   font-family: Arial, sans-serif;
+}
+
+.calendar-experiment__title,
+.calendar-experiment__status {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 .calendar-toolbar {
