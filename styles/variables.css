@@ -1,51 +1,47 @@
-/* Shared design tokens. */
 :root {
   color-scheme: light;
 
-  --paper: #fafafa;
-  --surface: #fff;
-  --surface-soft: #f5f5f5;
-  --ink: #333;
-  --ink-muted: rgb(51 51 51 / 52%);
-  --ink-faint: rgb(51 51 51 / 34%);
-  --line: #ececec;
-  --line-strong: #d2d2d2;
-  --accent: #c00c1b;
-  --accent-soft: #fff0f1;
-  --focus: #215fc6;
-  --shadow: 0 10px 32px rgb(51 51 51 / 8%);
-  --radius-panel: 20px;
   --font-default: "IBM Plex Sans", "Segoe UI", arial, sans-serif;
   --font-mono: "IBM Plex Mono", "SFMono-Regular", consolas, monospace;
+  
   --color-bg-default: light-dark(#fafafa, #fafafa);
   --color-bg-surface: light-dark(#fff, #fff);
   --color-bg-selection: light-dark(#f5f5f5, #f5f5f5);
   --color-text-default: light-dark(#333, #333);
   --color-text-secondary: light-dark(rgb(51 51 51 / 52%), rgb(51 51 51 / 52%));
+  
   --font-weight-normal: 400;
   --font-weight-bold: 700;
+  
   --blur-m: 12px;
+  
   --radius-checkbox: 4px;
   --radius-control: 8px;
   --radius-card: 24px;
+  
   --corner-shape-default: superellipse(1.5);
+  
   --size-control: 32px;
   --size-checkbox: 16px;
   --size-header: 50px;
+  
   --control-primary-background: light-dark(transparent, transparent);
   --control-primary-background-hover: light-dark(transparent, transparent);
   --control-primary-text: light-dark(var(--color-text-default), var(--color-text-default));
   --control-primary-text-hover: light-dark(var(--color-text-default), var(--color-text-default));
+  
   --control-secondary-background: light-dark(#f5f5f5, #f5f5f5);
   --control-secondary-background-hover: light-dark(transparent, transparent);
   --control-secondary-border: light-dark(#d2d2d2, #d2d2d2);
   --control-secondary-border-hover: light-dark(#d2d2d2, #d2d2d2);
   --control-secondary-text: light-dark(var(--color-text-default), var(--color-text-default));
   --control-secondary-text-hover: light-dark(var(--color-text-default), var(--color-text-default));
+  
   --control-ghost-background: light-dark(transparent, transparent);
   --control-ghost-background-hover: light-dark(transparent, transparent);
   --control-ghost-text: light-dark(var(--color-text-default), var(--color-text-default));
   --control-ghost-text-hover: light-dark(var(--color-text-default), var(--color-text-default));
+  
   --space-1: 2px;
   --space-2: 4px;
   --space-3: 8px;

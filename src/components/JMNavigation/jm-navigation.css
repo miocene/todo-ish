@@ -1,14 +1,18 @@
 .jm-navigation {
-  min-inline-size: 0;
-  overflow-x: auto;
+  position: fixed;
+  bottom: var(--space-3);
+  left: 50%;
+  padding: var(--space-2);
+  border-radius: calc(var(--radius-control) + var(--space-2));
+  corner-shape: var(--corner-shape-default);
+  background-color: var(--color-bg-surface);
+  translate: -50%;
 }
 
 .jm-navigation__list {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  min-inline-size: 100%;
-  inline-size: max-content;
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -17,13 +21,12 @@
 .jm-navigation__link {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  min-block-size: var(--size-control);
-  padding-inline: var(--space-3);
+  justify-content: center;
+  inline-size: var(--size-control);
+  block-size: var(--size-control);
   color: var(--color-text-secondary);
   border-radius: var(--radius-control);
-  text-decoration: underline transparent 2px;
-  text-underline-offset: var(--space-2);
+  corner-shape: var(--corner-shape-default);
 }
 
 .jm-navigation__link:not(.jm-navigation__link--disabled):is(:hover, :focus-visible) {
@@ -33,11 +36,22 @@
 
 .jm-navigation__link--active {
   color: var(--color-text-default);
-  font-weight: var(--font-weight-bold);
-  text-decoration-color: currentcolor;
+  background: var(--color-bg-selection);
 }
 
 .jm-navigation__link--disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+.jm-navigation__label {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }

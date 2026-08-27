@@ -33,11 +33,11 @@ export default {
           :to="item.to"
         >
           <JMIcon :name="item.icon" />
-          <span>{{ item.label }}</span>
+          <span class="jm-navigation__label">{{ item.label }}</span>
         </RouterLink>
         <span v-else class="jm-navigation__link jm-navigation__link--disabled" aria-disabled="true">
           <JMIcon :name="item.icon" />
-          <span>{{ item.label }}</span>
+          <span class="jm-navigation__label">{{ item.label }}</span>
         </span>
       </li>
     </ul>

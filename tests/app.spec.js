@@ -25,6 +25,8 @@ test("the root page is the empty three-day work calendar", async ({ page }) => {
     "Cross stitch",
     "Catalog",
   ]);
+  await expect(navigation.locator(".jm-navigation__label")).toHaveCount(7);
+  expect(await navigation.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
   expect(
     await navigation
       .locator("use")
