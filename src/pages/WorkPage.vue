@@ -168,14 +168,19 @@ export default {
             </span>
           </time>
           <label class="calendar__status-select">
-            <JMIcon :name="day.statusIcon" />
             <select
               :value="day.statusValue"
               :aria-label="`Status for ${day.label}`"
               @change="setDayStatus(day.iso, $event.target.value)"
             >
+              <button type="button">
+                <component :is="'selectedcontent'" />
+                <JMIcon name="chevron-down" />
+              </button>
               <option v-for="status in statusOptions" :key="status.value" :value="status.value">
-                {{ status.label }}
+                <JMIcon :name="status.icon" />
+                <span>{{ status.label }}</span>
+                <JMIcon v-if="status.value === day.statusValue" class="calendar__status-check" name="check" />
               </option>
             </select>
           </label>
@@ -217,21 +222,80 @@ export default {
 }
 
 .calendar__status-select {
+  block-size: var(--size-control);
+}
+
+.calendar__status-select select,
+.calendar__status-select select::picker(select) {
+  appearance: base-select;
+}
+
+.calendar__status-select select {
+  min-inline-size: 10rem;
+  block-size: 100%;
+  padding: 0;
+  color: var(--control-secondary-text);
+  font: inherit;
+  background: var(--control-secondary-background);
+  border: 0;
+  border-radius: var(--radius-control);
+  corner-shape: var(--corner-shape-default);
+  cursor: pointer;
+}
+
+.calendar__status-select select > button,
+.calendar__status-select selectedcontent,
+.calendar__status-select option {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  block-size: var(--size-control);
-  padding-inline-start: var(--space-3);
-  background: var(--control-secondary-background);
-  border-radius: var(--radius-control);
+}
 
-  select {
-    block-size: 100%;
-    padding-inline: 0 var(--space-3);
-    background: transparent;
-    border: 0;
-    cursor: pointer;
-  }
+.calendar__status-select select > button {
+  inline-size: 100%;
+  block-size: 100%;
+  padding-inline: var(--space-3);
+  color: inherit;
+  font: inherit;
+  background: transparent;
+  border: 0;
+}
+
+.calendar__status-select selectedcontent {
+  flex: 1;
+}
+
+.calendar__status-select selectedcontent .calendar__status-check,
+.calendar__status-select select::picker-icon {
+  display: none;
+}
+
+.calendar__status-select select::picker(select) {
+  margin-block-start: var(--space-2);
+  padding: var(--space-2);
+  background: var(--color-bg-surface);
+  border: 0;
+  border-radius: var(--radius-control);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 14%);
+}
+
+.calendar__status-select option {
+  min-block-size: var(--size-control);
+  padding-inline: var(--space-3);
+  border-radius: calc(var(--radius-control) - var(--space-1));
+  cursor: pointer;
+}
+
+.calendar__status-select option::checkmark {
+  display: none;
+}
+
+.calendar__status-check {
+  margin-inline-start: auto;
+}
+
+.calendar__status-select option:is(:hover, :focus, :checked) {
+  background: var(--color-bg-selection);
 }
 
 .week-stage {
