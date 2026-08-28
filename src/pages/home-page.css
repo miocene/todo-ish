@@ -1,0 +1,35 @@
+.home-dashboard {
+  view-transition-name: home-dashboard;
+}
+
+.home-dashboard--date-transitioning * {
+  view-transition-name: none !important;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-group(home-dashboard) {
+    animation-duration: 340ms;
+  }
+
+  ::view-transition-old(home-dashboard) {
+    animation: home-dashboard-fade-out 140ms ease-in both;
+  }
+
+  ::view-transition-new(home-dashboard) {
+    animation: home-dashboard-fade-in 180ms 160ms ease-out both;
+  }
+}
+
+@keyframes home-dashboard-fade-out {
+  to {
+    opacity: 0;
+    translate: -25%;
+  }
+}
+
+@keyframes home-dashboard-fade-in {
+  from {
+    opacity: 0;
+    translate: 25%;
+  }
+}
