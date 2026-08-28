@@ -7,6 +7,7 @@
     "dev": "vite --host 127.0.0.1 --port 4173",
     "start": "vite --host 127.0.0.1 --port 4173",
     "build": "vite build",
+    "build:pages": "yarn build && node scripts/prepare_github_pages.mjs",
     "preview": "vite preview --host 127.0.0.1 --port 4173",
     "setup": "yarn install --frozen-lockfile && yarn setup:python && yarn test:e2e:install",
     "setup:python": "python3 -m venv backend/.venv && backend/.venv/bin/python -m pip install -r backend/requirements-dev.txt",
