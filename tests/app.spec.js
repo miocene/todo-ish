@@ -156,7 +156,7 @@ test("task completion persists and unfinished tasks roll into today", async ({ p
   await expect(page.getByRole("checkbox", { name: "Complete Triage inbox" })).toBeChecked();
 });
 
-test("navigation and profile open placeholder pages", async ({ page }) => {
+test("navigation opens application pages", async ({ page }) => {
   const destinations = [
     { label: "Chores", path: "/chores" },
     { label: "Todo lists", path: "/todos" },
@@ -181,6 +181,58 @@ test("navigation and profile open placeholder pages", async ({ page }) => {
   await expect.poll(() => new URL(page.url()).pathname).toBe("/profile");
   await expect(page).toHaveTitle("Profile — Done-ish");
   await expect(page.getByRole("heading", { level: 1, name: "Profile" })).toBeVisible();
+});
+
+test("task pages render their variants and save changes immediately", async ({ page }) => {
+  await page.goto("/chores");
+
+  const chores = page.locator(".task-page__tasks .task-item");
+  await expect(chores).toHaveCount(3);
+  await expect(chores.first().locator(".task-item__details")).toHaveText("Every Saturday");
+  await expect(page.locator(".task-item__drag-handle, .task-item__pin, .task-item__remove")).toHaveCount(0);
+  await chores.first().locator("textarea").fill("Water all the plants");
+  await chores.first().getByRole("checkbox").check();
+  await page.reload();
+  await expect(page.locator(".task-page__tasks textarea").first()).toHaveValue("Water all the plants");
+  await expect(page.locator(".task-page__tasks .task-item").first().getByRole("checkbox")).toBeChecked();
+
+  await page.goto("/todos");
+  const listTabs = page.locator(".task-tabs__link");
+  await expect(listTabs).toHaveText(["General", "Home", "Travel"]);
+  await expect(listTabs.first()).toHaveAttribute("aria-current", "page");
+  await listTabs.getByText("Home", { exact: true }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.get("list")).toBe("home");
+  await expect(page.getByRole("heading", { level: 2, name: "Home" })).toBeVisible();
+  const homeTasks = page.locator(".task-page__section textarea.task-item__title");
+  await homeTasks.last().press("Enter");
+  await expect(homeTasks).toHaveCount(3);
+  await expect(homeTasks.last()).toBeFocused();
+  await expect(page.locator(".task-item__drag-handle, .task-item__pin")).toHaveCount(0);
+
+  await page.goto("/shopping");
+  await expect(page.locator(".task-item__remove")).toHaveCount(3);
+  await expect(page.locator(".task-item__remove").first().locator("use")).toHaveAttribute("href", /#icon-remove$/);
+  await page.getByRole("button", { name: "Remove Oat milk from shopping list" }).click();
+  await expect(page.locator(".task-page__tasks .task-item")).toHaveCount(2);
+  await page.reload();
+  await expect(page.getByRole("textbox", { name: "Task title" })).toHaveCount(2);
+  await expect(page.locator(".task-item__drag-handle, .task-item__pin")).toHaveCount(0);
+
+  await page.goto("/printing");
+  const projects = page.locator(".project-card");
+  await expect(projects).toHaveCount(2);
+  await expect(projects.getByRole("heading", { level: 2 })).toHaveText(["Desk cable clips", "Miniature planter"]);
+  await expect(page.locator(".task-item__drag-handle, .task-item__pin, .task-item__remove")).toHaveCount(0);
+  await projects.first().getByRole("button", { name: "Add task" }).click();
+  await expect(projects.first().locator("textarea.task-item__title")).toHaveCount(4);
+  await expect(projects.first().locator("textarea.task-item__title").last()).toBeFocused();
+
+  await page.goto("/cross-stitch");
+  await expect(page.getByRole("heading", { level: 1, name: "Cross stitch" })).toBeVisible();
+  await expect(page.locator(".project-card").getByRole("heading", { level: 2 })).toHaveText([
+    "Botanical sampler",
+    "Amsterdam canal house",
+  ]);
 });
 
 test("the work page navigates in three-day ranges", async ({ page }) => {

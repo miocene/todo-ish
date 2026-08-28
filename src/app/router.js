@@ -1,14 +1,13 @@
 import { createRouter, createWebHistory } from "vue-router";
 
 const WorkPage = () => import("../pages/WorkPage.vue");
+const ChoresPage = () => import("../pages/ChoresPage.vue");
 const PlaceholderPage = () => import("../pages/PlaceholderPage.vue");
+const ProjectTasksPage = () => import("../pages/ProjectTasksPage.vue");
+const ShoppingPage = () => import("../pages/ShoppingPage.vue");
+const TodoListsPage = () => import("../pages/TodoListsPage.vue");
 
 const placeholderRoutes = [
-  { path: "/chores", name: "chores", title: "Chores" },
-  { path: "/todos", name: "todos", title: "Todo lists" },
-  { path: "/shopping", name: "shopping", title: "Shopping cart" },
-  { path: "/printing", name: "printing", title: "3D printing" },
-  { path: "/cross-stitch", name: "cross-stitch", title: "Cross stitch" },
   { path: "/catalog", name: "catalog", title: "Catalog" },
   { path: "/profile", name: "profile", title: "Profile" },
 ].map(({ path, name, title }) => ({
@@ -25,6 +24,46 @@ export const routes = [
     name: "work",
     component: WorkPage,
     meta: { title: "Work" },
+  },
+  {
+    path: "/chores",
+    name: "chores",
+    component: ChoresPage,
+    meta: { title: "Chores" },
+  },
+  {
+    path: "/todos",
+    name: "todos",
+    component: TodoListsPage,
+    meta: { title: "Todo lists" },
+  },
+  {
+    path: "/shopping",
+    name: "shopping",
+    component: ShoppingPage,
+    meta: { title: "Shopping cart" },
+  },
+  {
+    path: "/printing",
+    name: "printing",
+    component: ProjectTasksPage,
+    props: {
+      title: "3D printing",
+      description: "Active prints and the next steps for each project.",
+      pageKey: "printing",
+    },
+    meta: { title: "3D printing" },
+  },
+  {
+    path: "/cross-stitch",
+    name: "cross-stitch",
+    component: ProjectTasksPage,
+    props: {
+      title: "Cross stitch",
+      description: "Patterns in progress and the details left to stitch.",
+      pageKey: "crossStitch",
+    },
+    meta: { title: "Cross stitch" },
   },
   ...placeholderRoutes,
   {

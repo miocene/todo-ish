@@ -32,8 +32,17 @@ for (const removedRootPath of [
   assert.ok(!exists(removedRootPath), `${removedRootPath} should live under backend, not at the repository root`);
 }
 
-assert.deepEqual(readdirSync(new URL("src/pages/", root)).sort(), ["PlaceholderPage.vue", "WorkPage.vue"]);
+assert.deepEqual(readdirSync(new URL("src/pages/", root)).sort(), [
+  "ChoresPage.vue",
+  "PlaceholderPage.vue",
+  "ProjectTasksPage.vue",
+  "ShoppingPage.vue",
+  "TodoListsPage.vue",
+  "WorkPage.vue",
+  "task-pages.css",
+]);
 assert.deepEqual(readdirSync(new URL("src/app/", root)).sort(), [
+  "page-tasks.js",
   "router.js",
   "work-calendar.js",
   "work-status.js",
@@ -98,7 +107,7 @@ assert.deepEqual(readdirSync(new URL("src/components/JMTaskCard/", root)).sort()
   "jm-task-card.css",
 ]);
 for (const removedDirectory of ["src/data", "src/domain", "src/persistence", "src/shared"]) {
-  assert.ok(!exists(removedDirectory), `${removedDirectory} should not remain in the work-only client`);
+  assert.ok(!exists(removedDirectory), `${removedDirectory} should not remain in the client`);
 }
 
 const clientSource = [
@@ -110,7 +119,11 @@ const clientSource = [
   "src/components/JMIcon/JMIcon.vue",
   "src/components/JMNavigation/JMNavigation.vue",
   "src/components/JMTaskCard/JMTaskCard.vue",
+  "src/pages/ChoresPage.vue",
   "src/pages/PlaceholderPage.vue",
+  "src/pages/ProjectTasksPage.vue",
+  "src/pages/ShoppingPage.vue",
+  "src/pages/TodoListsPage.vue",
   "src/pages/WorkPage.vue",
 ]
   .map(read)
@@ -140,4 +153,4 @@ assert.match(
 );
 assert.match(read("backend/deploy/raspberry-pi/web/Dockerfile"), /COPY styles \.\/styles/);
 
-console.log("Repository audit passed · routed client · catalog server preserved");
+console.log("Repository audit passed · task pages routed · catalog server preserved");

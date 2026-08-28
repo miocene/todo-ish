@@ -1,0 +1,122 @@
+.task-page {
+  --task-page-border: #dadce0;
+  --task-page-muted: #70757a;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-block-end: var(--space-6);
+}
+
+.task-page__header,
+.project-card__header {
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.task-page__header > div,
+.project-card__header > div {
+  min-inline-size: 0;
+}
+
+.task-page__header p,
+.project-card__header p {
+  margin-block-start: var(--space-2);
+  color: var(--task-page-muted);
+  font-size: 0.875rem;
+}
+
+.task-page__header .jm-button,
+.project-card__header .jm-button {
+  flex: none;
+}
+
+.task-page__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.task-page__section h2,
+.project-card h2 {
+  font-size: 1rem;
+}
+
+.task-page__tasks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.task-page__tasks .task-item {
+  margin-inline: 0;
+}
+
+.task-page__empty {
+  padding: var(--space-5);
+  color: var(--task-page-muted);
+  text-align: center;
+  border: 1px dashed var(--task-page-border);
+  border-radius: var(--radius-control);
+}
+
+.task-tabs {
+  overflow-x: auto;
+  border-block-end: 1px solid var(--task-page-border);
+}
+
+.task-tabs__list {
+  display: flex;
+  min-inline-size: max-content;
+}
+
+.task-tabs__link {
+  display: flex;
+  align-items: center;
+  min-block-size: 44px;
+  padding-inline: var(--space-4);
+  color: var(--task-page-muted);
+  border-block-end: 2px solid transparent;
+}
+
+.task-tabs__link:is(:hover, :focus-visible) {
+  color: var(--color-text-default);
+  background: var(--color-bg-selection);
+}
+
+.task-tabs__link--active {
+  color: var(--color-text-default);
+  font-weight: var(--font-weight-bold);
+  border-block-end-color: currentcolor;
+}
+
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.project-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  block-size: 100%;
+  padding: var(--space-4);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--task-page-border);
+  border-radius: var(--radius-card);
+}
+
+@media (width <= 560px) {
+  .project-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (pointer: coarse) {
+  .task-tabs__link {
+    min-block-size: 48px;
+  }
+}
