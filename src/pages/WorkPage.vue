@@ -12,7 +12,7 @@ import {
   requestedDate,
 } from "../app/work-calendar.js";
 import { setWorkStatus, WORK_STATUSES } from "../app/work-status.js";
-import { getAllWorkTasks } from "../app/work-tasks.mock.js";
+import { getAllWorkTasks, saveWorkTasks } from "../app/work-tasks.mock.js";
 
 const BACKLOG_DROP_TARGET = "backlog";
 
@@ -20,17 +20,24 @@ export default {
   name: "WorkPage",
   components: { JMButton, JMIcon },
   data() {
-    const workTasks = getAllWorkTasks();
+    const workTasks = [...getAllWorkTasks()];
+    const nextTaskId =
+      workTasks.reduce((largestId, task) => {
+        const taskId = /^new-(\d+)$/.exec(task.id);
+        return taskId ? Math.max(largestId, Number(taskId[1])) : largestId;
+      }, -1) + 1;
     return {
       backlogDropTarget: BACKLOG_DROP_TARGET,
       draggedTaskId: undefined,
       dragTarget: undefined,
       midnightTimer: undefined,
+      nextTaskId,
       rangeTransitionFrame: undefined,
       routeWatchReady: false,
       statusOptions: WORK_STATUSES,
       taskAssignments: Object.fromEntries(workTasks.map((task) => [task.id, task.date ?? null])),
       taskMoveStatus: "",
+      taskTitles: Object.fromEntries(workTasks.map((task) => [task.id, task.title])),
       today: calendarDate(),
       trackMoving: false,
       transitionDirection: "next",
@@ -127,8 +134,54 @@ export default {
         tasks: this.workTasks.filter((task) => this.taskAssignments[task.id] === day.iso),
       }));
     },
-    canDragTask(date) {
+    taskTitle(task) {
+      return this.taskTitles[task.id];
+    },
+    taskInputId(task) {
+      return `work-task-${task.id}`;
+    },
+    canEditTask(date) {
       return date === null || date >= this.todayIso;
+    },
+    canDragTask(date) {
+      return this.canEditTask(date);
+    },
+    updateTaskTitle(task, event) {
+      this.taskTitles[task.id] = event.target.value;
+      this.saveTasks();
+    },
+    handleTaskTitleEnter(task, date, columnTasks, event) {
+      if (event.isComposing) return;
+      event.preventDefault();
+      const taskIndex = columnTasks.findIndex((item) => item.id === task.id);
+      const nextTask = columnTasks[taskIndex + 1] ?? this.createTask(date);
+      this.focusTaskTitle(nextTask);
+    },
+    createTask(date) {
+      const task = { id: `new-${this.nextTaskId++}` };
+      this.workTasks.push(task);
+      this.taskAssignments[task.id] = date;
+      this.taskTitles[task.id] = "";
+      this.saveTasks();
+      return task;
+    },
+    saveTasks() {
+      saveWorkTasks(
+        this.workTasks.map((task) => ({
+          id: task.id,
+          date: this.taskAssignments[task.id],
+          title: this.taskTitle(task),
+          ...(task.checkedAt && { checkedAt: task.checkedAt }),
+        })),
+      );
+    },
+    focusTaskTitle(task) {
+      this.$nextTick(() => {
+        const input = document.getElementById(this.taskInputId(task));
+        if (!input) return;
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
+      });
     },
     toggleTaskAssignment(task) {
       this.moveTask(task, this.taskAssignments[task.id] === null ? this.todayIso : null);
@@ -136,8 +189,9 @@ export default {
     moveTask(task, date) {
       if (this.taskAssignments[task.id] === date) return;
       this.taskAssignments[task.id] = date;
+      this.saveTasks();
       const destination = date === null ? "backlog" : date === this.todayIso ? "today" : date;
-      this.taskMoveStatus = `${task.title} moved to ${destination}.`;
+      this.taskMoveStatus = `${this.taskTitle(task) || "Untitled task"} moved to ${destination}.`;
     },
     startTaskDrag(task, event) {
       if (!this.canDragTask(this.taskAssignments[task.id])) {
@@ -300,11 +354,24 @@ export default {
                 <JMIcon name="grip" />
               </span>
               <span v-else class="task-item__drag-handle-placeholder" />
-              <span class="task-item__title">{{ task.title }}</span>
+              <template v-if="canEditTask(day.iso)">
+                <label class="calendar__status" :for="taskInputId(task)">Task title</label>
+                <textarea
+                  :id="taskInputId(task)"
+                  class="task-item__title"
+                  name="task-title"
+                  rows="1"
+                  enterkeyhint="next"
+                  :value="taskTitle(task)"
+                  @input="updateTaskTitle(task, $event)"
+                  @keydown.enter="handleTaskTitleEnter(task, day.iso, day.tasks, $event)"
+                />
+              </template>
+              <span v-else class="task-item__title">{{ taskTitle(task) }}</span>
               <button
                 class="task-item__pin"
                 type="button"
-                :aria-label="`Move ${task.title} to backlog`"
+                :aria-label="`Move ${taskTitle(task) || 'untitled task'} to backlog`"
                 @click="toggleTaskAssignment(task)"
               >
                 <JMIcon name="pinned" />
@@ -336,11 +403,21 @@ export default {
           >
             <JMIcon name="grip" />
           </span>
-          <span class="task-item__title">{{ task.title }}</span>
+          <label class="calendar__status" :for="taskInputId(task)">Task title</label>
+          <textarea
+            :id="taskInputId(task)"
+            class="task-item__title"
+            name="task-title"
+            rows="1"
+            enterkeyhint="next"
+            :value="taskTitle(task)"
+            @input="updateTaskTitle(task, $event)"
+            @keydown.enter="handleTaskTitleEnter(task, null, backlogTasks, $event)"
+          />
           <button
             class="task-item__pin"
             type="button"
-            :aria-label="`Mark ${task.title} ready for today`"
+            :aria-label="`Mark ${taskTitle(task) || 'untitled task'} ready for today`"
             @click="toggleTaskAssignment(task)"
           >
             <JMIcon name="pin" />

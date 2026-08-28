@@ -48,7 +48,13 @@ test("the root page is the three-day work calendar", async ({ page }) => {
   await expect(page.locator(".week-day")).toHaveCount(3);
   await expect(page.locator(".week-day--today")).toHaveCount(1);
   await expect(page.getByRole("heading", { level: 1, name: "Work" })).toHaveCount(1);
-  await expect(page.locator(".week-day > p")).toHaveText([
+  const taskTitles = page.locator(".week-day .task-item__title");
+  await expect(taskTitles).toHaveCount(7);
+  expect(
+    await taskTitles.evaluateAll((elements) =>
+      elements.map((element) => (element.localName === "textarea" ? element.value : element.textContent)),
+    ),
+  ).toEqual([
     "Triage inbox",
     "Prepare the quarterly planning notes",
     "Daily stand-up",
@@ -65,6 +71,50 @@ test("the root page is the three-day work calendar", async ({ page }) => {
       elements.flatMap((element) => element.getAttributeNames()).filter((name) => /^data-v-[\da-f]+$/i.test(name)),
     );
   expect(hashedVueAttributes).toEqual([]);
+});
+
+test("editable work tasks create and focus the next item with Enter", async ({ page }) => {
+  await page.goto("/");
+
+  const today = page.locator(".week-day--today");
+  const todayTitles = today.locator("textarea.task-item__title");
+  const lastTitle = todayTitles.last();
+
+  await lastTitle.fill("Updated roadmap");
+  expect(
+    await page.evaluate(() =>
+      JSON.parse(localStorage.getItem("done-ish.work-tasks.v1")).some((task) => task.title === "Updated roadmap"),
+    ),
+  ).toBe(true);
+  await lastTitle.press("Enter");
+  await expect(todayTitles).toHaveCount(5);
+  await expect(todayTitles.last()).toBeFocused();
+
+  await todayTitles.last().fill("Plan tomorrow");
+  await todayTitles.last().press("Enter");
+  await expect(todayTitles).toHaveCount(6);
+  await expect(todayTitles.last()).toBeFocused();
+
+  const firstTitle = todayTitles.first();
+  await firstTitle.press("Enter");
+  await expect(todayTitles.nth(1)).toBeFocused();
+
+  const futureTitles = page.locator(".week-day").last().locator("textarea.task-item__title");
+  await futureTitles.last().press("Enter");
+  await expect(futureTitles).toHaveCount(2);
+  await expect(futureTitles.last()).toBeFocused();
+
+  await today.locator(".task-item__pin").first().click();
+  const backlogTitles = page.locator(".backlog textarea.task-item__title");
+  await expect(backlogTitles).toHaveCount(1);
+  await backlogTitles.last().press("Enter");
+  await expect(backlogTitles).toHaveCount(2);
+  await expect(backlogTitles.last()).toBeFocused();
+
+  await page.reload();
+  await expect(page.locator(".week-day--today textarea.task-item__title")).toHaveCount(5);
+  await expect(page.locator(".week-day").last().locator("textarea.task-item__title")).toHaveCount(2);
+  await expect(page.locator(".backlog textarea.task-item__title")).toHaveCount(2);
 });
 
 test("navigation and profile open placeholder pages", async ({ page }) => {

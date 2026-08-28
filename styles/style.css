@@ -296,8 +296,24 @@ h3 {
 
 .task-item__title {
   min-inline-size: 0;
+  min-block-size: 1.4em;
+  padding: 0;
   overflow-wrap: anywhere;
+  color: inherit;
+  font: inherit;
   font-size: 0.8125rem;
+  background: transparent;
+  border: 0;
+  resize: none;
+  field-sizing: content;
+}
+
+textarea.task-item__title {
+  overflow: clip;
+}
+
+.task-item__title:focus-visible {
+  outline-offset: 1px;
 }
 
 .task-item__drag-handle,
