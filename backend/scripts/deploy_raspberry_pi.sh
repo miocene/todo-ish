@@ -20,10 +20,13 @@ case "$remote_directory" in
 esac
 
 repository_root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
-compose_command="docker compose -f /opt/todo-db/compose.yaml -f /opt/todo-db/compose.services.yaml -f $remote_directory/backend/deploy/raspberry-pi/compose.web.yaml"
+compose_command="docker compose -f /opt/todo-db/compose.yaml -f $remote_directory/backend/deploy/raspberry-pi/compose.services.yaml -f $remote_directory/backend/deploy/raspberry-pi/compose.web.yaml"
 remote_base_directory=$(ssh "$ssh_target" pwd)
 remote_build_context="$remote_base_directory/$remote_directory"
 compose_environment="TODO_APP_BUILD_CONTEXT=$remote_build_context"
+backup_timestamp=$(date -u +%Y%m%dT%H%M%SZ)
+backup_directory="$remote_directory/backups"
+backup_file="$backup_directory/todo-before-deploy-$backup_timestamp.dump"
 
 rsync \
   --archive \
@@ -50,11 +53,16 @@ rsync \
   "$repository_root/" "$ssh_target:$remote_directory/"
 
 ssh "$ssh_target" "$compose_environment $compose_command config --quiet"
-ssh "$ssh_target" "$compose_environment $compose_command up -d --build --no-deps --wait --wait-timeout 300 web"
-ssh "$ssh_target" "$compose_environment $compose_command ps web"
+ssh "$ssh_target" "$compose_environment $compose_command build catalog-api web"
+ssh "$ssh_target" "mkdir -p $backup_directory && docker exec todo-postgres pg_dump -U todo_app -d todo --format=custom > $backup_file && test -s $backup_file"
+echo "Database backup created at $ssh_target:$backup_file"
+ssh "$ssh_target" "$compose_environment $compose_command run --rm migrate"
+ssh "$ssh_target" "$compose_environment $compose_command up -d --no-build --wait --wait-timeout 300 catalog-api web"
+ssh "$ssh_target" "$compose_environment $compose_command ps catalog-api web"
 ssh "$ssh_target" "curl --fail --silent --show-error http://127.0.0.1:4173/healthz >/dev/null"
 ssh "$ssh_target" "curl --fail --silent --show-error 'http://127.0.0.1:4173/api/catalogs/filaments?limit=1' >/dev/null"
 ssh "$ssh_target" "curl --fail --silent --show-error 'http://127.0.0.1:4173/api/catalogs/floss?limit=1' >/dev/null"
+ssh "$ssh_target" "curl --fail --silent --show-error 'http://127.0.0.1:4173/api/data' >/dev/null"
 
 echo "The web app is listening on the Pi at http://127.0.0.1:4173"
 echo "Run 'ssh $ssh_target tailscale serve --bg --yes 4173' once to publish it privately over Tailscale HTTPS."

@@ -1,7 +1,31 @@
-import filamentCatalog from "../../backend/catalogs/bambu-filaments.snapshot.json" with { type: "json" };
+import { apiUrl } from "./api.js";
 
-export const filaments = filamentCatalog.entries;
-export const filamentsById = new Map(filaments.map((filament) => [filament.id, filament]));
+export const filaments = [];
+export const filamentsById = new Map();
+
+export async function initializeFilamentCatalog() {
+  const items = [];
+  let offset = 0;
+  let total;
+  do {
+    const response = await fetch(apiUrl(`/catalogs/filaments?limit=500&offset=${offset}`), {
+      headers: { accept: "application/json" },
+    });
+    if (!response.ok) throw new Error(`Filament catalogue request failed with status ${response.status}`);
+    const page = await response.json();
+    if (!Array.isArray(page.items) || !Number.isInteger(page.total)) {
+      throw new Error("Filament catalogue response is invalid");
+    }
+    total = page.total;
+    items.push(...page.items);
+    offset += page.items.length;
+    if (page.items.length === 0 && offset < total) throw new Error("Filament catalogue pagination did not advance");
+  } while (offset < total);
+
+  filaments.splice(0, filaments.length, ...items);
+  filamentsById.clear();
+  for (const filament of filaments) filamentsById.set(filament.id, filament);
+}
 
 export function filamentLabel(filament) {
   return `${filament.family} · ${filament.color}`;

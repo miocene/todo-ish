@@ -1,6 +1,32 @@
 @import url("./variables.css");
 @import url("./normalisation.css");
 
+.app-startup-error,
+.app-sync-error {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  color: var(--color-text-default);
+  background: var(--color-bg-surface);
+}
+
+.app-startup-error {
+  min-block-size: 100vh;
+  flex-direction: column;
+}
+
+.app-sync-error {
+  position: sticky;
+  z-index: 3;
+  inset-block-start: 0;
+}
+
+.app-sync-error p {
+  margin: 0;
+}
+
 html {
   background: var(--color-bg-default);
 }

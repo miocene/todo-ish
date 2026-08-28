@@ -13,7 +13,7 @@ function positiveInteger(name, value, fallback) {
 }
 
 function readSecret(path) {
-  return readFileSync(path, "utf8").replace(/\r?\n$/, "");
+  return readFileSync(path, "utf8").replace(/[\r\n]+$/, "");
 }
 
 export function loadConfig(environment = process.env) {
@@ -25,7 +25,7 @@ export function loadConfig(environment = process.env) {
     host: environment.HOST?.trim() || "0.0.0.0",
     port: positiveInteger("PORT", environment.PORT, 3000),
     database: {
-      application_name: "done-ish-catalog-api",
+      application_name: "done-ish-api",
       connectionTimeoutMillis: 5000,
       database: required("PGDATABASE", environment),
       host: required("PGHOST", environment),

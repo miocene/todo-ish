@@ -1,7 +1,7 @@
 services:
   catalog-api:
     build:
-      context: ./catalog-api
+      context: ${TODO_APP_BUILD_CONTEXT:?Set TODO_APP_BUILD_CONTEXT to the repository root}/backend/api
     container_name: todo-catalog-api
     restart: unless-stopped
     environment:
@@ -36,6 +36,42 @@ services:
       timeout: 5s
       retries: 5
       start_period: 15s
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  migrate:
+    image: postgres:18.6-bookworm
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: todo
+      PGUSER: todo_migrator
+      PGOPTIONS: -c role=todo_owner
+      PGPASSWORD_FILE: /run/secrets/migrator_password
+      MIGRATION_DIRECTORY: /migrations
+      TZ: UTC
+    entrypoint: ["/bin/sh", "/run-migrations.sh"]
+    secrets:
+      - migrator_password
+    volumes:
+      - type: bind
+        source: ${TODO_APP_BUILD_CONTEXT:?Set TODO_APP_BUILD_CONTEXT to the repository root}/backend/database/migrations
+        target: /migrations
+        read_only: true
+      - type: bind
+        source: ${TODO_APP_BUILD_CONTEXT:?Set TODO_APP_BUILD_CONTEXT to the repository root}/backend/database/run-migrations.sh
+        target: /run-migrations.sh
+        read_only: true
+    networks:
+      - todo-internal
+    depends_on:
+      postgres:
+        condition: service_healthy
     read_only: true
     tmpfs:
       - /tmp:size=16m,mode=1777

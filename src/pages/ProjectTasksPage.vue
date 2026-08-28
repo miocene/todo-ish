@@ -96,20 +96,21 @@ export default {
     projectColorInputId(project) {
       return `${this.pageKey}-project-color-${project.id}`;
     },
-    projectCrossesInputId(project) {
-      return `${this.pageKey}-project-crosses-${project.id}`;
-    },
     taskInputId(project, task) {
       return `${this.pageKey}-title-${project.id}-${task.id}`;
     },
     projectCrossesDone(project) {
       return Math.min(
-        project.totalCrosses,
+        this.projectTotalCrosses(project),
         project.tasks.reduce((total, task) => total + (Number(task.crossesDone) || 0), 0),
       );
     },
+    projectTotalCrosses(project) {
+      return project.tasks.reduce((total, task) => total + (Number(task.crosses) || 0), 0);
+    },
     projectProgress(project) {
-      return project.totalCrosses > 0 ? Math.round((this.projectCrossesDone(project) / project.totalCrosses) * 100) : 0;
+      const totalCrosses = this.projectTotalCrosses(project);
+      return totalCrosses > 0 ? Math.round((this.projectCrossesDone(project) / totalCrosses) * 100) : 0;
     },
     save() {
       savePageTasks(this.pageKey, {
@@ -131,10 +132,6 @@ export default {
     },
     updateProjectColor(project, color) {
       project.color = color;
-      this.save();
-    },
-    updateProjectCrosses(project, value) {
-      project.totalCrosses = Math.max(0, Math.floor(Number(value) || 0));
       this.save();
     },
     updateFilament(usage, catalogId) {
@@ -307,23 +304,13 @@ export default {
           </header>
 
           <div v-if="isCrossStitch" class="stitch-project__progress">
-            <label :for="projectCrossesInputId(project)">Total project crosses</label>
-            <input
-              :id="projectCrossesInputId(project)"
-              name="project-crosses"
-              type="number"
-              inputmode="numeric"
-              min="0"
-              step="1"
-              :value="project.totalCrosses"
-              @input="updateProjectCrosses(project, $event.target.value)"
-            />
-            <progress :max="project.totalCrosses || 1" :value="projectCrossesDone(project)">
+            <p>{{ projectTotalCrosses(project).toLocaleString() }} total crosses</p>
+            <progress :max="projectTotalCrosses(project) || 1" :value="projectCrossesDone(project)">
               {{ projectProgress(project) }}%
             </progress>
             <p>
-              {{ projectCrossesDone(project).toLocaleString() }} / {{ project.totalCrosses.toLocaleString() }} crosses ·
-              {{ projectProgress(project) }}%
+              {{ projectCrossesDone(project).toLocaleString() }} /
+              {{ projectTotalCrosses(project).toLocaleString() }} crosses · {{ projectProgress(project) }}%
             </p>
           </div>
 

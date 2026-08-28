@@ -1,7 +1,6 @@
-import { readStoredJson, writeStoredJson } from "./storage.js";
+import { initializeAppDataResource, readAppData, writeAppData } from "./app-data.js";
 
 const EMPTY_TASKS = Object.freeze([]);
-const STORAGE_KEY = "done-ish.work-tasks.v1";
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const TODAY = new Date();
 const TASK_GROUPS = [
@@ -63,9 +62,9 @@ function isStoredTask(task) {
 }
 
 function loadTasks() {
-  const savedTasks = readStoredJson(STORAGE_KEY);
-  if (!Array.isArray(savedTasks) || !savedTasks.every(isStoredTask)) return defaultTasks;
-  return Object.freeze(savedTasks.map((task) => Object.freeze({ ...task })));
+  const savedTasks = readAppData("work-tasks");
+  const tasks = Array.isArray(savedTasks) && savedTasks.every(isStoredTask) ? savedTasks : defaultTasks;
+  return Object.freeze(initializeAppDataResource("work-tasks", tasks).map((task) => Object.freeze({ ...task })));
 }
 
 let allTasks = loadTasks();
@@ -94,5 +93,5 @@ export function saveWorkTasks(tasks) {
   }));
   allTasks = Object.freeze(savedTasks.map((task) => Object.freeze(task)));
 
-  writeStoredJson(STORAGE_KEY, savedTasks);
+  writeAppData("work-tasks", savedTasks);
 }

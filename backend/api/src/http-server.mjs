@@ -1,9 +1,12 @@
 import { createServer } from "node:http";
+import { AppDataRevisionConflictError } from "./app-data-repository.mjs";
+import { AppDataValidationError, isAppDataResource, validateAppDataResource } from "./app-data-validation.mjs";
 
 const DEFAULT_LIMIT = 100;
 const MAX_LIMIT = 500;
 const MAX_OFFSET = 1_000_000;
 const MAX_QUERY_LENGTH = 100;
+const MAX_BODY_BYTES = 1_000_000;
 
 class RequestError extends Error {
   constructor(message, statusCode = 400) {
@@ -37,47 +40,98 @@ function pagination(searchParams) {
   };
 }
 
-function writeJson(response, statusCode, body, cacheControl = "no-store") {
+function writeJson(response, statusCode, body, cacheControl = "no-store", headers = {}) {
   const payload = JSON.stringify(body);
   response.writeHead(statusCode, {
     "cache-control": cacheControl,
     "content-length": Buffer.byteLength(payload),
     "content-type": "application/json; charset=utf-8",
     "x-content-type-options": "nosniff",
+    ...headers,
   });
   response.end(payload);
 }
 
-export function createCatalogHttpServer(repository, logger = console) {
+function requireMethod(method, allowedMethods) {
+  if (allowedMethods.includes(method)) return;
+  const error = new RequestError("Method not allowed", 405);
+  error.allowedMethods = allowedMethods;
+  throw error;
+}
+
+function expectedRevision(request) {
+  const value = request.headers["if-match"];
+  if (typeof value !== "string") throw new RequestError("If-Match is required", 428);
+  const match = /^"(\d+)"$/.exec(value.trim());
+  if (!match || Number(match[1]) > 2_147_483_646) {
+    throw new RequestError('If-Match must contain a revision such as "0"');
+  }
+  return Number(match[1]);
+}
+
+async function readJson(request) {
+  const contentType = request.headers["content-type"]?.split(";", 1)[0].trim().toLowerCase();
+  if (contentType !== "application/json") throw new RequestError("Content-Type must be application/json", 415);
+  const declaredLength = Number(request.headers["content-length"] ?? 0);
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) {
+    throw new RequestError("Request body is too large", 413);
+  }
+
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of request) {
+    size += chunk.length;
+    if (size > MAX_BODY_BYTES) throw new RequestError("Request body is too large", 413);
+    chunks.push(chunk);
+  }
+  if (size === 0) throw new RequestError("Request body is required");
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  } catch {
+    throw new RequestError("Request body must contain valid JSON");
+  }
+}
+
+export function createHttpServer(repository, logger = console) {
   const server = createServer(async (request, response) => {
     const method = request.method || "GET";
 
     try {
-      if (method !== "GET" && method !== "HEAD") {
-        response.setHeader("allow", "GET, HEAD");
-        throw new RequestError("Method not allowed", 405);
-      }
-
       const url = new URL(request.url || "/", "http://localhost");
       let body;
       let cacheControl = "no-store";
+      let headers = {};
 
       if (url.pathname === "/healthz") {
+        requireMethod(method, ["GET", "HEAD"]);
         body = await repository.health();
       } else if (url.pathname === "/api/catalogs") {
+        requireMethod(method, ["GET", "HEAD"]);
         body = await repository.summary();
         cacheControl = "private, max-age=60";
       } else if (url.pathname === "/api/catalogs/filaments") {
+        requireMethod(method, ["GET", "HEAD"]);
         body = await repository.filaments({
           ...pagination(url.searchParams),
           family: textParameter(url.searchParams, "family"),
         });
         cacheControl = "private, max-age=60";
       } else if (url.pathname === "/api/catalogs/floss") {
+        requireMethod(method, ["GET", "HEAD"]);
         body = await repository.floss(pagination(url.searchParams));
         cacheControl = "private, max-age=60";
+      } else if (url.pathname === "/api/data") {
+        requireMethod(method, ["GET", "HEAD"]);
+        body = await repository.read();
       } else {
-        throw new RequestError("Not found", 404);
+        const resourceMatch = /^\/api\/data\/([a-z-]+)$/.exec(url.pathname);
+        if (!resourceMatch || !isAppDataResource(resourceMatch[1])) throw new RequestError("Not found", 404);
+        requireMethod(method, ["PUT"]);
+        const resource = resourceMatch[1];
+        const data = validateAppDataResource(resource, await readJson(request));
+        const revision = await repository.replace(resource, data, expectedRevision(request));
+        body = { resource, revision };
+        headers = { etag: `"${revision}"` };
       }
 
       if (method === "HEAD") {
@@ -90,15 +144,29 @@ export function createCatalogHttpServer(repository, logger = console) {
         return;
       }
 
-      writeJson(response, 200, body, cacheControl);
+      writeJson(response, 200, body, cacheControl, headers);
     } catch (error) {
-      const statusCode = error instanceof RequestError ? error.statusCode : 500;
-      if (statusCode === 500) {
-        logger.error({ error, method, path: request.url }, "Catalog API request failed");
+      const statusCode =
+        error instanceof RequestError
+          ? error.statusCode
+          : error instanceof AppDataValidationError
+            ? 400
+            : error instanceof AppDataRevisionConflictError
+              ? 409
+              : 500;
+      if (error instanceof RequestError && error.allowedMethods) {
+        response.setHeader("allow", error.allowedMethods.join(", "));
       }
-      writeJson(response, statusCode, {
-        error: statusCode === 500 ? "Internal server error" : error.message,
-      });
+      if (statusCode === 500) {
+        logger.error({ error, method, path: request.url }, "API request failed");
+      }
+      writeJson(
+        response,
+        statusCode,
+        error instanceof AppDataRevisionConflictError
+          ? { error: error.message, currentRevision: error.currentRevision }
+          : { error: statusCode === 500 ? "Internal server error" : error.message },
+      );
     }
   });
 

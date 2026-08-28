@@ -14,7 +14,7 @@ import {
   requestedDate,
 } from "../app/work-calendar.js";
 import { setWorkStatus, WORK_STATUSES } from "../app/work-status.js";
-import { getAllWorkTasks, saveWorkTasks } from "../app/work-tasks.mock.js";
+import { getAllWorkTasks, saveWorkTasks } from "../app/work-tasks.js";
 
 const BACKLOG_DROP_TARGET = "backlog";
 

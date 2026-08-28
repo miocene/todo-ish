@@ -1,5 +1,5 @@
 import { loadPageTasks } from "./page-tasks.js";
-import { getAllWorkTasks } from "./work-tasks.mock.js";
+import { getAllWorkTasks } from "./work-tasks.js";
 
 const DAY_FORMATTER = new Intl.DateTimeFormat("en", {
   weekday: "long",

@@ -1,5 +1,5 @@
 import { getWorkStatus } from "./work-status.js";
-import { getFirstCheckedWorkTaskDate, getWorkTasks } from "./work-tasks.mock.js";
+import { getFirstCheckedWorkTaskDate, getWorkTasks } from "./work-tasks.js";
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const FUTURE_DAY_LIMIT = 14;

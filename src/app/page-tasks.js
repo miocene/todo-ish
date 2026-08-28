@@ -1,8 +1,5 @@
-import { normalizeInventory, readStoredJson, writeStoredJson } from "./storage.js";
+import { initializeAppDataResource, readAppData, writeAppData } from "./app-data.js";
 
-const STORAGE_PREFIX = "done-ish.page-tasks.v1";
-const FILAMENT_INVENTORY_KEY = "done-ish.filament-inventory.v1";
-const FLOSS_INVENTORY_KEY = "done-ish.floss-inventory.v1";
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const DEFAULT_FILAMENT_INVENTORY = Object.freeze({
   "bambu-pla-basic-filament-10101": 1,
@@ -263,6 +260,15 @@ const DEFAULT_PAGE_DATA = Object.freeze({
 
 const clone = structuredClone;
 
+function normalizeInventory(value, fallback) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return clone(fallback);
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([, count]) => Number.isInteger(count) && count >= 0)
+      .map(([catalogId, count]) => [catalogId, count]),
+  );
+}
+
 function isTask(task) {
   return (
     task &&
@@ -330,10 +336,7 @@ function normalizeCrossStitch(data) {
     projects: data.projects.map((project, projectIndex) => ({
       ...project,
       color: /^#[\da-f]{6}$/i.test(project.color) ? project.color : ["#71935c", "#c72b3b"][projectIndex % 2],
-      totalCrosses:
-        Number.isFinite(project.totalCrosses) && project.totalCrosses >= 0
-          ? Math.floor(project.totalCrosses)
-          : project.tasks.reduce((total, task) => total + (Number(task.crosses) || 0), 0),
+      totalCrosses: project.tasks.reduce((total, task) => total + (Number(task.crosses) || 0), 0),
       tasks: project.tasks.map((task) => {
         const crosses = Number.isFinite(task.crosses) && task.crosses >= 0 ? Math.floor(task.crosses) : 0;
         const crossesDone =
@@ -401,26 +404,29 @@ export function loadPageTasks(page) {
   const normalize = PAGE_NORMALIZERS[page];
   if (!defaultData || !normalize) throw new Error(`Unknown task page: ${page}`);
 
-  const savedData = readStoredJson(`${STORAGE_PREFIX}.${page}`);
-  return clone(normalize(savedData) ?? normalize(defaultData));
+  const resource = page === "crossStitch" ? "cross-stitch" : page;
+  const data = normalize(readAppData(resource)) ?? normalize(defaultData);
+  return initializeAppDataResource(resource, data);
 }
 
 export function savePageTasks(page, data) {
-  writeStoredJson(`${STORAGE_PREFIX}.${page}`, data);
+  writeAppData(page === "crossStitch" ? "cross-stitch" : page, data);
 }
 
 export function loadFilamentInventory() {
-  return normalizeInventory(readStoredJson(FILAMENT_INVENTORY_KEY), DEFAULT_FILAMENT_INVENTORY);
+  const inventory = normalizeInventory(readAppData("filament-inventory"), DEFAULT_FILAMENT_INVENTORY);
+  return initializeAppDataResource("filament-inventory", inventory);
 }
 
 export function saveFilamentInventory(inventory) {
-  writeStoredJson(FILAMENT_INVENTORY_KEY, inventory);
+  writeAppData("filament-inventory", inventory);
 }
 
 export function loadFlossInventory() {
-  return normalizeInventory(readStoredJson(FLOSS_INVENTORY_KEY), DEFAULT_FLOSS_INVENTORY);
+  const inventory = normalizeInventory(readAppData("floss-inventory"), DEFAULT_FLOSS_INVENTORY);
+  return initializeAppDataResource("floss-inventory", inventory);
 }
 
 export function saveFlossInventory(inventory) {
-  writeStoredJson(FLOSS_INVENTORY_KEY, inventory);
+  writeAppData("floss-inventory", inventory);
 }

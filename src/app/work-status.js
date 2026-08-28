@@ -1,5 +1,5 @@
 import { reactive } from "vue";
-import { readStoredJson, writeStoredJson } from "./storage.js";
+import { initializeAppDataResource, readAppData, writeAppData } from "./app-data.js";
 
 export const WORK_STATUSES = Object.freeze([
   { value: "work", label: "Workday", icon: "work" },
@@ -12,20 +12,21 @@ export const WORK_STATUSES = Object.freeze([
 ]);
 
 const DEFAULT_STATUS = WORK_STATUSES[0];
-const STORAGE_KEY = "done-ish.work-statuses.v1";
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const STATUS_VALUES = new Set(WORK_STATUSES.map((status) => status.value));
 
 function loadStatuses() {
-  const savedStatuses = readStoredJson(STORAGE_KEY, {});
-  if (!savedStatuses || typeof savedStatuses !== "object" || Array.isArray(savedStatuses)) return {};
-  return Object.fromEntries(
-    Object.entries(savedStatuses).filter(([date, value]) => ISO_DATE.test(date) && STATUS_VALUES.has(value)),
+  const savedStatuses = readAppData("work-statuses");
+  const statuses =
+    !savedStatuses || typeof savedStatuses !== "object" || Array.isArray(savedStatuses) ? {} : savedStatuses;
+  const normalized = Object.fromEntries(
+    Object.entries(statuses).filter(([date, value]) => ISO_DATE.test(date) && STATUS_VALUES.has(value)),
   );
+  return initializeAppDataResource("work-statuses", normalized);
 }
 
 function saveStatuses(statuses) {
-  writeStoredJson(STORAGE_KEY, statuses);
+  writeAppData("work-statuses", statuses);
 }
 
 const statusesByDate = reactive(loadStatuses());

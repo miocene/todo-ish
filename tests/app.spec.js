@@ -1,4 +1,97 @@
 import { expect, test } from "@playwright/test";
+import filamentCatalog from "../backend/catalogs/bambu-filaments.snapshot.json" with { type: "json" };
+import flossCatalog from "../backend/catalogs/dmc-floss.snapshot.json" with { type: "json" };
+
+const appDataByPage = new WeakMap();
+const APP_DATA_RESOURCES = [
+  "work-tasks",
+  "work-statuses",
+  "chores",
+  "todos",
+  "shopping",
+  "printing",
+  "cross-stitch",
+  "filament-inventory",
+  "floss-inventory",
+];
+
+function emptyAppData(values, revisions) {
+  return {
+    initializedResources: Object.keys(values),
+    revisions,
+    workTasks: values["work-tasks"] ?? [],
+    workStatuses: values["work-statuses"] ?? {},
+    pages: {
+      chores: values.chores ?? { occurrenceOrder: [], tasks: [] },
+      todos: values.todos ?? { lists: [] },
+      shopping: values.shopping ?? { tasks: [] },
+      printing: values.printing ?? { projects: [] },
+      crossStitch: values["cross-stitch"] ?? { projects: [] },
+    },
+    inventories: {
+      filament: values["filament-inventory"] ?? {},
+      floss: values["floss-inventory"] ?? {},
+    },
+  };
+}
+
+test.beforeEach(async ({ page }) => {
+  const values = {};
+  const revisions = Object.fromEntries(APP_DATA_RESOURCES.map((resource) => [resource, 0]));
+  const controller = { get: (resource) => values[resource] };
+  appDataByPage.set(page, controller);
+
+  await page.route("**/api/**", async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const json = (body, status = 200, headers = {}) =>
+      route.fulfill({ status, headers, contentType: "application/json", body: JSON.stringify(body) });
+
+    if (request.method() === "GET" && url.pathname === "/api/data") {
+      await json(emptyAppData(values, revisions));
+      return;
+    }
+
+    const resourceMatch = /^\/api\/data\/([a-z-]+)$/.exec(url.pathname);
+    if (request.method() === "PUT" && resourceMatch) {
+      const resource = resourceMatch[1];
+      const expectedRevision = Number(/^"(\d+)"$/.exec(request.headers()["if-match"] || "")?.[1]);
+      if (expectedRevision !== revisions[resource]) {
+        await json({ error: "Revision conflict", currentRevision: revisions[resource] }, 409);
+        return;
+      }
+      const submittedValue = request.postDataJSON();
+      values[resource] =
+        resource === "shopping" ? { tasks: submittedValue.tasks.filter((task) => !task.source) } : submittedValue;
+      revisions[resource] += 1;
+      await json({ resource, revision: revisions[resource] }, 200, { etag: `"${revisions[resource]}"` });
+      return;
+    }
+
+    if (request.method() === "GET" && url.pathname === "/api/catalogs/filaments") {
+      const offset = Number(url.searchParams.get("offset") || 0);
+      const limit = Number(url.searchParams.get("limit") || 100);
+      await json({
+        total: filamentCatalog.entries.length,
+        items: filamentCatalog.entries.slice(offset, offset + limit),
+      });
+      return;
+    }
+
+    if (request.method() === "GET" && url.pathname === "/api/catalogs/floss") {
+      const offset = Number(url.searchParams.get("offset") || 0);
+      const limit = Number(url.searchParams.get("limit") || 100);
+      const entries = flossCatalog.entries.map((thread) => ({
+        ...thread,
+        id: `dmc${thread.number.toLocaleLowerCase()}`,
+      }));
+      await json({ total: entries.length, items: entries.slice(offset, offset + limit) });
+      return;
+    }
+
+    await json({ error: "Not found" }, 404);
+  });
+});
 
 function localIsoDate(dayOffset = 0) {
   const date = new Date();
@@ -66,7 +159,7 @@ test("the root page is the three-day work calendar", async ({ page }) => {
   await expect(page.locator(".week-day").first().locator(".task-item")).toHaveCount(0);
   await expect(page.locator(".week-day--today .task-item")).toHaveCount(6);
   await expect(page.getByRole("checkbox", { name: /^Complete / })).toHaveCount(7);
-  expect(await page.evaluate(() => localStorage.getItem("done-ish.work-statuses.v1"))).toBeNull();
+  await expect.poll(() => appDataByPage.get(page).get("work-statuses")).toEqual({});
 
   const hashedVueAttributes = await page
     .locator("*")
@@ -84,11 +177,14 @@ test("editable work tasks create and focus the next item with Enter", async ({ p
   const lastTitle = todayTitles.last();
 
   await lastTitle.fill("Updated roadmap");
-  expect(
-    await page.evaluate(() =>
-      JSON.parse(localStorage.getItem("done-ish.work-tasks.v1")).some((task) => task.title === "Updated roadmap"),
-    ),
-  ).toBe(true);
+  await expect
+    .poll(() =>
+      appDataByPage
+        .get(page)
+        .get("work-tasks")
+        ?.some((task) => task.title === "Updated roadmap"),
+    )
+    .toBe(true);
   await lastTitle.press("Enter");
   await expect(todayTitles).toHaveCount(7);
   await expect(todayTitles.last()).toBeFocused();
@@ -130,11 +226,14 @@ test("the backlog add button creates, focuses, and saves a task", async ({ page 
   await expect(backlogTitle).toBeFocused();
   await page.getByRole("button", { name: "Today", exact: true }).focus();
   await expect(backlogTitle).toHaveCount(0);
-  expect(
-    await page.evaluate(() =>
-      JSON.parse(localStorage.getItem("done-ish.work-tasks.v1")).every((task) => task.title.trim()),
-    ),
-  ).toBe(true);
+  await expect
+    .poll(() =>
+      appDataByPage
+        .get(page)
+        .get("work-tasks")
+        ?.every((task) => task.title.trim()),
+    )
+    .toBe(true);
 
   await addBacklogTask.click();
   await backlogTitle.fill("Plan the next sprint");
@@ -172,13 +271,14 @@ test("task completion persists and unfinished tasks roll into today", async ({ p
   await expect(todayTitles.first()).toHaveValue("Triage inbox");
   await page.clock.runFor(1);
   await expect(todayTitles.last()).toHaveValue("Triage inbox");
-  expect(
-    await page.evaluate(() =>
-      JSON.parse(localStorage.getItem("done-ish.work-tasks.v1")).some(
-        (task) => task.title === "Triage inbox" && Boolean(task.checkedAt),
-      ),
-    ),
-  ).toBe(true);
+  await expect
+    .poll(() =>
+      appDataByPage
+        .get(page)
+        .get("work-tasks")
+        ?.some((task) => task.title === "Triage inbox" && Boolean(task.checkedAt)),
+    )
+    .toBe(true);
 
   await page.reload();
   await expect(page.getByRole("checkbox", { name: "Complete Triage inbox" })).toBeChecked();
@@ -374,7 +474,7 @@ test("task pages render their variants and save changes immediately", async ({ p
   const stitchProject = page.locator(".project-card").first();
   await expect(stitchProject.getByLabel("Project title")).toHaveValue("Botanical sampler");
   await expect(stitchProject.getByLabel("Project color")).toHaveValue("#71935c");
-  await expect(stitchProject.getByLabel("Total project crosses")).toHaveValue("2400");
+  await expect(stitchProject.getByText("2,400 total crosses", { exact: true })).toBeVisible();
   await expect(stitchProject.getByRole("checkbox")).toHaveCount(0);
   const stitchColors = stitchProject.locator('select[name="stitch-floss"]');
   await expect(stitchColors).toHaveCount(3);
@@ -444,6 +544,7 @@ test("task pages render their variants and save changes immediately", async ({ p
   await expect(page.locator(".catalog-card--missing")).toHaveCount(0);
 
   await page.goto("/shopping");
+  await expect(page.getByLabel("Task title")).toHaveCount(2);
   expect(await page.getByLabel("Task title").evaluateAll((inputs) => inputs.map((input) => input.value))).toEqual([
     "Apples",
     "Dish soap",

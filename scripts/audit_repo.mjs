@@ -46,6 +46,8 @@ assert.deepEqual(readdirSync(new URL("src/pages/", root)).sort(), [
 ]);
 assert.deepEqual(readdirSync(new URL("src/app/", root)).sort(), [
   "activity.js",
+  "api.js",
+  "app-data.js",
   "filament-catalog.js",
   "floss-catalog.js",
   "managed-shopping.js",
@@ -54,11 +56,10 @@ assert.deepEqual(readdirSync(new URL("src/app/", root)).sort(), [
   "router.js",
   "shopping-supplies.js",
   "stitching-supplies.js",
-  "storage.js",
   "task-list.js",
   "work-calendar.js",
   "work-status.js",
-  "work-tasks.mock.js",
+  "work-tasks.js",
 ]);
 assert.deepEqual(readdirSync(new URL("src/components/", root)).sort(), [
   "JMButton",
@@ -136,6 +137,8 @@ const clientSource = [
   "src/App.vue",
   "src/main.js",
   "src/app/activity.js",
+  "src/app/api.js",
+  "src/app/app-data.js",
   "src/app/filament-catalog.js",
   "src/app/floss-catalog.js",
   "src/app/managed-shopping.js",
@@ -144,6 +147,8 @@ const clientSource = [
   "src/app/stitching-supplies.js",
   "src/app/router.js",
   "src/app/task-list.js",
+  "src/app/work-status.js",
+  "src/app/work-tasks.js",
   "src/components/JMButton/JMButton.vue",
   "src/components/JMCatalogCard/JMCatalogCard.vue",
   "src/components/JMHeader/JMHeader.vue",
@@ -162,13 +167,19 @@ const clientSource = [
 ]
   .map(read)
   .join("\n");
-assert.doesNotMatch(clientSource, /demo-state|localStorage|catalog-api/i);
+assert.doesNotMatch(clientSource, /demo-state|catalog-api/i);
+assert.doesNotMatch(clientSource.replace(read("src/app/app-data.js"), ""), /localStorage/);
+assert.match(read("src/app/app-data.js"), /LEGACY_STORAGE_KEYS/);
+assert.doesNotMatch(read("src/app/filament-catalog.js"), /\.snapshot\.json/);
+assert.doesNotMatch(read("src/app/floss-catalog.js"), /\.snapshot\.json/);
 assert.doesNotMatch(clientSource, /CataloguePage|HomePage|TodoPage/);
 assert.doesNotMatch(clientSource, /<style\s+scoped\b/i);
 
 for (const path of [
   "backend/README.md",
   "backend/api/src/catalog-repository.mjs",
+  "backend/api/src/app-data-repository.mjs",
+  "backend/database/schema/app-data.ts",
   "backend/catalogs/catalogs.js",
   "backend/database/schema/catalogs.ts",
   "backend/database/migrations/0000_catalogs.sql",
@@ -187,4 +198,4 @@ assert.match(
 );
 assert.match(read("backend/deploy/raspberry-pi/web/Dockerfile"), /COPY styles \.\/styles/);
 
-console.log("Repository audit passed · task pages routed · catalog server preserved");
+console.log("Repository audit passed · task pages routed · database-backed API preserved");
