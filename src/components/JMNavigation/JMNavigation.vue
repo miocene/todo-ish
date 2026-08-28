@@ -1,5 +1,6 @@
 <script>
 import { RouterLink } from "vue-router";
+import { getWorkStatus } from "../../app/work-status.js";
 import JMIcon from "../JMIcon/JMIcon.vue";
 import "./jm-navigation.css";
 
@@ -13,11 +14,22 @@ const navigationItems = [
   { icon: "catalog", label: "Catalog", to: { name: "catalog" } },
 ];
 
+function todayIso() {
+  const today = new Date();
+  const pad = (part) => String(part).padStart(2, "0");
+  return `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+}
+
 export default {
   name: "JMNavigation",
   components: { JMIcon, RouterLink },
   data() {
-    return { navigationItems };
+    return { navigationItems, today: todayIso() };
+  },
+  computed: {
+    workIcon() {
+      return getWorkStatus(this.today).icon;
+    },
   },
 };
 </script>
@@ -27,7 +39,7 @@ export default {
     <ul class="jm-navigation__list" role="list">
       <li v-for="item in navigationItems" :key="item.label" class="jm-navigation__item">
         <RouterLink class="jm-navigation__link" exact-active-class="jm-navigation__link--active" :to="item.to">
-          <JMIcon :name="item.icon" />
+          <JMIcon :name="item.to.name === 'work' ? workIcon : item.icon" />
           <span class="jm-navigation__label">{{ item.label }}</span>
         </RouterLink>
       </li>

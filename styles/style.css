@@ -11,15 +11,10 @@ body {
   font: var(--font-weight-normal) 16px/1.4 var(--font-default);
 }
 
-#app {
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
-  block-size: 100dvh;
-}
-
 #main-content {
   min-block-size: 0;
   overflow: auto;
+  padding-top: var(--space-5);
 }
 
 h1,

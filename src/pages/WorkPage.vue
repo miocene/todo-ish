@@ -1,5 +1,7 @@
 <script>
 import JMButton from "../components/JMButton/JMButton.vue";
+import JMIcon from "../components/JMIcon/JMIcon.vue";
+import { getWorkStatus, setWorkStatus, WORK_STATUSES } from "../app/work-status.js";
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const WEEKDAY_FORMATTER = new Intl.DateTimeFormat("en", { weekday: "short" });
@@ -41,10 +43,11 @@ function requestedDate(value, fallback = new Date()) {
 
 export default {
   name: "WorkPage",
-  components: { JMButton },
+  components: { JMButton, JMIcon },
   data() {
     return {
       midnightTimer: undefined,
+      statusOptions: WORK_STATUSES,
       today: localDate(),
       transitionName: "range-next",
     };
@@ -66,12 +69,15 @@ export default {
       return Array.from({ length: 3 }, (_, index) => {
         const date = shiftDays(this.focusDate, index - 1);
         const iso = isoDate(date);
+        const status = getWorkStatus(iso);
         return {
           iso,
           weekday: WEEKDAY_FORMATTER.format(date),
           day: DAY_FORMATTER.format(date),
           month: MONTH_FORMATTER.format(date),
           label: LABEL_FORMATTER.format(date),
+          statusIcon: status.icon,
+          statusValue: status.value,
           today: iso === this.todayIso,
         };
       });
@@ -120,6 +126,9 @@ export default {
     goToday() {
       this.navigateToRange(this.today);
     },
+    setDayStatus(date, value) {
+      setWorkStatus(date, value);
+    },
     scheduleTodayRefresh() {
       const now = new Date();
       const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
@@ -137,60 +146,54 @@ export default {
 </script>
 
 <template>
-  <section class="calendar-experiment" aria-labelledby="work-page-title">
-    <h1 id="work-page-title" class="calendar-experiment__title">Work</h1>
-    <p class="calendar-experiment__status" aria-live="polite" aria-atomic="true">{{ rangeLabel }}</p>
+  <section class="calendar" aria-labelledby="work-page-title">
+    <div class="calendar__header">
+      <!-- TODO classes -->
+      <h1 id="work-page-title" class="calendar__title">Work</h1>
+      <p class="calendar__status" aria-live="polite" aria-atomic="true">{{ rangeLabel }}</p>
 
-    <div class="calendar-toolbar">
-      <JMButton text="Today" view="secondary" @click="goToday" />
-    </div>
-
-    <div class="week-control week-control--previous">
       <JMButton aria-label="Previous three days" icon-name="arrow-left" view="secondary" @click="changeRange(-1)" />
-    </div>
-
-    <div class="week-stage">
-      <Transition :name="transitionName">
-        <div :key="rangeKey" class="week-grid" role="group" :aria-label="rangeLabel">
-          <div v-for="day in days" :key="day.iso" class="week-day" :class="{ 'week-day--today': day.today }">
-            <time class="week-day__heading" :datetime="day.iso">
-              <span class="week-day__weekday">{{ day.weekday }}</span>
-              <span class="week-day__date">
-                <strong>{{ day.day }}</strong>
-                <small>{{ day.month }}</small>
-              </span>
-            </time>
-          </div>
-        </div>
-      </Transition>
-    </div>
-
-    <div class="week-control week-control--next">
+      <JMButton text="Today" view="secondary" @click="goToday" />
       <JMButton aria-label="Next three days" icon-name="arrow-right" view="secondary" @click="changeRange(1)" />
     </div>
+
+    <Transition :name="transitionName">
+      <div :key="rangeKey" class="week-grid" role="group" :aria-label="rangeLabel">
+        <div v-for="day in days" :key="day.iso" class="week-day" :class="{ 'week-day--today': day.today }">
+          <time class="week-day__heading" :datetime="day.iso">
+            <span class="week-day__weekday">{{ day.weekday }}</span>
+            <span class="week-day__date">
+              <strong>{{ day.day }}</strong>
+              <small>{{ day.month }}</small>
+            </span>
+          </time>
+          <label class="calendar__status-select">
+            <JMIcon :name="day.statusIcon" />
+            <select
+              :value="day.statusValue"
+              :aria-label="`Status for ${day.label}`"
+              @change="setDayStatus(day.iso, $event.target.value)"
+            >
+              <option v-for="status in statusOptions" :key="status.value" :value="status.value">
+                {{ status.label }}
+              </option>
+            </select>
+          </label>
+        </div>
+      </div>
+    </Transition>
   </section>
 </template>
 
 <style>
-.calendar-experiment {
+.calendar {
   --calendar-accent: #1967d2;
   --calendar-border: #dadce0;
   --calendar-muted: #70757a;
   --calendar-surface: #fff;
-
-  display: grid;
-  grid-template-columns: clamp(48px, 6vw, 80px) minmax(0, 1fr) clamp(48px, 6vw, 80px);
-  grid-template-rows: auto minmax(0, 1fr);
-  block-size: 100%;
-  min-inline-size: 0;
-  overflow: hidden;
-  color: #202124;
-  background: #f8f9fa;
-  font-family: Arial, sans-serif;
 }
 
-.calendar-experiment__title,
-.calendar-experiment__status {
+.calendar__status {
   position: absolute;
   inline-size: 1px;
   block-size: 1px;
@@ -202,15 +205,33 @@ export default {
   border: 0;
 }
 
-.calendar-toolbar {
-  grid-column: 2;
-  grid-row: 1;
+.calendar__header {
   display: flex;
-  justify-content: center;
-  padding: 12px;
-  background: var(--calendar-surface);
-  border: 1px solid var(--calendar-border);
-  border-block-start: 0;
+  gap: var(--space-3);
+  align-items: center;
+  padding-bottom: var(--space-5);
+
+  .calendar__title {
+    flex-grow: 1;
+  }
+}
+
+.calendar__status-select {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  block-size: var(--size-control);
+  padding-inline-start: var(--space-3);
+  background: var(--control-secondary-background);
+  border-radius: var(--radius-control);
+
+  select {
+    block-size: 100%;
+    padding-inline: 0 var(--space-3);
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+  }
 }
 
 .week-stage {
@@ -224,35 +245,18 @@ export default {
 }
 
 .week-grid {
-  position: absolute;
-  inset: 0;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  background: var(--calendar-surface);
 }
 
 .week-day {
   display: flex;
   flex-direction: column;
-  min-inline-size: 0;
-  color: inherit;
-  background: var(--calendar-surface);
-  border-inline-end: 1px solid var(--calendar-border);
-}
-
-.week-day:last-child {
-  border-inline-end: 0;
+  gap: var(--space-3);
 }
 
 .week-day__heading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  gap: clamp(12px, 2.5vh, 24px);
-  min-block-size: clamp(112px, 16vh, 148px);
   padding: clamp(18px, 4vh, 40px) 6px;
-  color: inherit;
   border-block-end: 1px solid var(--calendar-border);
 }
 
@@ -299,23 +303,6 @@ export default {
   background: var(--calendar-accent);
 }
 
-.week-control {
-  position: relative;
-  z-index: 2;
-  align-self: center;
-  justify-self: center;
-}
-
-.week-control--previous {
-  grid-column: 1;
-  grid-row: 2;
-}
-
-.week-control--next {
-  grid-column: 3;
-  grid-row: 2;
-}
-
 .range-next-enter-active,
 .range-next-leave-active,
 .range-previous-enter-active,
@@ -338,7 +325,7 @@ export default {
 }
 
 @media (width <= 640px) {
-  .calendar-experiment {
+  .calendar {
     grid-template-columns: 42px minmax(0, 1fr) 42px;
   }
 

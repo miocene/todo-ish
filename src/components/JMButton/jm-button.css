@@ -3,7 +3,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  min-block-size: var(--size-control);
+  height: var(--size-control);
   padding-inline: var(--space-3);
   color: var(--jm-button-text);
   background: var(--jm-button-background);

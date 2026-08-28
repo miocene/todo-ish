@@ -110,6 +110,30 @@ test("the work page navigates in three-day ranges", async ({ page }) => {
   await expect(page.locator(".week-day__heading").first()).toHaveAttribute("datetime", "2000-01-01");
 });
 
+test("work statuses are saved by date and update today's navigation icon", async ({ page }) => {
+  await page.goto("/");
+
+  const statusSelect = page.getByRole("combobox", { name: /^Status for / });
+  const workNavigationIcon = page.getByRole("link", { name: "Work" }).locator("use");
+
+  await statusSelect.selectOption("pto");
+  await expect(workNavigationIcon).toHaveAttribute("href", /#icon-pto$/);
+
+  await page.reload();
+  await expect(statusSelect).toHaveValue("pto");
+  await expect(workNavigationIcon).toHaveAttribute("href", /#icon-pto$/);
+
+  await page.goto("/?date=2000-01-03");
+  await statusSelect.selectOption("conference");
+  await expect(workNavigationIcon).toHaveAttribute("href", /#icon-pto$/);
+
+  await page.reload();
+  await expect(statusSelect).toHaveValue("conference");
+
+  await page.getByRole("button", { name: "Today" }).click();
+  await expect(statusSelect).toHaveValue("pto");
+});
+
 test("work entry points return the calendar to today without a date query", async ({ page }) => {
   const expectTodayWithoutDateQuery = async () => {
     await expect.poll(() => new URL(page.url()).searchParams.get("date")).toBeNull();
@@ -138,5 +162,5 @@ test("unknown application routes return to work", async ({ page }) => {
 
   await expect(page).toHaveURL(/\/$/);
   expect(new URL(page.url()).hash).toBe("");
-  await expect(page.locator(".calendar-experiment")).toBeVisible();
+  await expect(page.locator(".calendar")).toBeVisible();
 });
