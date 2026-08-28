@@ -19,7 +19,9 @@ export default {
     reserveDragSpace: { type: Boolean, default: false },
     taskId: { type: String, required: true },
     title: { type: String, default: "" },
+    titleHref: { type: String, default: "" },
     titleInputId: { type: String, default: "" },
+    titleLabel: { type: String, default: "Task title" },
   },
   computed: {
     completionId() {
@@ -75,8 +77,18 @@ export default {
     />
 
     <div class="task-item__content">
-      <template v-if="editable">
-        <label class="task-item__visually-hidden" :for="titleId">Task title</label>
+      <a
+        v-if="titleHref"
+        class="task-item__title task-item__title-link"
+        :href="titleHref"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {{ title }}
+        <span class="task-item__visually-hidden"> (opens in a new tab)</span>
+      </a>
+      <template v-else-if="editable">
+        <label class="task-item__visually-hidden" :for="titleId">{{ titleLabel }}</label>
         <textarea
           :id="titleId"
           class="task-item__title"

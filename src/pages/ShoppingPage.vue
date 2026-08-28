@@ -1,6 +1,7 @@
 <script>
-import { loadPageTasks, nextTaskId, savePageTasks } from "../app/page-tasks.js";
+import { nextTaskId, savePageTasks } from "../app/page-tasks.js";
 import { completedTasksLast, finishTaskDraft, serializableTasks } from "../app/task-drafts.js";
+import { syncFilamentShoppingList } from "../app/printing-supplies.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
 import "./task-pages.css";
@@ -9,7 +10,7 @@ export default {
   name: "ShoppingPage",
   components: { JMButton, JMTaskCard },
   data() {
-    const shopping = loadPageTasks("shopping");
+    const shopping = syncFilamentShoppingList();
     shopping.tasks = completedTasksLast(shopping.tasks);
     return { completionMoveTimers: new Map(), draftTaskIds: new Set(), shopping };
   },
@@ -36,6 +37,10 @@ export default {
       task.completed = completed;
       this.save();
       if (!completed) return;
+      if (task.filamentId) {
+        void this.$router.push({ name: "catalog", query: { q: task.filamentId } });
+        return;
+      }
 
       const timer = window.setTimeout(() => {
         this.completionMoveTimers.delete(task.id);
@@ -102,6 +107,7 @@ export default {
         <JMTaskCard
           :task-id="task.id"
           :title="task.title"
+          :title-href="task.productLink || ''"
           :title-input-id="taskInputId(task)"
           :completed="task.completed"
           removable

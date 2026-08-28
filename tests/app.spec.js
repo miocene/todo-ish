@@ -256,14 +256,32 @@ test("task pages render their variants and save changes immediately", async ({ p
   await expect(page.locator(".task-item__drag-handle, .task-item__pin")).toHaveCount(0);
 
   await page.goto("/shopping");
-  await expect(page.locator(".task-item__remove")).toHaveCount(3);
+  await expect(page.locator(".task-item__remove")).toHaveCount(5);
+  expect(await page.getByLabel("Task title").evaluateAll((inputs) => inputs.map((input) => input.value))).toEqual([
+    "Oat milk",
+    "Apples",
+    "Dish soap",
+  ]);
+  const petgShoppingLink = page.getByRole("link", { name: /PETG Basic · Charcoal filament · 1 spool/ });
+  const blueShoppingLink = page.getByRole("link", { name: /PLA Basic · Blue filament · 1 spool/ });
+  await expect(petgShoppingLink).toHaveAttribute("href", /eu\.store\.bambulab\.com\/search\?q=PETG/);
+  await expect(blueShoppingLink).toHaveAttribute("href", "https://eu.store.bambulab.com/products/pla-basic-filament");
+  await expect(blueShoppingLink).toHaveAttribute("target", "_blank");
+  await expect(blueShoppingLink).toHaveAttribute("rel", "noopener noreferrer");
+  await page.getByRole("checkbox", { name: "Complete PLA Basic · Blue filament · 1 spool" }).check();
+  await expect.poll(() => new URL(page.url()).pathname).toBe("/catalog");
+  await expect.poll(() => new URL(page.url()).searchParams.get("q")).toBe("bambu-pla-basic-filament-10601");
+  await expect(page.getByLabel("Search filaments")).toHaveValue("bambu-pla-basic-filament-10601");
+  await expect(page.getByLabel("Filament type")).toHaveValue("");
+
+  await page.goto("/shopping");
   await expect(page.locator(".task-item__remove").first().locator("use")).toHaveAttribute("href", /#icon-remove$/);
   await page.getByRole("button", { name: "Remove Oat milk from shopping list" }).click();
-  await expect(page.locator(".task-page__tasks .task-item")).toHaveCount(2);
+  await expect(page.locator(".task-page__tasks .task-item")).toHaveCount(4);
   await page.getByRole("button", { name: "Add item" }).click();
-  await expect(page.locator(".task-page__tasks .task-item")).toHaveCount(3);
+  await expect(page.locator(".task-page__tasks .task-item")).toHaveCount(5);
   await page.getByRole("button", { name: "Add item" }).focus();
-  await expect(page.locator(".task-page__tasks .task-item")).toHaveCount(2);
+  await expect(page.locator(".task-page__tasks .task-item")).toHaveCount(4);
   await page.reload();
   await expect(page.getByRole("textbox", { name: "Task title" })).toHaveCount(2);
   await expect(page.locator(".task-item__drag-handle, .task-item__pin")).toHaveCount(0);
@@ -273,11 +291,48 @@ test("task pages render their variants and save changes immediately", async ({ p
   await expect(projects).toHaveCount(2);
   await expect(projects.getByRole("heading", { level: 2 })).toHaveText(["Desk cable clips", "Miniature planter"]);
   await expect(page.locator(".task-item__drag-handle, .task-item__pin, .task-item__remove")).toHaveCount(0);
-  await projects.first().getByRole("button", { name: "Add task" }).click();
+  await expect(projects.first().getByLabel("Project color")).toHaveValue("#446e5c");
+  await expect(projects.first().getByLabel(/^Filament \d+$/)).toHaveCount(4);
+  expect(
+    await projects
+      .first()
+      .getByLabel(/^Weight \d+$/)
+      .evaluateAll((inputs) => inputs.map((input) => input.value)),
+  ).toEqual(["12", "1002", "2", "8"]);
+  await expect(projects.first().locator(".printing-filament--missing")).toHaveCount(2);
+  await expect(projects.first().getByText("Not in catalog · Need 1 spool")).toBeVisible();
+  await expect(projects.first().getByText("Missing 1 spool · 1 owned")).toBeVisible();
+  await projects.first().getByRole("button", { name: "Add item" }).click();
   await expect(projects.first().locator("textarea.task-item__title")).toHaveCount(4);
   await expect(projects.first().locator("textarea.task-item__title").last()).toBeFocused();
-  await projects.first().getByRole("button", { name: "Add task" }).focus();
+  await projects.first().getByRole("button", { name: "Add item" }).focus();
   await expect(projects.first().locator("textarea.task-item__title")).toHaveCount(3);
+
+  await page.getByRole("button", { name: "Add project" }).click();
+  await expect(projects).toHaveCount(3);
+  const newProject = projects.last();
+  await expect(newProject.getByLabel("Project title")).toBeFocused();
+  await newProject.getByLabel("Project title").fill("Headphone stand");
+  await newProject.getByLabel("Project color").fill("#704f8a");
+  await newProject.getByRole("button", { name: "Add item" }).click();
+  await newProject.getByLabel("Item name").fill("Weighted base");
+  await newProject.getByLabel("Filament 1", { exact: true }).selectOption("bambu-pla-basic-filament-10101");
+  await newProject.getByLabel("Weight 1", { exact: true }).fill("35");
+  await newProject.getByRole("button", { name: "Add filament" }).click();
+  await expect(newProject.getByLabel("Filament 2", { exact: true })).toBeFocused();
+  await newProject.getByLabel("Filament 2", { exact: true }).selectOption("bambu-pla-basic-filament-10501");
+  await newProject.getByLabel("Weight 2", { exact: true }).fill("7.5");
+  await page.reload();
+  const savedProject = page.locator(".project-card").last();
+  await expect(savedProject.getByLabel("Project title")).toHaveValue("Headphone stand");
+  await expect(savedProject.getByLabel("Project color")).toHaveValue("#704f8a");
+  await expect(savedProject.getByLabel("Item name")).toHaveValue("Weighted base");
+  expect(
+    await savedProject.getByLabel(/^Filament \d+$/).evaluateAll((selects) => selects.map((select) => select.value)),
+  ).toEqual(["bambu-pla-basic-filament-10101", "bambu-pla-basic-filament-10501"]);
+  expect(
+    await savedProject.getByLabel(/^Weight \d+$/).evaluateAll((inputs) => inputs.map((input) => input.value)),
+  ).toEqual(["35", "7.5"]);
 
   await page.goto("/cross-stitch");
   await expect(page.getByRole("heading", { level: 1, name: "Cross stitch" })).toBeVisible();
@@ -285,6 +340,50 @@ test("task pages render their variants and save changes immediately", async ({ p
     "Botanical sampler",
     "Amsterdam canal house",
   ]);
+
+  await page.goto("/catalog");
+  await expect(page.locator(".filament-card")).toHaveCount(265);
+  await expect(page.getByText("265 filaments", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Filament type")).toHaveValue("");
+  const catalogGroups = await page
+    .locator(".filament-card")
+    .evaluateAll((cards) => cards.map((card) => card.dataset.catalogGroup));
+  expect(catalogGroups).toEqual(
+    [...catalogGroups].sort(
+      (first, second) => ["owned", "needed", "other"].indexOf(first) - ["owned", "needed", "other"].indexOf(second),
+    ),
+  );
+  await page.getByLabel("Filament type").selectOption("PLA Basic");
+  await expect(page.locator(".filament-card")).toHaveCount(30);
+  await page.getByLabel("Filament type").selectOption("");
+  await page.getByLabel("Search filaments").fill("bambu-pla-basic-filament-10601");
+  await expect(page.locator(".filament-card")).toHaveCount(1);
+  await expect(page.getByRole("heading", { level: 2, name: "PLA Basic · Blue" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /PLA Basic · Blue/ })).toHaveAttribute(
+    "href",
+    "https://eu.store.bambulab.com/products/pla-basic-filament",
+  );
+  await expect(page.getByText("Required 1002 g · 2 spools")).toBeVisible();
+  await expect(page.getByText("Missing 1 spool", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Spools owned")).toHaveValue("1");
+  await page.getByLabel("Spools owned").fill("2");
+  await expect(page.locator(".filament-card--missing")).toHaveCount(0);
+
+  await page.goto("/printing");
+  await expect(page.locator(".printing-filament--missing")).toHaveCount(1);
+  await expect(page.getByText("Missing 1 spool · 1 owned")).toHaveCount(0);
+  await page.goto("/shopping");
+  expect(await page.getByLabel("Task title").evaluateAll((inputs) => inputs.map((input) => input.value))).toEqual([
+    "Apples",
+    "Dish soap",
+  ]);
+  await expect(page.getByRole("link", { name: /PETG Basic · Charcoal filament · 1 spool/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /PLA Basic · Blue filament/ })).toHaveCount(0);
+
+  await page.goto("/catalog");
+  await page.getByLabel("Search filaments").fill("discontinued-petg-charcoal");
+  await expect(page.locator(".filament-card")).toHaveCount(0);
+  await expect(page.getByText("No catalog filaments match this search.")).toBeVisible();
 });
 
 test("completed items move to the bottom after 500 milliseconds on every task page", async ({ page }) => {
@@ -325,12 +424,12 @@ test("completed items move to the bottom after 500 milliseconds on every task pa
 
   await page.goto("/printing");
   const printingTitles = page.locator(".project-card").first().locator("textarea.task-item__title");
-  await expect(printingTitles.first()).toHaveValue("Adjust the clip tolerance");
-  await page.getByRole("checkbox", { name: "Complete Adjust the clip tolerance" }).check();
+  await expect(printingTitles.first()).toHaveValue("Large cable clip");
+  await page.getByRole("checkbox", { name: "Complete Large cable clip" }).check();
   await page.clock.runFor(499);
-  await expect(printingTitles.first()).toHaveValue("Adjust the clip tolerance");
+  await expect(printingTitles.first()).toHaveValue("Large cable clip");
   await page.clock.runFor(1);
-  await expect(printingTitles.last()).toHaveValue("Adjust the clip tolerance");
+  await expect(printingTitles.last()).toHaveValue("Large cable clip");
 
   await page.goto("/cross-stitch");
   const stitchTitles = page.locator(".project-card").first().locator("textarea.task-item__title");

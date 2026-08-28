@@ -1,5 +1,11 @@
 const STORAGE_PREFIX = "done-ish.page-tasks.v1";
+const FILAMENT_INVENTORY_KEY = "done-ish.filament-inventory.v1";
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const DEFAULT_FILAMENT_INVENTORY = Object.freeze({
+  "bambu-pla-basic-filament-10101": 1,
+  "bambu-pla-basic-filament-10501": 1,
+  "bambu-pla-basic-filament-10601": 1,
+});
 
 function isoDate(value) {
   const pad = (part) => String(part).padStart(2, "0");
@@ -82,20 +88,88 @@ const DEFAULT_PAGE_DATA = Object.freeze({
       {
         id: "printing-cable-clips",
         title: "Desk cable clips",
+        color: "#446e5c",
         description: "Small clips for routing charging cables under the desk.",
         tasks: [
-          { id: "printing-cable-1", title: "Measure cable diameters", completed: true },
-          { id: "printing-cable-2", title: "Adjust the clip tolerance", completed: false },
-          { id: "printing-cable-3", title: "Print a test set", completed: false },
+          {
+            id: "printing-cable-1",
+            title: "Small cable clip",
+            filaments: [
+              {
+                id: "printing-cable-1-filament-1",
+                catalogId: "bambu-pla-basic-filament-10101",
+                label: "PLA Basic · Black",
+                weightGrams: 8,
+              },
+            ],
+            completed: true,
+          },
+          {
+            id: "printing-cable-2",
+            title: "Large cable clip",
+            filaments: [
+              {
+                id: "printing-cable-2-filament-1",
+                catalogId: "discontinued-petg-charcoal",
+                label: "PETG Basic · Charcoal",
+                weightGrams: 12,
+              },
+            ],
+            completed: false,
+          },
+          {
+            id: "printing-cable-3",
+            title: "Test clip",
+            filaments: [
+              {
+                id: "printing-cable-3-filament-1",
+                catalogId: "bambu-pla-basic-filament-10601",
+                label: "PLA Basic · Blue",
+                weightGrams: 1002,
+              },
+              {
+                id: "printing-cable-3-filament-2",
+                catalogId: "bambu-pla-basic-filament-10101",
+                label: "PLA Basic · Black",
+                weightGrams: 2,
+              },
+            ],
+            completed: false,
+          },
         ],
       },
       {
         id: "printing-planter",
         title: "Miniature planter",
+        color: "#bd6a43",
         description: "A self-watering planter for the kitchen windowsill.",
         tasks: [
-          { id: "printing-planter-1", title: "Choose filament colour", completed: false },
-          { id: "printing-planter-2", title: "Slice the final model", completed: false },
+          {
+            id: "printing-planter-1",
+            title: "Planter body",
+            filaments: [
+              {
+                id: "printing-planter-1-filament-1",
+                catalogId: "bambu-pla-basic-filament-10501",
+                label: "PLA Basic · Bambu Green",
+                weightGrams: 84,
+              },
+            ],
+            completed: false,
+          },
+          {
+            id: "printing-planter-2",
+            title: "Water reservoir",
+            filaments: [
+              {
+                id: "printing-planter-2-filament-1",
+                catalogId: "",
+                label: "",
+                weightGrams: 32,
+              },
+            ],
+            completed: false,
+          },
         ],
       },
     ],
@@ -143,6 +217,51 @@ function isTaskList(value) {
   return Array.isArray(value) && value.every(isTask);
 }
 
+function isProjectData(data) {
+  return (
+    Array.isArray(data.projects) &&
+    data.projects.every(
+      (project) =>
+        project &&
+        typeof project.id === "string" &&
+        typeof project.title === "string" &&
+        typeof project.description === "string" &&
+        isTaskList(project.tasks),
+    )
+  );
+}
+
+function normalizePrinting(data) {
+  if (!data || typeof data !== "object" || !isProjectData(data)) return undefined;
+  return {
+    ...data,
+    projects: data.projects.map((project, projectIndex) => ({
+      ...project,
+      color: /^#[\da-f]{6}$/i.test(project.color) ? project.color : ["#446e5c", "#bd6a43", "#526d9c"][projectIndex % 3],
+      tasks: project.tasks.map((task) => {
+        const { filamentId, filamentLabel, weightGrams, ...taskData } = task;
+        const savedFilaments = Array.isArray(task.filaments) ? task.filaments : [];
+        const legacyFilaments =
+          typeof filamentId === "string" || typeof weightGrams === "number"
+            ? [{ catalogId: filamentId, label: filamentLabel, weightGrams }]
+            : [];
+        const sourceFilaments = savedFilaments.length > 0 ? savedFilaments : legacyFilaments;
+        return {
+          ...taskData,
+          filaments: sourceFilaments.map((filament, filamentIndex) => ({
+            id:
+              typeof filament.id === "string" && filament.id ? filament.id : `${task.id}-filament-${filamentIndex + 1}`,
+            catalogId: typeof filament.catalogId === "string" ? filament.catalogId : "",
+            label: typeof filament.label === "string" ? filament.label : "",
+            weightGrams:
+              typeof filament.weightGrams === "number" && filament.weightGrams >= 0 ? filament.weightGrams : "",
+          })),
+        };
+      }),
+    })),
+  };
+}
+
 function normalizeChores(data) {
   if (!data || typeof data !== "object" || !isTaskList(data.tasks)) return undefined;
   if (!data.tasks.every((task) => typeof task.details === "string")) return undefined;
@@ -171,6 +290,7 @@ function isPageData(page, data) {
     return Boolean(normalizeChores(data));
   }
   if (page === "shopping") return isTaskList(data.tasks);
+  if (page === "printing") return Boolean(normalizePrinting(data));
   if (page === "todos") {
     return (
       Array.isArray(data.lists) &&
@@ -179,17 +299,7 @@ function isPageData(page, data) {
       )
     );
   }
-  return (
-    Array.isArray(data.projects) &&
-    data.projects.every(
-      (project) =>
-        project &&
-        typeof project.id === "string" &&
-        typeof project.title === "string" &&
-        typeof project.description === "string" &&
-        isTaskList(project.tasks),
-    )
-  );
+  return isProjectData(data);
 }
 
 export function loadPageTasks(page) {
@@ -199,6 +309,7 @@ export function loadPageTasks(page) {
   try {
     const savedData = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}.${page}`) ?? "null");
     if (page === "chores") return clone(normalizeChores(savedData) ?? normalizeChores(defaultData));
+    if (page === "printing") return clone(normalizePrinting(savedData) ?? normalizePrinting(defaultData));
     return clone(isPageData(page, savedData) ? savedData : defaultData);
   } catch {
     return clone(defaultData);
@@ -210,6 +321,30 @@ export function savePageTasks(page, data) {
     localStorage.setItem(`${STORAGE_PREFIX}.${page}`, JSON.stringify(data));
   } catch {
     // Keep the in-memory page state usable when browser storage is unavailable.
+  }
+}
+
+export function loadFilamentInventory() {
+  try {
+    const savedInventory = JSON.parse(localStorage.getItem(FILAMENT_INVENTORY_KEY) ?? "null");
+    if (!savedInventory || typeof savedInventory !== "object" || Array.isArray(savedInventory)) {
+      return clone(DEFAULT_FILAMENT_INVENTORY);
+    }
+    return Object.fromEntries(
+      Object.entries(savedInventory)
+        .filter(([, count]) => Number.isInteger(count) && count >= 0)
+        .map(([catalogId, count]) => [catalogId, count]),
+    );
+  } catch {
+    return clone(DEFAULT_FILAMENT_INVENTORY);
+  }
+}
+
+export function saveFilamentInventory(inventory) {
+  try {
+    localStorage.setItem(FILAMENT_INVENTORY_KEY, JSON.stringify(inventory));
+  } catch {
+    // Keep the in-memory inventory usable when browser storage is unavailable.
   }
 }
 

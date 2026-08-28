@@ -93,6 +93,16 @@ textarea.task-item__title {
   outline-offset: 1px;
 }
 
+.task-item__title-link {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentcolor 45%, transparent);
+  text-underline-offset: 0.16em;
+}
+
+.task-item__title-link:is(:hover, :focus-visible) {
+  text-decoration-color: currentcolor;
+}
+
 .task-item--completed .task-item__title {
   color: var(--task-item-muted);
   text-decoration: line-through;

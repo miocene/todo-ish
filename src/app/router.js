@@ -1,16 +1,14 @@
 import { createRouter, createWebHistory } from "vue-router";
 
 const WorkPage = () => import("../pages/WorkPage.vue");
+const CatalogPage = () => import("../pages/CatalogPage.vue");
 const ChoresPage = () => import("../pages/ChoresPage.vue");
 const PlaceholderPage = () => import("../pages/PlaceholderPage.vue");
 const ProjectTasksPage = () => import("../pages/ProjectTasksPage.vue");
 const ShoppingPage = () => import("../pages/ShoppingPage.vue");
 const TodoListsPage = () => import("../pages/TodoListsPage.vue");
 
-const placeholderRoutes = [
-  { path: "/catalog", name: "catalog", title: "Catalog" },
-  { path: "/profile", name: "profile", title: "Profile" },
-].map(({ path, name, title }) => ({
+const placeholderRoutes = [{ path: "/profile", name: "profile", title: "Profile" }].map(({ path, name, title }) => ({
   path,
   name,
   component: PlaceholderPage,
@@ -42,6 +40,12 @@ export const routes = [
     name: "shopping",
     component: ShoppingPage,
     meta: { title: "Shopping cart" },
+  },
+  {
+    path: "/catalog",
+    name: "catalog",
+    component: CatalogPage,
+    meta: { title: "Catalog" },
   },
   {
     path: "/printing",
