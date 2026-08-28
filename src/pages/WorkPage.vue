@@ -1,72 +1,17 @@
 <script>
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMIcon from "../components/JMIcon/JMIcon.vue";
-import { getWorkStatus, setWorkStatus, WORK_STATUSES } from "../app/work-status.js";
-
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-const RANGE_DAY_COUNT = 3;
-const WEEKDAY_FORMATTER = new Intl.DateTimeFormat("en", { weekday: "short" });
-const DAY_FORMATTER = new Intl.DateTimeFormat("en", { day: "numeric" });
-const MONTH_FORMATTER = new Intl.DateTimeFormat("en", { month: "short" });
-const LABEL_FORMATTER = new Intl.DateTimeFormat("en", {
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-});
-const SAMPLE_TASK_TITLES = [
-  ["Triage inbox", "Prepare the quarterly planning notes"],
-  ["Daily stand-up", "Review pull requests", "Pair on calendar navigation", "Update the team roadmap"],
-  ["Document the release process and share it with the team"],
-];
-
-function localDate(value = new Date()) {
-  if (typeof value === "string") return new Date(`${value}T12:00:00`);
-  return new Date(value.getFullYear(), value.getMonth(), value.getDate(), 12);
-}
-
-function shiftDays(value, amount) {
-  const date = localDate(value);
-  date.setDate(date.getDate() + amount);
-  return date;
-}
-
-function isoDate(value) {
-  const date = localDate(value);
-  const pad = (part) => String(part).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
-
-function isIsoDate(value) {
-  if (!ISO_DATE.test(value)) return false;
-  const date = localDate(value);
-  return !Number.isNaN(date.valueOf()) && isoDate(date) === value;
-}
-
-function requestedDate(value, fallback = new Date()) {
-  return isIsoDate(value) ? localDate(value) : localDate(fallback);
-}
-
-function calendarDays(focusDate, todayIso) {
-  return Array.from({ length: RANGE_DAY_COUNT }, (_, index) => {
-    const date = shiftDays(focusDate, index - 1);
-    const iso = isoDate(date);
-    const status = getWorkStatus(iso);
-    return {
-      iso,
-      weekday: WEEKDAY_FORMATTER.format(date),
-      day: DAY_FORMATTER.format(date),
-      month: MONTH_FORMATTER.format(date),
-      label: LABEL_FORMATTER.format(date),
-      statusValue: status.value,
-      tasks: SAMPLE_TASK_TITLES[index].map((title, taskIndex) => ({
-        id: `${iso}-${taskIndex}`,
-        title,
-      })),
-      today: iso === todayIso,
-    };
-  });
-}
+import {
+  calendarDate,
+  canMoveWorkRange,
+  getCalendarDays,
+  getWorkRangeBounds,
+  isIsoDate,
+  isoDate,
+  moveWorkRange,
+  requestedDate,
+} from "../app/work-calendar.js";
+import { setWorkStatus, WORK_STATUSES } from "../app/work-status.js";
 
 export default {
   name: "WorkPage",
@@ -77,7 +22,7 @@ export default {
       rangeTransitionFrame: undefined,
       routeWatchReady: false,
       statusOptions: WORK_STATUSES,
-      today: localDate(),
+      today: calendarDate(),
       trackMoving: false,
       transitionDirection: "next",
       transitionFromDate: undefined,
@@ -93,18 +38,27 @@ export default {
     focusDate() {
       return requestedDate(this.$route.query.date, this.today);
     },
+    rangeBounds() {
+      return getWorkRangeBounds(this.today);
+    },
+    canGoPrevious() {
+      return canMoveWorkRange(this.focusDate, -1, this.rangeBounds);
+    },
+    canGoNext() {
+      return canMoveWorkRange(this.focusDate, 1, this.rangeBounds);
+    },
     todayIso() {
       return isoDate(this.today);
     },
     days() {
-      return calendarDays(this.focusDate, this.todayIso);
+      return getCalendarDays(this.focusDate, this.todayIso);
     },
     isRangeTransitioning() {
       return Boolean(this.transitionFromDate);
     },
     trackDays() {
       if (!this.transitionFromDate) return this.days;
-      const outgoingDays = calendarDays(this.transitionFromDate, this.todayIso);
+      const outgoingDays = getCalendarDays(this.transitionFromDate, this.todayIso);
       return this.transitionDirection === "next" ? [...outgoingDays, ...this.days] : [...this.days, ...outgoingDays];
     },
     rangeLabel() {
@@ -136,7 +90,7 @@ export default {
     },
     navigateToRange(value) {
       if (this.isRangeTransitioning) return;
-      const date = localDate(value);
+      const date = calendarDate(value);
       const dateIso = isoDate(date);
       const query = { ...this.$route.query };
       if (dateIso === this.todayIso) delete query.date;
@@ -145,7 +99,8 @@ export default {
       this.$router.push({ name: "work", query });
     },
     changeRange(amount) {
-      this.navigateToRange(shiftDays(this.focusDate, amount * RANGE_DAY_COUNT));
+      if (!canMoveWorkRange(this.focusDate, amount, this.rangeBounds)) return;
+      this.navigateToRange(moveWorkRange(this.focusDate, amount, this.rangeBounds));
     },
     goToday() {
       this.navigateToRange(this.today);
@@ -183,7 +138,7 @@ export default {
       const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
       this.midnightTimer = window.setTimeout(
         () => {
-          this.today = localDate();
+          this.today = calendarDate();
           this.normalizeDateQuery(this.$route.query.date);
           this.scheduleTodayRefresh();
         },
@@ -202,7 +157,7 @@ export default {
 
       <JMButton
         aria-label="Previous three days"
-        :disabled="isRangeTransitioning"
+        :disabled="isRangeTransitioning || !canGoPrevious"
         icon-name="arrow-left"
         view="secondary"
         @click="changeRange(-1)"
@@ -210,7 +165,7 @@ export default {
       <JMButton :disabled="isRangeTransitioning" text="Today" view="secondary" @click="goToday" />
       <JMButton
         aria-label="Next three days"
-        :disabled="isRangeTransitioning"
+        :disabled="isRangeTransitioning || !canGoNext"
         icon-name="arrow-right"
         view="secondary"
         @click="changeRange(1)"

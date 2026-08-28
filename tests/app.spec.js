@@ -1,5 +1,13 @@
 import { expect, test } from "@playwright/test";
 
+function localIsoDate(dayOffset = 0) {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + dayOffset);
+  const pad = (part) => String(part).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
 test("the root page is the three-day work calendar", async ({ page }) => {
   await page.goto("/");
 
@@ -40,7 +48,15 @@ test("the root page is the three-day work calendar", async ({ page }) => {
   await expect(page.locator(".week-day")).toHaveCount(3);
   await expect(page.locator(".week-day--today")).toHaveCount(1);
   await expect(page.getByRole("heading", { level: 1, name: "Work" })).toHaveCount(1);
-  await expect(page.locator(".week-day > p")).toHaveCount(7);
+  await expect(page.locator(".week-day > p")).toHaveText([
+    "Triage inbox",
+    "Prepare the quarterly planning notes",
+    "Daily stand-up",
+    "Review pull requests",
+    "Pair on calendar navigation",
+    "Update the team roadmap",
+    "Document the release process and share it with the team",
+  ]);
   expect(await page.evaluate(() => localStorage.length)).toBe(0);
 
   const hashedVueAttributes = await page
@@ -79,14 +95,15 @@ test("navigation and profile open placeholder pages", async ({ page }) => {
 });
 
 test("the work page navigates in three-day ranges", async ({ page }) => {
-  await page.goto("/?date=2000-01-02");
+  await page.goto(`/?date=${localIsoDate(-2)}`);
 
   await expect(page.locator(".week-day__heading")).toHaveCount(3);
   expect(await page.locator(".week-day__heading").evaluateAll((days) => days.map((day) => day.dateTime))).toEqual([
-    "2000-01-01",
-    "2000-01-02",
-    "2000-01-03",
+    localIsoDate(-3),
+    localIsoDate(-2),
+    localIsoDate(-1),
   ]);
+  await expect(page.locator(".week-day > p")).toHaveCount(2);
 
   const nextButton = page.getByRole("button", { name: "Next three days" });
   const previousButton = page.getByRole("button", { name: "Previous three days" });
@@ -99,21 +116,44 @@ test("the work page navigates in three-day ranges", async ({ page }) => {
   await nextButton.click();
   await expect(page.locator(".week-grid")).toHaveClass(/week-grid--next/);
   await expect(page.locator(".week-day__heading")).toHaveCount(6);
-  await expect.poll(() => new URL(page.url()).searchParams.get("date")).toBe("2000-01-05");
-  await expect(page.locator(".week-day__heading").first()).toHaveAttribute("datetime", "2000-01-04");
+  await expect.poll(() => new URL(page.url()).searchParams.get("date")).toBe(localIsoDate(1));
+  await expect(page.locator(".week-day__heading").first()).toHaveAttribute("datetime", localIsoDate(0));
   await expect(page.locator(".week-day__heading")).toHaveCount(3);
 
   await previousButton.click();
   await expect(page.locator(".week-grid")).toHaveClass(/week-grid--previous/);
   await expect(page.locator(".week-day__heading")).toHaveCount(6);
-  await expect.poll(() => new URL(page.url()).searchParams.get("date")).toBe("2000-01-02");
+  await expect.poll(() => new URL(page.url()).searchParams.get("date")).toBe(localIsoDate(-2));
 
   await page.getByRole("link", { name: "Skip to content" }).focus();
   await page.keyboard.press("Enter");
-  expect(new URL(page.url()).searchParams.get("date")).toBe("2000-01-02");
+  expect(new URL(page.url()).searchParams.get("date")).toBe(localIsoDate(-2));
   expect(new URL(page.url()).hash).toBe("#main-content");
-  await expect(page.locator(".week-day__heading").first()).toHaveAttribute("datetime", "2000-01-01");
+  await expect(page.locator(".week-day__heading").first()).toHaveAttribute("datetime", localIsoDate(-3));
   await expect(page.locator(".week-day__heading")).toHaveCount(3);
+});
+
+test("work history stops at the first checked task", async ({ page }) => {
+  await page.goto(`/?date=${localIsoDate(-3)}`);
+
+  const previousButton = page.getByRole("button", { name: "Previous three days" });
+  await previousButton.click();
+
+  await expect.poll(() => new URL(page.url()).searchParams.get("date")).toBe(localIsoDate(-6));
+  await expect(page.locator(".week-day__heading").first()).toHaveAttribute("datetime", localIsoDate(-7));
+  await expect(page.locator(".week-day").first().locator("p")).toHaveText("Set up the work calendar");
+  await expect(previousButton).toBeDisabled();
+});
+
+test("future work is limited to fourteen days from today", async ({ page }) => {
+  await page.goto(`/?date=${localIsoDate(11)}`);
+
+  const nextButton = page.getByRole("button", { name: "Next three days" });
+  await nextButton.click();
+
+  await expect.poll(() => new URL(page.url()).searchParams.get("date")).toBe(localIsoDate(13));
+  await expect(page.locator(".week-day__heading").last()).toHaveAttribute("datetime", localIsoDate(14));
+  await expect(nextButton).toBeDisabled();
 });
 
 test("work statuses are saved by date and update today's navigation icon", async ({ page }) => {

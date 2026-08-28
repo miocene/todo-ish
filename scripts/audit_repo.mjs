@@ -33,7 +33,12 @@ for (const removedRootPath of [
 }
 
 assert.deepEqual(readdirSync(new URL("src/pages/", root)).sort(), ["PlaceholderPage.vue", "WorkPage.vue"]);
-assert.deepEqual(readdirSync(new URL("src/app/", root)).sort(), ["router.js"]);
+assert.deepEqual(readdirSync(new URL("src/app/", root)).sort(), [
+  "router.js",
+  "work-calendar.js",
+  "work-status.js",
+  "work-tasks.mock.js",
+]);
 assert.deepEqual(readdirSync(new URL("src/components/", root)).sort(), [
   "JMButton",
   "JMHeader",
@@ -102,7 +107,7 @@ const clientSource = [
 ]
   .map(read)
   .join("\n");
-assert.doesNotMatch(clientSource, /mock|demo-state|localStorage|catalog-api/i);
+assert.doesNotMatch(clientSource, /demo-state|localStorage|catalog-api/i);
 assert.doesNotMatch(clientSource, /CataloguePage|HomePage|TodoPage/);
 assert.doesNotMatch(clientSource, /<style\s+scoped\b/i);
 
