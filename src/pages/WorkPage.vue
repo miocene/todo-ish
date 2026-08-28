@@ -211,7 +211,8 @@ export default {
             </option>
           </select>
         </label>
-        <p v-for="task in day.tasks" :key="task.id">{{ task.title }}</p>
+        <JMIcon v-if="!day.tasks" name="spinner" label="Loading tasks" />
+        <p v-else v-for="task in day.tasks" :key="task.id">{{ task.title }}</p>
       </div>
     </div>
   </section>
