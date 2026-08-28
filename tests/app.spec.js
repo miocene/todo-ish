@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("the root page is the empty three-day work calendar", async ({ page }) => {
+test("the root page is the three-day work calendar", async ({ page }) => {
   await page.goto("/");
 
   await expect(page).toHaveTitle("Work — Done-ish");
@@ -40,7 +40,7 @@ test("the root page is the empty three-day work calendar", async ({ page }) => {
   await expect(page.locator(".week-day")).toHaveCount(3);
   await expect(page.locator(".week-day--today")).toHaveCount(1);
   await expect(page.getByRole("heading", { level: 1, name: "Work" })).toHaveCount(1);
-  await expect(page.locator(".week-task")).toHaveCount(0);
+  await expect(page.locator(".week-day > p")).toHaveCount(7);
   expect(await page.evaluate(() => localStorage.length)).toBe(0);
 
   const hashedVueAttributes = await page
@@ -97,10 +97,15 @@ test("the work page navigates in three-day ranges", async ({ page }) => {
   await expect(previousButton.locator("use")).toHaveAttribute("href", /#icon-arrow-left$/);
 
   await nextButton.click();
+  await expect(page.locator(".week-grid")).toHaveClass(/week-grid--next/);
+  await expect(page.locator(".week-day__heading")).toHaveCount(6);
   await expect.poll(() => new URL(page.url()).searchParams.get("date")).toBe("2000-01-05");
   await expect(page.locator(".week-day__heading").first()).toHaveAttribute("datetime", "2000-01-04");
+  await expect(page.locator(".week-day__heading")).toHaveCount(3);
 
   await previousButton.click();
+  await expect(page.locator(".week-grid")).toHaveClass(/week-grid--previous/);
+  await expect(page.locator(".week-day__heading")).toHaveCount(6);
   await expect.poll(() => new URL(page.url()).searchParams.get("date")).toBe("2000-01-02");
 
   await page.getByRole("link", { name: "Skip to content" }).focus();
@@ -108,12 +113,13 @@ test("the work page navigates in three-day ranges", async ({ page }) => {
   expect(new URL(page.url()).searchParams.get("date")).toBe("2000-01-02");
   expect(new URL(page.url()).hash).toBe("#main-content");
   await expect(page.locator(".week-day__heading").first()).toHaveAttribute("datetime", "2000-01-01");
+  await expect(page.locator(".week-day__heading")).toHaveCount(3);
 });
 
 test("work statuses are saved by date and update today's navigation icon", async ({ page }) => {
   await page.goto("/");
 
-  const statusSelect = page.getByRole("combobox", { name: /^Status for / });
+  const statusSelect = page.getByRole("combobox", { name: /^Status for / }).nth(1);
   const workNavigationIcon = page.getByRole("link", { name: "Work" }).locator("use");
 
   await statusSelect.selectOption("pto");
