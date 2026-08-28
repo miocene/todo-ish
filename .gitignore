@@ -1,5 +1,6 @@
 node_modules/
 dist/
+.vite/
 .venv/
 .ruff_cache/
 playwright-report/
@@ -7,3 +8,20 @@ test-results/
 __pycache__/
 *.pyc
 .DS_Store
+local-notes/
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+.npmrc
+*.pem
+*.key
+*.p12
+*.pfx
+*credentials*.json
+service-account*.json
+secrets/
+id_rsa
+id_ecdsa
+id_ed25519

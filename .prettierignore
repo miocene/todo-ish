@@ -4,5 +4,6 @@ dist
 .ruff_cache
 playwright-report
 test-results
-catalogs/*.snapshot.json
+local-notes
+backend/catalogs/*.snapshot.json
 yarn.lock

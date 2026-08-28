@@ -2,31 +2,26 @@
 import JMIcon from "../JMIcon/JMIcon.vue";
 import "./jm-button.css";
 
-const viewClasses = {
-  primary: "button__primary",
-  secondary: "button__secondary",
-  ghost: "button__ghost",
-};
+const BUTTON_VIEWS = ["primary", "secondary", "ghost"];
 
 export default {
   name: "JMButton",
   components: { JMIcon },
   props: {
-    icon: { type: String, default: "" },
-    type: { type: String, default: "button" },
-    view: { type: String, default: "primary" },
-  },
-  computed: {
-    buttonClass() {
-      return viewClasses[this.view] || viewClasses.primary;
+    iconName: { type: String, default: "" },
+    text: { type: String, default: "" },
+    view: {
+      type: String,
+      default: "primary",
+      validator: (value) => BUTTON_VIEWS.includes(value),
     },
   },
 };
 </script>
 
 <template>
-  <button class="button" :class="buttonClass" :type="type">
-    <JMIcon v-if="icon" :name="icon" />
-    <slot />
+  <button class="jm-button" :class="`jm-button--${view}`" type="button">
+    <JMIcon v-if="iconName" :name="iconName" />
+    <span v-if="text">{{ text }}</span>
   </button>
 </template>

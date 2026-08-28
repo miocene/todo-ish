@@ -1,48 +1,53 @@
 <script>
 import { RouterView } from "vue-router";
+import JMButton from "./components/JMButton/JMButton.vue";
 import JMHeader from "./components/JMHeader/JMHeader.vue";
-import PrimaryNav from "./components/PrimaryNav.vue";
-import SearchPalette from "./components/SearchPalette.vue";
+import JMNavigation from "./components/JMNavigation/JMNavigation.vue";
 
 export default {
   name: "App",
-  components: { JMHeader, PrimaryNav, RouterView, SearchPalette },
+  components: { JMButton, JMHeader, JMNavigation, RouterView },
   data() {
-    return { searchOpen: false };
-  },
-  watch: {
-    "$route.path"() {
-      this.updateTitle();
-      this.$nextTick(() => this.$refs.mainContent?.focus({ preventScroll: true }));
-    },
+    return { syncError: "" };
   },
   mounted() {
-    window.addEventListener("keydown", this.keyboard);
-    this.updateTitle();
+    window.addEventListener("done-ish:sync-error", this.handleSyncError);
   },
   beforeUnmount() {
-    window.removeEventListener("keydown", this.keyboard);
+    window.removeEventListener("done-ish:sync-error", this.handleSyncError);
+  },
+  watch: {
+    "$route.meta.title": {
+      immediate: true,
+      handler(title) {
+        document.title = title ? `${title} — Done-ish` : "Done-ish";
+      },
+    },
   },
   methods: {
-    keyboard(event) {
-      const isEditable = event.target?.closest?.("input, textarea, select, [contenteditable], [role='textbox']");
-      if (event.defaultPrevented || event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey || isEditable)
-        return;
-
-      event.preventDefault();
-      this.searchOpen = true;
+    handleSyncError(event) {
+      this.syncError = event.detail?.message || "Changes could not be saved.";
     },
-    updateTitle() {
-      document.title = this.$route.meta.title ? `${this.$route.meta.title} — Done-ish` : "Done-ish";
+    reload() {
+      window.location.reload();
     },
   },
 };
 </script>
 
 <template>
-  <a class="skip-link" href="#main-content">Skip to main content</a>
-  <JMHeader @search="searchOpen = true" />
-  <main id="main-content" ref="mainContent" tabindex="-1"><RouterView /></main>
-  <PrimaryNav :section="$route.meta.section || ''" />
-  <SearchPalette :open="searchOpen" @close="searchOpen = false" />
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <aside v-if="syncError" class="app-sync-error" role="alert">
+    <p>{{ syncError }}</p>
+    <JMButton text="Reload" view="secondary" @click="reload" />
+  </aside>
+
+  <JMHeader />
+
+  <main id="main-content" tabindex="-1">
+    <RouterView />
+  </main>
+
+  <JMNavigation />
 </template>

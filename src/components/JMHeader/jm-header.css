@@ -1,45 +1,35 @@
-.header {
+.jm-header {
   position: sticky;
-  top: 0;
+  inset-block-start: 0;
   z-index: 1;
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  block-size: var(--size-header);
+  min-block-size: var(--size-header);
   background: color-mix(in srgb, var(--color-bg-default) 92%, transparent);
   backdrop-filter: blur(var(--blur-m));
-
-  .button {
-    margin-left: auto;
-  }
 }
 
-.header__brand {
+.jm-header__logo {
   display: inline-flex;
   align-items: baseline;
-  line-height: 1.2;
+  margin-inline-end: auto;
+  line-height: 1;
   border-radius: var(--radius-control);
-  outline-offset: var(--space-3);
 }
 
-.header__brand-main,
-.header__brand-ish {
-  font-size: 24px;
+.jm-header__logo-main,
+.jm-header__logo-suffix {
+  font-size: 1.25rem;
+
+  /* TODO */
 }
 
-.header__brand-main {
+.jm-header__logo-main {
   font-weight: var(--font-weight-bold);
 }
 
-.header__brand-ish {
+.jm-header__logo-suffix {
   color: var(--color-text-secondary);
   font-style: italic;
-}
-
-/* TODO: replace with real avatar */
-.header__avatar {
-  inline-size: 32px;
-  block-size: 32px;
-  background: var(--ink);
-  border-radius: 50%;
 }

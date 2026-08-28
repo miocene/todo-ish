@@ -11,15 +11,13 @@ export default {
 </script>
 
 <template>
-  <header class="header">
-    <RouterLink class="header__brand" :to="{ name: 'home' }" aria-label="Done-ish, home">
-      <span class="header__brand-main">Done</span><span class="header__brand-ish">-ish</span>
+  <header class="jm-header">
+    <RouterLink class="jm-header__logo" :to="{ name: 'work' }" aria-label="ToDo-ish, Work">
+      <span class="jm-header__logo-main">ToDo</span><span class="jm-header__logo-suffix">-ish</span>
     </RouterLink>
 
-    <JMButton icon="search" view="ghost" aria-label="Search and commands" @click="$emit('search')">
-      <kbd>/</kbd>
-    </JMButton>
+    <JMButton aria-label="Search" icon-name="search" view="ghost" @click="$emit('search')" />
 
-    <RouterLink class="header__avatar" :to="{ name: 'settings' }" aria-label="Open settings" />
+    <JMButton aria-label="Profile" icon-name="user" view="ghost" @click="$router.push({ name: 'profile' })" />
   </header>
 </template>

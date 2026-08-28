@@ -1,0 +1,17 @@
+{
+  "name": "done-ish-api",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/index.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "pg": "8.23.0"
+  },
+  "packageManager": "yarn@1.22.22"
+}

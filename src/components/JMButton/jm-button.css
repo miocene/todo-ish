@@ -1,47 +1,45 @@
-.button {
-  display: flex;
+.jm-button {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: var(--space-2);
   height: var(--size-control);
-  min-width: var(--size-control);
-  padding: 0;
+  padding-inline: var(--space-3);
+  color: var(--jm-button-text);
+  background: var(--jm-button-background);
+  border: none;
   border-radius: var(--radius-control);
   corner-shape: var(--corner-shape-default);
-  /* TODO: add transitions */
-  /* TODO: add focus */
 }
 
-.button__primary {
-  background-color: var(--control-primary-background);
-  color: var(--control-primary-text);
-
-  &:hover {
-    background-color: var(--control-primary-background-hover);
-    color: var(--control-primary-text-hover);
-  }
+.jm-button--primary {
+  --jm-button-background: var(--control-primary-background);
+  --jm-button-background-hover: var(--control-primary-background-hover);
+  --jm-button-text: var(--control-primary-text);
+  --jm-button-text-hover: var(--control-primary-text-hover);
 }
 
-.button__secondary {
-  background-color: var(--control-secondary-background);
-  color: var(--control-secondary-text);
-
-  &:hover {
-    background-color: var(--control-secondary-background-hover);
-    color: var(--control-secondary-text-hover);
-  }
+.jm-button--secondary {
+  --jm-button-background: var(--control-secondary-background);
+  --jm-button-background-hover: var(--control-secondary-background-hover);
+  --jm-button-text: var(--control-secondary-text);
+  --jm-button-text-hover: var(--control-secondary-text-hover);
 }
 
-.button__ghost {
-  background-color: var(--control-ghost-background);
-  color: var(--control-ghost-text);
-
-  &:hover {
-    background-color: var(--control-ghost-background-hover);
-    color: var(--control-ghost-text-hover);
-  }
+.jm-button--ghost {
+  --jm-button-background: var(--control-ghost-background);
+  --jm-button-background-hover: var(--control-ghost-background-hover);
+  --jm-button-text: var(--control-ghost-text);
+  --jm-button-text-hover: var(--control-ghost-text-hover);
 }
 
-.button__label,
-.button kbd {
-  display: none;
+.jm-button:not(:disabled):is(:hover, :focus-visible) {
+  color: var(--jm-button-text-hover);
+  background: var(--jm-button-background-hover);
+}
+
+.jm-button:disabled {
+  /* TODO */
+  opacity: 0.55;
+  cursor: not-allowed;
 }

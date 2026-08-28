@@ -6,9 +6,9 @@ import globals from "globals";
 export default [
   {
     ignores: [
-      ".ruff_cache/**",
-      ".venv/**",
-      "catalogs/*.snapshot.json",
+      "**/.ruff_cache/**",
+      "**/.venv/**",
+      "backend/catalogs/*.snapshot.json",
       "dist/**",
       "node_modules/**",
       "playwright-report/**",
@@ -29,7 +29,7 @@ export default [
     },
   },
   {
-    files: ["*.{js,mjs}", "scripts/**/*.{js,mjs}", "tests/**/*.js"],
+    files: ["*.{js,mjs}", "backend/**/*.{js,mjs}", "scripts/**/*.{js,mjs}", "tests/**/*.js"],
     languageOptions: {
       ecmaVersion: "latest",
       globals: globals.node,

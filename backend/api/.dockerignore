@@ -1,0 +1,16 @@
+node_modules
+test
+*.log
+.env
+.env.*
+.npmrc
+*.key
+*.p12
+*.pem
+*.pfx
+*credentials*.json
+service-account*.json
+secrets
+id_ecdsa
+id_ed25519
+id_rsa

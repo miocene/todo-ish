@@ -1,0 +1,403 @@
+{
+  "id": "0352e686-e3ae-4f9b-a267-c7958b2c84b5",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.filament_catalog_entries": {
+      "name": "filament_catalog_entries",
+      "schema": "",
+      "columns": {
+        "snapshot_id": {
+          "name": "snapshot_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "catalog_id": {
+          "name": "catalog_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "family": {
+          "name": "family",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "color_name": {
+          "name": "color_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_code": {
+          "name": "product_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "swatch": {
+          "name": "swatch",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "filament_catalog_entries_catalog_id_idx": {
+          "name": "filament_catalog_entries_catalog_id_idx",
+          "columns": [
+            {
+              "expression": "catalog_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "filament_catalog_entries_family_idx": {
+          "name": "filament_catalog_entries_family_idx",
+          "columns": [
+            {
+              "expression": "family",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "filament_catalog_entries_snapshot_id_filament_catalog_snapshots_id_fk": {
+          "name": "filament_catalog_entries_snapshot_id_filament_catalog_snapshots_id_fk",
+          "tableFrom": "filament_catalog_entries",
+          "tableTo": "filament_catalog_snapshots",
+          "columnsFrom": ["snapshot_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "filament_catalog_entries_snapshot_id_catalog_id_pk": {
+          "name": "filament_catalog_entries_snapshot_id_catalog_id_pk",
+          "columns": ["snapshot_id", "catalog_id"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "filament_catalog_entries_catalog_id_not_blank": {
+          "name": "filament_catalog_entries_catalog_id_not_blank",
+          "value": "length(trim(\"filament_catalog_entries\".\"catalog_id\")) > 0"
+        },
+        "filament_catalog_entries_family_not_blank": {
+          "name": "filament_catalog_entries_family_not_blank",
+          "value": "length(trim(\"filament_catalog_entries\".\"family\")) > 0"
+        },
+        "filament_catalog_entries_color_name_not_blank": {
+          "name": "filament_catalog_entries_color_name_not_blank",
+          "value": "length(trim(\"filament_catalog_entries\".\"color_name\")) > 0"
+        },
+        "filament_catalog_entries_swatch_not_blank": {
+          "name": "filament_catalog_entries_swatch_not_blank",
+          "value": "length(trim(\"filament_catalog_entries\".\"swatch\")) > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.filament_catalog_snapshots": {
+      "name": "filament_catalog_snapshots",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "content_sha256": {
+          "name": "content_sha256",
+          "type": "char(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entry_count": {
+          "name": "entry_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "imported_at": {
+          "name": "imported_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "filament_catalog_snapshots_imported_at_idx": {
+          "name": "filament_catalog_snapshots_imported_at_idx",
+          "columns": [
+            {
+              "expression": "imported_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "filament_catalog_snapshots_content_sha256_unique": {
+          "name": "filament_catalog_snapshots_content_sha256_unique",
+          "nullsNotDistinct": false,
+          "columns": ["content_sha256"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "filament_catalog_snapshots_source_not_blank": {
+          "name": "filament_catalog_snapshots_source_not_blank",
+          "value": "length(trim(\"filament_catalog_snapshots\".\"source\")) > 0"
+        },
+        "filament_catalog_snapshots_entry_count_positive": {
+          "name": "filament_catalog_snapshots_entry_count_positive",
+          "value": "\"filament_catalog_snapshots\".\"entry_count\" > 0"
+        },
+        "filament_catalog_snapshots_sha256_format": {
+          "name": "filament_catalog_snapshots_sha256_format",
+          "value": "\"filament_catalog_snapshots\".\"content_sha256\" ~ '^[0-9a-f]{64}$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.floss_catalog_entries": {
+      "name": "floss_catalog_entries",
+      "schema": "",
+      "columns": {
+        "snapshot_id": {
+          "name": "snapshot_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "catalog_id": {
+          "name": "catalog_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "number": {
+          "name": "number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "color_name": {
+          "name": "color_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "color_hex": {
+          "name": "color_hex",
+          "type": "char(7)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "purchase_url": {
+          "name": "purchase_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "floss_catalog_entries_catalog_id_idx": {
+          "name": "floss_catalog_entries_catalog_id_idx",
+          "columns": [
+            {
+              "expression": "catalog_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "floss_catalog_entries_number_idx": {
+          "name": "floss_catalog_entries_number_idx",
+          "columns": [
+            {
+              "expression": "number",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "floss_catalog_entries_snapshot_id_floss_catalog_snapshots_id_fk": {
+          "name": "floss_catalog_entries_snapshot_id_floss_catalog_snapshots_id_fk",
+          "tableFrom": "floss_catalog_entries",
+          "tableTo": "floss_catalog_snapshots",
+          "columnsFrom": ["snapshot_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "floss_catalog_entries_snapshot_id_catalog_id_pk": {
+          "name": "floss_catalog_entries_snapshot_id_catalog_id_pk",
+          "columns": ["snapshot_id", "catalog_id"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "floss_catalog_entries_catalog_id_not_blank": {
+          "name": "floss_catalog_entries_catalog_id_not_blank",
+          "value": "length(trim(\"floss_catalog_entries\".\"catalog_id\")) > 0"
+        },
+        "floss_catalog_entries_number_not_blank": {
+          "name": "floss_catalog_entries_number_not_blank",
+          "value": "length(trim(\"floss_catalog_entries\".\"number\")) > 0"
+        },
+        "floss_catalog_entries_color_name_not_blank": {
+          "name": "floss_catalog_entries_color_name_not_blank",
+          "value": "length(trim(\"floss_catalog_entries\".\"color_name\")) > 0"
+        },
+        "floss_catalog_entries_color_hex_format": {
+          "name": "floss_catalog_entries_color_hex_format",
+          "value": "\"floss_catalog_entries\".\"color_hex\" ~ '^#[0-9A-F]{6}$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.floss_catalog_snapshots": {
+      "name": "floss_catalog_snapshots",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "content_sha256": {
+          "name": "content_sha256",
+          "type": "char(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entry_count": {
+          "name": "entry_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "imported_at": {
+          "name": "imported_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "floss_catalog_snapshots_imported_at_idx": {
+          "name": "floss_catalog_snapshots_imported_at_idx",
+          "columns": [
+            {
+              "expression": "imported_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "floss_catalog_snapshots_content_sha256_unique": {
+          "name": "floss_catalog_snapshots_content_sha256_unique",
+          "nullsNotDistinct": false,
+          "columns": ["content_sha256"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "floss_catalog_snapshots_source_not_blank": {
+          "name": "floss_catalog_snapshots_source_not_blank",
+          "value": "length(trim(\"floss_catalog_snapshots\".\"source\")) > 0"
+        },
+        "floss_catalog_snapshots_entry_count_positive": {
+          "name": "floss_catalog_snapshots_entry_count_positive",
+          "value": "\"floss_catalog_snapshots\".\"entry_count\" > 0"
+        },
+        "floss_catalog_snapshots_sha256_format": {
+          "name": "floss_catalog_snapshots_sha256_format",
+          "value": "\"floss_catalog_snapshots\".\"content_sha256\" ~ '^[0-9a-f]{64}$'"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
