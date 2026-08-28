@@ -1,6 +1,7 @@
 <script>
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMIcon from "../components/JMIcon/JMIcon.vue";
+import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
 import {
   calendarDate,
   canMoveWorkRange,
@@ -18,7 +19,7 @@ const BACKLOG_DROP_TARGET = "backlog";
 
 export default {
   name: "WorkPage",
-  components: { JMButton, JMIcon },
+  components: { JMButton, JMIcon, JMTaskCard },
   data() {
     const workTasks = [...getAllWorkTasks()];
     const nextTaskId =
@@ -156,8 +157,8 @@ export default {
     canDragTask(date) {
       return this.canEditTask(date);
     },
-    updateTaskTitle(task, event) {
-      this.taskTitles[task.id] = event.target.value;
+    updateTaskTitle(task, title) {
+      this.taskTitles[task.id] = title;
       this.saveTasks();
     },
     handleTaskTitleEnter(task, date, columnTasks, event) {
@@ -186,8 +187,7 @@ export default {
         })),
       );
     },
-    setTaskCompletion(task, event) {
-      const completed = event.target.checked;
+    setTaskCompletion(task, completed) {
       this.taskCompletions[task.id] = completed ? new Date().toISOString() : null;
       const taskDate = this.taskAssignments[task.id];
       if (completed && taskDate === null) {
@@ -392,57 +392,27 @@ export default {
               </select>
             </label>
             <JMIcon v-if="!day.tasks" name="spinner" label="Loading tasks" />
-            <p
+            <JMTaskCard
               v-else
               v-for="task in day.tasks"
               :key="task.id"
-              class="task-item"
-              :class="{ 'task-item--completed': isTaskComplete(task) }"
-            >
-              <span
-                v-if="canDragTask(day.iso)"
-                class="task-item__drag-handle"
-                draggable="true"
-                aria-hidden="true"
-                @dragend="endTaskDrag"
-                @dragstart="startTaskDrag(task, $event)"
-              >
-                <JMIcon name="grip" />
-              </span>
-              <span v-else class="task-item__drag-handle-placeholder" />
-              <label class="calendar__status" :for="taskCheckboxId(task)">
-                Complete {{ taskTitle(task) || "untitled task" }}
-              </label>
-              <input
-                :id="taskCheckboxId(task)"
-                class="task-item__checkbox"
-                type="checkbox"
-                :checked="isTaskComplete(task)"
-                @change="setTaskCompletion(task, $event)"
-              />
-              <template v-if="canEditTask(day.iso)">
-                <label class="calendar__status" :for="taskInputId(task)">Task title</label>
-                <textarea
-                  :id="taskInputId(task)"
-                  class="task-item__title"
-                  name="task-title"
-                  rows="1"
-                  enterkeyhint="next"
-                  :value="taskTitle(task)"
-                  @input="updateTaskTitle(task, $event)"
-                  @keydown.enter="handleTaskTitleEnter(task, day.iso, day.tasks, $event)"
-                />
-              </template>
-              <span v-else class="task-item__title">{{ taskTitle(task) }}</span>
-              <button
-                class="task-item__pin"
-                type="button"
-                :aria-label="`Move ${taskTitle(task) || 'untitled task'} to backlog`"
-                @click="toggleTaskAssignment(task)"
-              >
-                <JMIcon name="pinned" />
-              </button>
-            </p>
+              :task-id="task.id"
+              :title="taskTitle(task)"
+              :title-input-id="taskInputId(task)"
+              :completion-input-id="taskCheckboxId(task)"
+              :completed="isTaskComplete(task)"
+              :editable="canEditTask(day.iso)"
+              :can-drag="canDragTask(day.iso)"
+              reserve-drag-space
+              pin-icon="pinned"
+              :pin-label="`Move ${taskTitle(task) || 'untitled task'} to backlog`"
+              @drag-end="endTaskDrag"
+              @drag-start="startTaskDrag(task, $event)"
+              @enter="handleTaskTitleEnter(task, day.iso, day.tasks, $event)"
+              @pin="toggleTaskAssignment(task)"
+              @update:completed="setTaskCompletion(task, $event)"
+              @update:title="updateTaskTitle(task, $event)"
+            />
           </div>
         </div>
       </div>
@@ -459,51 +429,24 @@ export default {
           <h2 id="backlog-title">Backlog</h2>
         </header>
         <p v-if="backlogTasks.length === 0" class="backlog__empty">No backlog tasks</p>
-        <p
+        <JMTaskCard
           v-for="task in backlogTasks"
           :key="task.id"
-          class="task-item"
-          :class="{ 'task-item--completed': isTaskComplete(task) }"
-        >
-          <span
-            class="task-item__drag-handle"
-            draggable="true"
-            aria-hidden="true"
-            @dragend="endTaskDrag"
-            @dragstart="startTaskDrag(task, $event)"
-          >
-            <JMIcon name="grip" />
-          </span>
-          <label class="calendar__status" :for="taskCheckboxId(task)">
-            Complete {{ taskTitle(task) || "untitled task" }}
-          </label>
-          <input
-            :id="taskCheckboxId(task)"
-            class="task-item__checkbox"
-            type="checkbox"
-            :checked="isTaskComplete(task)"
-            @change="setTaskCompletion(task, $event)"
-          />
-          <label class="calendar__status" :for="taskInputId(task)">Task title</label>
-          <textarea
-            :id="taskInputId(task)"
-            class="task-item__title"
-            name="task-title"
-            rows="1"
-            enterkeyhint="next"
-            :value="taskTitle(task)"
-            @input="updateTaskTitle(task, $event)"
-            @keydown.enter="handleTaskTitleEnter(task, null, backlogTasks, $event)"
-          />
-          <button
-            class="task-item__pin"
-            type="button"
-            :aria-label="`Mark ${taskTitle(task) || 'untitled task'} ready for today`"
-            @click="toggleTaskAssignment(task)"
-          >
-            <JMIcon name="pin" />
-          </button>
-        </p>
+          :task-id="task.id"
+          :title="taskTitle(task)"
+          :title-input-id="taskInputId(task)"
+          :completion-input-id="taskCheckboxId(task)"
+          :completed="isTaskComplete(task)"
+          can-drag
+          pin-icon="pin"
+          :pin-label="`Mark ${taskTitle(task) || 'untitled task'} ready for today`"
+          @drag-end="endTaskDrag"
+          @drag-start="startTaskDrag(task, $event)"
+          @enter="handleTaskTitleEnter(task, null, backlogTasks, $event)"
+          @pin="toggleTaskAssignment(task)"
+          @update:completed="setTaskCompletion(task, $event)"
+          @update:title="updateTaskTitle(task, $event)"
+        />
       </section>
     </div>
   </section>

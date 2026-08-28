@@ -44,6 +44,7 @@ assert.deepEqual(readdirSync(new URL("src/components/", root)).sort(), [
   "JMHeader",
   "JMIcon",
   "JMNavigation",
+  "JMTaskCard",
 ]);
 assert.deepEqual(readdirSync(new URL("src/components/JMButton/", root)).sort(), ["JMButton.vue", "jm-button.css"]);
 assert.deepEqual(readdirSync(new URL("src/components/JMHeader/", root)).sort(), ["JMHeader.vue", "jm-header.css"]);
@@ -75,6 +76,8 @@ assert.deepEqual(iconNames, [
   "holiday",
   "catalog",
   "grip",
+  "pin",
+  "pinned",
   "remove",
   "conference",
   "arrow-left",
@@ -90,6 +93,10 @@ assert.deepEqual(readdirSync(new URL("src/components/JMNavigation/", root)).sort
   "JMNavigation.vue",
   "jm-navigation.css",
 ]);
+assert.deepEqual(readdirSync(new URL("src/components/JMTaskCard/", root)).sort(), [
+  "JMTaskCard.vue",
+  "jm-task-card.css",
+]);
 for (const removedDirectory of ["src/data", "src/domain", "src/persistence", "src/shared"]) {
   assert.ok(!exists(removedDirectory), `${removedDirectory} should not remain in the work-only client`);
 }
@@ -102,6 +109,7 @@ const clientSource = [
   "src/components/JMHeader/JMHeader.vue",
   "src/components/JMIcon/JMIcon.vue",
   "src/components/JMNavigation/JMNavigation.vue",
+  "src/components/JMTaskCard/JMTaskCard.vue",
   "src/pages/PlaceholderPage.vue",
   "src/pages/WorkPage.vue",
 ]

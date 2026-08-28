@@ -132,7 +132,7 @@ test("task completion persists and unfinished tasks roll into today", async ({ p
 
   await today.getByRole("button", { name: "Move Triage inbox to backlog" }).click();
   const backlogCheckbox = page.locator(".backlog").getByRole("checkbox", { name: "Complete Triage inbox" });
-  await backlogCheckbox.check();
+  await backlogCheckbox.click();
   await expect(backlogCheckbox).toHaveCount(0);
 
   const todayCheckbox = today.getByRole("checkbox", { name: "Complete Triage inbox" });
@@ -192,7 +192,7 @@ test("the work page navigates in three-day ranges", async ({ page }) => {
     localIsoDate(-2),
     localIsoDate(-1),
   ]);
-  await expect(page.locator(".week-day > p")).toHaveCount(0);
+  await expect(page.locator(".week-day > .task-item")).toHaveCount(0);
 
   const nextButton = page.getByRole("button", { name: "Next three days" });
   const previousButton = page.getByRole("button", { name: "Previous three days" });

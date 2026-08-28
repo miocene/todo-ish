@@ -281,99 +281,9 @@ h3 {
   font-size: 0.75rem;
 }
 
-.task-item {
-  display: grid;
-  grid-template-columns: 16px 16px minmax(0, 1fr) 28px;
-  gap: var(--space-1);
-  align-items: start;
-  min-inline-size: 0;
-  margin-inline: var(--space-2);
-  padding: var(--space-2);
-  background: var(--color-bg-surface);
-  border: 1px solid var(--calendar-border);
-  border-radius: var(--radius-control);
-}
-
-.task-item__checkbox {
-  inline-size: 16px;
-  block-size: 16px;
-  margin: 2px 0 0;
-  accent-color: var(--calendar-accent);
-  cursor: pointer;
-}
-
-.task-item--completed .task-item__title {
-  color: var(--calendar-muted);
-  text-decoration: line-through;
-}
-
-.task-item__title {
-  min-inline-size: 0;
-  min-block-size: 1.4em;
-  padding: 0;
-  overflow-wrap: anywhere;
-  color: inherit;
-  font: inherit;
-  font-size: 0.8125rem;
-  background: transparent;
-  border: 0;
-  resize: none;
-  field-sizing: content;
-}
-
-textarea.task-item__title {
-  overflow: clip;
-}
-
-.task-item__title:focus-visible {
-  outline-offset: 1px;
-}
-
-.task-item__drag-handle,
-.task-item__drag-handle-placeholder {
-  display: inline-flex;
-  padding-block-start: 3px;
-}
-
-.task-item__drag-handle {
-  opacity: 0;
-  cursor: grab;
-}
-
-.task-item__drag-handle:active {
-  cursor: grabbing;
-}
-
-.task-item:is(:hover, :focus-within) .task-item__drag-handle {
-  opacity: 1;
-}
-
-.task-item__pin {
-  display: inline-grid;
-  place-items: center;
-  inline-size: 28px;
-  block-size: 28px;
-  padding: 0;
-  color: inherit;
-  background: transparent;
-  border: 0;
-  border-radius: var(--radius-control);
-  cursor: pointer;
-}
-
-.task-item__pin:hover {
-  background: var(--color-bg-selection);
-}
-
 @media (width <= 640px) {
   .week-day__heading {
     padding-inline: var(--space-1);
-  }
-}
-
-@media (hover: none) {
-  .task-item__drag-handle {
-    opacity: 1;
   }
 }
 
