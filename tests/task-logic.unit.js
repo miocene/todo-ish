@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { activityYears, buildActivityCalendar, groupActivityByDay } from "../src/app/activity.js";
 import { filamentSupplyStatus } from "../src/app/printing-supplies.js";
 import { flossSupplyStatus } from "../src/app/stitching-supplies.js";
 import {
@@ -8,6 +9,7 @@ import {
   finishTaskDraft,
   moveItemToEnd,
   nextEntityId,
+  setTaskCompletion,
   serializableTasks,
 } from "../src/app/task-list.js";
 
@@ -38,6 +40,33 @@ test("task list helpers preserve order and remove abandoned drafts", () => {
     tasks.map((task) => task.id),
     ["task-2", "task-1"],
   );
+});
+
+test("task completion records and clears its timestamp", () => {
+  const task = { id: "task-1", title: "Finish profile", completed: false };
+  setTaskCompletion(task, true, "2026-08-28T12:00:00.000Z");
+  assert.equal(task.completed, true);
+  assert.equal(task.completedAt, "2026-08-28T12:00:00.000Z");
+
+  setTaskCompletion(task, false);
+  assert.equal(task.completed, false);
+  assert.equal(task.completedAt, undefined);
+});
+
+test("activity helpers group completed items and build a complete calendar year", () => {
+  const items = [
+    { id: "one", date: "2026-08-28", completedAt: "2026-08-28T09:00:00.000Z" },
+    { id: "two", date: "2026-08-28", completedAt: "2026-08-28T10:00:00.000Z" },
+    { id: "old", date: "2024-02-01", completedAt: "2024-02-01T10:00:00.000Z" },
+  ];
+  const groups = groupActivityByDay(items, 2026);
+  const calendar = buildActivityCalendar(2026, groups);
+
+  assert.equal(groups.length, 1);
+  assert.equal(groups[0].items.length, 2);
+  assert.equal(calendar.days.filter((day) => day.count !== undefined).length, 365);
+  assert.equal(calendar.days.find((day) => day.date === "2026-08-28").level, 2);
+  assert.deepEqual(activityYears(items, 2026), [2026, 2025, 2024, 2023, 2022]);
 });
 
 test("completion moves are cancellable and use one timer per task", () => {

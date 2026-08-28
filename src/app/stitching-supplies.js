@@ -44,6 +44,7 @@ export function syncFlossShoppingList(projects, inventory = loadFlossInventory()
       id: existingTask?.id ?? `shopping-floss-${supply.catalogId}`,
       title: `${supply.label} floss · ${supply.missingSkeins} ${supply.missingSkeins === 1 ? "skein" : "skeins"}`,
       completed: existingTask?.completed ?? false,
+      ...(existingTask?.completedAt && { completedAt: existingTask.completedAt }),
       source: SHOPPING_SOURCE,
       flossId: supply.catalogId,
       productLink: supply.productLink,

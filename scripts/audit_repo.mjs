@@ -35,15 +35,17 @@ for (const removedRootPath of [
 assert.deepEqual(readdirSync(new URL("src/pages/", root)).sort(), [
   "CatalogPage.vue",
   "ChoresPage.vue",
-  "PlaceholderPage.vue",
+  "ProfilePage.vue",
   "ProjectTasksPage.vue",
   "ShoppingPage.vue",
   "TodoListsPage.vue",
   "WorkPage.vue",
   "catalog-page.css",
+  "profile-page.css",
   "task-pages.css",
 ]);
 assert.deepEqual(readdirSync(new URL("src/app/", root)).sort(), [
+  "activity.js",
   "filament-catalog.js",
   "floss-catalog.js",
   "managed-shopping.js",
@@ -133,6 +135,7 @@ for (const removedDirectory of ["src/data", "src/domain", "src/persistence", "sr
 const clientSource = [
   "src/App.vue",
   "src/main.js",
+  "src/app/activity.js",
   "src/app/filament-catalog.js",
   "src/app/floss-catalog.js",
   "src/app/managed-shopping.js",
@@ -151,7 +154,7 @@ const clientSource = [
   "src/components/JMTaskCard/JMTaskCard.vue",
   "src/pages/CatalogPage.vue",
   "src/pages/ChoresPage.vue",
-  "src/pages/PlaceholderPage.vue",
+  "src/pages/ProfilePage.vue",
   "src/pages/ProjectTasksPage.vue",
   "src/pages/ShoppingPage.vue",
   "src/pages/TodoListsPage.vue",

@@ -6,6 +6,7 @@ import {
   finishTaskDraft,
   moveItemToEnd,
   nextEntityId,
+  setTaskCompletion,
   serializableTasks,
 } from "../app/task-list.js";
 import { syncSupplyShoppingLists } from "../app/shopping-supplies.js";
@@ -40,7 +41,7 @@ export default {
     },
     updateCompleted(task, completed) {
       this.completionMoves.cancel(task.id);
-      task.completed = completed;
+      setTaskCompletion(task, completed);
       this.save();
       if (!completed) return;
       if (task.filamentId) {

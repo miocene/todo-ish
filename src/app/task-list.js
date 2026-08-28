@@ -17,6 +17,11 @@ export function completedTasksLast(tasks) {
   return [...tasks.filter((task) => !task.completed), ...tasks.filter((task) => task.completed)];
 }
 
+export function setTaskCompletion(task, completed, completedAt = new Date().toISOString()) {
+  task.completed = completed;
+  task.completedAt = completed ? completedAt : undefined;
+}
+
 export function nextEntityId(items, prefix) {
   const usedIds = new Set(items.map((item) => item.id));
   let index = items.length + 1;

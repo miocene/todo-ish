@@ -53,6 +53,7 @@ export function syncFilamentShoppingList(projects, inventory = loadFilamentInven
       id: existingTask?.id ?? `shopping-filament-${supply.catalogId}`,
       title: `${supply.label} filament · ${supply.missingSpools} ${supply.missingSpools === 1 ? "spool" : "spools"}`,
       completed: existingTask?.completed ?? false,
+      ...(existingTask?.completedAt && { completedAt: existingTask.completedAt }),
       source: SHOPPING_SOURCE,
       filamentId: supply.catalogId,
       productLink: supply.productLink,

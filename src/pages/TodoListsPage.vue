@@ -7,6 +7,7 @@ import {
   finishTaskDraft,
   moveItemToEnd,
   nextEntityId,
+  setTaskCompletion,
   serializableTasks,
 } from "../app/task-list.js";
 import JMButton from "../components/JMButton/JMButton.vue";
@@ -50,7 +51,7 @@ export default {
       this.save();
     },
     updateCompleted(list, task, completed) {
-      task.completed = completed;
+      setTaskCompletion(task, completed);
       this.save();
       this.scheduleCompletedTaskMove(list, task, completed);
     },

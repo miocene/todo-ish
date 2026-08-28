@@ -3,18 +3,10 @@ import { createRouter, createWebHistory } from "vue-router";
 const WorkPage = () => import("../pages/WorkPage.vue");
 const CatalogPage = () => import("../pages/CatalogPage.vue");
 const ChoresPage = () => import("../pages/ChoresPage.vue");
-const PlaceholderPage = () => import("../pages/PlaceholderPage.vue");
+const ProfilePage = () => import("../pages/ProfilePage.vue");
 const ProjectTasksPage = () => import("../pages/ProjectTasksPage.vue");
 const ShoppingPage = () => import("../pages/ShoppingPage.vue");
 const TodoListsPage = () => import("../pages/TodoListsPage.vue");
-
-const placeholderRoutes = [{ path: "/profile", name: "profile", title: "Profile" }].map(({ path, name, title }) => ({
-  path,
-  name,
-  component: PlaceholderPage,
-  props: { title },
-  meta: { title },
-}));
 
 export const routes = [
   {
@@ -69,7 +61,12 @@ export const routes = [
     },
     meta: { title: "Cross stitch" },
   },
-  ...placeholderRoutes,
+  {
+    path: "/profile",
+    name: "profile",
+    component: ProfilePage,
+    meta: { title: "Profile" },
+  },
   {
     path: "/:pathMatch(.*)*",
     redirect: { name: "work" },

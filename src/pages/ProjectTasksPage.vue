@@ -10,6 +10,7 @@ import {
   finishTaskDraft,
   moveItemToEnd,
   nextEntityId,
+  setTaskCompletion,
   serializableTasks,
 } from "../app/task-list.js";
 import JMButton from "../components/JMButton/JMButton.vue";
@@ -174,14 +175,18 @@ export default {
       this.save();
     },
     updateCrosses(task, value) {
+      const wasCompleted = task.completed;
       task.crosses = Math.max(0, Math.floor(Number(value) || 0));
       task.crossesDone = Math.min(task.crossesDone, task.crosses);
-      task.completed = task.crosses > 0 && task.crossesDone >= task.crosses;
+      const completed = task.crosses > 0 && task.crossesDone >= task.crosses;
+      if (completed !== wasCompleted) setTaskCompletion(task, completed);
       this.save();
     },
     updateCrossesDone(task, value) {
+      const wasCompleted = task.completed;
       task.crossesDone = Math.min(task.crosses, Math.max(0, Math.floor(Number(value) || 0)));
-      task.completed = task.crosses > 0 && task.crossesDone >= task.crosses;
+      const completed = task.crosses > 0 && task.crossesDone >= task.crosses;
+      if (completed !== wasCompleted) setTaskCompletion(task, completed);
       this.save();
     },
     removeStitchColor(project, task) {
@@ -189,7 +194,7 @@ export default {
       this.save();
     },
     updateCompleted(project, task, completed) {
-      task.completed = completed;
+      setTaskCompletion(task, completed);
       this.save();
       this.completionMoves.schedule(task.id, completed, () => {
         if (moveItemToEnd(project.tasks, task)) this.save();

@@ -211,6 +211,30 @@ test("navigation opens application pages", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1, name: "Profile" })).toBeVisible();
 });
 
+test("profile shows yearly task activity and newly checked items", async ({ page }) => {
+  const currentYear = new Date().getFullYear();
+  const previousYear = currentYear - 1;
+
+  await page.goto("/todos");
+  await page.getByRole("checkbox", { name: "Complete Renew passport" }).check();
+  await page.getByRole("button", { name: "Profile" }).click();
+
+  await expect(page.getByRole("navigation", { name: "Activity years" }).getByRole("link")).toHaveCount(5);
+  await expect(page.getByRole("link", { name: String(currentYear), exact: true })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  await expect(page.locator(".activity-graph__day:not(.activity-graph__day--outside)")).toHaveCount(
+    currentYear % 4 === 0 ? 366 : 365,
+  );
+  await expect(page.getByRole("heading", { level: 2, name: /checked items? in/ })).toContainText(String(currentYear));
+  await expect(page.getByText("Renew passport", { exact: true })).toBeVisible();
+
+  await page.getByRole("link", { name: String(previousYear), exact: true }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.get("year")).toBe(String(previousYear));
+  await expect(page.getByText(`No checked items in ${previousYear}.`)).toBeVisible();
+});
+
 test("task pages render their variants and save changes immediately", async ({ page }) => {
   await page.goto("/chores");
 

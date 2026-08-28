@@ -5,6 +5,7 @@ import {
   finishTaskDraft,
   moveItemToEnd,
   nextEntityId,
+  setTaskCompletion,
   serializableTasks,
 } from "../app/task-list.js";
 import { calendarDate, isoDate } from "../app/work-calendar.js";
@@ -69,7 +70,7 @@ export default {
       this.save();
     },
     updateCompleted(task, completed) {
-      task.completed = completed;
+      setTaskCompletion(task, completed);
       this.save();
       this.completionMoves.schedule(task.id, completed, () => {
         if (moveItemToEnd(this.chores.occurrenceOrder, task.id)) this.save();

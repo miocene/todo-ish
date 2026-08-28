@@ -24,6 +24,12 @@ function nextWeekdayIso(weekday) {
 }
 
 const DEFAULT_CHORE_DUE_DATES = [nextWeekdayIso(6), nextWeekdayIso(0), nextWeekdayIso(3)];
+const completedAtDaysAgo = (dayOffset) => {
+  const date = new Date();
+  date.setDate(date.getDate() - dayOffset);
+  date.setHours(12, 0, 0, 0);
+  return date.toISOString();
+};
 
 const DEFAULT_PAGE_DATA = Object.freeze({
   chores: {
@@ -49,6 +55,7 @@ const DEFAULT_PAGE_DATA = Object.freeze({
         details: "Every Wednesday",
         nextDue: DEFAULT_CHORE_DUE_DATES[2],
         completed: true,
+        completedAt: completedAtDaysAgo(2),
       },
     ],
   },
@@ -67,7 +74,12 @@ const DEFAULT_PAGE_DATA = Object.freeze({
         title: "Home",
         tasks: [
           { id: "todo-home-1", title: "Measure the hallway for a runner", completed: false },
-          { id: "todo-home-2", title: "Choose frames for the prints", completed: true },
+          {
+            id: "todo-home-2",
+            title: "Choose frames for the prints",
+            completed: true,
+            completedAt: completedAtDaysAgo(4),
+          },
         ],
       },
       {
@@ -107,6 +119,7 @@ const DEFAULT_PAGE_DATA = Object.freeze({
               },
             ],
             completed: true,
+            completedAt: completedAtDaysAgo(6),
           },
           {
             id: "printing-cable-2",
@@ -195,6 +208,7 @@ const DEFAULT_PAGE_DATA = Object.freeze({
             crosses: 400,
             crossesDone: 400,
             completed: true,
+            completedAt: completedAtDaysAgo(8),
           },
           {
             id: "stitch-botanical-2",
@@ -255,7 +269,8 @@ function isTask(task) {
     typeof task === "object" &&
     typeof task.id === "string" &&
     typeof task.title === "string" &&
-    typeof task.completed === "boolean"
+    typeof task.completed === "boolean" &&
+    (task.completedAt === undefined || typeof task.completedAt === "string")
   );
 }
 
@@ -331,6 +346,7 @@ function normalizeCrossStitch(data) {
           crosses,
           crossesDone: Math.min(crossesDone, crosses),
           completed: crosses > 0 && crossesDone >= crosses,
+          completedAt: crosses > 0 && crossesDone >= crosses ? task.completedAt : undefined,
         };
       }),
     })),
