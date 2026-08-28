@@ -2,6 +2,7 @@
 import { nextTaskId, savePageTasks } from "../app/page-tasks.js";
 import { completedTasksLast, finishTaskDraft, serializableTasks } from "../app/task-drafts.js";
 import { syncFilamentShoppingList } from "../app/printing-supplies.js";
+import { syncFlossShoppingList } from "../app/stitching-supplies.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
 import "./task-pages.css";
@@ -10,7 +11,8 @@ export default {
   name: "ShoppingPage",
   components: { JMButton, JMTaskCard },
   data() {
-    const shopping = syncFilamentShoppingList();
+    syncFilamentShoppingList();
+    const shopping = syncFlossShoppingList();
     shopping.tasks = completedTasksLast(shopping.tasks);
     return { completionMoveTimers: new Map(), draftTaskIds: new Set(), shopping };
   },
@@ -39,6 +41,10 @@ export default {
       if (!completed) return;
       if (task.filamentId) {
         void this.$router.push({ name: "catalog", query: { q: task.filamentId } });
+        return;
+      }
+      if (task.flossId) {
+        void this.$router.push({ name: "catalog", query: { catalog: "floss", q: task.flossId } });
         return;
       }
 

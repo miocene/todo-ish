@@ -256,7 +256,7 @@ test("task pages render their variants and save changes immediately", async ({ p
   await expect(page.locator(".task-item__drag-handle, .task-item__pin")).toHaveCount(0);
 
   await page.goto("/shopping");
-  await expect(page.locator(".task-item__remove")).toHaveCount(5);
+  await expect(page.locator(".task-item__remove")).toHaveCount(7);
   expect(await page.getByLabel("Task title").evaluateAll((inputs) => inputs.map((input) => input.value))).toEqual([
     "Oat milk",
     "Apples",
@@ -275,13 +275,20 @@ test("task pages render their variants and save changes immediately", async ({ p
   await expect(page.getByLabel("Filament type")).toHaveValue("");
 
   await page.goto("/shopping");
+  await page.getByRole("checkbox", { name: "Complete DMC 3853 · Autumn Gold Dk floss · 1 skein" }).check();
+  await expect.poll(() => new URL(page.url()).pathname).toBe("/catalog");
+  await expect.poll(() => new URL(page.url()).searchParams.get("catalog")).toBe("floss");
+  await expect.poll(() => new URL(page.url()).searchParams.get("q")).toBe("dmc3853");
+  await expect(page.getByLabel("Search floss")).toHaveValue("dmc3853");
+
+  await page.goto("/shopping");
   await expect(page.locator(".task-item__remove").first().locator("use")).toHaveAttribute("href", /#icon-remove$/);
   await page.getByRole("button", { name: "Remove Oat milk from shopping list" }).click();
-  await expect(page.locator(".task-page__tasks .task-item")).toHaveCount(4);
+  await expect(page.locator(".task-page__tasks .task-item")).toHaveCount(6);
   await page.getByRole("button", { name: "Add item" }).click();
-  await expect(page.locator(".task-page__tasks .task-item")).toHaveCount(5);
+  await expect(page.locator(".task-page__tasks .task-item")).toHaveCount(7);
   await page.getByRole("button", { name: "Add item" }).focus();
-  await expect(page.locator(".task-page__tasks .task-item")).toHaveCount(4);
+  await expect(page.locator(".task-page__tasks .task-item")).toHaveCount(6);
   await page.reload();
   await expect(page.getByRole("textbox", { name: "Task title" })).toHaveCount(2);
   await expect(page.locator(".task-item__drag-handle, .task-item__pin")).toHaveCount(0);
@@ -340,8 +347,33 @@ test("task pages render their variants and save changes immediately", async ({ p
     "Botanical sampler",
     "Amsterdam canal house",
   ]);
+  const stitchProject = page.locator(".project-card").first();
+  await expect(stitchProject.getByLabel("Project title")).toHaveValue("Botanical sampler");
+  await expect(stitchProject.getByLabel("Project color")).toHaveValue("#71935c");
+  await expect(stitchProject.getByLabel("Total project crosses")).toHaveValue("2400");
+  await expect(stitchProject.getByRole("checkbox")).toHaveCount(0);
+  const stitchColors = stitchProject.locator('select[name="stitch-floss"]');
+  await expect(stitchColors).toHaveCount(3);
+  await expect(stitchProject.locator(".stitch-color__fields--missing")).toHaveCount(2);
+  await expect(stitchProject.getByText("971 / 2,400 crosses · 40%", { exact: true })).toBeVisible();
+  await stitchProject.getByLabel("Crosses done").first().fill("1200");
+  await expect(stitchProject.locator(".task-item--completed")).toHaveCount(2);
+  await expect(stitchProject.getByText("1,600 / 2,400 crosses · 67%", { exact: true })).toBeVisible();
+  await stitchProject.getByRole("button", { name: "Add color" }).click();
+  await expect(stitchColors).toHaveCount(4);
+  await expect(stitchColors.last()).toBeFocused();
 
   await page.goto("/catalog");
+  await expect(page.getByRole("navigation", { name: "Catalog" }).getByRole("link")).toHaveText([
+    "3D printing filament",
+    "DMC embroidery floss",
+  ]);
+  await expect(page.getByRole("link", { name: "3D printing filament" })).toHaveAttribute("aria-current", "page");
+  await page.getByRole("link", { name: "DMC embroidery floss" }).click();
+  await expect(page.getByRole("link", { name: "DMC embroidery floss" })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByLabel("Search floss")).toBeVisible();
+  await page.getByRole("link", { name: "3D printing filament" }).click();
+  await expect(page.getByLabel("Search filaments")).toBeVisible();
   await expect(page.locator(".filament-card")).toHaveCount(265);
   await expect(page.getByText("265 filaments", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Filament type")).toHaveValue("");
@@ -372,6 +404,21 @@ test("task pages render their variants and save changes immediately", async ({ p
   await page.goto("/printing");
   await expect(page.locator(".printing-filament--missing")).toHaveCount(1);
   await expect(page.getByText("Missing 1 spool · 1 owned")).toHaveCount(0);
+
+  await page.goto("/catalog?catalog=floss&q=dmc3853");
+  await expect(page.getByRole("link", { name: "DMC embroidery floss" })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByLabel("Search floss")).toHaveValue("dmc3853");
+  await expect(page.locator(".filament-card")).toHaveCount(1);
+  await expect(page.getByRole("heading", { level: 2, name: "DMC 3853 · Autumn Gold Dk" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /DMC 3853 · Autumn Gold Dk/ })).toHaveAttribute(
+    "href",
+    "https://www.breibrink.nl/dmc-3853.html",
+  );
+  await expect(page.getByText("Required 1 skein", { exact: true })).toBeVisible();
+  await expect(page.getByText("Missing 1 skein", { exact: true })).toBeVisible();
+  await page.getByLabel("Skeins owned").fill("1");
+  await expect(page.locator(".filament-card--missing")).toHaveCount(0);
+
   await page.goto("/shopping");
   expect(await page.getByLabel("Task title").evaluateAll((inputs) => inputs.map((input) => input.value))).toEqual([
     "Apples",
@@ -379,6 +426,7 @@ test("task pages render their variants and save changes immediately", async ({ p
   ]);
   await expect(page.getByRole("link", { name: /PETG Basic · Charcoal filament · 1 spool/ })).toBeVisible();
   await expect(page.getByRole("link", { name: /PLA Basic · Blue filament/ })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /DMC .* floss/ })).toHaveCount(0);
 
   await page.goto("/catalog");
   await page.getByLabel("Search filaments").fill("discontinued-petg-charcoal");
@@ -430,15 +478,6 @@ test("completed items move to the bottom after 500 milliseconds on every task pa
   await expect(printingTitles.first()).toHaveValue("Large cable clip");
   await page.clock.runFor(1);
   await expect(printingTitles.last()).toHaveValue("Large cable clip");
-
-  await page.goto("/cross-stitch");
-  const stitchTitles = page.locator(".project-card").first().locator("textarea.task-item__title");
-  await expect(stitchTitles.first()).toHaveValue("Finish the rosemary border");
-  await page.getByRole("checkbox", { name: "Complete Finish the rosemary border" }).check();
-  await page.clock.runFor(499);
-  await expect(stitchTitles.first()).toHaveValue("Finish the rosemary border");
-  await page.clock.runFor(1);
-  await expect(stitchTitles.last()).toHaveValue("Finish the rosemary border");
 });
 
 test("the work page navigates in three-day ranges", async ({ page }) => {

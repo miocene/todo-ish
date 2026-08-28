@@ -1,11 +1,13 @@
 const STORAGE_PREFIX = "done-ish.page-tasks.v1";
 const FILAMENT_INVENTORY_KEY = "done-ish.filament-inventory.v1";
+const FLOSS_INVENTORY_KEY = "done-ish.floss-inventory.v1";
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const DEFAULT_FILAMENT_INVENTORY = Object.freeze({
   "bambu-pla-basic-filament-10101": 1,
   "bambu-pla-basic-filament-10501": 1,
   "bambu-pla-basic-filament-10601": 1,
 });
+const DEFAULT_FLOSS_INVENTORY = Object.freeze({ dmc310: 1, dmc321: 1, dmc3347: 1 });
 
 function isoDate(value) {
   const pad = (part) => String(part).padStart(2, "0");
@@ -179,20 +181,64 @@ const DEFAULT_PAGE_DATA = Object.freeze({
       {
         id: "stitch-botanical",
         title: "Botanical sampler",
+        color: "#71935c",
+        totalCrosses: 2400,
         description: "A small sampler with herbs and wildflowers.",
         tasks: [
-          { id: "stitch-botanical-1", title: "Sort the green floss", completed: true },
-          { id: "stitch-botanical-2", title: "Finish the rosemary border", completed: false },
-          { id: "stitch-botanical-3", title: "Backstitch the labels", completed: false },
+          {
+            id: "stitch-botanical-1",
+            title: "DMC 310 · Black",
+            flossId: "dmc310",
+            requiredSkeins: 1,
+            crosses: 400,
+            crossesDone: 400,
+            completed: true,
+          },
+          {
+            id: "stitch-botanical-2",
+            title: "DMC 3347 · Yellow Green Med",
+            flossId: "dmc3347",
+            requiredSkeins: 2,
+            crosses: 1200,
+            crossesDone: 571,
+            completed: false,
+          },
+          {
+            id: "stitch-botanical-3",
+            title: "DMC 3853 · Autumn Gold Dk",
+            flossId: "dmc3853",
+            requiredSkeins: 1,
+            crosses: 800,
+            crossesDone: 0,
+            completed: false,
+          },
         ],
       },
       {
         id: "stitch-canal-house",
         title: "Amsterdam canal house",
+        color: "#c72b3b",
+        totalCrosses: 1800,
         description: "A narrow canal-house pattern for the hallway.",
         tasks: [
-          { id: "stitch-house-1", title: "Grid the fabric", completed: false },
-          { id: "stitch-house-2", title: "Complete the roof section", completed: false },
+          {
+            id: "stitch-house-1",
+            title: "DMC 321 · Red",
+            flossId: "dmc321",
+            requiredSkeins: 1,
+            crosses: 900,
+            crossesDone: 300,
+            completed: false,
+          },
+          {
+            id: "stitch-house-2",
+            title: "DMC 310 · Black",
+            flossId: "dmc310",
+            requiredSkeins: 1,
+            crosses: 900,
+            crossesDone: 0,
+            completed: false,
+          },
         ],
       },
     ],
@@ -262,6 +308,43 @@ function normalizePrinting(data) {
   };
 }
 
+function normalizeCrossStitch(data) {
+  if (!data || typeof data !== "object" || !isProjectData(data)) return undefined;
+  const legacyFloss = [
+    { id: "dmc310", label: "DMC 310 · Black" },
+    { id: "dmc3347", label: "DMC 3347 · Yellow Green Med" },
+    { id: "dmc3853", label: "DMC 3853 · Autumn Gold Dk" },
+    { id: "dmc321", label: "DMC 321 · Red" },
+  ];
+  return {
+    ...data,
+    projects: data.projects.map((project, projectIndex) => ({
+      ...project,
+      color: /^#[\da-f]{6}$/i.test(project.color) ? project.color : ["#71935c", "#c72b3b"][projectIndex % 2],
+      totalCrosses:
+        Number.isFinite(project.totalCrosses) && project.totalCrosses >= 0
+          ? Math.floor(project.totalCrosses)
+          : project.tasks.reduce((total, task) => total + (Number(task.crosses) || 0), 0),
+      tasks: project.tasks.map((task, taskIndex) => {
+        const fallback = legacyFloss[(projectIndex * 2 + taskIndex) % legacyFloss.length];
+        const crosses = Number.isFinite(task.crosses) && task.crosses >= 0 ? Math.floor(task.crosses) : 0;
+        const crossesDone =
+          Number.isFinite(task.crossesDone) && task.crossesDone >= 0 ? Math.floor(task.crossesDone) : 0;
+        return {
+          ...task,
+          title: typeof task.flossId === "string" ? task.title : fallback.label,
+          flossId: typeof task.flossId === "string" ? task.flossId : fallback.id,
+          requiredSkeins:
+            Number.isFinite(task.requiredSkeins) && task.requiredSkeins >= 0 ? Math.floor(task.requiredSkeins) : 1,
+          crosses,
+          crossesDone: Math.min(crossesDone, crosses),
+          completed: crosses > 0 && crossesDone >= crosses,
+        };
+      }),
+    })),
+  };
+}
+
 function normalizeChores(data) {
   if (!data || typeof data !== "object" || !isTaskList(data.tasks)) return undefined;
   if (!data.tasks.every((task) => typeof task.details === "string")) return undefined;
@@ -291,6 +374,7 @@ function isPageData(page, data) {
   }
   if (page === "shopping") return isTaskList(data.tasks);
   if (page === "printing") return Boolean(normalizePrinting(data));
+  if (page === "crossStitch") return Boolean(normalizeCrossStitch(data));
   if (page === "todos") {
     return (
       Array.isArray(data.lists) &&
@@ -310,6 +394,7 @@ export function loadPageTasks(page) {
     const savedData = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}.${page}`) ?? "null");
     if (page === "chores") return clone(normalizeChores(savedData) ?? normalizeChores(defaultData));
     if (page === "printing") return clone(normalizePrinting(savedData) ?? normalizePrinting(defaultData));
+    if (page === "crossStitch") return clone(normalizeCrossStitch(savedData) ?? normalizeCrossStitch(defaultData));
     return clone(isPageData(page, savedData) ? savedData : defaultData);
   } catch {
     return clone(defaultData);
@@ -343,6 +428,30 @@ export function loadFilamentInventory() {
 export function saveFilamentInventory(inventory) {
   try {
     localStorage.setItem(FILAMENT_INVENTORY_KEY, JSON.stringify(inventory));
+  } catch {
+    // Keep the in-memory inventory usable when browser storage is unavailable.
+  }
+}
+
+export function loadFlossInventory() {
+  try {
+    const savedInventory = JSON.parse(localStorage.getItem(FLOSS_INVENTORY_KEY) ?? "null");
+    if (!savedInventory || typeof savedInventory !== "object" || Array.isArray(savedInventory)) {
+      return clone(DEFAULT_FLOSS_INVENTORY);
+    }
+    return Object.fromEntries(
+      Object.entries(savedInventory)
+        .filter(([, count]) => Number.isInteger(count) && count >= 0)
+        .map(([catalogId, count]) => [catalogId, count]),
+    );
+  } catch {
+    return clone(DEFAULT_FLOSS_INVENTORY);
+  }
+}
+
+export function saveFlossInventory(inventory) {
+  try {
+    localStorage.setItem(FLOSS_INVENTORY_KEY, JSON.stringify(inventory));
   } catch {
     // Keep the in-memory inventory usable when browser storage is unavailable.
   }

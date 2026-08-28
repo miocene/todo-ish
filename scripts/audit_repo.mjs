@@ -45,9 +45,11 @@ assert.deepEqual(readdirSync(new URL("src/pages/", root)).sort(), [
 ]);
 assert.deepEqual(readdirSync(new URL("src/app/", root)).sort(), [
   "filament-catalog.js",
+  "floss-catalog.js",
   "page-tasks.js",
   "printing-supplies.js",
   "router.js",
+  "stitching-supplies.js",
   "task-drafts.js",
   "work-calendar.js",
   "work-status.js",
@@ -119,7 +121,9 @@ const clientSource = [
   "src/App.vue",
   "src/main.js",
   "src/app/filament-catalog.js",
+  "src/app/floss-catalog.js",
   "src/app/printing-supplies.js",
+  "src/app/stitching-supplies.js",
   "src/app/router.js",
   "src/app/task-drafts.js",
   "src/components/JMButton/JMButton.vue",

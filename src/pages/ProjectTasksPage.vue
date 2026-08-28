@@ -1,7 +1,15 @@
 <script>
 import { filamentLabel, filaments, filamentsById } from "../app/filament-catalog.js";
-import { loadFilamentInventory, loadPageTasks, nextTaskId, savePageTasks } from "../app/page-tasks.js";
+import { floss, flossById, flossLabel } from "../app/floss-catalog.js";
+import {
+  loadFilamentInventory,
+  loadFlossInventory,
+  loadPageTasks,
+  nextTaskId,
+  savePageTasks,
+} from "../app/page-tasks.js";
 import { filamentSupplyStatus, syncFilamentShoppingList } from "../app/printing-supplies.js";
+import { flossSupplyStatus, syncFlossShoppingList } from "../app/stitching-supplies.js";
 import { completedTasksLast, finishTaskDraft, serializableTasks } from "../app/task-drafts.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMIcon from "../components/JMIcon/JMIcon.vue";
@@ -32,21 +40,26 @@ export default {
       draftTaskIds: new Set(),
       filamentInventory: loadFilamentInventory(),
       filaments,
+      floss,
+      flossInventory: loadFlossInventory(),
       pageData: loadProjectTasks(this.pageKey),
     };
-  },
-  beforeUnmount() {
-    this.clearCompletionMoveTimers();
-  },
-  mounted() {
-    if (this.isPrinting) syncFilamentShoppingList(this.pageData.projects, this.filamentInventory);
   },
   computed: {
     isPrinting() {
       return this.pageKey === "printing";
     },
+    isCrossStitch() {
+      return this.pageKey === "crossStitch";
+    },
+    isCraftProject() {
+      return this.isPrinting || this.isCrossStitch;
+    },
     supplyById() {
       return this.isPrinting ? filamentSupplyStatus(this.pageData.projects, this.filamentInventory) : new Map();
+    },
+    flossSupplyById() {
+      return this.isCrossStitch ? flossSupplyStatus(this.pageData.projects, this.flossInventory) : new Map();
     },
   },
   watch: {
@@ -54,14 +67,25 @@ export default {
       this.clearCompletionMoveTimers();
       this.draftTaskIds.clear();
       this.filamentInventory = loadFilamentInventory();
+      this.flossInventory = loadFlossInventory();
       this.pageData = loadProjectTasks(value);
-      if (value === "printing") syncFilamentShoppingList(this.pageData.projects, this.filamentInventory);
+      this.syncShoppingList();
     },
+  },
+  mounted() {
+    this.syncShoppingList();
+  },
+  beforeUnmount() {
+    this.clearCompletionMoveTimers();
   },
   methods: {
     clearCompletionMoveTimers() {
       for (const timer of this.completionMoveTimers.values()) window.clearTimeout(timer);
       this.completionMoveTimers.clear();
+    },
+    syncShoppingList() {
+      if (this.isPrinting) syncFilamentShoppingList(this.pageData.projects, this.filamentInventory);
+      if (this.isCrossStitch) syncFlossShoppingList(this.pageData.projects, this.flossInventory);
     },
     projectTitleId(project) {
       return `${this.pageKey}-project-${project.id}`;
@@ -71,6 +95,9 @@ export default {
     },
     projectColorInputId(project) {
       return `${this.pageKey}-project-color-${project.id}`;
+    },
+    projectCrossesInputId(project) {
+      return `${this.pageKey}-project-crosses-${project.id}`;
     },
     taskInputId(project, task) {
       return `${this.pageKey}-title-${project.id}-${task.id}`;
@@ -83,6 +110,21 @@ export default {
     },
     weightInputId(project, task, usage) {
       return `${this.pageKey}-weight-${project.id}-${task.id}-${usage.id}`;
+    },
+    flossInputId(project, task) {
+      return `${this.pageKey}-floss-${project.id}-${task.id}`;
+    },
+    flossStatusId(project, task) {
+      return `${this.pageKey}-floss-status-${project.id}-${task.id}`;
+    },
+    skeinsInputId(project, task) {
+      return `${this.pageKey}-skeins-${project.id}-${task.id}`;
+    },
+    crossesDoneInputId(project, task) {
+      return `${this.pageKey}-crosses-done-${project.id}-${task.id}`;
+    },
+    crossesInputId(project, task) {
+      return `${this.pageKey}-crosses-${project.id}-${task.id}`;
     },
     isMissingFilament(usage) {
       return Boolean(
@@ -104,6 +146,24 @@ export default {
       return `Missing ${supply.missingSpools} ${supply.missingSpools === 1 ? "spool" : "spools"} · ${supply.ownedSpools} owned`;
     },
     filamentLabel,
+    flossLabel,
+    isMissingFloss(task) {
+      return Boolean(task.flossId && (this.flossSupplyById.get(task.flossId)?.missingSkeins ?? 0) > 0);
+    },
+    missingFlossStatus(task) {
+      const supply = this.flossSupplyById.get(task.flossId);
+      if (!supply) return "";
+      return `Missing ${supply.missingSkeins} ${supply.missingSkeins === 1 ? "skein" : "skeins"} · ${supply.ownedSkeins} owned`;
+    },
+    projectCrossesDone(project) {
+      return Math.min(
+        project.totalCrosses,
+        project.tasks.reduce((total, task) => total + (Number(task.crossesDone) || 0), 0),
+      );
+    },
+    projectProgress(project) {
+      return project.totalCrosses > 0 ? Math.round((this.projectCrossesDone(project) / project.totalCrosses) * 100) : 0;
+    },
     save() {
       savePageTasks(this.pageKey, {
         ...this.pageData,
@@ -112,7 +172,7 @@ export default {
           tasks: serializableTasks(project.tasks, this.draftTaskIds),
         })),
       });
-      if (this.isPrinting) syncFilamentShoppingList(this.pageData.projects, this.filamentInventory);
+      this.syncShoppingList();
     },
     updateTitle(task, title) {
       task.title = title;
@@ -124,6 +184,10 @@ export default {
     },
     updateProjectColor(project, color) {
       project.color = color;
+      this.save();
+    },
+    updateProjectCrosses(project, value) {
+      project.totalCrosses = Math.max(0, Math.floor(Number(value) || 0));
       this.save();
     },
     updateFilament(usage, catalogId) {
@@ -153,6 +217,31 @@ export default {
       task.filaments.splice(usageIndex, 1);
       this.save();
     },
+    updateFloss(task, flossId) {
+      const thread = flossById.get(flossId);
+      task.flossId = flossId;
+      task.title = thread ? flossLabel(thread) : "Choose a thread color";
+      this.save();
+    },
+    updateSkeins(task, value) {
+      task.requiredSkeins = Math.max(0, Math.floor(Number(value) || 0));
+      this.save();
+    },
+    updateCrosses(task, value) {
+      task.crosses = Math.max(0, Math.floor(Number(value) || 0));
+      task.crossesDone = Math.min(task.crossesDone, task.crosses);
+      task.completed = task.crosses > 0 && task.crossesDone >= task.crosses;
+      this.save();
+    },
+    updateCrossesDone(task, value) {
+      task.crossesDone = Math.min(task.crosses, Math.max(0, Math.floor(Number(value) || 0)));
+      task.completed = task.crosses > 0 && task.crossesDone >= task.crosses;
+      this.save();
+    },
+    removeStitchColor(project, task) {
+      project.tasks = project.tasks.filter((item) => item.id !== task.id);
+      this.save();
+    },
     updateCompleted(project, task, completed) {
       window.clearTimeout(this.completionMoveTimers.get(task.id));
       this.completionMoveTimers.delete(task.id);
@@ -171,35 +260,37 @@ export default {
       this.completionMoveTimers.set(task.id, timer);
     },
     addTask(project) {
-      const task = {
-        id: nextTaskId(project.tasks, `${project.id}-task`),
-        title: "",
-        completed: false,
-      };
+      const task = { id: nextTaskId(project.tasks, `${project.id}-task`), title: "", completed: false };
       if (this.isPrinting) {
-        task.filaments = [
-          {
-            id: `${task.id}-filament-1`,
-            catalogId: "",
-            label: "",
-            weightGrams: "",
-          },
-        ];
+        task.filaments = [{ id: `${task.id}-filament-1`, catalogId: "", label: "", weightGrams: "" }];
+      } else if (this.isCrossStitch) {
+        Object.assign(task, {
+          title: "Choose a thread color",
+          flossId: "",
+          requiredSkeins: 1,
+          crosses: 0,
+          crossesDone: 0,
+        });
       }
       project.tasks.push(task);
-      this.draftTaskIds.add(task.id);
+      if (!this.isCrossStitch) this.draftTaskIds.add(task.id);
       this.save();
-      this.focusTask(project, task);
+      if (this.isCrossStitch) {
+        this.$nextTick(() => document.getElementById(this.flossInputId(project, task))?.focus());
+      } else {
+        this.focusTask(project, task);
+      }
       return task;
     },
     addProject() {
       const project = {
-        id: nextTaskId(this.pageData.projects, "printing-project"),
-        title: "New 3D project",
-        color: "#526d9c",
+        id: nextTaskId(this.pageData.projects, this.isPrinting ? "printing-project" : "stitch-project"),
+        title: this.isPrinting ? "New 3D project" : "New cross stitch project",
+        color: this.isPrinting ? "#526d9c" : "#a6638d",
         description: "",
         tasks: [],
       };
+      if (this.isCrossStitch) project.totalCrosses = 0;
       this.pageData.projects.push(project);
       this.save();
       this.$nextTick(() => document.getElementById(this.projectTitleInputId(project))?.select());
@@ -231,21 +322,21 @@ export default {
         <h1 :id="`${pageKey}-title`">{{ title }}</h1>
         <p>{{ description }}</p>
       </div>
-      <JMButton v-if="isPrinting" text="Add project" view="secondary" @click="addProject" />
+      <JMButton v-if="isCraftProject" text="Add project" view="secondary" @click="addProject" />
     </header>
 
-    <ul class="project-grid" role="list">
+    <ul class="project-grid" :class="{ 'project-grid--stitching': isCrossStitch }" role="list">
       <li v-for="project in pageData.projects" :key="project.id">
         <article
           class="project-card"
-          :class="{ 'project-card--printing': isPrinting }"
-          :style="isPrinting ? { '--project-color': project.color } : undefined"
+          :class="{ 'project-card--printing': isPrinting, 'project-card--stitching': isCrossStitch }"
+          :style="isCraftProject ? { '--project-color': project.color } : undefined"
           :aria-labelledby="projectTitleId(project)"
         >
           <header class="project-card__header">
-            <div v-if="isPrinting" class="project-card__identity">
+            <div v-if="isCraftProject" class="project-card__identity">
               <h2 :id="projectTitleId(project)" class="task-page__visually-hidden">
-                {{ project.title || "Untitled 3D project" }}
+                {{ project.title || (isPrinting ? "Untitled 3D project" : "Untitled cross stitch project") }}
               </h2>
               <label class="project-card__field-label" :for="projectTitleInputId(project)">Project title</label>
               <input
@@ -271,8 +362,29 @@ export default {
               <h2 :id="projectTitleId(project)">{{ project.title }}</h2>
               <p>{{ project.description }}</p>
             </div>
-            <JMButton :text="isPrinting ? 'Add item' : 'Add task'" view="ghost" @click="addTask(project)" />
+            <JMButton :text="isCrossStitch ? 'Add color' : 'Add item'" view="ghost" @click="addTask(project)" />
           </header>
+
+          <div v-if="isCrossStitch" class="stitch-project__progress">
+            <label :for="projectCrossesInputId(project)">Total project crosses</label>
+            <input
+              :id="projectCrossesInputId(project)"
+              name="project-crosses"
+              type="number"
+              inputmode="numeric"
+              min="0"
+              step="1"
+              :value="project.totalCrosses"
+              @input="updateProjectCrosses(project, $event.target.value)"
+            />
+            <progress :max="project.totalCrosses || 1" :value="projectCrossesDone(project)">
+              {{ projectProgress(project) }}%
+            </progress>
+            <p>
+              {{ projectCrossesDone(project).toLocaleString() }} / {{ project.totalCrosses.toLocaleString() }} crosses ·
+              {{ projectProgress(project) }}%
+            </p>
+          </div>
 
           <ul class="task-page__tasks" role="list">
             <li v-for="task in project.tasks" :key="task.id">
@@ -282,13 +394,18 @@ export default {
                 :title-input-id="taskInputId(project, task)"
                 :title-label="isPrinting ? 'Item name' : 'Task title'"
                 :completed="task.completed"
+                :completable="!isCrossStitch"
+                :editable="!isCrossStitch"
+                :removable="isCrossStitch"
+                :remove-label="`Remove ${task.title || 'thread color'} from ${project.title}`"
                 @enter="handleEnter(project, task, $event)"
+                @remove="removeStitchColor(project, task)"
                 @title-blur="handleTitleBlur(project, task)"
                 @update:completed="updateCompleted(project, task, $event)"
                 @update:title="updateTitle(task, $event)"
               >
-                <template v-if="isPrinting" #details>
-                  <fieldset class="printing-item__fields">
+                <template #details>
+                  <fieldset v-if="isPrinting" class="printing-item__fields">
                     <legend class="task-page__visually-hidden">
                       Filaments and weights for {{ task.title || "untitled item" }}
                     </legend>
@@ -351,6 +468,83 @@ export default {
                       </button>
                     </div>
                     <JMButton text="Add filament" view="ghost" @click="addFilament(project, task)" />
+                  </fieldset>
+
+                  <fieldset
+                    v-else-if="isCrossStitch"
+                    class="stitch-color__fields"
+                    :class="{ 'stitch-color__fields--missing': isMissingFloss(task) }"
+                  >
+                    <legend class="task-page__visually-hidden">Thread and progress for {{ task.title }}</legend>
+                    <div class="stitch-color__field stitch-color__field--thread">
+                      <label :for="flossInputId(project, task)">Thread color</label>
+                      <select
+                        :id="flossInputId(project, task)"
+                        name="stitch-floss"
+                        :value="task.flossId"
+                        :aria-describedby="isMissingFloss(task) ? flossStatusId(project, task) : undefined"
+                        @change="updateFloss(task, $event.target.value)"
+                      >
+                        <option value="">Choose DMC color</option>
+                        <option v-for="thread in floss" :key="thread.id" :value="thread.id">
+                          {{ flossLabel(thread) }}
+                        </option>
+                      </select>
+                      <span
+                        v-if="isMissingFloss(task)"
+                        :id="flossStatusId(project, task)"
+                        class="stitch-color__missing"
+                      >
+                        {{ missingFlossStatus(task) }}
+                      </span>
+                    </div>
+                    <div class="stitch-color__field">
+                      <label :for="skeinsInputId(project, task)">Skeins needed</label>
+                      <input
+                        :id="skeinsInputId(project, task)"
+                        name="stitch-skeins"
+                        type="number"
+                        inputmode="numeric"
+                        min="0"
+                        step="1"
+                        :value="task.requiredSkeins"
+                        @input="updateSkeins(task, $event.target.value)"
+                      />
+                    </div>
+                    <div class="stitch-color__field">
+                      <label :for="crossesDoneInputId(project, task)">Crosses done</label>
+                      <input
+                        :id="crossesDoneInputId(project, task)"
+                        name="stitch-crosses-done"
+                        type="number"
+                        inputmode="numeric"
+                        min="0"
+                        :max="task.crosses"
+                        step="1"
+                        :value="task.crossesDone"
+                        @input="updateCrossesDone(task, $event.target.value)"
+                      />
+                    </div>
+                    <div class="stitch-color__field">
+                      <label :for="crossesInputId(project, task)">Crosses total</label>
+                      <input
+                        :id="crossesInputId(project, task)"
+                        name="stitch-crosses-total"
+                        type="number"
+                        inputmode="numeric"
+                        min="0"
+                        step="1"
+                        :value="task.crosses"
+                        @input="updateCrosses(task, $event.target.value)"
+                      />
+                    </div>
+                    <p class="stitch-color__progress">
+                      {{ task.crossesDone.toLocaleString() }} / {{ task.crosses.toLocaleString() }} crosses<span
+                        v-if="task.completed"
+                      >
+                        · Done</span
+                      >
+                    </p>
                   </fieldset>
                 </template>
               </JMTaskCard>

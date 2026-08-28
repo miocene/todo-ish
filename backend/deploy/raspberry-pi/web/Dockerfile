@@ -9,6 +9,7 @@ RUN corepack enable \
 
 COPY index.html vite.config.js ./
 COPY backend/catalogs/bambu-filaments.snapshot.json ./backend/catalogs/bambu-filaments.snapshot.json
+COPY backend/catalogs/dmc-floss.snapshot.json ./backend/catalogs/dmc-floss.snapshot.json
 COPY styles ./styles
 COPY src ./src
 
