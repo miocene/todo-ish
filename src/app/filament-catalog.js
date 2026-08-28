@@ -1,4 +1,4 @@
-import filamentCatalog from "../../backend/catalogs/bambu-filaments.snapshot.json";
+import filamentCatalog from "../../backend/catalogs/bambu-filaments.snapshot.json" with { type: "json" };
 
 export const filaments = filamentCatalog.entries;
 export const filamentsById = new Map(filaments.map((filament) => [filament.id, filament]));

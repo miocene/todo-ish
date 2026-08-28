@@ -2,7 +2,7 @@
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMIcon from "../components/JMIcon/JMIcon.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
-import { finishTaskDraft, serializableTasks } from "../app/task-drafts.js";
+import { createCompletionMoveScheduler, finishTaskDraft, moveItemToEnd, serializableTasks } from "../app/task-list.js";
 import {
   calendarDate,
   canMoveWorkRange,
@@ -22,7 +22,7 @@ export default {
   name: "WorkPage",
   components: { JMButton, JMIcon, JMTaskCard },
   data() {
-    const workTasks = [...getAllWorkTasks()];
+    const workTasks = getAllWorkTasks().map((task) => ({ ...task }));
     const nextTaskId =
       workTasks.reduce((largestId, task) => {
         const taskId = /^new-(\d+)$/.exec(task.id);
@@ -30,7 +30,7 @@ export default {
       }, -1) + 1;
     return {
       backlogDropTarget: BACKLOG_DROP_TARGET,
-      completionMoveTimers: new Map(),
+      completionMoves: createCompletionMoveScheduler(),
       draftTaskIds: new Set(),
       draggedTaskId: undefined,
       dragTarget: undefined,
@@ -39,10 +39,7 @@ export default {
       rangeTransitionFrame: undefined,
       routeWatchReady: false,
       statusOptions: WORK_STATUSES,
-      taskAssignments: Object.fromEntries(workTasks.map((task) => [task.id, task.date ?? null])),
-      taskCompletions: Object.fromEntries(workTasks.map((task) => [task.id, task.checkedAt ?? null])),
       taskMoveStatus: "",
-      taskTitles: Object.fromEntries(workTasks.map((task) => [task.id, task.title])),
       today: calendarDate(),
       trackMoving: false,
       transitionDirection: "next",
@@ -76,7 +73,7 @@ export default {
       return this.getDaysWithTasks(this.focusDate);
     },
     backlogTasks() {
-      return this.workTasks.filter((task) => this.taskAssignments[task.id] === null);
+      return this.workTasks.filter((task) => task.date === null);
     },
     isRangeTransitioning() {
       return Boolean(this.transitionFromDate);
@@ -95,7 +92,7 @@ export default {
     this.scheduleTodayRefresh();
   },
   beforeUnmount() {
-    for (const timer of this.completionMoveTimers.values()) window.clearTimeout(timer);
+    this.completionMoves.clear();
     window.cancelAnimationFrame(this.rangeTransitionFrame);
     window.clearTimeout(this.midnightTimer);
   },
@@ -138,11 +135,11 @@ export default {
     getDaysWithTasks(focusDate) {
       return getCalendarDays(focusDate, this.todayIso).map((day) => ({
         ...day,
-        tasks: this.workTasks.filter((task) => this.taskAssignments[task.id] === day.iso),
+        tasks: this.workTasks.filter((task) => task.date === day.iso),
       }));
     },
     taskTitle(task) {
-      return this.taskTitles[task.id];
+      return task.title;
     },
     taskInputId(task) {
       return `work-task-${task.id}`;
@@ -151,7 +148,7 @@ export default {
       return `work-task-complete-${task.id}`;
     },
     isTaskComplete(task) {
-      return Boolean(this.taskCompletions[task.id]);
+      return Boolean(task.checkedAt);
     },
     canEditTask(date) {
       return date === null || date >= this.todayIso;
@@ -160,7 +157,7 @@ export default {
       return this.canEditTask(date);
     },
     updateTaskTitle(task, title) {
-      this.taskTitles[task.id] = title;
+      task.title = title;
       this.saveTasks();
     },
     handleTaskTitleEnter(task, date, columnTasks, event) {
@@ -171,12 +168,9 @@ export default {
       this.focusTaskTitle(nextTask);
     },
     createTask(date) {
-      const task = { id: `new-${this.nextTaskId++}` };
+      const task = { id: `new-${this.nextTaskId++}`, date, title: "" };
       this.workTasks.push(task);
       this.draftTaskIds.add(task.id);
-      this.taskAssignments[task.id] = date;
-      this.taskCompletions[task.id] = null;
-      this.taskTitles[task.id] = "";
       this.saveTasks();
       return task;
     },
@@ -184,56 +178,33 @@ export default {
       this.focusTaskTitle(this.createTask(null));
     },
     saveTasks() {
-      saveWorkTasks(
-        serializableTasks(this.workTasks, this.draftTaskIds, (task) => this.taskTitle(task)).map((task) => ({
-          id: task.id,
-          date: this.taskAssignments[task.id],
-          title: this.taskTitle(task),
-          ...(this.taskCompletions[task.id] && { checkedAt: this.taskCompletions[task.id] }),
-        })),
-      );
+      saveWorkTasks(serializableTasks(this.workTasks, this.draftTaskIds));
     },
     handleTaskTitleBlur(task) {
       if (!finishTaskDraft(this.workTasks, task, this.draftTaskIds, (item) => this.taskTitle(item))) return;
-      window.clearTimeout(this.completionMoveTimers.get(task.id));
-      this.completionMoveTimers.delete(task.id);
-      delete this.taskAssignments[task.id];
-      delete this.taskCompletions[task.id];
-      delete this.taskTitles[task.id];
+      this.completionMoves.cancel(task.id);
       this.saveTasks();
     },
     setTaskCompletion(task, completed) {
-      this.taskCompletions[task.id] = completed ? new Date().toISOString() : null;
-      const taskDate = this.taskAssignments[task.id];
-      if (completed && taskDate === null) {
-        this.taskAssignments[task.id] = this.todayIso;
-      } else if (!completed && taskDate !== null && taskDate < this.todayIso) {
-        this.taskAssignments[task.id] = this.todayIso;
+      task.checkedAt = completed ? new Date().toISOString() : undefined;
+      if (completed && task.date === null) {
+        task.date = this.todayIso;
+      } else if (!completed && task.date !== null && task.date < this.todayIso) {
+        task.date = this.todayIso;
       }
       this.saveTasks();
       this.scheduleCompletedTaskMove(task, completed);
     },
     scheduleCompletedTaskMove(task, completed) {
-      window.clearTimeout(this.completionMoveTimers.get(task.id));
-      this.completionMoveTimers.delete(task.id);
-      if (!completed) return;
-
-      const timer = window.setTimeout(() => {
-        this.completionMoveTimers.delete(task.id);
-        const taskIndex = this.workTasks.findIndex((item) => item.id === task.id);
-        if (taskIndex === -1 || taskIndex === this.workTasks.length - 1) return;
-        this.workTasks.splice(taskIndex, 1);
-        this.workTasks.push(task);
-        this.saveTasks();
-      }, 500);
-      this.completionMoveTimers.set(task.id, timer);
+      this.completionMoves.schedule(task.id, completed, () => {
+        if (moveItemToEnd(this.workTasks, task)) this.saveTasks();
+      });
     },
     rollOverIncompleteTasks() {
       let taskMoved = false;
       for (const task of this.workTasks) {
-        const taskDate = this.taskAssignments[task.id];
-        if (!this.isTaskComplete(task) && taskDate !== null && taskDate < this.todayIso) {
-          this.taskAssignments[task.id] = this.todayIso;
+        if (!this.isTaskComplete(task) && task.date !== null && task.date < this.todayIso) {
+          task.date = this.todayIso;
           taskMoved = true;
         }
       }
@@ -248,17 +219,17 @@ export default {
       });
     },
     toggleTaskAssignment(task) {
-      this.moveTask(task, this.taskAssignments[task.id] === null ? this.todayIso : null);
+      this.moveTask(task, task.date === null ? this.todayIso : null);
     },
     moveTask(task, date) {
-      if (this.taskAssignments[task.id] === date) return;
-      this.taskAssignments[task.id] = date;
+      if (task.date === date) return;
+      task.date = date;
       this.saveTasks();
       const destination = date === null ? "backlog" : date === this.todayIso ? "today" : date;
       this.taskMoveStatus = `${this.taskTitle(task) || "Untitled task"} moved to ${destination}.`;
     },
     startTaskDrag(task, event) {
-      if (!this.canDragTask(this.taskAssignments[task.id])) {
+      if (!this.canDragTask(task.date)) {
         event.preventDefault();
         return;
       }
@@ -268,9 +239,10 @@ export default {
     },
     canDropTask(target) {
       if (!this.draggedTaskId) return false;
-      if (target === BACKLOG_DROP_TARGET && this.taskCompletions[this.draggedTaskId]) return false;
+      const task = this.workTasks.find((item) => item.id === this.draggedTaskId);
+      if (!task || (target === BACKLOG_DROP_TARGET && task.checkedAt)) return false;
       const date = target === BACKLOG_DROP_TARGET ? null : target;
-      return (date === null || date >= this.todayIso) && this.taskAssignments[this.draggedTaskId] !== date;
+      return (date === null || date >= this.todayIso) && task.date !== date;
     },
     handleTaskDragOver(target, event) {
       if (!this.canDropTask(target)) return;

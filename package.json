@@ -19,7 +19,7 @@
     "quality": "yarn lint && yarn format:check && yarn test && yarn build",
     "test": "yarn test:unit && yarn test:api && yarn test:e2e",
     "test:api": "yarn --cwd backend/api test",
-    "test:unit": "python3 -m unittest backend.scripts.test_update_catalogs && node --test backend/scripts/test_catalogs.mjs backend/scripts/test_catalog_seed.mjs && node scripts/audit_repo.mjs",
+    "test:unit": "python3 -m unittest backend.scripts.test_update_catalogs && node --test backend/scripts/test_catalogs.mjs backend/scripts/test_catalog_seed.mjs tests/task-logic.unit.js && node scripts/audit_repo.mjs",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install chromium",
     "audit": "node scripts/audit_repo.mjs",

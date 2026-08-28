@@ -10,10 +10,12 @@ import {
 } from "../app/page-tasks.js";
 import { filamentSupplyStatus, syncFilamentShoppingList } from "../app/printing-supplies.js";
 import { flossSupplyStatus, syncFlossShoppingList } from "../app/stitching-supplies.js";
+import JMCatalogCard from "../components/JMCatalogCard/JMCatalogCard.vue";
 import "./catalog-page.css";
 
 export default {
   name: "CatalogPage",
+  components: { JMCatalogCard },
   data() {
     return {
       catalogKind: this.$route.query.catalog === "floss" ? "floss" : "filament",
@@ -69,6 +71,49 @@ export default {
           return priority || first.number.localeCompare(second.number, undefined, { numeric: true });
         });
     },
+    filamentCards() {
+      return this.filteredFilaments.map((filament) => {
+        const supply = this.supplyById.get(filament.id);
+        const group = this.catalogGroup(filament);
+        const missingSpools = supply?.missingSpools ?? 0;
+        return {
+          catalogGroup: group,
+          catalogId: filament.id,
+          detailText: filament.productCode ? `Product ${filament.productCode}` : "",
+          inventoryValue: this.filamentInventory[filament.id] ?? 0,
+          item: filament,
+          missing: missingSpools > 0,
+          missingText: missingSpools ? `Missing ${missingSpools} ${missingSpools === 1 ? "spool" : "spools"}` : "",
+          requiredText: supply
+            ? `Required ${supply.requiredGrams} g · ${supply.requiredSpools} ${supply.requiredSpools === 1 ? "spool" : "spools"}`
+            : "",
+          status: group === "owned" ? "In stock" : group === "needed" ? "Needed" : "",
+          title: filamentLabel(filament),
+          titleHref: filamentProductLink(filament),
+        };
+      });
+    },
+    flossCards() {
+      return this.filteredFloss.map((thread) => {
+        const supply = this.flossSupplyById.get(thread.id);
+        const group = this.flossCatalogGroup(thread);
+        const missingSkeins = supply?.missingSkeins ?? 0;
+        return {
+          catalogGroup: group,
+          catalogId: thread.id,
+          inventoryValue: this.flossInventory[thread.id] ?? 0,
+          item: thread,
+          missing: missingSkeins > 0,
+          missingText: missingSkeins ? `Missing ${missingSkeins} ${missingSkeins === 1 ? "skein" : "skeins"}` : "",
+          requiredText: supply
+            ? `Required ${supply.requiredSkeins} ${supply.requiredSkeins === 1 ? "skein" : "skeins"}`
+            : "",
+          status: group === "owned" ? "In stock" : group === "needed" ? "Needed" : "",
+          title: flossLabel(thread),
+          titleHref: flossProductLink(thread),
+        };
+      });
+    },
   },
   watch: {
     "$route.query.catalog"(value) {
@@ -101,12 +146,6 @@ export default {
       if (ownedSkeins > 0 && missingSkeins === 0) return 0;
       if (missingSkeins > 0) return 1;
       return 2;
-    },
-    supply(filament) {
-      return this.supplyById.get(filament.id);
-    },
-    flossSupply(thread) {
-      return this.flossSupplyById.get(thread.id);
     },
     updateSpools(filament, value) {
       const count = Math.max(0, Math.floor(Number(value) || 0));
@@ -194,45 +233,22 @@ export default {
 
       <p v-if="filteredFloss.length === 0" class="catalog-page__empty">No DMC colors match this search.</p>
       <ul v-else class="filament-catalog" role="list">
-        <li v-for="thread in filteredFloss" :key="thread.id">
-          <article
-            class="filament-card"
-            :class="{ 'filament-card--missing': (flossSupply(thread)?.missingSkeins ?? 0) > 0 }"
-            :data-catalog-group="flossCatalogGroup(thread)"
-          >
-            <span class="filament-card__swatch" :style="{ backgroundColor: thread.color }" aria-hidden="true" />
-            <div>
-              <h2>
-                <a :href="flossProductLink(thread)" target="_blank" rel="noopener noreferrer">
-                  {{ flossLabel(thread) }}
-                  <span class="catalog-page__visually-hidden"> (opens in a new tab)</span>
-                </a>
-              </h2>
-              <p v-if="flossCatalogGroup(thread) === 'owned'" class="filament-card__status">In stock</p>
-              <p v-else-if="flossCatalogGroup(thread) === 'needed'" class="filament-card__missing">Needed</p>
-              <code>{{ thread.id }}</code>
-              <p v-if="flossSupply(thread)" class="filament-card__required">
-                Required {{ flossSupply(thread).requiredSkeins }}
-                {{ flossSupply(thread).requiredSkeins === 1 ? "skein" : "skeins" }}
-              </p>
-              <p v-if="(flossSupply(thread)?.missingSkeins ?? 0) > 0" class="filament-card__missing">
-                Missing {{ flossSupply(thread).missingSkeins }}
-                {{ flossSupply(thread).missingSkeins === 1 ? "skein" : "skeins" }}
-              </p>
-            </div>
-            <label class="filament-card__inventory">
-              <span>Skeins owned</span>
-              <input
-                name="skeins-owned"
-                type="number"
-                inputmode="numeric"
-                min="0"
-                step="1"
-                :value="flossInventory[thread.id] ?? 0"
-                @input="updateSkeins(thread, $event.target.value)"
-              />
-            </label>
-          </article>
+        <li v-for="card in flossCards" :key="card.catalogId">
+          <JMCatalogCard
+            :catalog-group="card.catalogGroup"
+            :catalog-id="card.catalogId"
+            inventory-label="Skeins owned"
+            inventory-name="skeins-owned"
+            :inventory-value="card.inventoryValue"
+            :missing="card.missing"
+            :missing-text="card.missingText"
+            :required-text="card.requiredText"
+            :status="card.status"
+            :swatch-color="card.item.color"
+            :title="card.title"
+            :title-href="card.titleHref"
+            @update:inventory="updateSkeins(card.item, $event)"
+          />
         </li>
       </ul>
     </template>
@@ -244,46 +260,23 @@ export default {
 
       <p v-if="filteredFilaments.length === 0" class="catalog-page__empty">No catalog filaments match this search.</p>
       <ul v-else class="filament-catalog" role="list">
-        <li v-for="filament in filteredFilaments" :key="filament.id">
-          <article
-            class="filament-card"
-            :class="{ 'filament-card--missing': (supply(filament)?.missingSpools ?? 0) > 0 }"
-            :data-catalog-group="catalogGroup(filament)"
-          >
-            <img class="filament-card__swatch" :src="filament.swatch" alt="" loading="lazy" width="48" height="48" />
-            <div>
-              <h2>
-                <a :href="filamentProductLink(filament)" target="_blank" rel="noopener noreferrer">
-                  {{ filamentLabel(filament) }}
-                  <span class="catalog-page__visually-hidden"> (opens in a new tab)</span>
-                </a>
-              </h2>
-              <p v-if="catalogGroup(filament) === 'owned'" class="filament-card__status">In stock</p>
-              <p v-else-if="catalogGroup(filament) === 'needed'" class="filament-card__missing">Needed</p>
-              <p v-if="filament.productCode">Product {{ filament.productCode }}</p>
-              <code>{{ filament.id }}</code>
-              <p v-if="supply(filament)" class="filament-card__required">
-                Required {{ supply(filament).requiredGrams }} g · {{ supply(filament).requiredSpools }}
-                {{ supply(filament).requiredSpools === 1 ? "spool" : "spools" }}
-              </p>
-              <p v-if="(supply(filament)?.missingSpools ?? 0) > 0" class="filament-card__missing">
-                Missing {{ supply(filament).missingSpools }}
-                {{ supply(filament).missingSpools === 1 ? "spool" : "spools" }}
-              </p>
-            </div>
-            <label class="filament-card__inventory">
-              <span>Spools owned</span>
-              <input
-                name="spools-owned"
-                type="number"
-                inputmode="numeric"
-                min="0"
-                step="1"
-                :value="filamentInventory[filament.id] ?? 0"
-                @input="updateSpools(filament, $event.target.value)"
-              />
-            </label>
-          </article>
+        <li v-for="card in filamentCards" :key="card.catalogId">
+          <JMCatalogCard
+            :catalog-group="card.catalogGroup"
+            :catalog-id="card.catalogId"
+            :detail-text="card.detailText"
+            inventory-label="Spools owned"
+            inventory-name="spools-owned"
+            :inventory-value="card.inventoryValue"
+            :missing="card.missing"
+            :missing-text="card.missingText"
+            :required-text="card.requiredText"
+            :status="card.status"
+            :swatch-src="card.item.swatch"
+            :title="card.title"
+            :title-href="card.titleHref"
+            @update:inventory="updateSpools(card.item, $event)"
+          />
         </li>
       </ul>
     </template>

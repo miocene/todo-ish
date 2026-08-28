@@ -1,3 +1,5 @@
+import { normalizeInventory, readStoredJson, writeStoredJson } from "./storage.js";
+
 const STORAGE_PREFIX = "done-ish.page-tasks.v1";
 const FILAMENT_INVENTORY_KEY = "done-ish.filament-inventory.v1";
 const FLOSS_INVENTORY_KEY = "done-ish.floss-inventory.v1";
@@ -245,9 +247,7 @@ const DEFAULT_PAGE_DATA = Object.freeze({
   },
 });
 
-function clone(value) {
-  return JSON.parse(JSON.stringify(value));
-}
+const clone = structuredClone;
 
 function isTask(task) {
   return (
@@ -310,12 +310,6 @@ function normalizePrinting(data) {
 
 function normalizeCrossStitch(data) {
   if (!data || typeof data !== "object" || !isProjectData(data)) return undefined;
-  const legacyFloss = [
-    { id: "dmc310", label: "DMC 310 · Black" },
-    { id: "dmc3347", label: "DMC 3347 · Yellow Green Med" },
-    { id: "dmc3853", label: "DMC 3853 · Autumn Gold Dk" },
-    { id: "dmc321", label: "DMC 321 · Red" },
-  ];
   return {
     ...data,
     projects: data.projects.map((project, projectIndex) => ({
@@ -325,15 +319,13 @@ function normalizeCrossStitch(data) {
         Number.isFinite(project.totalCrosses) && project.totalCrosses >= 0
           ? Math.floor(project.totalCrosses)
           : project.tasks.reduce((total, task) => total + (Number(task.crosses) || 0), 0),
-      tasks: project.tasks.map((task, taskIndex) => {
-        const fallback = legacyFloss[(projectIndex * 2 + taskIndex) % legacyFloss.length];
+      tasks: project.tasks.map((task) => {
         const crosses = Number.isFinite(task.crosses) && task.crosses >= 0 ? Math.floor(task.crosses) : 0;
         const crossesDone =
           Number.isFinite(task.crossesDone) && task.crossesDone >= 0 ? Math.floor(task.crossesDone) : 0;
         return {
           ...task,
-          title: typeof task.flossId === "string" ? task.title : fallback.label,
-          flossId: typeof task.flossId === "string" ? task.flossId : fallback.id,
+          flossId: typeof task.flossId === "string" ? task.flossId : "",
           requiredSkeins:
             Number.isFinite(task.requiredSkeins) && task.requiredSkeins >= 0 ? Math.floor(task.requiredSkeins) : 1,
           crosses,
@@ -367,99 +359,52 @@ function normalizeChores(data) {
   };
 }
 
-function isPageData(page, data) {
-  if (!data || typeof data !== "object") return false;
-  if (page === "chores") {
-    return Boolean(normalizeChores(data));
-  }
-  if (page === "shopping") return isTaskList(data.tasks);
-  if (page === "printing") return Boolean(normalizePrinting(data));
-  if (page === "crossStitch") return Boolean(normalizeCrossStitch(data));
-  if (page === "todos") {
-    return (
-      Array.isArray(data.lists) &&
-      data.lists.every(
-        (list) => list && typeof list.id === "string" && typeof list.title === "string" && isTaskList(list.tasks),
-      )
-    );
-  }
-  return isProjectData(data);
+function normalizeShopping(data) {
+  return data && typeof data === "object" && isTaskList(data.tasks) ? data : undefined;
 }
+
+function normalizeTodos(data) {
+  if (!data || typeof data !== "object" || !Array.isArray(data.lists)) return undefined;
+  return data.lists.every(
+    (list) => list && typeof list.id === "string" && typeof list.title === "string" && isTaskList(list.tasks),
+  )
+    ? data
+    : undefined;
+}
+
+const PAGE_NORMALIZERS = Object.freeze({
+  chores: normalizeChores,
+  crossStitch: normalizeCrossStitch,
+  printing: normalizePrinting,
+  shopping: normalizeShopping,
+  todos: normalizeTodos,
+});
 
 export function loadPageTasks(page) {
   const defaultData = DEFAULT_PAGE_DATA[page];
-  if (!defaultData) throw new Error(`Unknown task page: ${page}`);
+  const normalize = PAGE_NORMALIZERS[page];
+  if (!defaultData || !normalize) throw new Error(`Unknown task page: ${page}`);
 
-  try {
-    const savedData = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}.${page}`) ?? "null");
-    if (page === "chores") return clone(normalizeChores(savedData) ?? normalizeChores(defaultData));
-    if (page === "printing") return clone(normalizePrinting(savedData) ?? normalizePrinting(defaultData));
-    if (page === "crossStitch") return clone(normalizeCrossStitch(savedData) ?? normalizeCrossStitch(defaultData));
-    return clone(isPageData(page, savedData) ? savedData : defaultData);
-  } catch {
-    return clone(defaultData);
-  }
+  const savedData = readStoredJson(`${STORAGE_PREFIX}.${page}`);
+  return clone(normalize(savedData) ?? normalize(defaultData));
 }
 
 export function savePageTasks(page, data) {
-  try {
-    localStorage.setItem(`${STORAGE_PREFIX}.${page}`, JSON.stringify(data));
-  } catch {
-    // Keep the in-memory page state usable when browser storage is unavailable.
-  }
+  writeStoredJson(`${STORAGE_PREFIX}.${page}`, data);
 }
 
 export function loadFilamentInventory() {
-  try {
-    const savedInventory = JSON.parse(localStorage.getItem(FILAMENT_INVENTORY_KEY) ?? "null");
-    if (!savedInventory || typeof savedInventory !== "object" || Array.isArray(savedInventory)) {
-      return clone(DEFAULT_FILAMENT_INVENTORY);
-    }
-    return Object.fromEntries(
-      Object.entries(savedInventory)
-        .filter(([, count]) => Number.isInteger(count) && count >= 0)
-        .map(([catalogId, count]) => [catalogId, count]),
-    );
-  } catch {
-    return clone(DEFAULT_FILAMENT_INVENTORY);
-  }
+  return normalizeInventory(readStoredJson(FILAMENT_INVENTORY_KEY), DEFAULT_FILAMENT_INVENTORY);
 }
 
 export function saveFilamentInventory(inventory) {
-  try {
-    localStorage.setItem(FILAMENT_INVENTORY_KEY, JSON.stringify(inventory));
-  } catch {
-    // Keep the in-memory inventory usable when browser storage is unavailable.
-  }
+  writeStoredJson(FILAMENT_INVENTORY_KEY, inventory);
 }
 
 export function loadFlossInventory() {
-  try {
-    const savedInventory = JSON.parse(localStorage.getItem(FLOSS_INVENTORY_KEY) ?? "null");
-    if (!savedInventory || typeof savedInventory !== "object" || Array.isArray(savedInventory)) {
-      return clone(DEFAULT_FLOSS_INVENTORY);
-    }
-    return Object.fromEntries(
-      Object.entries(savedInventory)
-        .filter(([, count]) => Number.isInteger(count) && count >= 0)
-        .map(([catalogId, count]) => [catalogId, count]),
-    );
-  } catch {
-    return clone(DEFAULT_FLOSS_INVENTORY);
-  }
+  return normalizeInventory(readStoredJson(FLOSS_INVENTORY_KEY), DEFAULT_FLOSS_INVENTORY);
 }
 
 export function saveFlossInventory(inventory) {
-  try {
-    localStorage.setItem(FLOSS_INVENTORY_KEY, JSON.stringify(inventory));
-  } catch {
-    // Keep the in-memory inventory usable when browser storage is unavailable.
-  }
-}
-
-export function nextTaskId(tasks, prefix) {
-  const usedIds = new Set(tasks.map((task) => task.id));
-  let index = tasks.length + 1;
-  while (usedIds.has(`${prefix}-${index}`)) index += 1;
-  return `${prefix}-${index}`;
+  writeStoredJson(FLOSS_INVENTORY_KEY, inventory);
 }

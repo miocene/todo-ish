@@ -1,18 +1,20 @@
 <script>
-import { filamentLabel, filaments, filamentsById } from "../app/filament-catalog.js";
-import { floss, flossById, flossLabel } from "../app/floss-catalog.js";
-import {
-  loadFilamentInventory,
-  loadFlossInventory,
-  loadPageTasks,
-  nextTaskId,
-  savePageTasks,
-} from "../app/page-tasks.js";
+import { filamentLabel, filamentsById } from "../app/filament-catalog.js";
+import { flossById, flossLabel } from "../app/floss-catalog.js";
+import { loadFilamentInventory, loadFlossInventory, loadPageTasks, savePageTasks } from "../app/page-tasks.js";
 import { filamentSupplyStatus, syncFilamentShoppingList } from "../app/printing-supplies.js";
 import { flossSupplyStatus, syncFlossShoppingList } from "../app/stitching-supplies.js";
-import { completedTasksLast, finishTaskDraft, serializableTasks } from "../app/task-drafts.js";
+import {
+  completedTasksLast,
+  createCompletionMoveScheduler,
+  finishTaskDraft,
+  moveItemToEnd,
+  nextEntityId,
+  serializableTasks,
+} from "../app/task-list.js";
 import JMButton from "../components/JMButton/JMButton.vue";
-import JMIcon from "../components/JMIcon/JMIcon.vue";
+import JMPrintingTaskDetails from "../components/JMProjectTaskDetails/JMPrintingTaskDetails.vue";
+import JMStitchTaskDetails from "../components/JMProjectTaskDetails/JMStitchTaskDetails.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
 import "./task-pages.css";
 
@@ -24,7 +26,7 @@ function loadProjectTasks(pageKey) {
 
 export default {
   name: "ProjectTasksPage",
-  components: { JMButton, JMIcon, JMTaskCard },
+  components: { JMButton, JMPrintingTaskDetails, JMStitchTaskDetails, JMTaskCard },
   props: {
     description: { type: String, required: true },
     pageKey: {
@@ -36,11 +38,9 @@ export default {
   },
   data() {
     return {
-      completionMoveTimers: new Map(),
+      completionMoves: createCompletionMoveScheduler(),
       draftTaskIds: new Set(),
       filamentInventory: loadFilamentInventory(),
-      filaments,
-      floss,
       flossInventory: loadFlossInventory(),
       pageData: loadProjectTasks(this.pageKey),
     };
@@ -80,8 +80,7 @@ export default {
   },
   methods: {
     clearCompletionMoveTimers() {
-      for (const timer of this.completionMoveTimers.values()) window.clearTimeout(timer);
-      this.completionMoveTimers.clear();
+      this.completionMoves.clear();
     },
     syncShoppingList() {
       if (this.isPrinting) syncFilamentShoppingList(this.pageData.projects, this.filamentInventory);
@@ -101,59 +100,6 @@ export default {
     },
     taskInputId(project, task) {
       return `${this.pageKey}-title-${project.id}-${task.id}`;
-    },
-    filamentInputId(project, task, usage) {
-      return `${this.pageKey}-filament-${project.id}-${task.id}-${usage.id}`;
-    },
-    filamentStatusId(project, task, usage) {
-      return `${this.pageKey}-filament-status-${project.id}-${task.id}-${usage.id}`;
-    },
-    weightInputId(project, task, usage) {
-      return `${this.pageKey}-weight-${project.id}-${task.id}-${usage.id}`;
-    },
-    flossInputId(project, task) {
-      return `${this.pageKey}-floss-${project.id}-${task.id}`;
-    },
-    flossStatusId(project, task) {
-      return `${this.pageKey}-floss-status-${project.id}-${task.id}`;
-    },
-    skeinsInputId(project, task) {
-      return `${this.pageKey}-skeins-${project.id}-${task.id}`;
-    },
-    crossesDoneInputId(project, task) {
-      return `${this.pageKey}-crosses-done-${project.id}-${task.id}`;
-    },
-    crossesInputId(project, task) {
-      return `${this.pageKey}-crosses-${project.id}-${task.id}`;
-    },
-    isMissingFilament(usage) {
-      return Boolean(
-        usage.catalogId &&
-        (!filamentsById.has(usage.catalogId) || (this.supplyById.get(usage.catalogId)?.missingSpools ?? 0) > 0),
-      );
-    },
-    missingFilamentLabel(usage) {
-      return usage.label || usage.catalogId;
-    },
-    filamentShortage(usage) {
-      return this.supplyById.get(usage.catalogId);
-    },
-    missingFilamentStatus(usage) {
-      const supply = this.filamentShortage(usage);
-      if (!filamentsById.has(usage.catalogId)) {
-        return `Not in catalog · Need ${supply?.requiredSpools ?? 1} ${supply?.requiredSpools === 1 ? "spool" : "spools"}`;
-      }
-      return `Missing ${supply.missingSpools} ${supply.missingSpools === 1 ? "spool" : "spools"} · ${supply.ownedSpools} owned`;
-    },
-    filamentLabel,
-    flossLabel,
-    isMissingFloss(task) {
-      return Boolean(task.flossId && (this.flossSupplyById.get(task.flossId)?.missingSkeins ?? 0) > 0);
-    },
-    missingFlossStatus(task) {
-      const supply = this.flossSupplyById.get(task.flossId);
-      if (!supply) return "";
-      return `Missing ${supply.missingSkeins} ${supply.missingSkeins === 1 ? "skein" : "skeins"} · ${supply.ownedSkeins} owned`;
     },
     projectCrossesDone(project) {
       return Math.min(
@@ -202,14 +148,14 @@ export default {
     },
     addFilament(project, task) {
       const usage = {
-        id: nextTaskId(task.filaments, `${task.id}-filament`),
+        id: nextEntityId(task.filaments, `${task.id}-filament`),
         catalogId: "",
         label: "",
         weightGrams: "",
       };
       task.filaments.push(usage);
       this.save();
-      this.$nextTick(() => document.getElementById(this.filamentInputId(project, task, usage))?.focus());
+      this.$nextTick(() => document.getElementById(`printing-filament-${task.id}-${usage.id}`)?.focus());
     },
     removeFilament(task, usage) {
       const usageIndex = task.filaments.findIndex((filament) => filament.id === usage.id);
@@ -243,24 +189,14 @@ export default {
       this.save();
     },
     updateCompleted(project, task, completed) {
-      window.clearTimeout(this.completionMoveTimers.get(task.id));
-      this.completionMoveTimers.delete(task.id);
       task.completed = completed;
       this.save();
-      if (!completed) return;
-
-      const timer = window.setTimeout(() => {
-        this.completionMoveTimers.delete(task.id);
-        const taskIndex = project.tasks.findIndex((item) => item.id === task.id);
-        if (taskIndex === -1 || taskIndex === project.tasks.length - 1) return;
-        project.tasks.splice(taskIndex, 1);
-        project.tasks.push(task);
-        this.save();
-      }, 500);
-      this.completionMoveTimers.set(task.id, timer);
+      this.completionMoves.schedule(task.id, completed, () => {
+        if (moveItemToEnd(project.tasks, task)) this.save();
+      });
     },
     addTask(project) {
-      const task = { id: nextTaskId(project.tasks, `${project.id}-task`), title: "", completed: false };
+      const task = { id: nextEntityId(project.tasks, `${project.id}-task`), title: "", completed: false };
       if (this.isPrinting) {
         task.filaments = [{ id: `${task.id}-filament-1`, catalogId: "", label: "", weightGrams: "" }];
       } else if (this.isCrossStitch) {
@@ -276,7 +212,7 @@ export default {
       if (!this.isCrossStitch) this.draftTaskIds.add(task.id);
       this.save();
       if (this.isCrossStitch) {
-        this.$nextTick(() => document.getElementById(this.flossInputId(project, task))?.focus());
+        this.$nextTick(() => document.getElementById(`stitch-floss-${task.id}`)?.focus());
       } else {
         this.focusTask(project, task);
       }
@@ -284,7 +220,7 @@ export default {
     },
     addProject() {
       const project = {
-        id: nextTaskId(this.pageData.projects, this.isPrinting ? "printing-project" : "stitch-project"),
+        id: nextEntityId(this.pageData.projects, this.isPrinting ? "printing-project" : "stitch-project"),
         title: this.isPrinting ? "New 3D project" : "New cross stitch project",
         color: this.isPrinting ? "#526d9c" : "#a6638d",
         description: "",
@@ -405,147 +341,24 @@ export default {
                 @update:title="updateTitle(task, $event)"
               >
                 <template #details>
-                  <fieldset v-if="isPrinting" class="printing-item__fields">
-                    <legend class="task-page__visually-hidden">
-                      Filaments and weights for {{ task.title || "untitled item" }}
-                    </legend>
-                    <div
-                      v-for="(usage, usageIndex) in task.filaments"
-                      :key="usage.id"
-                      class="printing-filament"
-                      :class="{ 'printing-filament--missing': isMissingFilament(usage) }"
-                    >
-                      <div class="printing-item__field printing-item__field--filament">
-                        <label :for="filamentInputId(project, task, usage)">Filament {{ usageIndex + 1 }}</label>
-                        <select
-                          :id="filamentInputId(project, task, usage)"
-                          name="item-filament"
-                          :value="usage.catalogId"
-                          :aria-describedby="
-                            isMissingFilament(usage) ? filamentStatusId(project, task, usage) : undefined
-                          "
-                          @change="updateFilament(usage, $event.target.value)"
-                        >
-                          <option value="">Choose filament</option>
-                          <option v-if="isMissingFilament(usage)" :value="usage.catalogId">
-                            Missing · {{ missingFilamentLabel(usage) }}
-                          </option>
-                          <option v-for="filament in filaments" :key="filament.id" :value="filament.id">
-                            {{ filamentLabel(filament) }}
-                          </option>
-                        </select>
-                        <span
-                          v-if="isMissingFilament(usage)"
-                          :id="filamentStatusId(project, task, usage)"
-                          class="printing-item__missing"
-                        >
-                          {{ missingFilamentStatus(usage) }}
-                        </span>
-                      </div>
-                      <div class="printing-item__field printing-item__field--weight">
-                        <label :for="weightInputId(project, task, usage)">Weight {{ usageIndex + 1 }}</label>
-                        <span class="printing-item__weight-control">
-                          <input
-                            :id="weightInputId(project, task, usage)"
-                            name="item-weight"
-                            type="number"
-                            inputmode="decimal"
-                            min="0"
-                            step="0.1"
-                            :value="usage.weightGrams"
-                            @input="updateWeight(usage, $event.target.value)"
-                          />
-                          <span aria-hidden="true">g</span>
-                        </span>
-                      </div>
-                      <button
-                        class="printing-filament__remove"
-                        type="button"
-                        :aria-label="`Remove filament ${usageIndex + 1} from ${task.title || 'untitled item'}`"
-                        @click="removeFilament(task, usage)"
-                      >
-                        <JMIcon name="remove" />
-                      </button>
-                    </div>
-                    <JMButton text="Add filament" view="ghost" @click="addFilament(project, task)" />
-                  </fieldset>
-
-                  <fieldset
+                  <JMPrintingTaskDetails
+                    v-if="isPrinting"
+                    :supply-by-id="supplyById"
+                    :task="task"
+                    @add="addFilament(project, task)"
+                    @remove="removeFilament(task, $event)"
+                    @update:filament="updateFilament"
+                    @update:weight="updateWeight"
+                  />
+                  <JMStitchTaskDetails
                     v-else-if="isCrossStitch"
-                    class="stitch-color__fields"
-                    :class="{ 'stitch-color__fields--missing': isMissingFloss(task) }"
-                  >
-                    <legend class="task-page__visually-hidden">Thread and progress for {{ task.title }}</legend>
-                    <div class="stitch-color__field stitch-color__field--thread">
-                      <label :for="flossInputId(project, task)">Thread color</label>
-                      <select
-                        :id="flossInputId(project, task)"
-                        name="stitch-floss"
-                        :value="task.flossId"
-                        :aria-describedby="isMissingFloss(task) ? flossStatusId(project, task) : undefined"
-                        @change="updateFloss(task, $event.target.value)"
-                      >
-                        <option value="">Choose DMC color</option>
-                        <option v-for="thread in floss" :key="thread.id" :value="thread.id">
-                          {{ flossLabel(thread) }}
-                        </option>
-                      </select>
-                      <span
-                        v-if="isMissingFloss(task)"
-                        :id="flossStatusId(project, task)"
-                        class="stitch-color__missing"
-                      >
-                        {{ missingFlossStatus(task) }}
-                      </span>
-                    </div>
-                    <div class="stitch-color__field">
-                      <label :for="skeinsInputId(project, task)">Skeins needed</label>
-                      <input
-                        :id="skeinsInputId(project, task)"
-                        name="stitch-skeins"
-                        type="number"
-                        inputmode="numeric"
-                        min="0"
-                        step="1"
-                        :value="task.requiredSkeins"
-                        @input="updateSkeins(task, $event.target.value)"
-                      />
-                    </div>
-                    <div class="stitch-color__field">
-                      <label :for="crossesDoneInputId(project, task)">Crosses done</label>
-                      <input
-                        :id="crossesDoneInputId(project, task)"
-                        name="stitch-crosses-done"
-                        type="number"
-                        inputmode="numeric"
-                        min="0"
-                        :max="task.crosses"
-                        step="1"
-                        :value="task.crossesDone"
-                        @input="updateCrossesDone(task, $event.target.value)"
-                      />
-                    </div>
-                    <div class="stitch-color__field">
-                      <label :for="crossesInputId(project, task)">Crosses total</label>
-                      <input
-                        :id="crossesInputId(project, task)"
-                        name="stitch-crosses-total"
-                        type="number"
-                        inputmode="numeric"
-                        min="0"
-                        step="1"
-                        :value="task.crosses"
-                        @input="updateCrosses(task, $event.target.value)"
-                      />
-                    </div>
-                    <p class="stitch-color__progress">
-                      {{ task.crossesDone.toLocaleString() }} / {{ task.crosses.toLocaleString() }} crosses<span
-                        v-if="task.completed"
-                      >
-                        · Done</span
-                      >
-                    </p>
-                  </fieldset>
+                    :supply-by-id="flossSupplyById"
+                    :task="task"
+                    @update:crosses="updateCrosses(task, $event)"
+                    @update:crosses-done="updateCrossesDone(task, $event)"
+                    @update:floss="updateFloss(task, $event)"
+                    @update:skeins="updateSkeins(task, $event)"
+                  />
                 </template>
               </JMTaskCard>
             </li>

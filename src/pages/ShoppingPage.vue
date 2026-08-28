@@ -1,8 +1,14 @@
 <script>
-import { nextTaskId, savePageTasks } from "../app/page-tasks.js";
-import { completedTasksLast, finishTaskDraft, serializableTasks } from "../app/task-drafts.js";
-import { syncFilamentShoppingList } from "../app/printing-supplies.js";
-import { syncFlossShoppingList } from "../app/stitching-supplies.js";
+import { savePageTasks } from "../app/page-tasks.js";
+import {
+  completedTasksLast,
+  createCompletionMoveScheduler,
+  finishTaskDraft,
+  moveItemToEnd,
+  nextEntityId,
+  serializableTasks,
+} from "../app/task-list.js";
+import { syncSupplyShoppingLists } from "../app/shopping-supplies.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
 import "./task-pages.css";
@@ -11,13 +17,12 @@ export default {
   name: "ShoppingPage",
   components: { JMButton, JMTaskCard },
   data() {
-    syncFilamentShoppingList();
-    const shopping = syncFlossShoppingList();
+    const shopping = syncSupplyShoppingLists();
     shopping.tasks = completedTasksLast(shopping.tasks);
-    return { completionMoveTimers: new Map(), draftTaskIds: new Set(), shopping };
+    return { completionMoves: createCompletionMoveScheduler(), draftTaskIds: new Set(), shopping };
   },
   beforeUnmount() {
-    for (const timer of this.completionMoveTimers.values()) window.clearTimeout(timer);
+    this.completionMoves.clear();
   },
   methods: {
     taskInputId(task) {
@@ -34,8 +39,7 @@ export default {
       this.save();
     },
     updateCompleted(task, completed) {
-      window.clearTimeout(this.completionMoveTimers.get(task.id));
-      this.completionMoveTimers.delete(task.id);
+      this.completionMoves.cancel(task.id);
       task.completed = completed;
       this.save();
       if (!completed) return;
@@ -48,26 +52,19 @@ export default {
         return;
       }
 
-      const timer = window.setTimeout(() => {
-        this.completionMoveTimers.delete(task.id);
-        const taskIndex = this.shopping.tasks.findIndex((item) => item.id === task.id);
-        if (taskIndex === -1 || taskIndex === this.shopping.tasks.length - 1) return;
-        this.shopping.tasks.splice(taskIndex, 1);
-        this.shopping.tasks.push(task);
-        this.save();
-      }, 500);
-      this.completionMoveTimers.set(task.id, timer);
+      this.completionMoves.schedule(task.id, completed, () => {
+        if (moveItemToEnd(this.shopping.tasks, task)) this.save();
+      });
     },
     removeTask(task) {
-      window.clearTimeout(this.completionMoveTimers.get(task.id));
-      this.completionMoveTimers.delete(task.id);
+      this.completionMoves.cancel(task.id);
       this.draftTaskIds.delete(task.id);
       this.shopping.tasks = this.shopping.tasks.filter((item) => item.id !== task.id);
       this.save();
     },
     addTask() {
       const task = {
-        id: nextTaskId(this.shopping.tasks, "shopping"),
+        id: nextEntityId(this.shopping.tasks, "shopping"),
         title: "",
         completed: false,
       };

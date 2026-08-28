@@ -1,7 +1,14 @@
 <script>
 import { RouterLink } from "vue-router";
-import { loadPageTasks, nextTaskId, savePageTasks } from "../app/page-tasks.js";
-import { completedTasksLast, finishTaskDraft, serializableTasks } from "../app/task-drafts.js";
+import { loadPageTasks, savePageTasks } from "../app/page-tasks.js";
+import {
+  completedTasksLast,
+  createCompletionMoveScheduler,
+  finishTaskDraft,
+  moveItemToEnd,
+  nextEntityId,
+  serializableTasks,
+} from "../app/task-list.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
 import "./task-pages.css";
@@ -12,10 +19,10 @@ export default {
   data() {
     const todos = loadPageTasks("todos");
     for (const list of todos.lists) list.tasks = completedTasksLast(list.tasks);
-    return { completionMoveTimers: new Map(), draftTaskIds: new Set(), todos };
+    return { completionMoves: createCompletionMoveScheduler(), draftTaskIds: new Set(), todos };
   },
   beforeUnmount() {
-    for (const timer of this.completionMoveTimers.values()) window.clearTimeout(timer);
+    this.completionMoves.clear();
   },
   computed: {
     activeList() {
@@ -48,23 +55,13 @@ export default {
       this.scheduleCompletedTaskMove(list, task, completed);
     },
     scheduleCompletedTaskMove(list, task, completed) {
-      window.clearTimeout(this.completionMoveTimers.get(task.id));
-      this.completionMoveTimers.delete(task.id);
-      if (!completed) return;
-
-      const timer = window.setTimeout(() => {
-        this.completionMoveTimers.delete(task.id);
-        const taskIndex = list.tasks.findIndex((item) => item.id === task.id);
-        if (taskIndex === -1 || taskIndex === list.tasks.length - 1) return;
-        list.tasks.splice(taskIndex, 1);
-        list.tasks.push(task);
-        this.save();
-      }, 500);
-      this.completionMoveTimers.set(task.id, timer);
+      this.completionMoves.schedule(task.id, completed, () => {
+        if (moveItemToEnd(list.tasks, task)) this.save();
+      });
     },
     addTask() {
       const task = {
-        id: nextTaskId(this.activeList.tasks, `todo-${this.activeList.id}`),
+        id: nextEntityId(this.activeList.tasks, `todo-${this.activeList.id}`),
         title: "",
         completed: false,
       };

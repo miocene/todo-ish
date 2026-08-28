@@ -46,23 +46,32 @@ assert.deepEqual(readdirSync(new URL("src/pages/", root)).sort(), [
 assert.deepEqual(readdirSync(new URL("src/app/", root)).sort(), [
   "filament-catalog.js",
   "floss-catalog.js",
+  "managed-shopping.js",
   "page-tasks.js",
   "printing-supplies.js",
   "router.js",
+  "shopping-supplies.js",
   "stitching-supplies.js",
-  "task-drafts.js",
+  "storage.js",
+  "task-list.js",
   "work-calendar.js",
   "work-status.js",
   "work-tasks.mock.js",
 ]);
 assert.deepEqual(readdirSync(new URL("src/components/", root)).sort(), [
   "JMButton",
+  "JMCatalogCard",
   "JMHeader",
   "JMIcon",
   "JMNavigation",
+  "JMProjectTaskDetails",
   "JMTaskCard",
 ]);
 assert.deepEqual(readdirSync(new URL("src/components/JMButton/", root)).sort(), ["JMButton.vue", "jm-button.css"]);
+assert.deepEqual(readdirSync(new URL("src/components/JMCatalogCard/", root)).sort(), [
+  "JMCatalogCard.vue",
+  "jm-catalog-card.css",
+]);
 assert.deepEqual(readdirSync(new URL("src/components/JMHeader/", root)).sort(), ["JMHeader.vue", "jm-header.css"]);
 assert.deepEqual(readdirSync(new URL("src/components/JMIcon/", root)).sort(), [
   "JMIcon.vue",
@@ -109,6 +118,10 @@ assert.deepEqual(readdirSync(new URL("src/components/JMNavigation/", root)).sort
   "JMNavigation.vue",
   "jm-navigation.css",
 ]);
+assert.deepEqual(readdirSync(new URL("src/components/JMProjectTaskDetails/", root)).sort(), [
+  "JMPrintingTaskDetails.vue",
+  "JMStitchTaskDetails.vue",
+]);
 assert.deepEqual(readdirSync(new URL("src/components/JMTaskCard/", root)).sort(), [
   "JMTaskCard.vue",
   "jm-task-card.css",
@@ -122,14 +135,19 @@ const clientSource = [
   "src/main.js",
   "src/app/filament-catalog.js",
   "src/app/floss-catalog.js",
+  "src/app/managed-shopping.js",
   "src/app/printing-supplies.js",
+  "src/app/shopping-supplies.js",
   "src/app/stitching-supplies.js",
   "src/app/router.js",
-  "src/app/task-drafts.js",
+  "src/app/task-list.js",
   "src/components/JMButton/JMButton.vue",
+  "src/components/JMCatalogCard/JMCatalogCard.vue",
   "src/components/JMHeader/JMHeader.vue",
   "src/components/JMIcon/JMIcon.vue",
   "src/components/JMNavigation/JMNavigation.vue",
+  "src/components/JMProjectTaskDetails/JMPrintingTaskDetails.vue",
+  "src/components/JMProjectTaskDetails/JMStitchTaskDetails.vue",
   "src/components/JMTaskCard/JMTaskCard.vue",
   "src/pages/CatalogPage.vue",
   "src/pages/ChoresPage.vue",

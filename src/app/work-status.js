@@ -1,4 +1,5 @@
 import { reactive } from "vue";
+import { readStoredJson, writeStoredJson } from "./storage.js";
 
 export const WORK_STATUSES = Object.freeze([
   { value: "work", label: "Workday", icon: "work" },
@@ -16,24 +17,15 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const STATUS_VALUES = new Set(WORK_STATUSES.map((status) => status.value));
 
 function loadStatuses() {
-  try {
-    const savedStatuses = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
-    if (!savedStatuses || typeof savedStatuses !== "object" || Array.isArray(savedStatuses)) return {};
-
-    return Object.fromEntries(
-      Object.entries(savedStatuses).filter(([date, value]) => ISO_DATE.test(date) && STATUS_VALUES.has(value)),
-    );
-  } catch {
-    return {};
-  }
+  const savedStatuses = readStoredJson(STORAGE_KEY, {});
+  if (!savedStatuses || typeof savedStatuses !== "object" || Array.isArray(savedStatuses)) return {};
+  return Object.fromEntries(
+    Object.entries(savedStatuses).filter(([date, value]) => ISO_DATE.test(date) && STATUS_VALUES.has(value)),
+  );
 }
 
 function saveStatuses(statuses) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(statuses));
-  } catch {
-    // Keep the reactive in-memory state usable when browser storage is unavailable.
-  }
+  writeStoredJson(STORAGE_KEY, statuses);
 }
 
 const statusesByDate = reactive(loadStatuses());

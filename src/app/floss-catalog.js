@@ -1,4 +1,4 @@
-import flossCatalog from "../../backend/catalogs/dmc-floss.snapshot.json";
+import flossCatalog from "../../backend/catalogs/dmc-floss.snapshot.json" with { type: "json" };
 
 export const floss = flossCatalog.entries.map((thread) => ({
   ...thread,

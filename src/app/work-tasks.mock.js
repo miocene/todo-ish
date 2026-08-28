@@ -1,3 +1,5 @@
+import { readStoredJson, writeStoredJson } from "./storage.js";
+
 const EMPTY_TASKS = Object.freeze([]);
 const STORAGE_KEY = "done-ish.work-tasks.v1";
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -61,23 +63,17 @@ function isStoredTask(task) {
 }
 
 function loadTasks() {
-  try {
-    const savedTasks = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
-    if (!Array.isArray(savedTasks) || !savedTasks.every(isStoredTask)) return defaultTasks;
-    return Object.freeze(savedTasks.map((task) => Object.freeze({ ...task })));
-  } catch {
-    return defaultTasks;
-  }
+  const savedTasks = readStoredJson(STORAGE_KEY);
+  if (!Array.isArray(savedTasks) || !savedTasks.every(isStoredTask)) return defaultTasks;
+  return Object.freeze(savedTasks.map((task) => Object.freeze({ ...task })));
 }
 
 let allTasks = loadTasks();
 
-const firstCheckedTaskDate = allTasks
-  .filter((task) => task.checkedAt)
-  .sort((first, second) => first.checkedAt.localeCompare(second.checkedAt))[0]?.date;
-
 export function getFirstCheckedWorkTaskDate() {
-  return firstCheckedTaskDate;
+  return allTasks
+    .filter((task) => task.checkedAt)
+    .sort((first, second) => first.checkedAt.localeCompare(second.checkedAt))[0]?.date;
 }
 
 export function getWorkTasks(date) {
@@ -98,9 +94,5 @@ export function saveWorkTasks(tasks) {
   }));
   allTasks = Object.freeze(savedTasks.map((task) => Object.freeze(task)));
 
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(savedTasks));
-  } catch {
-    // Keep the reactive in-memory state usable when browser storage is unavailable.
-  }
+  writeStoredJson(STORAGE_KEY, savedTasks);
 }

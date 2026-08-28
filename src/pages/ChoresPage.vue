@@ -1,6 +1,12 @@
 <script>
-import { loadPageTasks, nextTaskId, savePageTasks } from "../app/page-tasks.js";
-import { finishTaskDraft, serializableTasks } from "../app/task-drafts.js";
+import { loadPageTasks, savePageTasks } from "../app/page-tasks.js";
+import {
+  createCompletionMoveScheduler,
+  finishTaskDraft,
+  moveItemToEnd,
+  nextEntityId,
+  serializableTasks,
+} from "../app/task-list.js";
 import { calendarDate, isoDate } from "../app/work-calendar.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
@@ -16,10 +22,14 @@ export default {
   name: "ChoresPage",
   components: { JMButton, JMTaskCard },
   data() {
-    return { chores: loadPageTasks("chores"), completionMoveTimers: new Map(), draftTaskIds: new Set() };
+    return {
+      chores: loadPageTasks("chores"),
+      completionMoves: createCompletionMoveScheduler(),
+      draftTaskIds: new Set(),
+    };
   },
   beforeUnmount() {
-    for (const timer of this.completionMoveTimers.values()) window.clearTimeout(timer);
+    this.completionMoves.clear();
   },
   computed: {
     todayIso() {
@@ -59,25 +69,15 @@ export default {
       this.save();
     },
     updateCompleted(task, completed) {
-      window.clearTimeout(this.completionMoveTimers.get(task.id));
-      this.completionMoveTimers.delete(task.id);
       task.completed = completed;
       this.save();
-      if (!completed) return;
-
-      const timer = window.setTimeout(() => {
-        this.completionMoveTimers.delete(task.id);
-        const taskIndex = this.chores.occurrenceOrder.indexOf(task.id);
-        if (taskIndex === -1 || taskIndex === this.chores.occurrenceOrder.length - 1) return;
-        this.chores.occurrenceOrder.splice(taskIndex, 1);
-        this.chores.occurrenceOrder.push(task.id);
-        this.save();
-      }, 500);
-      this.completionMoveTimers.set(task.id, timer);
+      this.completionMoves.schedule(task.id, completed, () => {
+        if (moveItemToEnd(this.chores.occurrenceOrder, task.id)) this.save();
+      });
     },
     addTask() {
       const task = {
-        id: nextTaskId(this.chores.tasks, "chore"),
+        id: nextEntityId(this.chores.tasks, "chore"),
         title: "",
         details: "Repeats weekly",
         nextDue: this.todayIso,

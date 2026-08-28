@@ -1,5 +1,6 @@
 import { filamentLabel, filamentProductLink, filamentSearchLink, filamentsById } from "./filament-catalog.js";
-import { loadFilamentInventory, loadPageTasks, savePageTasks } from "./page-tasks.js";
+import { syncManagedShoppingTasks } from "./managed-shopping.js";
+import { loadFilamentInventory, loadPageTasks } from "./page-tasks.js";
 
 const SHOPPING_SOURCE = "filament-shortage";
 
@@ -44,14 +45,11 @@ export function syncFilamentShoppingList(projects, inventory = loadFilamentInven
   const shortages = [...filamentSupplyStatus(printingProjects, inventory).values()].filter(
     (supply) => supply.missingSpools > 0,
   );
-  const shopping = loadPageTasks("shopping");
-  const existingManagedTasks = new Map(
-    shopping.tasks.filter((task) => task.source === SHOPPING_SOURCE).map((task) => [task.filamentId, task]),
-  );
-  const regularTasks = shopping.tasks.filter((task) => task.source !== SHOPPING_SOURCE);
-  const managedTasks = shortages.map((supply) => {
-    const existingTask = existingManagedTasks.get(supply.catalogId);
-    return {
+  return syncManagedShoppingTasks({
+    source: SHOPPING_SOURCE,
+    resourceIdKey: "filamentId",
+    shortages,
+    createTask: (supply, existingTask) => ({
       id: existingTask?.id ?? `shopping-filament-${supply.catalogId}`,
       title: `${supply.label} filament · ${supply.missingSpools} ${supply.missingSpools === 1 ? "spool" : "spools"}`,
       completed: existingTask?.completed ?? false,
@@ -59,10 +57,6 @@ export function syncFilamentShoppingList(projects, inventory = loadFilamentInven
       filamentId: supply.catalogId,
       productLink: supply.productLink,
       quantity: supply.missingSpools,
-    };
+    }),
   });
-
-  shopping.tasks = [...regularTasks, ...managedTasks];
-  savePageTasks("shopping", shopping);
-  return shopping;
 }

@@ -1,5 +1,6 @@
 import { flossById, flossLabel, flossProductLink } from "./floss-catalog.js";
-import { loadFlossInventory, loadPageTasks, savePageTasks } from "./page-tasks.js";
+import { syncManagedShoppingTasks } from "./managed-shopping.js";
+import { loadFlossInventory, loadPageTasks } from "./page-tasks.js";
 
 const SHOPPING_SOURCE = "floss-shortage";
 
@@ -35,22 +36,18 @@ export function syncFlossShoppingList(projects, inventory = loadFlossInventory()
   const shortages = [...flossSupplyStatus(stitchingProjects, inventory).values()].filter(
     (supply) => supply.missingSkeins > 0,
   );
-  const shopping = loadPageTasks("shopping");
-  const existingManagedTasks = new Map(
-    shopping.tasks.filter((task) => task.source === SHOPPING_SOURCE).map((task) => [task.flossId, task]),
-  );
-  const regularTasks = shopping.tasks.filter((task) => task.source !== SHOPPING_SOURCE);
-  const managedTasks = shortages.map((supply) => ({
-    id: existingManagedTasks.get(supply.catalogId)?.id ?? `shopping-floss-${supply.catalogId}`,
-    title: `${supply.label} floss · ${supply.missingSkeins} ${supply.missingSkeins === 1 ? "skein" : "skeins"}`,
-    completed: existingManagedTasks.get(supply.catalogId)?.completed ?? false,
+  return syncManagedShoppingTasks({
     source: SHOPPING_SOURCE,
-    flossId: supply.catalogId,
-    productLink: supply.productLink,
-    quantity: supply.missingSkeins,
-  }));
-
-  shopping.tasks = [...regularTasks, ...managedTasks];
-  savePageTasks("shopping", shopping);
-  return shopping;
+    resourceIdKey: "flossId",
+    shortages,
+    createTask: (supply, existingTask) => ({
+      id: existingTask?.id ?? `shopping-floss-${supply.catalogId}`,
+      title: `${supply.label} floss · ${supply.missingSkeins} ${supply.missingSkeins === 1 ? "skein" : "skeins"}`,
+      completed: existingTask?.completed ?? false,
+      source: SHOPPING_SOURCE,
+      flossId: supply.catalogId,
+      productLink: supply.productLink,
+      quantity: supply.missingSkeins,
+    }),
+  });
 }
