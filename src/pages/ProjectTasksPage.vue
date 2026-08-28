@@ -1,9 +1,15 @@
 <script>
 import { loadPageTasks, nextTaskId, savePageTasks } from "../app/page-tasks.js";
-import { finishTaskDraft, serializableTasks } from "../app/task-drafts.js";
+import { completedTasksLast, finishTaskDraft, serializableTasks } from "../app/task-drafts.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
 import "./task-pages.css";
+
+function loadProjectTasks(pageKey) {
+  const pageData = loadPageTasks(pageKey);
+  for (const project of pageData.projects) project.tasks = completedTasksLast(project.tasks);
+  return pageData;
+}
 
 export default {
   name: "ProjectTasksPage",
@@ -18,15 +24,23 @@ export default {
     title: { type: String, required: true },
   },
   data() {
-    return { draftTaskIds: new Set(), pageData: loadPageTasks(this.pageKey) };
+    return { completionMoveTimers: new Map(), draftTaskIds: new Set(), pageData: loadProjectTasks(this.pageKey) };
+  },
+  beforeUnmount() {
+    this.clearCompletionMoveTimers();
   },
   watch: {
     pageKey(value) {
+      this.clearCompletionMoveTimers();
       this.draftTaskIds.clear();
-      this.pageData = loadPageTasks(value);
+      this.pageData = loadProjectTasks(value);
     },
   },
   methods: {
+    clearCompletionMoveTimers() {
+      for (const timer of this.completionMoveTimers.values()) window.clearTimeout(timer);
+      this.completionMoveTimers.clear();
+    },
     projectTitleId(project) {
       return `${this.pageKey}-project-${project.id}`;
     },
@@ -46,9 +60,22 @@ export default {
       task.title = title;
       this.save();
     },
-    updateCompleted(task, completed) {
+    updateCompleted(project, task, completed) {
+      window.clearTimeout(this.completionMoveTimers.get(task.id));
+      this.completionMoveTimers.delete(task.id);
       task.completed = completed;
       this.save();
+      if (!completed) return;
+
+      const timer = window.setTimeout(() => {
+        this.completionMoveTimers.delete(task.id);
+        const taskIndex = project.tasks.findIndex((item) => item.id === task.id);
+        if (taskIndex === -1 || taskIndex === project.tasks.length - 1) return;
+        project.tasks.splice(taskIndex, 1);
+        project.tasks.push(task);
+        this.save();
+      }, 500);
+      this.completionMoveTimers.set(task.id, timer);
     },
     addTask(project) {
       const task = {
@@ -111,7 +138,7 @@ export default {
                 :completed="task.completed"
                 @enter="handleEnter(project, task, $event)"
                 @title-blur="handleTitleBlur(project, task)"
-                @update:completed="updateCompleted(task, $event)"
+                @update:completed="updateCompleted(project, task, $event)"
                 @update:title="updateTitle(task, $event)"
               />
             </li>

@@ -10,3 +10,7 @@ export function finishTaskDraft(tasks, task, draftTaskIds, getTaskTitle = taskTi
   if (taskIndex !== -1) tasks.splice(taskIndex, 1);
   return taskIndex !== -1;
 }
+
+export function completedTasksLast(tasks) {
+  return [...tasks.filter((task) => !task.completed), ...tasks.filter((task) => task.completed)];
+}

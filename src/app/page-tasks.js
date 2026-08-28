@@ -1,11 +1,45 @@
 const STORAGE_PREFIX = "done-ish.page-tasks.v1";
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function isoDate(value) {
+  const pad = (part) => String(part).padStart(2, "0");
+  return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
+}
+
+function nextWeekdayIso(weekday) {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + ((weekday - date.getDay() + 7) % 7));
+  return isoDate(date);
+}
+
+const DEFAULT_CHORE_DUE_DATES = [nextWeekdayIso(6), nextWeekdayIso(0), nextWeekdayIso(3)];
 
 const DEFAULT_PAGE_DATA = Object.freeze({
   chores: {
+    occurrenceOrder: ["chore-1", "chore-2", "chore-3"],
     tasks: [
-      { id: "chore-1", title: "Water the plants", details: "Every Saturday", completed: false },
-      { id: "chore-2", title: "Change the bed linen", details: "Every 2 weeks on Sunday", completed: false },
-      { id: "chore-3", title: "Clean the kitchen", details: "Every Wednesday", completed: true },
+      {
+        id: "chore-1",
+        title: "Water the plants",
+        details: "Every Saturday",
+        nextDue: DEFAULT_CHORE_DUE_DATES[0],
+        completed: false,
+      },
+      {
+        id: "chore-2",
+        title: "Change the bed linen",
+        details: "Every 2 weeks on Sunday",
+        nextDue: DEFAULT_CHORE_DUE_DATES[1],
+        completed: false,
+      },
+      {
+        id: "chore-3",
+        title: "Clean the kitchen",
+        details: "Every Wednesday",
+        nextDue: DEFAULT_CHORE_DUE_DATES[2],
+        completed: true,
+      },
     ],
   },
   todos: {
@@ -109,10 +143,32 @@ function isTaskList(value) {
   return Array.isArray(value) && value.every(isTask);
 }
 
+function normalizeChores(data) {
+  if (!data || typeof data !== "object" || !isTaskList(data.tasks)) return undefined;
+  if (!data.tasks.every((task) => typeof task.details === "string")) return undefined;
+  const tasks = data.tasks.map((task, index) => ({
+    ...task,
+    nextDue: ISO_DATE.test(task.nextDue) ? task.nextDue : (DEFAULT_CHORE_DUE_DATES[index] ?? isoDate(new Date())),
+  }));
+  const taskIds = new Set(tasks.map((task) => task.id));
+  const defaultOrder = [...tasks.filter((task) => !task.completed), ...tasks.filter((task) => task.completed)].map(
+    (task) => task.id,
+  );
+  const savedOrder = Array.isArray(data.occurrenceOrder)
+    ? data.occurrenceOrder.filter((taskId) => taskIds.has(taskId))
+    : defaultOrder;
+  const occurrenceOrder = [...new Set([...savedOrder, ...defaultOrder])];
+  return {
+    ...data,
+    occurrenceOrder,
+    tasks,
+  };
+}
+
 function isPageData(page, data) {
   if (!data || typeof data !== "object") return false;
   if (page === "chores") {
-    return isTaskList(data.tasks) && data.tasks.every((task) => typeof task.details === "string");
+    return Boolean(normalizeChores(data));
   }
   if (page === "shopping") return isTaskList(data.tasks);
   if (page === "todos") {
@@ -142,6 +198,7 @@ export function loadPageTasks(page) {
 
   try {
     const savedData = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}.${page}`) ?? "null");
+    if (page === "chores") return clone(normalizeChores(savedData) ?? normalizeChores(defaultData));
     return clone(isPageData(page, savedData) ? savedData : defaultData);
   } catch {
     return clone(defaultData);

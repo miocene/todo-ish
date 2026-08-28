@@ -19,6 +19,10 @@
   grid-template-columns: 16px 16px minmax(0, 1fr) auto;
 }
 
+.task-item--without-checkbox {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
 .task-item__drag-handle,
 .task-item__drag-handle-placeholder {
   grid-column: 1;
@@ -55,6 +59,10 @@
 .task-item__content {
   grid-column: 2;
   min-inline-size: 0;
+}
+
+.task-item--without-checkbox .task-item__content {
+  grid-column: 1;
 }
 
 .task-item:has(:is(.task-item__drag-handle, .task-item__drag-handle-placeholder)) .task-item__content {
@@ -100,6 +108,10 @@ textarea.task-item__title {
   grid-column: 3;
   display: inline-flex;
   gap: var(--space-1);
+}
+
+.task-item--without-checkbox .task-item__actions {
+  grid-column: 2;
 }
 
 .task-item:has(:is(.task-item__drag-handle, .task-item__drag-handle-placeholder)) .task-item__actions {

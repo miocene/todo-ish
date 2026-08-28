@@ -1,6 +1,6 @@
 <script>
 import { loadPageTasks, nextTaskId, savePageTasks } from "../app/page-tasks.js";
-import { finishTaskDraft, serializableTasks } from "../app/task-drafts.js";
+import { completedTasksLast, finishTaskDraft, serializableTasks } from "../app/task-drafts.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
 import "./task-pages.css";
@@ -9,7 +9,12 @@ export default {
   name: "ShoppingPage",
   components: { JMButton, JMTaskCard },
   data() {
-    return { draftTaskIds: new Set(), shopping: loadPageTasks("shopping") };
+    const shopping = loadPageTasks("shopping");
+    shopping.tasks = completedTasksLast(shopping.tasks);
+    return { completionMoveTimers: new Map(), draftTaskIds: new Set(), shopping };
+  },
+  beforeUnmount() {
+    for (const timer of this.completionMoveTimers.values()) window.clearTimeout(timer);
   },
   methods: {
     taskInputId(task) {
@@ -26,10 +31,25 @@ export default {
       this.save();
     },
     updateCompleted(task, completed) {
+      window.clearTimeout(this.completionMoveTimers.get(task.id));
+      this.completionMoveTimers.delete(task.id);
       task.completed = completed;
       this.save();
+      if (!completed) return;
+
+      const timer = window.setTimeout(() => {
+        this.completionMoveTimers.delete(task.id);
+        const taskIndex = this.shopping.tasks.findIndex((item) => item.id === task.id);
+        if (taskIndex === -1 || taskIndex === this.shopping.tasks.length - 1) return;
+        this.shopping.tasks.splice(taskIndex, 1);
+        this.shopping.tasks.push(task);
+        this.save();
+      }, 500);
+      this.completionMoveTimers.set(task.id, timer);
     },
     removeTask(task) {
+      window.clearTimeout(this.completionMoveTimers.get(task.id));
+      this.completionMoveTimers.delete(task.id);
       this.draftTaskIds.delete(task.id);
       this.shopping.tasks = this.shopping.tasks.filter((item) => item.id !== task.id);
       this.save();

@@ -1,7 +1,7 @@
 <script>
 import { RouterLink } from "vue-router";
 import { loadPageTasks, nextTaskId, savePageTasks } from "../app/page-tasks.js";
-import { finishTaskDraft, serializableTasks } from "../app/task-drafts.js";
+import { completedTasksLast, finishTaskDraft, serializableTasks } from "../app/task-drafts.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
 import "./task-pages.css";
@@ -10,7 +10,12 @@ export default {
   name: "TodoListsPage",
   components: { JMButton, JMTaskCard, RouterLink },
   data() {
-    return { draftTaskIds: new Set(), todos: loadPageTasks("todos") };
+    const todos = loadPageTasks("todos");
+    for (const list of todos.lists) list.tasks = completedTasksLast(list.tasks);
+    return { completionMoveTimers: new Map(), draftTaskIds: new Set(), todos };
+  },
+  beforeUnmount() {
+    for (const timer of this.completionMoveTimers.values()) window.clearTimeout(timer);
   },
   computed: {
     activeList() {
@@ -37,9 +42,25 @@ export default {
       task.title = title;
       this.save();
     },
-    updateCompleted(task, completed) {
+    updateCompleted(list, task, completed) {
       task.completed = completed;
       this.save();
+      this.scheduleCompletedTaskMove(list, task, completed);
+    },
+    scheduleCompletedTaskMove(list, task, completed) {
+      window.clearTimeout(this.completionMoveTimers.get(task.id));
+      this.completionMoveTimers.delete(task.id);
+      if (!completed) return;
+
+      const timer = window.setTimeout(() => {
+        this.completionMoveTimers.delete(task.id);
+        const taskIndex = list.tasks.findIndex((item) => item.id === task.id);
+        if (taskIndex === -1 || taskIndex === list.tasks.length - 1) return;
+        list.tasks.splice(taskIndex, 1);
+        list.tasks.push(task);
+        this.save();
+      }, 500);
+      this.completionMoveTimers.set(task.id, timer);
     },
     addTask() {
       const task = {
@@ -112,7 +133,7 @@ export default {
             :completed="task.completed"
             @enter="handleEnter(task, $event)"
             @title-blur="handleTitleBlur(activeList, task)"
-            @update:completed="updateCompleted(task, $event)"
+            @update:completed="updateCompleted(activeList, task, $event)"
             @update:title="updateTitle(task, $event)"
           />
         </li>

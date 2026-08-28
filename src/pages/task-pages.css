@@ -39,6 +39,13 @@
   gap: var(--space-3);
 }
 
+.task-page__section-header {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+}
+
 .task-page__section h2,
 .project-card h2 {
   font-size: 1rem;
@@ -52,6 +59,17 @@
 
 .task-page__tasks .task-item {
   margin-inline: 0;
+}
+
+.chore-rule {
+  inline-size: 100%;
+  min-inline-size: 0;
+  padding: var(--space-2);
+  color: inherit;
+  font: inherit;
+  background: var(--color-bg-selection);
+  border: 1px solid var(--task-page-border);
+  border-radius: calc(var(--radius-control) / 2);
 }
 
 .task-page__empty {

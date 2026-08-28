@@ -214,19 +214,31 @@ test("navigation opens application pages", async ({ page }) => {
 test("task pages render their variants and save changes immediately", async ({ page }) => {
   await page.goto("/chores");
 
-  const chores = page.locator(".task-page__tasks .task-item");
-  await expect(chores).toHaveCount(3);
-  await expect(chores.first().locator(".task-item__details")).toHaveText("Every Saturday");
+  await expect(page.getByRole("heading", { level: 2 })).toHaveText(["Today and upcoming", "All chores"]);
+  const upcomingChores = page.locator(".chores-upcoming .task-item");
+  const allChores = page.locator(".chores-all .task-item");
+  await expect(upcomingChores).toHaveCount(3);
+  await expect(allChores).toHaveCount(3);
+  await expect(upcomingChores.getByRole("checkbox")).toHaveCount(3);
+  await expect(allChores.getByRole("checkbox")).toHaveCount(0);
+  expect(await allChores.locator(".chore-rule").evaluateAll((inputs) => inputs.map((input) => input.value))).toEqual([
+    "Every Saturday",
+    "Every 2 weeks on Sunday",
+    "Every Wednesday",
+  ]);
   await expect(page.locator(".task-item__drag-handle, .task-item__pin, .task-item__remove")).toHaveCount(0);
   await page.getByRole("button", { name: "Add chore" }).click();
-  await expect(chores).toHaveCount(4);
+  await expect(allChores).toHaveCount(4);
+  await expect(upcomingChores).toHaveCount(3);
   await page.getByRole("button", { name: "Add chore" }).focus();
-  await expect(chores).toHaveCount(3);
-  await chores.first().locator("textarea").fill("Water all the plants");
-  await chores.first().getByRole("checkbox").check();
+  await expect(allChores).toHaveCount(3);
+  await allChores.first().locator("textarea").fill("Water all the plants");
+  await allChores.first().locator(".chore-rule").fill("Every other Saturday");
+  await upcomingChores.getByRole("checkbox", { name: "Complete Water all the plants" }).check();
   await page.reload();
-  await expect(page.locator(".task-page__tasks textarea").first()).toHaveValue("Water all the plants");
-  await expect(page.locator(".task-page__tasks .task-item").first().getByRole("checkbox")).toBeChecked();
+  await expect(page.locator(".chores-all textarea").first()).toHaveValue("Water all the plants");
+  await expect(page.locator(".chores-all .chore-rule").first()).toHaveValue("Every other Saturday");
+  await expect(page.getByRole("checkbox", { name: "Complete Water all the plants" })).toBeChecked();
 
   await page.goto("/todos");
   const listTabs = page.locator(".task-tabs__link");
@@ -273,6 +285,61 @@ test("task pages render their variants and save changes immediately", async ({ p
     "Botanical sampler",
     "Amsterdam canal house",
   ]);
+});
+
+test("completed items move to the bottom after 500 milliseconds on every task page", async ({ page }) => {
+  const testTime = Date.now();
+  await page.clock.install({ time: testTime });
+  await page.goto("/todos");
+  await page.clock.pauseAt(testTime + 60_000);
+
+  const todoTitles = page.locator(".task-page__section textarea.task-item__title");
+  await expect(todoTitles.first()).toHaveValue("Renew passport");
+  await page.getByRole("checkbox", { name: "Complete Renew passport" }).check();
+  await page.clock.runFor(499);
+  await expect(todoTitles.first()).toHaveValue("Renew passport");
+  await page.clock.runFor(1);
+  await expect(todoTitles.last()).toHaveValue("Renew passport");
+
+  await page.reload();
+  await expect(page.locator(".task-page__section textarea.task-item__title").last()).toHaveValue("Renew passport");
+  await expect(page.getByRole("checkbox", { name: "Complete Renew passport" })).toBeChecked();
+
+  await page.goto("/chores");
+  const choreTitles = page.locator(".chores-upcoming .task-item__title");
+  await expect(choreTitles.first()).toHaveText("Water the plants");
+  await page.getByRole("checkbox", { name: "Complete Water the plants" }).check();
+  await page.clock.runFor(499);
+  await expect(choreTitles.first()).toHaveText("Water the plants");
+  await page.clock.runFor(1);
+  await expect(choreTitles.last()).toHaveText("Water the plants");
+
+  await page.goto("/shopping");
+  const shoppingTitles = page.locator(".task-page__tasks textarea.task-item__title");
+  await expect(shoppingTitles.first()).toHaveValue("Oat milk");
+  await page.getByRole("checkbox", { name: "Complete Oat milk" }).check();
+  await page.clock.runFor(499);
+  await expect(shoppingTitles.first()).toHaveValue("Oat milk");
+  await page.clock.runFor(1);
+  await expect(shoppingTitles.last()).toHaveValue("Oat milk");
+
+  await page.goto("/printing");
+  const printingTitles = page.locator(".project-card").first().locator("textarea.task-item__title");
+  await expect(printingTitles.first()).toHaveValue("Adjust the clip tolerance");
+  await page.getByRole("checkbox", { name: "Complete Adjust the clip tolerance" }).check();
+  await page.clock.runFor(499);
+  await expect(printingTitles.first()).toHaveValue("Adjust the clip tolerance");
+  await page.clock.runFor(1);
+  await expect(printingTitles.last()).toHaveValue("Adjust the clip tolerance");
+
+  await page.goto("/cross-stitch");
+  const stitchTitles = page.locator(".project-card").first().locator("textarea.task-item__title");
+  await expect(stitchTitles.first()).toHaveValue("Finish the rosemary border");
+  await page.getByRole("checkbox", { name: "Complete Finish the rosemary border" }).check();
+  await page.clock.runFor(499);
+  await expect(stitchTitles.first()).toHaveValue("Finish the rosemary border");
+  await page.clock.runFor(1);
+  await expect(stitchTitles.last()).toHaveValue("Finish the rosemary border");
 });
 
 test("the work page navigates in three-day ranges", async ({ page }) => {

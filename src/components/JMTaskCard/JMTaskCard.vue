@@ -8,6 +8,7 @@ export default {
   emits: ["drag-end", "drag-start", "enter", "pin", "remove", "title-blur", "update:completed", "update:title"],
   props: {
     canDrag: { type: Boolean, default: false },
+    completable: { type: Boolean, default: true },
     completed: { type: Boolean, default: false },
     completionInputId: { type: String, default: "" },
     editable: { type: Boolean, default: true },
@@ -46,6 +47,7 @@ export default {
     :class="{
       'task-item--completed': completed,
       'task-item--drag-column': canDrag || reserveDragSpace,
+      'task-item--without-checkbox': !completable,
     }"
   >
     <span
@@ -60,8 +62,11 @@ export default {
     </span>
     <span v-else-if="reserveDragSpace" class="task-item__drag-handle-placeholder" />
 
-    <label class="task-item__visually-hidden" :for="completionId"> Complete {{ title || "untitled task" }} </label>
+    <label v-if="completable" class="task-item__visually-hidden" :for="completionId">
+      Complete {{ title || "untitled task" }}
+    </label>
     <input
+      v-if="completable"
       :id="completionId"
       class="task-item__checkbox"
       type="checkbox"
