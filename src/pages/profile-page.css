@@ -16,6 +16,27 @@
   font-size: 0.875rem;
 }
 
+.profile-page__header,
+.profile-page__auth-actions {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.profile-page__header {
+  justify-content: space-between;
+}
+
+.profile-page__auth-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.profile-page__auth-message {
+  color: var(--profile-muted);
+  font-size: 0.875rem;
+}
+
 .profile-years {
   overflow-x: auto;
   border-block-end: 1px solid var(--profile-border);
@@ -246,6 +267,15 @@ a.activity-graph__day:hover {
 }
 
 @media (width <= 480px) {
+  .profile-page__header {
+    align-items: flex-start;
+  }
+
+  .profile-page__auth-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .activity-graph {
     padding-inline: var(--space-3);
   }

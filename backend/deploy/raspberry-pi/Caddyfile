@@ -1,0 +1,29 @@
+{
+	admin off
+}
+
+api.todo-ish.today {
+	encode zstd gzip
+
+	header {
+		-Server
+		Referrer-Policy "no-referrer"
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+	}
+
+	@api path /api/* /healthz
+	handle @api {
+		reverse_proxy catalog-api:3000 {
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 15s
+			}
+		}
+	}
+
+	handle {
+		respond "Not found" 404
+	}
+}

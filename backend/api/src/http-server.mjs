@@ -1,12 +1,15 @@
 import { createServer } from "node:http";
 import { AppDataRevisionConflictError } from "./app-data-repository.mjs";
 import { AppDataValidationError, isAppDataResource, validateAppDataResource } from "./app-data-validation.mjs";
+import { AuthError } from "./auth-service.mjs";
 
 const DEFAULT_LIMIT = 100;
 const MAX_LIMIT = 500;
 const MAX_OFFSET = 1_000_000;
 const MAX_QUERY_LENGTH = 100;
 const MAX_BODY_BYTES = 1_000_000;
+const CORS_METHODS = ["GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"];
+const CORS_HEADERS = ["content-type", "if-match"];
 
 class RequestError extends Error {
   constructor(message, statusCode = 400) {
@@ -59,6 +62,45 @@ function requireMethod(method, allowedMethods) {
   throw error;
 }
 
+function corsHeaders(request, allowedOrigin) {
+  if (!allowedOrigin || request.headers.origin !== allowedOrigin) return {};
+  return {
+    "access-control-allow-credentials": "true",
+    "access-control-allow-origin": allowedOrigin,
+    vary: "Origin",
+  };
+}
+
+function validateOrigin(request, allowedOrigin, pathname, method) {
+  if (!allowedOrigin || !pathname.startsWith("/api/")) return;
+  const origin = request.headers.origin;
+  if (origin && origin !== allowedOrigin) throw new RequestError("Origin not allowed", 403);
+  if (!["GET", "HEAD", "OPTIONS"].includes(method) && origin !== allowedOrigin) {
+    throw new RequestError("Origin header is required", 403);
+  }
+}
+
+function writePreflight(response, request, allowedOrigin) {
+  const requestedMethod = request.headers["access-control-request-method"];
+  if (!CORS_METHODS.includes(requestedMethod)) throw new RequestError("CORS method not allowed", 405);
+
+  const requestedHeaders = (request.headers["access-control-request-headers"] || "")
+    .split(",")
+    .map((header) => header.trim().toLowerCase())
+    .filter(Boolean);
+  if (requestedHeaders.some((header) => !CORS_HEADERS.includes(header))) {
+    throw new RequestError("CORS header not allowed", 400);
+  }
+
+  response.writeHead(204, {
+    ...corsHeaders(request, allowedOrigin),
+    "access-control-allow-headers": CORS_HEADERS.join(", "),
+    "access-control-allow-methods": CORS_METHODS.join(", "),
+    "access-control-max-age": "600",
+  });
+  response.end();
+}
+
 function expectedRevision(request) {
   const value = request.headers["if-match"];
   if (typeof value !== "string") throw new RequestError("If-Match is required", 428);
@@ -92,12 +134,20 @@ async function readJson(request) {
   }
 }
 
-export function createHttpServer(repository, logger = console) {
+export function createHttpServer(repository, authService, { allowedOrigin, logger = console } = {}) {
   const server = createServer(async (request, response) => {
     const method = request.method || "GET";
+    let responseCorsHeaders = {};
 
     try {
       const url = new URL(request.url || "/", "http://localhost");
+      validateOrigin(request, allowedOrigin, url.pathname, method);
+      responseCorsHeaders = corsHeaders(request, allowedOrigin);
+      if (method === "OPTIONS" && url.pathname.startsWith("/api/")) {
+        writePreflight(response, request, allowedOrigin);
+        return;
+      }
+
       let body;
       let cacheControl = "no-store";
       let headers = {};
@@ -105,11 +155,49 @@ export function createHttpServer(repository, logger = console) {
       if (url.pathname === "/healthz") {
         requireMethod(method, ["GET", "HEAD"]);
         body = await repository.health();
+      } else if (url.pathname === "/api/auth/session" && method === "DELETE") {
+        const result = await authService.logout(request.headers.cookie);
+        body = result.body;
+        headers = { "set-cookie": result.cookies };
+      } else if (url.pathname === "/api/auth/session") {
+        requireMethod(method, ["GET"]);
+        body = await authService.session(request.headers.cookie);
+      } else if (url.pathname === "/api/auth/registration/options") {
+        requireMethod(method, ["POST"]);
+        const result = await authService.registrationOptions({
+          bootstrapToken: (await readJson(request)).token,
+          cookieHeader: request.headers.cookie,
+        });
+        body = result.body;
+        headers = { "set-cookie": result.cookies };
+      } else if (url.pathname === "/api/auth/registration/verify") {
+        requireMethod(method, ["POST"]);
+        const result = await authService.verifyRegistration({
+          cookieHeader: request.headers.cookie,
+          response: await readJson(request),
+        });
+        body = result.body;
+        headers = { "set-cookie": result.cookies };
+      } else if (url.pathname === "/api/auth/authentication/options") {
+        requireMethod(method, ["POST"]);
+        const result = await authService.authenticationOptions();
+        body = result.body;
+        headers = { "set-cookie": result.cookies };
+      } else if (url.pathname === "/api/auth/authentication/verify") {
+        requireMethod(method, ["POST"]);
+        const result = await authService.verifyAuthentication({
+          cookieHeader: request.headers.cookie,
+          response: await readJson(request),
+        });
+        body = result.body;
+        headers = { "set-cookie": result.cookies };
       } else if (url.pathname === "/api/catalogs") {
+        await authService.requireUser(request.headers.cookie);
         requireMethod(method, ["GET", "HEAD"]);
         body = await repository.summary();
         cacheControl = "private, max-age=60";
       } else if (url.pathname === "/api/catalogs/filaments") {
+        await authService.requireUser(request.headers.cookie);
         requireMethod(method, ["GET", "HEAD"]);
         body = await repository.filaments({
           ...pagination(url.searchParams),
@@ -117,13 +205,16 @@ export function createHttpServer(repository, logger = console) {
         });
         cacheControl = "private, max-age=60";
       } else if (url.pathname === "/api/catalogs/floss") {
+        await authService.requireUser(request.headers.cookie);
         requireMethod(method, ["GET", "HEAD"]);
         body = await repository.floss(pagination(url.searchParams));
         cacheControl = "private, max-age=60";
       } else if (url.pathname === "/api/data") {
+        await authService.requireUser(request.headers.cookie);
         requireMethod(method, ["GET", "HEAD"]);
         body = await repository.read();
       } else {
+        await authService.requireUser(request.headers.cookie);
         const resourceMatch = /^\/api\/data\/([a-z-]+)$/.exec(url.pathname);
         if (!resourceMatch || !isAppDataResource(resourceMatch[1])) throw new RequestError("Not found", 404);
         requireMethod(method, ["PUT"]);
@@ -139,21 +230,24 @@ export function createHttpServer(repository, logger = console) {
           "cache-control": cacheControl,
           "content-type": "application/json; charset=utf-8",
           "x-content-type-options": "nosniff",
+          ...responseCorsHeaders,
         });
         response.end();
         return;
       }
 
-      writeJson(response, 200, body, cacheControl, headers);
+      writeJson(response, 200, body, cacheControl, { ...responseCorsHeaders, ...headers });
     } catch (error) {
       const statusCode =
         error instanceof RequestError
           ? error.statusCode
-          : error instanceof AppDataValidationError
-            ? 400
-            : error instanceof AppDataRevisionConflictError
-              ? 409
-              : 500;
+          : error instanceof AuthError
+            ? error.statusCode
+            : error instanceof AppDataValidationError
+              ? 400
+              : error instanceof AppDataRevisionConflictError
+                ? 409
+                : 500;
       if (error instanceof RequestError && error.allowedMethods) {
         response.setHeader("allow", error.allowedMethods.join(", "));
       }
@@ -165,7 +259,11 @@ export function createHttpServer(repository, logger = console) {
         statusCode,
         error instanceof AppDataRevisionConflictError
           ? { error: error.message, currentRevision: error.currentRevision }
-          : { error: statusCode === 500 ? "Internal server error" : error.message },
+          : error instanceof AuthError
+            ? { error: error.message, code: error.code }
+            : { error: statusCode === 500 ? "Internal server error" : error.message },
+        "no-store",
+        responseCorsHeaders,
       );
     }
   });

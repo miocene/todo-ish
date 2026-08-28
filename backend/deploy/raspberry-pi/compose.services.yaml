@@ -13,8 +13,16 @@ services:
       PGUSER: todo_runtime
       PGPASSWORD_FILE: /run/secrets/runtime_password
       PGPOOL_MAX: 4
+      AUTH_BOOTSTRAP_TOKEN_FILE: /run/secrets/auth_bootstrap_token
+      AUTH_ORIGIN: https://todo-ish.today
+      AUTH_RP_ID: todo-ish.today
+      AUTH_RP_NAME: Done-ish
+      AUTH_SECURE_COOKIES: "true"
+      AUTH_USER_DISPLAY_NAME: Julia
+      AUTH_USER_NAME: julia
       TZ: UTC
     secrets:
+      - auth_bootstrap_token
       - runtime_password
     networks:
       - todo-internal
@@ -43,6 +51,40 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+
+  public-api:
+    image: caddy:2.11.4-alpine
+    container_name: todo-public-api
+    restart: unless-stopped
+    ports:
+      - "${PUBLIC_API_BIND_ADDRESS:?Set PUBLIC_API_BIND_ADDRESS to the Pi LAN address}:80:80"
+      - "${PUBLIC_API_BIND_ADDRESS:?Set PUBLIC_API_BIND_ADDRESS to the Pi LAN address}:443:443"
+      - "${PUBLIC_API_BIND_ADDRESS:?Set PUBLIC_API_BIND_ADDRESS to the Pi LAN address}:443:443/udp"
+    volumes:
+      - type: bind
+        source: ${TODO_APP_BUILD_CONTEXT:?Set TODO_APP_BUILD_CONTEXT to the repository root}/backend/deploy/raspberry-pi/Caddyfile
+        target: /etc/caddy/Caddyfile
+        read_only: true
+      - type: volume
+        source: todo-caddy-data
+        target: /data
+      - type: volume
+        source: todo-caddy-config
+        target: /config
+    networks:
+      - todo-edge
+    depends_on:
+      catalog-api:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
 
   migrate:
     image: postgres:18.6-bookworm
@@ -102,3 +144,13 @@ networks:
   todo-edge:
     name: todo-edge
     driver: bridge
+
+volumes:
+  todo-caddy-config:
+    name: todo-caddy-config
+  todo-caddy-data:
+    name: todo-caddy-data
+
+secrets:
+  auth_bootstrap_token:
+    file: /etc/todo-db/auth_bootstrap_token

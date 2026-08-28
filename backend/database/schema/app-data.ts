@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  bigint,
   boolean,
   check,
   date,
@@ -10,6 +11,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 const orderedEntityColumns = () => ({
@@ -35,6 +37,83 @@ export const appDataRevisions = pgTable(
       sql`${table.resource} IN ('work-tasks', 'work-statuses', 'chores', 'todos', 'shopping', 'printing', 'cross-stitch', 'filament-inventory', 'floss-inventory')`,
     ),
     check("app_data_revisions_revision_non_negative", sql`${table.revision} >= 0`),
+  ],
+);
+
+export const authUsers = pgTable(
+  "auth_users",
+  {
+    id: text("id").primaryKey(),
+    username: text("username").notNull(),
+    displayName: text("display_name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    check("auth_users_id_not_blank", sql`length(trim(${table.id})) > 0`),
+    check("auth_users_username_not_blank", sql`length(trim(${table.username})) > 0`),
+    check("auth_users_display_name_not_blank", sql`length(trim(${table.displayName})) > 0`),
+    uniqueIndex("auth_users_username_unique").on(table.username),
+  ],
+);
+
+export const passkeyCredentials = pgTable(
+  "passkey_credentials",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    publicKey: text("public_key").notNull(),
+    counter: bigint("counter", { mode: "number" }).default(0).notNull(),
+    deviceType: text("device_type").notNull(),
+    backedUp: boolean("backed_up").default(false).notNull(),
+    transports: text("transports").array().notNull(),
+    aaguid: text("aaguid").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+  },
+  (table) => [
+    check("passkey_credentials_id_not_blank", sql`length(trim(${table.id})) > 0`),
+    check("passkey_credentials_public_key_not_blank", sql`length(trim(${table.publicKey})) > 0`),
+    check("passkey_credentials_device_type_valid", sql`${table.deviceType} IN ('singleDevice', 'multiDevice')`),
+    check("passkey_credentials_counter_non_negative", sql`${table.counter} >= 0`),
+    index("passkey_credentials_user_id_idx").on(table.userId),
+  ],
+);
+
+export const authChallenges = pgTable(
+  "auth_challenges",
+  {
+    tokenHash: text("token_hash").primaryKey(),
+    challenge: text("challenge").notNull(),
+    ceremony: text("ceremony").notNull(),
+    userHandle: text("user_handle"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    check("auth_challenges_token_hash_not_blank", sql`length(trim(${table.tokenHash})) > 0`),
+    check("auth_challenges_challenge_not_blank", sql`length(trim(${table.challenge})) > 0`),
+    check("auth_challenges_ceremony_valid", sql`${table.ceremony} IN ('registration', 'authentication')`),
+    index("auth_challenges_expires_at_idx").on(table.expiresAt),
+  ],
+);
+
+export const authSessions = pgTable(
+  "auth_sessions",
+  {
+    tokenHash: text("token_hash").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    check("auth_sessions_token_hash_not_blank", sql`length(trim(${table.tokenHash})) > 0`),
+    index("auth_sessions_user_id_idx").on(table.userId),
+    index("auth_sessions_expires_at_idx").on(table.expiresAt),
   ],
 );
 

@@ -1,4 +1,4 @@
-import { apiUrl } from "./api.js";
+import { apiFetch } from "./api.js";
 
 const RESOURCES = Object.freeze([
   "work-tasks",
@@ -84,7 +84,7 @@ async function writeResource(resource) {
     const value = pendingWrites.get(resource);
     pendingWrites.delete(resource);
     try {
-      const response = await fetch(apiUrl(`/data/${resource}`), {
+      const response = await apiFetch(`/data/${resource}`, {
         method: "PUT",
         headers: {
           "content-type": "application/json",
@@ -126,7 +126,7 @@ function queueWrite(resource, value) {
 }
 
 export async function initializeAppData() {
-  const response = await fetch(apiUrl("/data"), { headers: { accept: "application/json" } });
+  const response = await apiFetch("/data", { headers: { accept: "application/json" } });
   if (!response.ok) throw new Error(`App data request failed with status ${response.status}`);
   const state = await response.json();
   if (!state || typeof state !== "object") throw new Error("App data response is invalid");

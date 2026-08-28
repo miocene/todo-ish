@@ -38,7 +38,17 @@ function emptyAppData(values, revisions) {
 test.beforeEach(async ({ page }) => {
   const values = {};
   const revisions = Object.fromEntries(APP_DATA_RESOURCES.map((resource) => [resource, 0]));
-  const controller = { get: (resource) => values[resource] };
+  let session = {
+    authenticated: true,
+    bootstrapRequired: false,
+    user: { username: "owner", displayName: "Owner" },
+  };
+  const controller = {
+    get: (resource) => values[resource],
+    setSession: (value) => {
+      session = value;
+    },
+  };
   appDataByPage.set(page, controller);
 
   await page.route("**/api/**", async (route) => {
@@ -46,6 +56,11 @@ test.beforeEach(async ({ page }) => {
     const url = new URL(request.url());
     const json = (body, status = 200, headers = {}) =>
       route.fulfill({ status, headers, contentType: "application/json", body: JSON.stringify(body) });
+
+    if (request.method() === "GET" && url.pathname === "/api/auth/session") {
+      await json(session);
+      return;
+    }
 
     if (request.method() === "GET" && url.pathname === "/api/data") {
       await json(emptyAppData(values, revisions));
@@ -91,6 +106,21 @@ test.beforeEach(async ({ page }) => {
 
     await json({ error: "Not found" }, 404);
   });
+});
+
+test("anonymous visitors see passkey setup before application data", async ({ page }) => {
+  appDataByPage.get(page).setSession({
+    authenticated: false,
+    bootstrapRequired: true,
+    user: null,
+  });
+
+  await page.goto("/");
+
+  await expect(page.getByRole("heading", { level: 1, name: "Create your passkey" })).toBeVisible();
+  await expect(page.getByLabel("One-time setup code")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Create passkey" })).toBeVisible();
+  await expect(page.locator(".jm-header")).toHaveCount(0);
 });
 
 function localIsoDate(dayOffset = 0) {

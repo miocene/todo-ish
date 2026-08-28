@@ -9,7 +9,7 @@ const readJson = (path) => JSON.parse(read(path));
 const packageJson = readJson("package.json");
 const runtimeDependencies = Object.keys(packageJson.dependencies || {}).sort();
 
-assert.deepEqual(runtimeDependencies, ["vue", "vue-router"]);
+assert.deepEqual(runtimeDependencies, ["vue", "vue-router", "webauthn-polyfills"]);
 assert.match(packageJson.packageManager || "", /^yarn@1\./);
 assert.ok(exists("yarn.lock"));
 assert.deepEqual(readdirSync(new URL("styles/", root)).sort(), ["normalisation.css", "style.css", "variables.css"]);
@@ -51,6 +51,7 @@ assert.deepEqual(readdirSync(new URL("src/app/", root)).sort(), [
   "filament-catalog.js",
   "floss-catalog.js",
   "managed-shopping.js",
+  "passkeys.js",
   "page-tasks.js",
   "printing-supplies.js",
   "router.js",
@@ -67,6 +68,7 @@ assert.deepEqual(readdirSync(new URL("src/components/", root)).sort(), [
   "JMHeader",
   "JMIcon",
   "JMNavigation",
+  "JMPasskeyGate",
   "JMProjectTaskDetails",
   "JMTaskCard",
 ]);
@@ -135,6 +137,7 @@ for (const removedDirectory of ["src/data", "src/domain", "src/persistence", "sr
 
 const clientSource = [
   "src/App.vue",
+  "src/AppBootstrap.vue",
   "src/main.js",
   "src/app/activity.js",
   "src/app/api.js",
@@ -142,6 +145,7 @@ const clientSource = [
   "src/app/filament-catalog.js",
   "src/app/floss-catalog.js",
   "src/app/managed-shopping.js",
+  "src/app/passkeys.js",
   "src/app/printing-supplies.js",
   "src/app/shopping-supplies.js",
   "src/app/stitching-supplies.js",
@@ -154,6 +158,7 @@ const clientSource = [
   "src/components/JMHeader/JMHeader.vue",
   "src/components/JMIcon/JMIcon.vue",
   "src/components/JMNavigation/JMNavigation.vue",
+  "src/components/JMPasskeyGate/JMPasskeyGate.vue",
   "src/components/JMProjectTaskDetails/JMPrintingTaskDetails.vue",
   "src/components/JMProjectTaskDetails/JMStitchTaskDetails.vue",
   "src/components/JMTaskCard/JMTaskCard.vue",

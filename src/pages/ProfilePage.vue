@@ -1,15 +1,19 @@
 <script>
 import { RouterLink } from "vue-router";
 import { activityYears, buildActivityCalendar, collectCompletedActivity, groupActivityByDay } from "../app/activity.js";
+import { createPasskey, signOut } from "../app/passkeys.js";
+import JMButton from "../components/JMButton/JMButton.vue";
 import JMIcon from "../components/JMIcon/JMIcon.vue";
 import "./profile-page.css";
 
 export default {
   name: "ProfilePage",
-  components: { JMIcon, RouterLink },
+  components: { JMButton, JMIcon, RouterLink },
   data() {
     return {
       activity: collectCompletedActivity(),
+      authBusy: false,
+      authMessage: "",
       currentYear: new Date().getFullYear(),
     };
   },
@@ -39,6 +43,31 @@ export default {
       const itemLabel = day.count === 1 ? "item" : "items";
       return `${day.count} checked ${itemLabel} on ${day.label}`;
     },
+    async addPasskey() {
+      this.authBusy = true;
+      this.authMessage = "";
+      try {
+        await createPasskey();
+        this.authMessage = "Passkey added.";
+      } catch (error) {
+        if (error?.name !== "NotAllowedError" && error?.name !== "AbortError") {
+          this.authMessage = error?.message || "The passkey could not be added.";
+        }
+      } finally {
+        this.authBusy = false;
+      }
+    },
+    async logout() {
+      this.authBusy = true;
+      this.authMessage = "";
+      try {
+        await signOut();
+        window.location.assign("/");
+      } catch (error) {
+        this.authMessage = error?.message || "Could not sign out.";
+        this.authBusy = false;
+      }
+    },
   },
 };
 </script>
@@ -50,7 +79,13 @@ export default {
         <h1 id="profile-title">Profile</h1>
         <p>Your completed tasks, day by day.</p>
       </div>
+      <div class="profile-page__auth-actions">
+        <JMButton text="Add passkey" view="secondary" :disabled="authBusy" @click="addPasskey" />
+        <JMButton text="Sign out" view="ghost" :disabled="authBusy" @click="logout" />
+      </div>
     </header>
+
+    <p v-if="authMessage" class="profile-page__auth-message" role="status">{{ authMessage }}</p>
 
     <nav class="profile-years" aria-label="Activity years">
       <ul class="profile-years__list" role="list">

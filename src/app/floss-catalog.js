@@ -1,4 +1,4 @@
-import { apiUrl } from "./api.js";
+import { apiFetch } from "./api.js";
 
 export const floss = [];
 
@@ -9,7 +9,7 @@ export async function initializeFlossCatalog() {
   let offset = 0;
   let total;
   do {
-    const response = await fetch(apiUrl(`/catalogs/floss?limit=500&offset=${offset}`), {
+    const response = await apiFetch(`/catalogs/floss?limit=500&offset=${offset}`, {
       headers: { accept: "application/json" },
     });
     if (!response.ok) throw new Error(`Floss catalogue request failed with status ${response.status}`);

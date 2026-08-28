@@ -2,13 +2,14 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { AppDataRevisionConflictError } from "../src/app-data-repository.mjs";
+import { AuthError } from "../src/auth-service.mjs";
 import { createCatalogRepository } from "../src/catalog-repository.mjs";
 import { createHttpServer } from "../src/http-server.mjs";
 
-async function withServer(repository, callback) {
+async function withServer(repository, callback, authService = fakeAuthService(), options = {}) {
   const messages = [];
   const logger = { error: (...values) => messages.push(values) };
-  const server = createHttpServer(repository, logger);
+  const server = createHttpServer(repository, authService, { ...options, logger });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   const { port } = server.address();
 
@@ -17,6 +18,19 @@ async function withServer(repository, callback) {
   } finally {
     await new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
   }
+}
+
+function fakeAuthService(overrides = {}) {
+  return {
+    session: async () => ({ authenticated: true, bootstrapRequired: false, user: { displayName: "Owner" } }),
+    requireUser: async () => ({ username: "owner", displayName: "Owner" }),
+    registrationOptions: async () => ({ body: {}, cookies: [] }),
+    verifyRegistration: async () => ({ body: {}, cookies: [] }),
+    authenticationOptions: async () => ({ body: {}, cookies: [] }),
+    verifyAuthentication: async () => ({ body: {}, cookies: [] }),
+    logout: async () => ({ body: { authenticated: false }, cookies: [] }),
+    ...overrides,
+  };
 }
 
 function fakeRepository(overrides = {}) {
@@ -55,6 +69,71 @@ test("API exposes health and validates catalogue pagination", async () => {
     assert.equal(invalid.status, 400);
     assert.deepEqual(await invalid.json(), { error: "limit must be an integer between 1 and 500" });
   });
+});
+
+test("API protects application data and catalogues with the authenticated session", async () => {
+  const authService = fakeAuthService({
+    requireUser: async () => {
+      throw new AuthError("Authentication required", 401, "authentication_required");
+    },
+  });
+
+  await withServer(
+    fakeRepository(),
+    async (origin) => {
+      const session = await fetch(`${origin}/api/auth/session`);
+      assert.equal(session.status, 200);
+
+      const data = await fetch(`${origin}/api/data`);
+      assert.equal(data.status, 401);
+      assert.deepEqual(await data.json(), {
+        error: "Authentication required",
+        code: "authentication_required",
+      });
+    },
+    authService,
+  );
+});
+
+test("API allows credentialed browser requests only from the configured site origin", async () => {
+  const allowedOrigin = "https://todo-ish.today";
+
+  await withServer(
+    fakeRepository(),
+    async (origin) => {
+      const session = await fetch(`${origin}/api/auth/session`, {
+        headers: { origin: allowedOrigin },
+      });
+      assert.equal(session.status, 200);
+      assert.equal(session.headers.get("access-control-allow-origin"), allowedOrigin);
+      assert.equal(session.headers.get("access-control-allow-credentials"), "true");
+      assert.equal(session.headers.get("vary"), "Origin");
+
+      const preflight = await fetch(`${origin}/api/auth/authentication/options`, {
+        method: "OPTIONS",
+        headers: {
+          origin: allowedOrigin,
+          "access-control-request-method": "POST",
+          "access-control-request-headers": "content-type",
+        },
+      });
+      assert.equal(preflight.status, 204);
+      assert.match(preflight.headers.get("access-control-allow-methods"), /POST/);
+      assert.match(preflight.headers.get("access-control-allow-headers"), /content-type/);
+
+      const foreignOrigin = await fetch(`${origin}/api/auth/session`, {
+        headers: { origin: "https://attacker.example" },
+      });
+      assert.equal(foreignOrigin.status, 403);
+      assert.equal(foreignOrigin.headers.get("access-control-allow-origin"), null);
+
+      const missingOrigin = await fetch(`${origin}/api/auth/authentication/options`, { method: "POST" });
+      assert.equal(missingOrigin.status, 403);
+      assert.deepEqual(await missingOrigin.json(), { error: "Origin header is required" });
+    },
+    fakeAuthService(),
+    { allowedOrigin },
+  );
 });
 
 test("API rejects unsupported catalogue writes and hides internal errors", async () => {

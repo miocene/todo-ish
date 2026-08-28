@@ -1,4 +1,4 @@
-import { apiUrl } from "./api.js";
+import { apiFetch } from "./api.js";
 
 export const filaments = [];
 export const filamentsById = new Map();
@@ -8,7 +8,7 @@ export async function initializeFilamentCatalog() {
   let offset = 0;
   let total;
   do {
-    const response = await fetch(apiUrl(`/catalogs/filaments?limit=500&offset=${offset}`), {
+    const response = await apiFetch(`/catalogs/filaments?limit=500&offset=${offset}`, {
       headers: { accept: "application/json" },
     });
     if (!response.ok) throw new Error(`Filament catalogue request failed with status ${response.status}`);

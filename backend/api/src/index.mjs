@@ -1,5 +1,7 @@
 import { Pool } from "pg";
 import { createAppDataRepository } from "./app-data-repository.mjs";
+import { createAuthRepository } from "./auth-repository.mjs";
+import { createAuthService } from "./auth-service.mjs";
 import { createCatalogRepository } from "./catalog-repository.mjs";
 import { loadConfig } from "./config.mjs";
 import { createHttpServer } from "./http-server.mjs";
@@ -10,7 +12,8 @@ const repository = {
   ...createCatalogRepository(pool),
   ...createAppDataRepository(pool),
 };
-const server = createHttpServer(repository);
+const authService = createAuthService(createAuthRepository(pool), config.auth);
+const server = createHttpServer(repository, authService, { allowedOrigin: config.auth.origin });
 
 pool.on("error", (error) => {
   console.error("Unexpected PostgreSQL pool error", error);
