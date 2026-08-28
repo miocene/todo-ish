@@ -283,7 +283,7 @@ h3 {
 
 .task-item {
   display: grid;
-  grid-template-columns: 16px minmax(0, 1fr) 28px;
+  grid-template-columns: 16px 16px minmax(0, 1fr) 28px;
   gap: var(--space-1);
   align-items: start;
   min-inline-size: 0;
@@ -292,6 +292,19 @@ h3 {
   background: var(--color-bg-surface);
   border: 1px solid var(--calendar-border);
   border-radius: var(--radius-control);
+}
+
+.task-item__checkbox {
+  inline-size: 16px;
+  block-size: 16px;
+  margin: 2px 0 0;
+  accent-color: var(--calendar-accent);
+  cursor: pointer;
+}
+
+.task-item--completed .task-item__title {
+  color: var(--calendar-muted);
+  text-decoration: line-through;
 }
 
 .task-item__title {

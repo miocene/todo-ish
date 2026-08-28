@@ -28,6 +28,7 @@ export default {
       }, -1) + 1;
     return {
       backlogDropTarget: BACKLOG_DROP_TARGET,
+      completionMoveTimers: new Map(),
       draggedTaskId: undefined,
       dragTarget: undefined,
       midnightTimer: undefined,
@@ -36,6 +37,7 @@ export default {
       routeWatchReady: false,
       statusOptions: WORK_STATUSES,
       taskAssignments: Object.fromEntries(workTasks.map((task) => [task.id, task.date ?? null])),
+      taskCompletions: Object.fromEntries(workTasks.map((task) => [task.id, task.checkedAt ?? null])),
       taskMoveStatus: "",
       taskTitles: Object.fromEntries(workTasks.map((task) => [task.id, task.title])),
       today: calendarDate(),
@@ -86,9 +88,11 @@ export default {
     },
   },
   mounted() {
+    this.rollOverIncompleteTasks();
     this.scheduleTodayRefresh();
   },
   beforeUnmount() {
+    for (const timer of this.completionMoveTimers.values()) window.clearTimeout(timer);
     window.cancelAnimationFrame(this.rangeTransitionFrame);
     window.clearTimeout(this.midnightTimer);
   },
@@ -140,6 +144,12 @@ export default {
     taskInputId(task) {
       return `work-task-${task.id}`;
     },
+    taskCheckboxId(task) {
+      return `work-task-complete-${task.id}`;
+    },
+    isTaskComplete(task) {
+      return Boolean(this.taskCompletions[task.id]);
+    },
     canEditTask(date) {
       return date === null || date >= this.todayIso;
     },
@@ -161,6 +171,7 @@ export default {
       const task = { id: `new-${this.nextTaskId++}` };
       this.workTasks.push(task);
       this.taskAssignments[task.id] = date;
+      this.taskCompletions[task.id] = null;
       this.taskTitles[task.id] = "";
       this.saveTasks();
       return task;
@@ -171,9 +182,47 @@ export default {
           id: task.id,
           date: this.taskAssignments[task.id],
           title: this.taskTitle(task),
-          ...(task.checkedAt && { checkedAt: task.checkedAt }),
+          ...(this.taskCompletions[task.id] && { checkedAt: this.taskCompletions[task.id] }),
         })),
       );
+    },
+    setTaskCompletion(task, event) {
+      const completed = event.target.checked;
+      this.taskCompletions[task.id] = completed ? new Date().toISOString() : null;
+      const taskDate = this.taskAssignments[task.id];
+      if (completed && taskDate === null) {
+        this.taskAssignments[task.id] = this.todayIso;
+      } else if (!completed && taskDate !== null && taskDate < this.todayIso) {
+        this.taskAssignments[task.id] = this.todayIso;
+      }
+      this.saveTasks();
+      this.scheduleCompletedTaskMove(task, completed);
+    },
+    scheduleCompletedTaskMove(task, completed) {
+      window.clearTimeout(this.completionMoveTimers.get(task.id));
+      this.completionMoveTimers.delete(task.id);
+      if (!completed) return;
+
+      const timer = window.setTimeout(() => {
+        this.completionMoveTimers.delete(task.id);
+        const taskIndex = this.workTasks.findIndex((item) => item.id === task.id);
+        if (taskIndex === -1 || taskIndex === this.workTasks.length - 1) return;
+        this.workTasks.splice(taskIndex, 1);
+        this.workTasks.push(task);
+        this.saveTasks();
+      }, 500);
+      this.completionMoveTimers.set(task.id, timer);
+    },
+    rollOverIncompleteTasks() {
+      let taskMoved = false;
+      for (const task of this.workTasks) {
+        const taskDate = this.taskAssignments[task.id];
+        if (!this.isTaskComplete(task) && taskDate !== null && taskDate < this.todayIso) {
+          this.taskAssignments[task.id] = this.todayIso;
+          taskMoved = true;
+        }
+      }
+      if (taskMoved) this.saveTasks();
     },
     focusTaskTitle(task) {
       this.$nextTick(() => {
@@ -255,6 +304,7 @@ export default {
       this.midnightTimer = window.setTimeout(
         () => {
           this.today = calendarDate();
+          this.rollOverIncompleteTasks();
           this.normalizeDateQuery(this.$route.query.date);
           this.scheduleTodayRefresh();
         },
@@ -342,7 +392,13 @@ export default {
               </select>
             </label>
             <JMIcon v-if="!day.tasks" name="spinner" label="Loading tasks" />
-            <p v-else v-for="task in day.tasks" :key="task.id" class="task-item">
+            <p
+              v-else
+              v-for="task in day.tasks"
+              :key="task.id"
+              class="task-item"
+              :class="{ 'task-item--completed': isTaskComplete(task) }"
+            >
               <span
                 v-if="canDragTask(day.iso)"
                 class="task-item__drag-handle"
@@ -354,6 +410,16 @@ export default {
                 <JMIcon name="grip" />
               </span>
               <span v-else class="task-item__drag-handle-placeholder" />
+              <label class="calendar__status" :for="taskCheckboxId(task)">
+                Complete {{ taskTitle(task) || "untitled task" }}
+              </label>
+              <input
+                :id="taskCheckboxId(task)"
+                class="task-item__checkbox"
+                type="checkbox"
+                :checked="isTaskComplete(task)"
+                @change="setTaskCompletion(task, $event)"
+              />
               <template v-if="canEditTask(day.iso)">
                 <label class="calendar__status" :for="taskInputId(task)">Task title</label>
                 <textarea
@@ -393,7 +459,12 @@ export default {
           <h2 id="backlog-title">Backlog</h2>
         </header>
         <p v-if="backlogTasks.length === 0" class="backlog__empty">No backlog tasks</p>
-        <p v-for="task in backlogTasks" :key="task.id" class="task-item">
+        <p
+          v-for="task in backlogTasks"
+          :key="task.id"
+          class="task-item"
+          :class="{ 'task-item--completed': isTaskComplete(task) }"
+        >
           <span
             class="task-item__drag-handle"
             draggable="true"
@@ -403,6 +474,16 @@ export default {
           >
             <JMIcon name="grip" />
           </span>
+          <label class="calendar__status" :for="taskCheckboxId(task)">
+            Complete {{ taskTitle(task) || "untitled task" }}
+          </label>
+          <input
+            :id="taskCheckboxId(task)"
+            class="task-item__checkbox"
+            type="checkbox"
+            :checked="isTaskComplete(task)"
+            @change="setTaskCompletion(task, $event)"
+          />
           <label class="calendar__status" :for="taskInputId(task)">Task title</label>
           <textarea
             :id="taskInputId(task)"
