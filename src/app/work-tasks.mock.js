@@ -44,9 +44,9 @@ const tasksByDate = new Map(
     return [date, Object.freeze(tasks)];
   }),
 );
+const allTasks = Object.freeze([...tasksByDate.values()].flat());
 
-const firstCheckedTaskDate = [...tasksByDate.values()]
-  .flat()
+const firstCheckedTaskDate = allTasks
   .filter((task) => task.checkedAt)
   .sort((first, second) => first.checkedAt.localeCompare(second.checkedAt))[0]?.date;
 
@@ -56,4 +56,8 @@ export function getFirstCheckedWorkTaskDate() {
 
 export function getWorkTasks(date) {
   return tasksByDate.get(date) ?? EMPTY_TASKS;
+}
+
+export function getAllWorkTasks() {
+  return allTasks;
 }
