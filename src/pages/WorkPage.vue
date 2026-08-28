@@ -2,6 +2,7 @@
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMIcon from "../components/JMIcon/JMIcon.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
+import { finishTaskDraft, serializableTasks } from "../app/task-drafts.js";
 import {
   calendarDate,
   canMoveWorkRange,
@@ -30,6 +31,7 @@ export default {
     return {
       backlogDropTarget: BACKLOG_DROP_TARGET,
       completionMoveTimers: new Map(),
+      draftTaskIds: new Set(),
       draggedTaskId: undefined,
       dragTarget: undefined,
       midnightTimer: undefined,
@@ -171,21 +173,34 @@ export default {
     createTask(date) {
       const task = { id: `new-${this.nextTaskId++}` };
       this.workTasks.push(task);
+      this.draftTaskIds.add(task.id);
       this.taskAssignments[task.id] = date;
       this.taskCompletions[task.id] = null;
       this.taskTitles[task.id] = "";
       this.saveTasks();
       return task;
     },
+    addBacklogTask() {
+      this.focusTaskTitle(this.createTask(null));
+    },
     saveTasks() {
       saveWorkTasks(
-        this.workTasks.map((task) => ({
+        serializableTasks(this.workTasks, this.draftTaskIds, (task) => this.taskTitle(task)).map((task) => ({
           id: task.id,
           date: this.taskAssignments[task.id],
           title: this.taskTitle(task),
           ...(this.taskCompletions[task.id] && { checkedAt: this.taskCompletions[task.id] }),
         })),
       );
+    },
+    handleTaskTitleBlur(task) {
+      if (!finishTaskDraft(this.workTasks, task, this.draftTaskIds, (item) => this.taskTitle(item))) return;
+      window.clearTimeout(this.completionMoveTimers.get(task.id));
+      this.completionMoveTimers.delete(task.id);
+      delete this.taskAssignments[task.id];
+      delete this.taskCompletions[task.id];
+      delete this.taskTitles[task.id];
+      this.saveTasks();
     },
     setTaskCompletion(task, completed) {
       this.taskCompletions[task.id] = completed ? new Date().toISOString() : null;
@@ -253,6 +268,7 @@ export default {
     },
     canDropTask(target) {
       if (!this.draggedTaskId) return false;
+      if (target === BACKLOG_DROP_TARGET && this.taskCompletions[this.draggedTaskId]) return false;
       const date = target === BACKLOG_DROP_TARGET ? null : target;
       return (date === null || date >= this.todayIso) && this.taskAssignments[this.draggedTaskId] !== date;
     },
@@ -404,12 +420,13 @@ export default {
               :editable="canEditTask(day.iso)"
               :can-drag="canDragTask(day.iso)"
               reserve-drag-space
-              pin-icon="pinned"
+              :pin-icon="isTaskComplete(task) ? '' : 'pinned'"
               :pin-label="`Move ${taskTitle(task) || 'untitled task'} to backlog`"
               @drag-end="endTaskDrag"
               @drag-start="startTaskDrag(task, $event)"
               @enter="handleTaskTitleEnter(task, day.iso, day.tasks, $event)"
               @pin="toggleTaskAssignment(task)"
+              @title-blur="handleTaskTitleBlur(task)"
               @update:completed="setTaskCompletion(task, $event)"
               @update:title="updateTaskTitle(task, $event)"
             />
@@ -427,6 +444,13 @@ export default {
         <header class="backlog__heading">
           <span class="week-day__weekday">Tasks</span>
           <h2 id="backlog-title">Backlog</h2>
+          <JMButton
+            class="backlog__add"
+            aria-label="Add backlog task"
+            text="Add task"
+            view="secondary"
+            @click="addBacklogTask"
+          />
         </header>
         <p v-if="backlogTasks.length === 0" class="backlog__empty">No backlog tasks</p>
         <JMTaskCard
@@ -444,6 +468,7 @@ export default {
           @drag-start="startTaskDrag(task, $event)"
           @enter="handleTaskTitleEnter(task, null, backlogTasks, $event)"
           @pin="toggleTaskAssignment(task)"
+          @title-blur="handleTaskTitleBlur(task)"
           @update:completed="setTaskCompletion(task, $event)"
           @update:title="updateTaskTitle(task, $event)"
         />

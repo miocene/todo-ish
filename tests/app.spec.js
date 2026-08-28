@@ -115,9 +115,32 @@ test("editable work tasks create and focus the next item with Enter", async ({ p
   await expect(backlogTitles.last()).toBeFocused();
 
   await page.reload();
-  await expect(page.locator(".week-day--today textarea.task-item__title")).toHaveCount(7);
-  await expect(page.locator(".week-day").last().locator("textarea.task-item__title")).toHaveCount(2);
-  await expect(page.locator(".backlog textarea.task-item__title")).toHaveCount(2);
+  await expect(page.locator(".week-day--today textarea.task-item__title")).toHaveCount(6);
+  await expect(page.locator(".week-day").last().locator("textarea.task-item__title")).toHaveCount(1);
+  await expect(page.locator(".backlog textarea.task-item__title")).toHaveCount(1);
+});
+
+test("the backlog add button creates, focuses, and saves a task", async ({ page }) => {
+  await page.goto("/");
+
+  const addBacklogTask = page.getByRole("button", { name: "Add backlog task" });
+  await addBacklogTask.click();
+  const backlogTitle = page.locator(".backlog textarea.task-item__title");
+  await expect(backlogTitle).toHaveCount(1);
+  await expect(backlogTitle).toBeFocused();
+  await page.getByRole("button", { name: "Today", exact: true }).focus();
+  await expect(backlogTitle).toHaveCount(0);
+  expect(
+    await page.evaluate(() =>
+      JSON.parse(localStorage.getItem("done-ish.work-tasks.v1")).every((task) => task.title.trim()),
+    ),
+  ).toBe(true);
+
+  await addBacklogTask.click();
+  await backlogTitle.fill("Plan the next sprint");
+
+  await page.reload();
+  await expect(page.locator(".backlog textarea.task-item__title")).toHaveValue("Plan the next sprint");
 });
 
 test("task completion persists and unfinished tasks roll into today", async ({ page }) => {
@@ -137,7 +160,12 @@ test("task completion persists and unfinished tasks roll into today", async ({ p
 
   const todayCheckbox = today.getByRole("checkbox", { name: "Complete Triage inbox" });
   await expect(todayCheckbox).toBeChecked();
-  await expect(todayCheckbox.locator("xpath=..")).toHaveClass(/task-item--completed/);
+  const completedTask = todayCheckbox.locator("xpath=..");
+  await expect(completedTask).toHaveClass(/task-item--completed/);
+  await expect(today.getByRole("button", { name: "Move Triage inbox to backlog" })).toHaveCount(0);
+  await completedTask.locator(".task-item__drag-handle").dragTo(page.locator(".backlog"));
+  await expect(page.locator(".backlog").getByRole("checkbox", { name: "Complete Triage inbox" })).toHaveCount(0);
+  await expect(todayCheckbox).toBeChecked();
   const todayTitles = today.locator(".task-item__title");
   await expect(todayTitles.first()).toHaveValue("Triage inbox");
   await page.clock.runFor(499);
@@ -190,6 +218,10 @@ test("task pages render their variants and save changes immediately", async ({ p
   await expect(chores).toHaveCount(3);
   await expect(chores.first().locator(".task-item__details")).toHaveText("Every Saturday");
   await expect(page.locator(".task-item__drag-handle, .task-item__pin, .task-item__remove")).toHaveCount(0);
+  await page.getByRole("button", { name: "Add chore" }).click();
+  await expect(chores).toHaveCount(4);
+  await page.getByRole("button", { name: "Add chore" }).focus();
+  await expect(chores).toHaveCount(3);
   await chores.first().locator("textarea").fill("Water all the plants");
   await chores.first().getByRole("checkbox").check();
   await page.reload();
@@ -207,12 +239,18 @@ test("task pages render their variants and save changes immediately", async ({ p
   await homeTasks.last().press("Enter");
   await expect(homeTasks).toHaveCount(3);
   await expect(homeTasks.last()).toBeFocused();
+  await page.locator(".task-tabs__link--active").focus();
+  await expect(homeTasks).toHaveCount(2);
   await expect(page.locator(".task-item__drag-handle, .task-item__pin")).toHaveCount(0);
 
   await page.goto("/shopping");
   await expect(page.locator(".task-item__remove")).toHaveCount(3);
   await expect(page.locator(".task-item__remove").first().locator("use")).toHaveAttribute("href", /#icon-remove$/);
   await page.getByRole("button", { name: "Remove Oat milk from shopping list" }).click();
+  await expect(page.locator(".task-page__tasks .task-item")).toHaveCount(2);
+  await page.getByRole("button", { name: "Add item" }).click();
+  await expect(page.locator(".task-page__tasks .task-item")).toHaveCount(3);
+  await page.getByRole("button", { name: "Add item" }).focus();
   await expect(page.locator(".task-page__tasks .task-item")).toHaveCount(2);
   await page.reload();
   await expect(page.getByRole("textbox", { name: "Task title" })).toHaveCount(2);
@@ -226,6 +264,8 @@ test("task pages render their variants and save changes immediately", async ({ p
   await projects.first().getByRole("button", { name: "Add task" }).click();
   await expect(projects.first().locator("textarea.task-item__title")).toHaveCount(4);
   await expect(projects.first().locator("textarea.task-item__title").last()).toBeFocused();
+  await projects.first().getByRole("button", { name: "Add task" }).focus();
+  await expect(projects.first().locator("textarea.task-item__title")).toHaveCount(3);
 
   await page.goto("/cross-stitch");
   await expect(page.getByRole("heading", { level: 1, name: "Cross stitch" })).toBeVisible();

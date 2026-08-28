@@ -1,5 +1,6 @@
 <script>
 import { loadPageTasks, nextTaskId, savePageTasks } from "../app/page-tasks.js";
+import { finishTaskDraft, serializableTasks } from "../app/task-drafts.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
 import "./task-pages.css";
@@ -8,14 +9,17 @@ export default {
   name: "ChoresPage",
   components: { JMButton, JMTaskCard },
   data() {
-    return { chores: loadPageTasks("chores") };
+    return { chores: loadPageTasks("chores"), draftTaskIds: new Set() };
   },
   methods: {
     taskInputId(task) {
       return `chore-title-${task.id}`;
     },
     save() {
-      savePageTasks("chores", this.chores);
+      savePageTasks("chores", {
+        ...this.chores,
+        tasks: serializableTasks(this.chores.tasks, this.draftTaskIds),
+      });
     },
     updateTitle(task, title) {
       task.title = title;
@@ -33,9 +37,14 @@ export default {
         completed: false,
       };
       this.chores.tasks.push(task);
+      this.draftTaskIds.add(task.id);
       this.save();
       this.focusTask(task);
       return task;
+    },
+    handleTitleBlur(task) {
+      if (!finishTaskDraft(this.chores.tasks, task, this.draftTaskIds)) return;
+      this.save();
     },
     handleEnter(task, event) {
       if (event.isComposing) return;
@@ -74,6 +83,7 @@ export default {
           :title-input-id="taskInputId(task)"
           :completed="task.completed"
           @enter="handleEnter(task, $event)"
+          @title-blur="handleTitleBlur(task)"
           @update:completed="updateCompleted(task, $event)"
           @update:title="updateTitle(task, $event)"
         >

@@ -5,7 +5,7 @@ import "./jm-task-card.css";
 export default {
   name: "JMTaskCard",
   components: { JMIcon },
-  emits: ["drag-end", "drag-start", "enter", "pin", "remove", "update:completed", "update:title"],
+  emits: ["drag-end", "drag-start", "enter", "pin", "remove", "title-blur", "update:completed", "update:title"],
   props: {
     canDrag: { type: Boolean, default: false },
     completed: { type: Boolean, default: false },
@@ -79,6 +79,7 @@ export default {
           rows="1"
           enterkeyhint="next"
           :value="title"
+          @blur="$emit('title-blur', $event)"
           @input="$emit('update:title', $event.target.value)"
           @keydown.enter="$emit('enter', $event)"
         />

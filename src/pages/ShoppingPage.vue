@@ -1,5 +1,6 @@
 <script>
 import { loadPageTasks, nextTaskId, savePageTasks } from "../app/page-tasks.js";
+import { finishTaskDraft, serializableTasks } from "../app/task-drafts.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
 import "./task-pages.css";
@@ -8,14 +9,17 @@ export default {
   name: "ShoppingPage",
   components: { JMButton, JMTaskCard },
   data() {
-    return { shopping: loadPageTasks("shopping") };
+    return { draftTaskIds: new Set(), shopping: loadPageTasks("shopping") };
   },
   methods: {
     taskInputId(task) {
       return `shopping-title-${task.id}`;
     },
     save() {
-      savePageTasks("shopping", this.shopping);
+      savePageTasks("shopping", {
+        ...this.shopping,
+        tasks: serializableTasks(this.shopping.tasks, this.draftTaskIds),
+      });
     },
     updateTitle(task, title) {
       task.title = title;
@@ -26,6 +30,7 @@ export default {
       this.save();
     },
     removeTask(task) {
+      this.draftTaskIds.delete(task.id);
       this.shopping.tasks = this.shopping.tasks.filter((item) => item.id !== task.id);
       this.save();
     },
@@ -36,9 +41,14 @@ export default {
         completed: false,
       };
       this.shopping.tasks.push(task);
+      this.draftTaskIds.add(task.id);
       this.save();
       this.focusTask(task);
       return task;
+    },
+    handleTitleBlur(task) {
+      if (!finishTaskDraft(this.shopping.tasks, task, this.draftTaskIds)) return;
+      this.save();
     },
     handleEnter(task, event) {
       if (event.isComposing) return;
@@ -78,6 +88,7 @@ export default {
           :remove-label="`Remove ${task.title || 'untitled item'} from shopping list`"
           @enter="handleEnter(task, $event)"
           @remove="removeTask(task)"
+          @title-blur="handleTitleBlur(task)"
           @update:completed="updateCompleted(task, $event)"
           @update:title="updateTitle(task, $event)"
         />

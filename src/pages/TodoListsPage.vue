@@ -1,6 +1,7 @@
 <script>
 import { RouterLink } from "vue-router";
 import { loadPageTasks, nextTaskId, savePageTasks } from "../app/page-tasks.js";
+import { finishTaskDraft, serializableTasks } from "../app/task-drafts.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
 import "./task-pages.css";
@@ -9,7 +10,7 @@ export default {
   name: "TodoListsPage",
   components: { JMButton, JMTaskCard, RouterLink },
   data() {
-    return { todos: loadPageTasks("todos") };
+    return { draftTaskIds: new Set(), todos: loadPageTasks("todos") };
   },
   computed: {
     activeList() {
@@ -24,7 +25,13 @@ export default {
       return `todo-title-${this.activeList.id}-${task.id}`;
     },
     save() {
-      savePageTasks("todos", this.todos);
+      savePageTasks("todos", {
+        ...this.todos,
+        lists: this.todos.lists.map((list) => ({
+          ...list,
+          tasks: serializableTasks(list.tasks, this.draftTaskIds),
+        })),
+      });
     },
     updateTitle(task, title) {
       task.title = title;
@@ -41,9 +48,14 @@ export default {
         completed: false,
       };
       this.activeList.tasks.push(task);
+      this.draftTaskIds.add(task.id);
       this.save();
       this.focusTask(task);
       return task;
+    },
+    handleTitleBlur(list, task) {
+      if (!finishTaskDraft(list.tasks, task, this.draftTaskIds)) return;
+      this.save();
     },
     handleEnter(task, event) {
       if (event.isComposing) return;
@@ -99,6 +111,7 @@ export default {
             :title-input-id="taskInputId(task)"
             :completed="task.completed"
             @enter="handleEnter(task, $event)"
+            @title-blur="handleTitleBlur(activeList, task)"
             @update:completed="updateCompleted(task, $event)"
             @update:title="updateTitle(task, $event)"
           />

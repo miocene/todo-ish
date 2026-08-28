@@ -1,5 +1,6 @@
 <script>
 import { loadPageTasks, nextTaskId, savePageTasks } from "../app/page-tasks.js";
+import { finishTaskDraft, serializableTasks } from "../app/task-drafts.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
 import "./task-pages.css";
@@ -17,10 +18,11 @@ export default {
     title: { type: String, required: true },
   },
   data() {
-    return { pageData: loadPageTasks(this.pageKey) };
+    return { draftTaskIds: new Set(), pageData: loadPageTasks(this.pageKey) };
   },
   watch: {
     pageKey(value) {
+      this.draftTaskIds.clear();
       this.pageData = loadPageTasks(value);
     },
   },
@@ -32,7 +34,13 @@ export default {
       return `${this.pageKey}-title-${project.id}-${task.id}`;
     },
     save() {
-      savePageTasks(this.pageKey, this.pageData);
+      savePageTasks(this.pageKey, {
+        ...this.pageData,
+        projects: this.pageData.projects.map((project) => ({
+          ...project,
+          tasks: serializableTasks(project.tasks, this.draftTaskIds),
+        })),
+      });
     },
     updateTitle(task, title) {
       task.title = title;
@@ -49,9 +57,14 @@ export default {
         completed: false,
       };
       project.tasks.push(task);
+      this.draftTaskIds.add(task.id);
       this.save();
       this.focusTask(project, task);
       return task;
+    },
+    handleTitleBlur(project, task) {
+      if (!finishTaskDraft(project.tasks, task, this.draftTaskIds)) return;
+      this.save();
     },
     handleEnter(project, task, event) {
       if (event.isComposing) return;
@@ -97,6 +110,7 @@ export default {
                 :title-input-id="taskInputId(project, task)"
                 :completed="task.completed"
                 @enter="handleEnter(project, task, $event)"
+                @title-blur="handleTitleBlur(project, task)"
                 @update:completed="updateCompleted(task, $event)"
                 @update:title="updateTitle(task, $event)"
               />
