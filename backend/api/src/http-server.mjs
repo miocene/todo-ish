@@ -71,8 +71,8 @@ function corsHeaders(request, allowedOrigin) {
   };
 }
 
-function validateOrigin(request, allowedOrigin, pathname, method) {
-  if (!allowedOrigin || !pathname.startsWith("/api/")) return;
+function validateOrigin(request, allowedOrigin, pathname, method, authenticationBypass) {
+  if (authenticationBypass || !allowedOrigin || !pathname.startsWith("/api/")) return;
   const origin = request.headers.origin;
   if (origin && origin !== allowedOrigin) throw new RequestError("Origin not allowed", 403);
   if (!["GET", "HEAD", "OPTIONS"].includes(method) && origin !== allowedOrigin) {
@@ -134,14 +134,18 @@ async function readJson(request) {
   }
 }
 
-export function createHttpServer(repository, authService, { allowedOrigin, logger = console } = {}) {
+export function createHttpServer(
+  repository,
+  authService,
+  { allowedOrigin, authenticationBypass = false, logger = console } = {},
+) {
   const server = createServer(async (request, response) => {
     const method = request.method || "GET";
     let responseCorsHeaders = {};
 
     try {
       const url = new URL(request.url || "/", "http://localhost");
-      validateOrigin(request, allowedOrigin, url.pathname, method);
+      validateOrigin(request, allowedOrigin, url.pathname, method, authenticationBypass);
       responseCorsHeaders = corsHeaders(request, allowedOrigin);
       if (method === "OPTIONS" && url.pathname.startsWith("/api/")) {
         writePreflight(response, request, allowedOrigin);
@@ -161,7 +165,7 @@ export function createHttpServer(repository, authService, { allowedOrigin, logge
         headers = { "set-cookie": result.cookies };
       } else if (url.pathname === "/api/auth/session") {
         requireMethod(method, ["GET"]);
-        body = await authService.session(request.headers.cookie);
+        body = await authService.session(request.headers.cookie, authenticationBypass);
       } else if (url.pathname === "/api/auth/registration/options") {
         requireMethod(method, ["POST"]);
         const result = await authService.registrationOptions({
@@ -192,12 +196,12 @@ export function createHttpServer(repository, authService, { allowedOrigin, logge
         body = result.body;
         headers = { "set-cookie": result.cookies };
       } else if (url.pathname === "/api/catalogs") {
-        await authService.requireUser(request.headers.cookie);
+        await authService.requireUser(request.headers.cookie, authenticationBypass);
         requireMethod(method, ["GET", "HEAD"]);
         body = await repository.summary();
         cacheControl = "private, max-age=60";
       } else if (url.pathname === "/api/catalogs/filaments") {
-        await authService.requireUser(request.headers.cookie);
+        await authService.requireUser(request.headers.cookie, authenticationBypass);
         requireMethod(method, ["GET", "HEAD"]);
         body = await repository.filaments({
           ...pagination(url.searchParams),
@@ -205,16 +209,16 @@ export function createHttpServer(repository, authService, { allowedOrigin, logge
         });
         cacheControl = "private, max-age=60";
       } else if (url.pathname === "/api/catalogs/floss") {
-        await authService.requireUser(request.headers.cookie);
+        await authService.requireUser(request.headers.cookie, authenticationBypass);
         requireMethod(method, ["GET", "HEAD"]);
         body = await repository.floss(pagination(url.searchParams));
         cacheControl = "private, max-age=60";
       } else if (url.pathname === "/api/data") {
-        await authService.requireUser(request.headers.cookie);
+        await authService.requireUser(request.headers.cookie, authenticationBypass);
         requireMethod(method, ["GET", "HEAD"]);
         body = await repository.read();
       } else {
-        await authService.requireUser(request.headers.cookie);
+        await authService.requireUser(request.headers.cookie, authenticationBypass);
         const resourceMatch = /^\/api\/data\/([a-z-]+)$/.exec(url.pathname);
         if (!resourceMatch || !isAppDataResource(resourceMatch[1])) throw new RequestError("Not found", 404);
         requireMethod(method, ["PUT"]);

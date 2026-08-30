@@ -136,6 +136,33 @@ test("API allows credentialed browser requests only from the configured site ori
   );
 });
 
+test("private development server bypasses session auth and browser-origin checks", async () => {
+  const authService = fakeAuthService({
+    session: async (_cookie, authenticationBypass) => ({ authenticated: authenticationBypass }),
+    requireUser: async (_cookie, authenticationBypass) => {
+      if (!authenticationBypass) throw new AuthError("Authentication required", 401, "authentication_required");
+      return { username: "julia", displayName: "Julia" };
+    },
+  });
+
+  await withServer(
+    fakeRepository(),
+    async (origin) => {
+      const session = await fetch(`${origin}/api/auth/session`);
+      assert.equal(session.status, 200);
+      assert.deepEqual(await session.json(), { authenticated: true });
+
+      const data = await fetch(`${origin}/api/data`);
+      assert.equal(data.status, 200);
+
+      const post = await fetch(`${origin}/api/auth/authentication/options`, { method: "POST" });
+      assert.equal(post.status, 200);
+    },
+    authService,
+    { authenticationBypass: true },
+  );
+});
+
 test("API rejects unsupported catalogue writes and hides internal errors", async () => {
   const repository = fakeRepository({
     summary: async () => {

@@ -100,6 +100,8 @@ test("passkey bootstrap stores a verified credential and creates a secure sessio
   assert.equal(generated.authenticatorSelection.residentKey, "required");
   assert.equal(generated.authenticatorSelection.userVerification, "required");
   assert.ok(generated.userID instanceof Uint8Array);
+  const verification = calls.find((call) => call.registrationVerification).registrationVerification;
+  assert.equal(verification.expectedOrigin, config.origin);
 });
 
 test("passkey authentication verifies the stored public key and rotates the session", async () => {
@@ -149,6 +151,21 @@ test("passkey authentication verifies the stored public key and rotates the sess
   assert.equal(calls.find((call) => call.authenticationOptions).authenticationOptions.allowCredentials.length, 0);
   const verification = calls.find((call) => call.authenticationVerification).authenticationVerification;
   assert.deepEqual([...verification.credential.publicKey], [1, 2, 3]);
+  assert.equal(verification.expectedOrigin, config.origin);
   assert.equal(verification.requireUserVerification, true);
   assert.equal(calls.find((call) => call.credentialId).counter, 5);
+});
+
+test("private development endpoint can explicitly bypass passkey sessions", async () => {
+  const service = createAuthService(fakeRepository(), config, {});
+
+  assert.deepEqual(await service.session("", true), {
+    authenticated: true,
+    bootstrapRequired: false,
+    user: { username: "julia", displayName: "Julia" },
+  });
+  assert.deepEqual(await service.requireUser("", true), {
+    username: "julia",
+    displayName: "Julia",
+  });
 });

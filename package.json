@@ -4,8 +4,8 @@
   "type": "module",
   "version": "0.1.0",
   "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 4173",
-    "start": "vite --host 127.0.0.1 --port 4173",
+    "dev": "sh scripts/dev.sh",
+    "start": "yarn dev",
     "build": "vite build",
     "build:pages": "yarn build && node scripts/prepare_github_pages.mjs",
     "preview": "vite preview --host 127.0.0.1 --port 4173",

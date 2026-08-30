@@ -7,6 +7,7 @@ services:
     environment:
       HOST: 0.0.0.0
       PORT: 3000
+      DEVELOPMENT_PORT: 3001
       PGHOST: postgres
       PGPORT: 5432
       PGDATABASE: todo
@@ -29,6 +30,7 @@ services:
       - todo-edge
     ports:
       - "127.0.0.1:3000:3000"
+      - "127.0.0.1:3001:3001"
     depends_on:
       postgres:
         condition: service_healthy

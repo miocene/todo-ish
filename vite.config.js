@@ -12,12 +12,17 @@ function appBasePath(value = "/") {
 export default defineConfig(({ mode }) => {
   const environment = loadEnv(mode, process.cwd(), "");
   const apiTarget = environment.API_PROXY_TARGET || environment.CATALOG_API_PROXY_TARGET || "http://127.0.0.1:3000";
-  const proxy = { "/api": { target: apiTarget } };
+  const proxy = {
+    "/api": {
+      changeOrigin: true,
+      target: apiTarget,
+    },
+  };
 
   return {
     base: appBasePath(environment.VITE_BASE_PATH),
     plugins: [vue()],
-    server: { proxy, strictPort: true },
+    server: { host: "127.0.0.1", proxy, strictPort: true },
     preview: { proxy, strictPort: true },
   };
 });

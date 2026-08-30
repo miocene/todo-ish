@@ -14,6 +14,9 @@ const repository = {
 };
 const authService = createAuthService(createAuthRepository(pool), config.auth);
 const server = createHttpServer(repository, authService, { allowedOrigin: config.auth.origin });
+const developmentServer = config.developmentPort
+  ? createHttpServer(repository, authService, { authenticationBypass: true })
+  : null;
 
 pool.on("error", (error) => {
   console.error("Unexpected PostgreSQL pool error", error);
@@ -22,16 +25,23 @@ pool.on("error", (error) => {
 server.listen(config.port, config.host, () => {
   console.log(`Done-ish API listening on http://${config.host}:${config.port}`);
 });
+developmentServer?.listen(config.developmentPort, config.host, () => {
+  console.log(`Done-ish development API listening on http://${config.host}:${config.developmentPort}`);
+});
+
+function closeServer(target) {
+  return new Promise((resolve, reject) => target.close((error) => (error ? reject(error) : resolve())));
+}
 
 async function shutdown(signal) {
   console.log(`Received ${signal}; shutting down`);
-  server.close(async (error) => {
+  try {
+    await Promise.all([closeServer(server), ...(developmentServer ? [closeServer(developmentServer)] : [])]);
     await pool.end();
-    if (error) {
-      console.error("HTTP server shutdown failed", error);
-      process.exitCode = 1;
-    }
-  });
+  } catch (error) {
+    console.error("HTTP server shutdown failed", error);
+    process.exitCode = 1;
+  }
 }
 
 process.once("SIGINT", () => shutdown("SIGINT"));

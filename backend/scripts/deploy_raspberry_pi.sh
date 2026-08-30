@@ -4,7 +4,7 @@ set -eu
 
 ssh_target=${PI_SSH_TARGET:-}
 remote_directory=${PI_APP_DIR:-todo-app}
-public_api_bind_address=${PI_LAN_ADDRESS:-192.168.178.13}
+public_api_bind_address=${PI_LAN_ADDRESS:-}
 
 case "$ssh_target" in
   "" | -* | *[!A-Za-z0-9._@:%-]*)
@@ -71,6 +71,9 @@ ssh "$ssh_target" "curl --fail --silent --show-error http://127.0.0.1:4173/healt
 ssh "$ssh_target" "curl --fail --silent --show-error http://127.0.0.1:3000/healthz >/dev/null"
 ssh "$ssh_target" "curl --fail --silent --show-error http://127.0.0.1:3000/api/auth/session >/dev/null"
 ssh "$ssh_target" "test \"\$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:3000/api/data)\" = 401"
+ssh "$ssh_target" "curl --fail --silent --show-error http://127.0.0.1:3001/healthz >/dev/null"
+ssh "$ssh_target" "curl --fail --silent --show-error http://127.0.0.1:3001/api/data >/dev/null"
 
 echo "The protected API is listening locally on the Pi at http://127.0.0.1:3000"
+echo "The SSH-only development API is listening on the Pi at http://127.0.0.1:3001"
 echo "Caddy will publish https://api.todo-ish.today after DNS points to this connection and router ports 80/443 reach the Pi."

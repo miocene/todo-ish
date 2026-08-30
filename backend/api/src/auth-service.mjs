@@ -63,6 +63,7 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
   const challengeCookieName = `${cookiePrefix}doneish_challenge`;
   const sessionCookieName = `${cookiePrefix}doneish_session`;
   const secureAttribute = config.secureCookies ? "; Secure" : "";
+  const developmentUser = { username: config.username, displayName: config.displayName };
 
   function cookie(name, value, maxAge) {
     return `${name}=${value}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}${secureAttribute}`;
@@ -107,14 +108,18 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
     return repository.sessionByTokenHash(tokenHash(token));
   }
 
-  async function requireUser(cookieHeader) {
+  async function requireUser(cookieHeader, authenticationBypass = false) {
+    if (authenticationBypass) return developmentUser;
     const user = await authenticatedUser(cookieHeader);
     if (!user) throw new AuthError("Authentication required", 401, "authentication_required");
     return user;
   }
 
   return {
-    async session(cookieHeader) {
+    async session(cookieHeader, authenticationBypass = false) {
+      if (authenticationBypass) {
+        return { authenticated: true, bootstrapRequired: false, user: publicUser(developmentUser) };
+      }
       const user = await authenticatedUser(cookieHeader);
       return {
         authenticated: Boolean(user),
@@ -123,8 +128,8 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
       };
     },
 
-    async requireUser(cookieHeader) {
-      return requireUser(cookieHeader);
+    async requireUser(cookieHeader, authenticationBypass = false) {
+      return requireUser(cookieHeader, authenticationBypass);
     },
 
     async registrationOptions({ bootstrapToken, cookieHeader }) {
