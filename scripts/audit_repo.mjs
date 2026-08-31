@@ -12,7 +12,12 @@ const runtimeDependencies = Object.keys(packageJson.dependencies || {}).sort();
 assert.deepEqual(runtimeDependencies, ["vue", "vue-router", "webauthn-polyfills"]);
 assert.match(packageJson.packageManager || "", /^yarn@1\./);
 assert.ok(exists("yarn.lock"));
-assert.deepEqual(readdirSync(new URL("styles/", root)).sort(), ["normalisation.css", "style.css", "variables.css"]);
+assert.deepEqual(readdirSync(new URL("styles/", root)).sort(), [
+  "normalisation.css",
+  "style.css",
+  "variables.css",
+  "views.css",
+]);
 assert.match(
   read("styles/style.css"),
   /^@import url\("\.\/variables\.css"\);\n@import url\("\.\/normalisation\.css"\);/,
@@ -27,6 +32,7 @@ for (const removedRootPath of [
   "requirements-dev.txt",
   "server",
   "style.css",
+  "styles.css",
   "variables.css",
 ]) {
   assert.ok(!exists(removedRootPath), `${removedRootPath} should live under backend, not at the repository root`);

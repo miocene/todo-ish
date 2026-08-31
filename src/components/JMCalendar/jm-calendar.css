@@ -4,7 +4,6 @@
   align-items: center;
   margin-block-end: var(--space-8);
   padding: var(--space-2) var(--space-5);
-  
   background: var(--color-bg-surface);
   border-radius: var(--radius-card);
 }
@@ -55,8 +54,7 @@
   anchor-name: --done-calendar-day;
 }
 
-.calendar__days:has(.calendar__day:not(.calendar__day--selected):is(:hover, :focus-visible))
-  .calendar__day--selected {
+.calendar__days:has(.calendar__day:not(.calendar__day--selected):is(:hover, :focus-visible)) .calendar__day--selected {
   anchor-name: none;
 }
 

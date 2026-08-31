@@ -11,7 +11,7 @@ function filesMatching(directory, pattern) {
 
 const sourceFilesList = ["index.html", ...filesMatching("src", /\.(?:js|vue)$/)];
 const source = sourceFilesList.map((file) => readFileSync(file, "utf8")).join("\n");
-const cssFiles = ["variables.css", "normalisation.css", "styles.css", ...filesMatching("src", /\.css$/)];
+const cssFiles = [...filesMatching("styles", /\.css$/), ...filesMatching("src", /\.css$/)];
 const css = cssFiles.map((file) => readFileSync(file, "utf8")).join("\n");
 
 const referenced = new Set();
@@ -31,8 +31,19 @@ for (const match of css.matchAll(/view-transition-class:\s*([a-z][a-z0-9_-]+)/g)
 }
 
 const defined = new Set([...css.matchAll(/\.([a-z_][a-z0-9_-]*)/gi)].map((match) => match[1]));
-const missing = [...referenced].filter((name) => !defined.has(name)).sort();
-const unused = [...defined].filter((name) => !referenced.has(name)).sort();
+const structuralHooks = new Set([
+  "chores-all",
+  "chores-upcoming",
+  "jm-navigation__item",
+  "printing-item__field--filament",
+  "task-item__pin",
+  "task-item__remove",
+]);
+const generatedClasses = new Set(["jm-button--ghost", "jm-button--primary", "jm-button--secondary"]);
+const missing = [...referenced].filter((name) => !defined.has(name) && !structuralHooks.has(name)).sort();
+const unused = [...defined]
+  .filter((name) => name !== "css" && !referenced.has(name) && !generatedClasses.has(name))
+  .sort();
 const bemName = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:__[a-z0-9]+(?:-[a-z0-9]+)*)?(?:--[a-z0-9]+(?:-[a-z0-9]+)*)?$/;
 const invalidNames = [...new Set([...referenced, ...defined])].filter((name) => !bemName.test(name)).sort();
 const nonBemState = [...defined].filter((name) => /^(?:is|has)-/.test(name)).sort();

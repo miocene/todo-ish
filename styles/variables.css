@@ -15,13 +15,13 @@
 
   --blur-m: 12px;
 
-  --radius-checkbox: 4px;
-  --radius-control: 8px;
-  --radius-card: 24px;
+  --radius-checkbox: 8px;
+  --radius-control: 12px;
+  --radius-card: 28px;
 
   --corner-shape-default: superellipse(1.5);
 
-  --size-control: 32px;
+  --size-control: 40px;
   --size-checkbox: 16px;
   --size-header: 50px;
 
@@ -49,4 +49,6 @@
   --space-7: 32px;
   --space-8: 40px;
   --space-9: 48px;
+  --space-10: 60px;
+  --space-11: 80px;
 }
