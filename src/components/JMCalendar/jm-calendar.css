@@ -62,12 +62,18 @@
   background: var(--color-bg-selection);
 }
 
+.jm-calendar__day:not(:disabled):active,
+.jm-day-type__trigger:active {
+  background: #f0f;
+}
+
 .jm-calendar__day--today .jm-calendar__weekday,
 .jm-calendar__day--today .jm-calendar__date {
   color: #f0f;
 }
 
 .jm-calendar__day:disabled {
+  background: #f0f;
   opacity: 0.35;
   cursor: not-allowed;
 }
@@ -174,8 +180,13 @@
 }
 
 .jm-day-type__input:focus-visible + .jm-day-type__option-content {
+  background: #f0f;
   outline: 2px solid #f0f;
   outline-offset: -2px;
+}
+
+.jm-day-type__option:active .jm-day-type__option-content {
+  background: #f0f;
 }
 
 .jm-day-type__check {

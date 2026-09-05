@@ -40,8 +40,12 @@
   background: var(--control-ghost-background-hover);
 }
 
+.jm-button:not(:disabled):active {
+  background: #f0f;
+}
+
 .jm-button:disabled {
-  /* TODO */
+  background: #f0f;
   opacity: 0.55;
   cursor: not-allowed;
 }

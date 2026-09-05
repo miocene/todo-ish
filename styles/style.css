@@ -57,8 +57,33 @@ h3 {
 :focus-visible {
   outline: 2px solid #f0f;
   outline-offset: 3px;
+}
 
-  /* TODO: add transition */
+input:not([type="checkbox"], [type="radio"], [type="hidden"], [readonly], :disabled):is(
+    :hover,
+    :focus-visible,
+    :active
+  ),
+select:not(:disabled):is(:hover, :focus-visible, :active),
+textarea:not([readonly], :disabled):is(:hover, :focus-visible, :active) {
+  background: #f0f;
+}
+
+body input:disabled,
+body select:disabled,
+body textarea:disabled {
+  background: #f0f;
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+input:is([type="checkbox"], [type="radio"]):not(:disabled):is(:hover, :active) {
+  outline: 2px solid #f0f;
+  outline-offset: 2px;
+}
+
+a[href]:active {
+  background: #f0f;
 }
 
 .skip-link {
@@ -75,6 +100,10 @@ h3 {
 
 .skip-link:focus {
   transform: translateY(0);
+}
+
+.skip-link:is(:hover, :active) {
+  background: #f0f;
 }
 
 .app-sync-status {

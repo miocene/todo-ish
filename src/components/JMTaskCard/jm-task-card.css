@@ -101,8 +101,18 @@ textarea.task-item__title {
   cursor: pointer;
 }
 
-.task-item__action:hover {
+.task-item__action:not(:disabled):hover {
   background: var(--color-bg-selection);
+}
+
+.task-item__action:not(:disabled):is(:focus-visible, :active) {
+  background: #f0f;
+}
+
+.task-item__action:disabled {
+  background: #f0f;
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .task-item__visually-hidden {

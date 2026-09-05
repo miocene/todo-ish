@@ -18,6 +18,10 @@
   border-radius: var(--radius-control);
 }
 
+.jm-header__logo:is(:hover, :focus-visible, :active) {
+  background: #f0f;
+}
+
 .jm-header__logo-main,
 .jm-header__logo-suffix {
   font-size: 1.25rem;

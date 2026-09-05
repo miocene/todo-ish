@@ -107,6 +107,10 @@
   border-block-end-color: currentcolor;
 }
 
+.task-tabs__link:active {
+  background: #f0f;
+}
+
 .project-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -338,9 +342,19 @@
   cursor: pointer;
 }
 
-.printing-filament__remove:is(:hover, :focus-visible) {
+.printing-filament__remove:not(:disabled):is(:hover, :focus-visible) {
   color: var(--color-text-default);
   background: var(--color-bg-selection);
+}
+
+.printing-filament__remove:not(:disabled):active {
+  background: #f0f;
+}
+
+.printing-filament__remove:disabled {
+  background: #f0f;
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .task-page__visually-hidden {

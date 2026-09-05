@@ -39,6 +39,10 @@
   background: var(--color-bg-selection);
 }
 
+.jm-navigation__link:active {
+  background: #f0f;
+}
+
 .jm-navigation__label {
   position: absolute;
   inline-size: 1px;
