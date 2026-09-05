@@ -250,7 +250,7 @@ a.activity-graph__day:active {
   margin-inline-start: -33px;
   color: var(--color-bg-surface);
   font-size: 0.75rem;
-  background: #446e5c;
+  background: #f0f;
   border: 3px solid var(--color-bg-default);
   border-radius: 50%;
 }

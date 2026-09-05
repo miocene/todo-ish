@@ -140,7 +140,7 @@
   background: var(--control-secondary-background);
   border: 0;
   border-radius: var(--space-5);
-  box-shadow: 0 12px 32px rgb(0 0 0 / 12%);
+  box-shadow: 0 12px 32px #f0f;
 }
 
 .jm-day-type__option {

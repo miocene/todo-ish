@@ -253,7 +253,6 @@ export default {
           :missing-text="card.missingText"
           :required-text="card.requiredText"
           :status="card.status"
-          :swatch-color="card.item.color"
           :title="card.title"
           :title-href="card.titleHref"
           @update:inventory="updateSkeins(card.item, $event)"

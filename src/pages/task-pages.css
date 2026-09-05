@@ -196,8 +196,8 @@
 }
 
 .stitch-color__fields--missing {
-  background: #fff4eb;
-  border-color: #d96b2b;
+  background: #f0f;
+  border-color: #f0f;
 }
 
 .stitch-color__field {
@@ -222,7 +222,7 @@
 }
 
 .stitch-color__missing {
-  color: #a33d0d;
+  color: #f0f;
   font-size: 0.6875rem;
   font-weight: var(--font-weight-bold);
 }
@@ -292,13 +292,13 @@
 }
 
 .printing-filament--missing select {
-  color: #8a3b12;
-  background: #fff4eb;
-  border-color: #d96b2b;
+  color: #f0f;
+  background: #f0f;
+  border-color: #f0f;
 }
 
 .printing-item__missing {
-  color: #a33d0d;
+  color: #f0f;
   font-size: 0.6875rem;
   font-weight: var(--font-weight-bold);
 }

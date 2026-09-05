@@ -11,8 +11,8 @@
 }
 
 .catalog-card--missing {
-  background: #fff4eb;
-  border-color: #d96b2b;
+  background: #f0f;
+  border-color: #f0f;
 }
 
 .catalog-card__swatch {
@@ -22,6 +22,10 @@
   background: var(--color-bg-selection);
   border: 1px solid #f0f;
   border-radius: 50%;
+}
+
+span.catalog-card__swatch {
+  background: #f0f;
 }
 
 .catalog-card h2 {
@@ -54,7 +58,7 @@
 }
 
 .catalog-card .catalog-card__missing {
-  color: #a33d0d;
+  color: #f0f;
   font-weight: var(--font-weight-bold);
 }
 

@@ -15,7 +15,6 @@ export default {
     missingText: { type: String, default: "" },
     requiredText: { type: String, default: "" },
     status: { type: String, default: "" },
-    swatchColor: { type: String, default: "" },
     swatchSrc: { type: String, default: "" },
     title: { type: String, required: true },
     titleHref: { type: String, required: true },
@@ -26,7 +25,7 @@ export default {
 <template>
   <li class="catalog-card" :class="{ 'catalog-card--missing': missing }" :data-catalog-group="catalogGroup">
     <img v-if="swatchSrc" class="catalog-card__swatch" :src="swatchSrc" alt="" loading="lazy" width="48" height="48" />
-    <span v-else class="catalog-card__swatch" :style="{ backgroundColor: swatchColor }" aria-hidden="true" />
+    <span v-else class="catalog-card__swatch" aria-hidden="true" />
     <div>
       <h2>
         <a :href="titleHref" target="_blank" rel="noopener noreferrer">
