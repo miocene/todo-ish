@@ -1,22 +1,12 @@
+import { APP_DATA_RESOURCES } from "./app-data-contract.mjs";
+export { APP_DATA_RESOURCES };
+
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const HEX_COLOR = /^#[\dA-F]{6}$/i;
 const RESOURCE_LIMIT = 2_000;
 const TEXT_LIMIT = 500;
 const DESCRIPTION_LIMIT = 5_000;
 const URL_LIMIT = 2_000;
-
-export const APP_DATA_RESOURCES = Object.freeze([
-  "work-tasks",
-  "work-statuses",
-  "colors",
-  "chores",
-  "todos",
-  "shopping",
-  "printing",
-  "cross-stitch",
-  "filament-inventory",
-  "floss-inventory",
-]);
 
 const RESOURCE_SET = new Set(APP_DATA_RESOURCES);
 const WORK_STATUS_SET = new Set(["work", "pto", "sick-leave", "holiday", "business-trip", "weekend", "conference"]);

@@ -3,7 +3,7 @@ import { createTaskEditor } from "../app/task-editor.js";
 import { appClock } from "../app/clock.js";
 import { activityLevel } from "../app/activity.js";
 import { loadCardColors } from "../app/card-colors.js";
-import { serializableTasks } from "../app/task-list.js";
+import { setTaskCompletion as completeTask, serializableTasks } from "../app/task-list.js";
 import {
   calendarDate,
   getCalendarDay,
@@ -67,7 +67,7 @@ export default {
     activityByDate() {
       const counts = new Map();
       for (const task of this.workTasks) {
-        if (!task.checkedAt || !task.date) continue;
+        if (!task.completedAt || !task.date) continue;
         counts.set(task.date, (counts.get(task.date) ?? 0) + 1);
       }
 
@@ -124,7 +124,7 @@ export default {
       return date === null || date >= this.todayIso;
     },
     createTask(date) {
-      return this.editor.add(this.workTasks, { id: `new-${this.nextTaskId++}`, date, title: "" });
+      return this.editor.add(this.workTasks, { id: `new-${this.nextTaskId++}`, date, title: "", completed: false });
     },
     focusTaskTitle(task) {
       this.editor.focus(this.taskInputId(task), { caretAtEnd: true });
@@ -148,7 +148,7 @@ export default {
       });
     },
     isTaskComplete(task) {
-      return Boolean(task.checkedAt);
+      return task.completed;
     },
     moveTask(task, date) {
       if (task.date === date) return;
@@ -192,7 +192,7 @@ export default {
       setWorkStatus(date, value);
     },
     setTaskCompletion(task, completed) {
-      task.checkedAt = completed ? new Date().toISOString() : undefined;
+      completeTask(task, completed);
       if (completed && task.date === null) {
         task.date = this.todayIso;
       } else if (!completed && task.date !== null && task.date < this.todayIso) {

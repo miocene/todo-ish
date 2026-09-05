@@ -1,4 +1,4 @@
-import { APP_DATA_RESOURCES } from "./app-data-validation.mjs";
+import { APP_DATA_RESOURCES, completionState as completion } from "./app-data-contract.mjs";
 
 export class AppDataRevisionConflictError extends Error {
   constructor(resource, expectedRevision, currentRevision) {
@@ -10,14 +10,6 @@ export class AppDataRevisionConflictError extends Error {
 }
 
 const timestamp = (value) => (value instanceof Date ? value.toISOString() : value || null);
-
-function completion(completedAt) {
-  const normalized = timestamp(completedAt);
-  return {
-    completed: Boolean(normalized),
-    ...(normalized && { completedAt: normalized }),
-  };
-}
 
 async function queryRows(executor, text, values = []) {
   return (await executor.query({ text, values })).rows;

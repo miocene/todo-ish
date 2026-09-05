@@ -1,3 +1,5 @@
+import { workTaskFromApi, workTaskToApi } from "../../backend/api/src/app-data-contract.mjs";
+
 import { initialAppData, initializeAppDataResource, readAppData, writeAppData } from "./app-data.js";
 
 const EMPTY_TASKS = Object.freeze([]);
@@ -17,7 +19,9 @@ function isStoredTask(task) {
 function loadTasks() {
   const savedTasks = readAppData("work-tasks");
   const tasks = Array.isArray(savedTasks) && savedTasks.every(isStoredTask) ? savedTasks : initialAppData("work-tasks");
-  return Object.freeze(initializeAppDataResource("work-tasks", tasks).map((task) => Object.freeze({ ...task })));
+  return Object.freeze(
+    initializeAppDataResource("work-tasks", tasks).map((task) => Object.freeze(workTaskFromApi(task))),
+  );
 }
 
 let allTasks = loadTasks();
@@ -27,17 +31,14 @@ export function getWorkTasks(date) {
   return tasks.length ? tasks : EMPTY_TASKS;
 }
 
+/** @returns {ReadonlyArray<import("../../backend/api/src/app-data-contract.mjs").WorkTask>} */
 export function getAllWorkTasks() {
   return allTasks;
 }
 
+/** @param {import("../../backend/api/src/app-data-contract.mjs").WorkTask[]} tasks */
 export function saveWorkTasks(tasks) {
-  const savedTasks = tasks.map((task) => ({
-    id: task.id,
-    date: task.date,
-    title: task.title,
-    ...(task.checkedAt && { checkedAt: task.checkedAt }),
-  }));
+  const savedTasks = tasks.map(workTaskToApi);
   allTasks = Object.freeze(savedTasks.map((task) => Object.freeze(task)));
 
   writeAppData("work-tasks", savedTasks);

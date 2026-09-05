@@ -1,7 +1,12 @@
+export { setTaskCompletion } from "../../backend/api/src/app-data-contract.mjs";
+
 export const COMPLETION_MOVE_DELAY = 500;
 
 const taskTitle = (task) => task.title;
 
+/** @template {{ id: string, title: string }} T
+ * @param {T[]} tasks @param {Set<string>} draftTaskIds @returns {T[]}
+ */
 export function serializableTasks(tasks, draftTaskIds, getTaskTitle = taskTitle) {
   return tasks.filter((task) => !draftTaskIds.has(task.id) || getTaskTitle(task).trim());
 }
@@ -21,11 +26,6 @@ export function finishTaskDraft(tasks, task, draftTaskIds, getTaskTitle = taskTi
 
 export function completedTasksLast(tasks) {
   return [...tasks.filter((task) => !task.completed), ...tasks.filter((task) => task.completed)];
-}
-
-export function setTaskCompletion(task, completed, completedAt = new Date().toISOString()) {
-  task.completed = completed;
-  task.completedAt = completed ? completedAt : undefined;
 }
 
 export function nextEntityId(items, prefix) {

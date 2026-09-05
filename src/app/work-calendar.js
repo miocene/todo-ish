@@ -41,7 +41,7 @@ export function getCalendarDay(value, todayIso) {
 
 export function getWorkDateBounds(today, tasks = getAllWorkTasks()) {
   const firstCheckedTaskDate = tasks
-    .filter((task) => task.checkedAt && task.date)
+    .filter((task) => task.completedAt && task.date)
     .map((task) => task.date)
     .sort()[0];
   return {

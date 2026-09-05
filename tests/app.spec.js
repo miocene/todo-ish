@@ -1,22 +1,10 @@
 import { expect, test } from "@playwright/test";
-import { validateAppDataResource } from "../backend/api/src/app-data-validation.mjs";
+import { APP_DATA_RESOURCES, validateAppDataResource } from "../backend/api/src/app-data-validation.mjs";
 import { CARD_COLORS } from "../src/app/card-colors.js";
 import filamentCatalog from "../backend/catalogs/bambu-filaments.snapshot.json" with { type: "json" };
 import flossCatalog from "../backend/catalogs/dmc-floss.snapshot.json" with { type: "json" };
 
 const appDataByPage = new WeakMap();
-const APP_DATA_RESOURCES = [
-  "work-tasks",
-  "work-statuses",
-  "colors",
-  "chores",
-  "todos",
-  "shopping",
-  "printing",
-  "cross-stitch",
-  "filament-inventory",
-  "floss-inventory",
-];
 
 function emptyAppData(values, revisions) {
   return {

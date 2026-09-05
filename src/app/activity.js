@@ -24,7 +24,7 @@ function localDateFromTimestamp(timestamp) {
 }
 
 function activityItem(task, source, context, route) {
-  const completedAt = task.completedAt ?? task.checkedAt;
+  const completedAt = task.completedAt;
   const date = localDateFromTimestamp(completedAt);
   if (!date || !task.title?.trim()) return undefined;
   return {

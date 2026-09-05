@@ -207,6 +207,11 @@ export async function initializeAppData() {
   hydrated = true;
 }
 
+/**
+ * @template {keyof import("../../backend/api/src/app-data-contract.mjs").ResourceValues} K
+ * @param {K} resource
+ * @returns {import("../../backend/api/src/app-data-contract.mjs").ResourceValues[K] | undefined}
+ */
 export function readAppData(resource) {
   if (!RESOURCES.includes(resource)) throw new Error(`Unknown app-data resource: ${resource}`);
   if (cache.has(resource)) return withMockColors(resource, clone(cache.get(resource)));
