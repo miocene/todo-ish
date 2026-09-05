@@ -2,10 +2,11 @@
 import { filamentCatalog, filamentLabel, filaments, filamentsById } from "../../app/filament-catalog.js";
 import JMButton from "../JMButton/JMButton.vue";
 import JMIcon from "../JMIcon/JMIcon.vue";
+import JMInput from "../JMInput/JMInput.vue";
 
 export default {
   name: "JMPrintingTaskDetails",
-  components: { JMButton, JMIcon },
+  components: { JMButton, JMIcon, JMInput },
   emits: ["add", "remove", "update:filament", "update:weight"],
   props: {
     supplyById: { type: Map, required: true },
@@ -76,19 +77,20 @@ export default {
       </div>
       <div class="printing-item__field printing-item__field--weight">
         <label :for="weightInputId(usage)">Weight {{ usageIndex + 1 }}</label>
-        <span class="printing-item__weight-control">
-          <input
+        <div class="printing-item__weight-control">
+          <JMInput
             :id="weightInputId(usage)"
             name="item-weight"
             type="number"
+            size="s"
             inputmode="decimal"
             min="0"
             step="0.1"
-            :value="usage.weightGrams"
-            @input="$emit('update:weight', usage, $event.target.value)"
+            :model-value="usage.weightGrams"
+            @update:model-value="$emit('update:weight', usage, $event)"
           />
           <span aria-hidden="true">g</span>
-        </span>
+        </div>
       </div>
       <button
         class="printing-filament__remove"

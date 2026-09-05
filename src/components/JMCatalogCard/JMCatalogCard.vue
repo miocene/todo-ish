@@ -1,8 +1,10 @@
 <script>
+import JMInput from "../JMInput/JMInput.vue";
 import "./jm-catalog-card.css";
 
 export default {
   name: "JMCatalogCard",
+  components: { JMInput },
   emits: ["update:inventory"],
   props: {
     catalogGroup: { type: String, required: true },
@@ -39,17 +41,17 @@ export default {
       <p v-if="requiredText" class="catalog-card__required">{{ requiredText }}</p>
       <p v-if="missingText" class="catalog-card__missing">{{ missingText }}</p>
     </div>
-    <label class="catalog-card__inventory">
-      {{ inventoryLabel }}
-      <input
-        :name="inventoryName"
-        type="number"
-        inputmode="numeric"
-        min="0"
-        step="1"
-        :value="inventoryValue"
-        @input="$emit('update:inventory', $event.target.value)"
-      />
-    </label>
+    <JMInput
+      class="catalog-card__inventory"
+      :label="inventoryLabel"
+      :name="inventoryName"
+      type="number"
+      size="s"
+      inputmode="numeric"
+      min="0"
+      step="1"
+      :model-value="inventoryValue"
+      @update:model-value="$emit('update:inventory', $event)"
+    />
   </li>
 </template>

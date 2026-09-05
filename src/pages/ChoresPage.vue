@@ -5,6 +5,7 @@ import { loadPageTasks, savePageTasks } from "../app/page-tasks.js";
 import { nextEntityId, setTaskCompletion, serializableChores } from "../app/task-list.js";
 import { calendarDate, isoDate } from "../app/work-calendar.js";
 import JMButton from "../components/JMButton/JMButton.vue";
+import JMInput from "../components/JMInput/JMInput.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
 
 const DUE_DATE_FORMATTER = new Intl.DateTimeFormat("en", {
@@ -15,7 +16,7 @@ const DUE_DATE_FORMATTER = new Intl.DateTimeFormat("en", {
 
 export default {
   name: "ChoresPage",
-  components: { JMButton, JMTaskCard },
+  components: { JMButton, JMInput, JMTaskCard },
   data() {
     return {
       chores: loadPageTasks("chores"),
@@ -142,15 +143,13 @@ export default {
             @update:title="updateTitle(task, $event)"
           >
             <template #details>
-              <label class="task-item__visually-hidden" :for="ruleInputId(task)">
-                Repeating rule for {{ task.title || "untitled chore" }}
-              </label>
-              <input
+              <JMInput
                 :id="ruleInputId(task)"
-                class="chore-rule"
                 name="chore-repeat-rule"
-                :value="task.details"
-                @input="updateRule(task, $event.target.value)"
+                size="s"
+                :aria-label="`Repeating rule for ${task.title || 'untitled chore'}`"
+                :model-value="task.details"
+                @update:model-value="updateRule(task, $event)"
               />
             </template>
           </JMTaskCard>

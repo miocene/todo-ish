@@ -116,19 +116,12 @@ h3 {
   outline-offset: 3px;
 }
 
-input:not([type="checkbox"], [type="radio"], [type="hidden"], [readonly], :disabled):is(
-    :hover,
-    :focus-visible,
-    :active
-  ),
-select:not(:disabled):is(:hover, :focus-visible, :active),
-textarea:not([readonly], :disabled):is(:hover, :focus-visible, :active) {
+select:not(:disabled):is(:hover, :focus-visible, :active) {
   background: #f0f;
 }
 
-body input:disabled,
-body select:disabled,
-body textarea:disabled {
+input:is([type="checkbox"], [type="radio"]):disabled,
+body select:disabled {
   background: #f0f;
   opacity: 0.55;
   cursor: not-allowed;
@@ -217,23 +210,89 @@ a[href]:active {
   font-weight: var(--font-weight-bold);
 }
 
-.jm-passkey-gate__field {
+.jm-passkey-gate__error {
+  color: #f0f;
+}
+
+/* Input */
+
+.jm-input {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  min-inline-size: 0;
 }
 
-.jm-passkey-gate__field input {
-  min-block-size: var(--size-control);
-  padding-inline: var(--space-3);
+.jm-input__label {
   color: var(--color-text-default);
-  background: var(--color-bg-default);
-  border: 1px solid currentcolor;
-  border-radius: var(--radius-control);
+  font-size: 0.8125rem;
+  font-weight: var(--font-weight-bold);
 }
 
-.jm-passkey-gate__error {
-  color: #f0f;
+.jm-input__control {
+  inline-size: 100%;
+  min-inline-size: 0;
+  min-block-size: var(--size-control);
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text-default);
+  font: inherit;
+  font-size: 1rem;
+  text-decoration: inherit;
+  background: var(--color-bg-surface);
+  border: 1px solid #f0f;
+  border-radius: var(--radius-control);
+  corner-shape: var(--corner-shape-default);
+}
+
+.jm-input--s .jm-input__control {
+  min-block-size: var(--size-control-s);
+  font-size: 0.8125rem;
+}
+
+.jm-input--s .jm-input__label {
+  font-size: 0.6875rem;
+}
+
+.jm-input--ghost .jm-input__control {
+  min-block-size: 1.4em;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+textarea.jm-input__control {
+  display: block;
+  overflow-wrap: anywhere;
+  resize: vertical;
+  field-sizing: content;
+}
+
+@supports (field-sizing: content) {
+  textarea.jm-input__control {
+    overflow: clip;
+    resize: none;
+  }
+}
+
+.jm-input__control::placeholder {
+  color: var(--color-text-secondary);
+  opacity: 1;
+}
+
+.jm-input__control:not([readonly], :disabled):is(:hover, :focus-visible, :active) {
+  background: #f0f;
+}
+
+.jm-input__control:focus-visible {
+  outline-offset: 1px;
+}
+
+.jm-input__control:disabled {
+  background: #f0f;
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 /* Header */
@@ -558,27 +617,10 @@ a[href]:active {
 }
 
 .task-item__title {
-  display: block;
-  inline-size: 100%;
   min-inline-size: 0;
-  min-block-size: 1.4em;
-  padding: 0;
   overflow-wrap: anywhere;
   color: inherit;
-  font: inherit;
   font-size: 0.8125rem;
-  background: transparent;
-  border: 0;
-  resize: none;
-  field-sizing: content;
-}
-
-textarea.task-item__title {
-  overflow: clip;
-}
-
-.task-item__title:focus-visible {
-  outline-offset: 1px;
 }
 
 .task-item__title-link {
@@ -712,29 +754,6 @@ span.catalog-card__swatch {
 .catalog-card .catalog-card__missing {
   color: #f0f;
   font-weight: var(--font-weight-bold);
-}
-
-.catalog-card__inventory {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  align-items: stretch;
-  color: #f0f;
-  font-size: 0.6875rem;
-  font-weight: var(--font-weight-bold);
-}
-
-.catalog-card__inventory input {
-  inline-size: 100%;
-  min-inline-size: 0;
-  min-block-size: 36px;
-  padding-inline: var(--space-2);
-  color: var(--color-text-default);
-  font: inherit;
-  font-size: 0.875rem;
-  background: var(--color-bg-surface);
-  border: 1px solid #f0f;
-  border-radius: var(--radius-control);
 }
 
 .catalog-card__visually-hidden {
@@ -923,17 +942,6 @@ span.catalog-card__swatch {
   margin-inline: 0;
 }
 
-.chore-rule {
-  inline-size: 100%;
-  min-inline-size: 0;
-  padding: var(--space-2);
-  color: inherit;
-  font: inherit;
-  background: var(--color-bg-selection);
-  border: 1px solid #f0f;
-  border-radius: calc(var(--radius-control) / 2);
-}
-
 .task-page__empty {
   padding: var(--space-6);
   color: #f0f;
@@ -1000,7 +1008,6 @@ span.catalog-card__swatch {
   inline-size: 100%;
 }
 
-.project-card__field-label,
 .printing-item__field > label,
 .stitch-color__field > label {
   color: #f0f;
@@ -1072,8 +1079,7 @@ span.catalog-card__swatch {
   min-inline-size: 0;
 }
 
-.stitch-color__field select,
-.stitch-color__field input {
+.stitch-color__field select {
   inline-size: 100%;
   min-inline-size: 0;
   min-block-size: 36px;
@@ -1100,15 +1106,7 @@ span.catalog-card__swatch {
 }
 
 .project-card__title-input {
-  inline-size: 100%;
-  min-inline-size: 0;
-  padding: 0;
-  color: inherit;
-  font: inherit;
-  font-size: 1rem;
   font-weight: var(--font-weight-bold);
-  background: transparent;
-  border: 0;
 }
 
 .printing-item__fields {
@@ -1142,8 +1140,7 @@ span.catalog-card__swatch {
   min-inline-size: 0;
 }
 
-.printing-item__field select,
-.printing-item__field input {
+.printing-item__field select {
   inline-size: 100%;
   min-inline-size: 0;
   min-block-size: 32px;
@@ -1335,7 +1332,6 @@ span.catalog-card__swatch {
   font-weight: var(--font-weight-bold);
 }
 
-.catalog-search input,
 .catalog-search select,
 .catalog-search button {
   min-block-size: 40px;
@@ -1355,7 +1351,6 @@ span.catalog-card__swatch {
   cursor: not-allowed;
 }
 
-.catalog-search input,
 .catalog-search select {
   min-inline-size: 0;
   padding-inline: var(--space-3);

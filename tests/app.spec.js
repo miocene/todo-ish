@@ -146,6 +146,7 @@ test("anonymous visitors see passkey setup before application data", async ({ pa
 
   await expect(page.getByRole("heading", { level: 1, name: "Create your passkey" })).toBeVisible();
   await expect(page.getByLabel("One-time setup code")).toBeVisible();
+  await expect(page.getByLabel("One-time setup code")).toHaveAttribute("type", "password");
   await expect(page.getByRole("button", { name: "Create passkey" })).toBeVisible();
   await expect(page.locator(".jm-header")).toHaveCount(0);
 });
@@ -436,7 +437,7 @@ test("the root redirects to the single-day work calendar", async ({ page }) => {
   await expect(taskTitles).toHaveCount(6);
   expect(
     await taskTitles.evaluateAll((elements) =>
-      elements.map((element) => (element.localName === "textarea" ? element.value : element.textContent)),
+      elements.map((element) => element.querySelector("textarea")?.value ?? element.textContent),
     ),
   ).toEqual([
     "Triage inbox",
@@ -470,8 +471,13 @@ test("editable work tasks create and focus the next item with Enter", async ({ p
   await page.goto("/");
 
   const today = page.locator(".work-day--today");
-  const todayTitles = today.locator("textarea.task-item__title");
+  const todayTitles = today.locator(".task-item__title textarea");
   const lastTitle = todayTitles.last();
+
+  await lastTitle.focus();
+  await lastTitle.dispatchEvent("keydown", { key: "Enter", isComposing: true });
+  await expect(todayTitles).toHaveCount(6);
+  await expect(lastTitle).toBeFocused();
 
   await lastTitle.fill("Updated roadmap");
   await expect
@@ -497,25 +503,25 @@ test("editable work tasks create and focus the next item with Enter", async ({ p
 
   await page.getByRole("button", { name: `${localFullDateLabel(1)}. No completed tasks`, exact: true }).click();
   await expect.poll(() => new URL(page.url()).searchParams.get("date")).toBe(localIsoDate(1));
-  const futureTitles = page.locator(".work-day textarea.task-item__title");
+  const futureTitles = page.locator(".work-day .task-item__title textarea");
   await futureTitles.last().press("Enter");
   await expect(futureTitles).toHaveCount(2);
   await expect(futureTitles.last()).toBeFocused();
 
   await page.getByRole("button", { name: "Today", exact: true }).click();
   await today.locator(".task-item__pin").first().click();
-  const backlogTitles = page.locator(".work-backlog textarea.task-item__title");
+  const backlogTitles = page.locator(".work-backlog .task-item__title textarea");
   await expect(backlogTitles).toHaveCount(1);
   await backlogTitles.last().press("Enter");
   await expect(backlogTitles).toHaveCount(2);
   await expect(backlogTitles.last()).toBeFocused();
 
   await page.reload();
-  await expect(page.locator(".work-day--today textarea.task-item__title")).toHaveCount(6);
-  await expect(page.locator(".work-backlog textarea.task-item__title")).toHaveCount(1);
+  await expect(page.locator(".work-day--today .task-item__title textarea")).toHaveCount(6);
+  await expect(page.locator(".work-backlog .task-item__title textarea")).toHaveCount(1);
 
   await page.getByRole("button", { name: `${localFullDateLabel(1)}. No completed tasks`, exact: true }).click();
-  await expect(page.locator(".work-day textarea.task-item__title")).toHaveCount(1);
+  await expect(page.locator(".work-day .task-item__title textarea")).toHaveCount(1);
 });
 
 test("work date navigation keeps one selected day and preserves empty dates", async ({ page }) => {
@@ -572,7 +578,7 @@ test("the backlog add button creates, focuses, and saves a task", async ({ page 
 
   const addBacklogTask = page.getByRole("button", { name: "Add backlog task" });
   await addBacklogTask.click();
-  const backlogTitle = page.locator(".work-backlog textarea.task-item__title");
+  const backlogTitle = page.locator(".work-backlog .task-item__title textarea");
   await expect(backlogTitle).toHaveCount(1);
   await expect(backlogTitle).toBeFocused();
   await page.getByRole("button", { name: "Search" }).focus();
@@ -590,7 +596,7 @@ test("the backlog add button creates, focuses, and saves a task", async ({ page 
   await backlogTitle.fill("Plan the next sprint");
 
   await page.reload();
-  await expect(page.locator(".work-backlog textarea.task-item__title")).toHaveValue("Plan the next sprint");
+  await expect(page.locator(".work-backlog .task-item__title textarea")).toHaveValue("Plan the next sprint");
 });
 
 test("work tasks can be deleted from the selected day and backlog", async ({ page }) => {
@@ -600,7 +606,7 @@ test("work tasks can be deleted from the selected day and backlog", async ({ pag
   await expect(page.getByRole("checkbox", { name: "Complete Triage inbox" })).toHaveCount(0);
 
   await page.getByRole("button", { name: "Add backlog task" }).click();
-  const backlogTitle = page.locator(".work-backlog textarea.task-item__title");
+  const backlogTitle = page.locator(".work-backlog .task-item__title textarea");
   await backlogTitle.fill("Remove this backlog task");
   await page.getByRole("button", { name: "Delete Remove this backlog task" }).click();
   await expect(backlogTitle).toHaveCount(0);
@@ -640,7 +646,7 @@ test("task completion persists and unfinished tasks roll into today", async ({ p
   ).toHaveCount(0);
   await expect(page.locator(".work-backlog").getByRole("checkbox", { name: "Complete Triage inbox" })).toHaveCount(0);
   await expect(todayCheckbox).toBeChecked();
-  const todayTitles = today.locator(".task-item__title");
+  const todayTitles = today.getByRole("textbox", { name: "Task title", exact: true });
   await expect(todayTitles.first()).toHaveValue("Triage inbox");
   await page.clock.runFor(499);
   await expect(todayTitles.first()).toHaveValue("Triage inbox");
@@ -743,11 +749,11 @@ test("task pages render their variants and save changes immediately", async ({ p
   await expect(allChores).toHaveCount(3);
   await expect(upcomingChores.getByRole("checkbox")).toHaveCount(3);
   await expect(allChores.getByRole("checkbox")).toHaveCount(0);
-  expect(await allChores.locator(".chore-rule").evaluateAll((inputs) => inputs.map((input) => input.value))).toEqual([
-    "Every Saturday",
-    "Every 2 weeks on Sunday",
-    "Every Wednesday",
-  ]);
+  expect(
+    await allChores
+      .locator("input[name='chore-repeat-rule']")
+      .evaluateAll((inputs) => inputs.map((input) => input.value)),
+  ).toEqual(["Every Saturday", "Every 2 weeks on Sunday", "Every Wednesday"]);
   await expect(page.locator(".task-item__drag-handle, .task-item__pin, .task-item__remove")).toHaveCount(0);
   await page.getByRole("button", { name: "Add chore" }).click();
   await expect(allChores).toHaveCount(4);
@@ -755,11 +761,11 @@ test("task pages render their variants and save changes immediately", async ({ p
   await page.getByRole("button", { name: "Add chore" }).focus();
   await expect(allChores).toHaveCount(3);
   await allChores.first().locator("textarea").fill("Water all the plants");
-  await allChores.first().locator(".chore-rule").fill("Every other Saturday");
+  await allChores.first().locator("input[name='chore-repeat-rule']").fill("Every other Saturday");
   await upcomingChores.getByRole("checkbox", { name: "Complete Water all the plants" }).check();
   await page.reload();
   await expect(page.locator(".chores-all textarea").first()).toHaveValue("Water all the plants");
-  await expect(page.locator(".chores-all .chore-rule").first()).toHaveValue("Every other Saturday");
+  await expect(page.locator(".chores-all input[name='chore-repeat-rule']").first()).toHaveValue("Every other Saturday");
   await expect(page.getByRole("checkbox", { name: "Complete Water all the plants" })).toBeChecked();
 
   await page.goto("/todos");
@@ -769,7 +775,7 @@ test("task pages render their variants and save changes immediately", async ({ p
   await listTabs.getByText("Home", { exact: true }).click();
   await expect.poll(() => new URL(page.url()).searchParams.get("list")).toBe("home");
   await expect(page.getByRole("heading", { level: 2, name: "Home" })).toBeVisible();
-  const homeTasks = page.locator(".task-page__section textarea.task-item__title");
+  const homeTasks = page.locator(".task-page__section .task-item__title textarea");
   await homeTasks.last().press("Enter");
   await expect(homeTasks).toHaveCount(3);
   await expect(homeTasks.last()).toBeFocused();
@@ -833,10 +839,10 @@ test("task pages render their variants and save changes immediately", async ({ p
   await expect(projects.first().getByText("Not in catalog · Need 1 spool")).toBeVisible();
   await expect(projects.first().getByText("Missing 1 spool · 1 owned")).toBeVisible();
   await projects.first().getByRole("button", { name: "Add item" }).click();
-  await expect(projects.first().locator("textarea.task-item__title")).toHaveCount(4);
-  await expect(projects.first().locator("textarea.task-item__title").last()).toBeFocused();
+  await expect(projects.first().locator(".task-item__title textarea")).toHaveCount(4);
+  await expect(projects.first().locator(".task-item__title textarea").last()).toBeFocused();
   await projects.first().getByRole("button", { name: "Add item" }).focus();
-  await expect(projects.first().locator("textarea.task-item__title")).toHaveCount(3);
+  await expect(projects.first().locator(".task-item__title textarea")).toHaveCount(3);
 
   await page.getByRole("button", { name: "Add project" }).click();
   await expect(projects).toHaveCount(3);
@@ -966,7 +972,7 @@ test("completed items move to the bottom after 500 milliseconds on every task pa
   await page.goto("/todos");
   await page.clock.pauseAt(testTime + 60_000);
 
-  const todoTitles = page.locator(".task-page__section textarea.task-item__title");
+  const todoTitles = page.locator(".task-page__section .task-item__title textarea");
   await expect(todoTitles.first()).toHaveValue("Renew passport");
   await page.getByRole("checkbox", { name: "Complete Renew passport" }).check();
   await page.clock.runFor(499);
@@ -975,7 +981,7 @@ test("completed items move to the bottom after 500 milliseconds on every task pa
   await expect(todoTitles.last()).toHaveValue("Renew passport");
 
   await page.reload();
-  await expect(page.locator(".task-page__section textarea.task-item__title").last()).toHaveValue("Renew passport");
+  await expect(page.locator(".task-page__section .task-item__title textarea").last()).toHaveValue("Renew passport");
   await expect(page.getByRole("checkbox", { name: "Complete Renew passport" })).toBeChecked();
 
   await page.goto("/chores");
@@ -988,7 +994,7 @@ test("completed items move to the bottom after 500 milliseconds on every task pa
   await expect(choreTitles.last()).toHaveText("Water the plants");
 
   await page.goto("/shopping");
-  const shoppingTitles = page.locator(".task-page__tasks textarea.task-item__title");
+  const shoppingTitles = page.locator(".task-page__tasks .task-item__title textarea");
   await expect(shoppingTitles.first()).toHaveValue("Oat milk");
   await page.getByRole("checkbox", { name: "Complete Oat milk" }).check();
   await page.clock.runFor(499);
@@ -997,7 +1003,7 @@ test("completed items move to the bottom after 500 milliseconds on every task pa
   await expect(shoppingTitles.last()).toHaveValue("Oat milk");
 
   await page.goto("/printing");
-  const printingTitles = page.locator(".project-card").first().locator("textarea.task-item__title");
+  const printingTitles = page.locator(".project-card").first().locator(".task-item__title textarea");
   await expect(printingTitles.first()).toHaveValue("Large cable clip");
   await page.getByRole("checkbox", { name: "Complete Large cable clip" }).check();
   await page.clock.runFor(499);

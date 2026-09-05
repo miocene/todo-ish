@@ -8,6 +8,7 @@ import { filamentSupplyStatus, syncFilamentShoppingList } from "../app/printing-
 import { flossSupplyStatus, syncFlossShoppingList } from "../app/stitching-supplies.js";
 import { completedTasksLast, nextEntityId, setTaskCompletion, serializableTasks } from "../app/task-list.js";
 import JMButton from "../components/JMButton/JMButton.vue";
+import JMInput from "../components/JMInput/JMInput.vue";
 import JMCatalogStatus from "../components/JMCatalogStatus/JMCatalogStatus.vue";
 import JMPrintingTaskDetails from "../components/JMProjectTaskDetails/JMPrintingTaskDetails.vue";
 import JMStitchTaskDetails from "../components/JMProjectTaskDetails/JMStitchTaskDetails.vue";
@@ -21,7 +22,7 @@ function loadProjectTasks(pageKey) {
 
 export default {
   name: "ProjectTasksPage",
-  components: { JMCatalogStatus, JMButton, JMPrintingTaskDetails, JMStitchTaskDetails, JMTaskCard },
+  components: { JMCatalogStatus, JMButton, JMInput, JMPrintingTaskDetails, JMStitchTaskDetails, JMTaskCard },
   props: {
     description: { type: String, required: true },
     pageKey: {
@@ -262,14 +263,14 @@ export default {
             <h2 :id="projectTitleId(project)" class="task-page__visually-hidden">
               {{ project.title || (isPrinting ? "Untitled 3D project" : "Untitled cross stitch project") }}
             </h2>
-            <label class="project-card__field-label" :for="projectTitleInputId(project)">Project title</label>
-            <input
+            <JMInput
               :id="projectTitleInputId(project)"
               class="project-card__title-input"
+              label="Project title"
               name="project-title"
-              type="text"
-              :value="project.title"
-              @input="updateProjectTitle(project, $event.target.value)"
+              view="ghost"
+              :model-value="project.title"
+              @update:model-value="updateProjectTitle(project, $event)"
             />
           </div>
           <div v-else>

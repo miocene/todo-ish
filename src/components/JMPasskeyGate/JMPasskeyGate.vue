@@ -1,11 +1,12 @@
 <script>
 import { authenticateWithPasskey, createPasskey, passkeysSupported } from "../../app/passkeys.js";
 import JMButton from "../JMButton/JMButton.vue";
+import JMInput from "../JMInput/JMInput.vue";
 import "./jm-passkey-gate.css";
 
 export default {
   name: "JMPasskeyGate",
-  components: { JMButton },
+  components: { JMButton, JMInput },
   props: {
     bootstrapRequired: { type: Boolean, required: true },
   },
@@ -59,17 +60,17 @@ export default {
       <p v-else>Use your passkey to open your lists.</p>
 
       <template v-if="supported">
-        <label v-if="bootstrapRequired" class="jm-passkey-gate__field">
-          <span>One-time setup code</span>
-          <input
-            v-model="bootstrapToken"
-            type="password"
-            autocomplete="off"
-            spellcheck="false"
-            :disabled="busy"
-            @keyup.enter="submit"
-          />
-        </label>
+        <JMInput
+          v-if="bootstrapRequired"
+          v-model="bootstrapToken"
+          label="One-time setup code"
+          name="bootstrap-token"
+          type="password"
+          autocomplete="off"
+          spellcheck="false"
+          :disabled="busy"
+          @keyup.enter="submit"
+        />
 
         <JMButton
           :text="bootstrapRequired ? 'Create passkey' : 'Sign in with passkey'"

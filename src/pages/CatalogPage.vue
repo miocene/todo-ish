@@ -12,10 +12,11 @@ import { filamentSupplyStatus, syncFilamentShoppingList } from "../app/printing-
 import { flossSupplyStatus, syncFlossShoppingList } from "../app/stitching-supplies.js";
 import JMCatalogStatus from "../components/JMCatalogStatus/JMCatalogStatus.vue";
 import JMCatalogCard from "../components/JMCatalogCard/JMCatalogCard.vue";
+import JMInput from "../components/JMInput/JMInput.vue";
 
 export default {
   name: "CatalogPage",
-  components: { JMCatalogCard, JMCatalogStatus },
+  components: { JMCatalogCard, JMCatalogStatus, JMInput },
   data() {
     return {
       catalogKind: this.$route.query.catalog === "floss" ? "floss" : "filament",
@@ -206,19 +207,18 @@ export default {
     <JMCatalogStatus :catalog="catalog" />
 
     <form class="catalog-search" action="/catalog" method="get" @submit.prevent>
-      <div class="catalog-search__field">
-        <label for="catalog-query">Search {{ isFlossCatalog ? "floss" : "filaments" }}</label>
-        <input
-          id="catalog-query"
-          v-model="query"
-          name="q"
-          type="search"
-          autocomplete="off"
-          :placeholder="
-            isFlossCatalog ? 'DMC number, color, or catalog ID' : 'Family, color, product code, or catalog ID'
-          "
-        />
-      </div>
+      <JMInput
+        id="catalog-query"
+        v-model="query"
+        class="catalog-search__field"
+        :label="`Search ${isFlossCatalog ? 'floss' : 'filaments'}`"
+        name="q"
+        type="search"
+        autocomplete="off"
+        :placeholder="
+          isFlossCatalog ? 'DMC number, color, or catalog ID' : 'Family, color, product code, or catalog ID'
+        "
+      />
       <div v-if="!isFlossCatalog" class="catalog-search__field">
         <label for="catalog-family">Filament type</label>
         <select id="catalog-family" v-model="family" name="family">

@@ -1,8 +1,10 @@
 <script>
 import { flossCatalog, flossById, floss, flossLabel } from "../../app/floss-catalog.js";
+import JMInput from "../JMInput/JMInput.vue";
 
 export default {
   name: "JMStitchTaskDetails",
+  components: { JMInput },
   emits: ["update:crosses", "update:crosses-done", "update:floss", "update:skeins"],
   props: {
     supplyById: { type: Map, required: true },
@@ -53,46 +55,43 @@ export default {
       </select>
       <span v-if="isMissing" :id="inputId('status')" class="stitch-color__missing">{{ missingStatus }}</span>
     </div>
-    <div class="stitch-color__field">
-      <label :for="inputId('skeins')">Skeins needed</label>
-      <input
-        :id="inputId('skeins')"
-        name="stitch-skeins"
-        type="number"
-        inputmode="numeric"
-        min="0"
-        step="1"
-        :value="task.requiredSkeins"
-        @input="$emit('update:skeins', $event.target.value)"
-      />
-    </div>
-    <div class="stitch-color__field">
-      <label :for="inputId('crosses-done')">Crosses done</label>
-      <input
-        :id="inputId('crosses-done')"
-        name="stitch-crosses-done"
-        type="number"
-        inputmode="numeric"
-        min="0"
-        :max="task.crosses"
-        step="1"
-        :value="task.crossesDone"
-        @input="$emit('update:crosses-done', $event.target.value)"
-      />
-    </div>
-    <div class="stitch-color__field">
-      <label :for="inputId('crosses')">Crosses total</label>
-      <input
-        :id="inputId('crosses')"
-        name="stitch-crosses-total"
-        type="number"
-        inputmode="numeric"
-        min="0"
-        step="1"
-        :value="task.crosses"
-        @input="$emit('update:crosses', $event.target.value)"
-      />
-    </div>
+    <JMInput
+      :id="inputId('skeins')"
+      label="Skeins needed"
+      name="stitch-skeins"
+      type="number"
+      size="s"
+      inputmode="numeric"
+      min="0"
+      step="1"
+      :model-value="task.requiredSkeins"
+      @update:model-value="$emit('update:skeins', $event)"
+    />
+    <JMInput
+      :id="inputId('crosses-done')"
+      label="Crosses done"
+      name="stitch-crosses-done"
+      type="number"
+      size="s"
+      inputmode="numeric"
+      min="0"
+      :max="task.crosses"
+      step="1"
+      :model-value="task.crossesDone"
+      @update:model-value="$emit('update:crosses-done', $event)"
+    />
+    <JMInput
+      :id="inputId('crosses')"
+      label="Crosses total"
+      name="stitch-crosses-total"
+      type="number"
+      size="s"
+      inputmode="numeric"
+      min="0"
+      step="1"
+      :model-value="task.crosses"
+      @update:model-value="$emit('update:crosses', $event)"
+    />
     <p class="stitch-color__progress">
       {{ task.crossesDone.toLocaleString() }} / {{ task.crosses.toLocaleString() }} crosses<span v-if="task.completed">
         · Done</span

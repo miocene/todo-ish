@@ -1,10 +1,11 @@
 <script>
 import JMIcon from "../JMIcon/JMIcon.vue";
+import JMInput from "../JMInput/JMInput.vue";
 import "./jm-task-card.css";
 
 export default {
   name: "JMTaskCard",
-  components: { JMIcon },
+  components: { JMIcon, JMInput },
   emits: ["enter", "pin", "remove", "title-blur", "update:completed", "update:title"],
   props: {
     completable: { type: Boolean, default: true },
@@ -66,20 +67,21 @@ export default {
         {{ title }}
         <span class="task-item__visually-hidden"> (opens in a new tab)</span>
       </a>
-      <template v-else-if="editable">
-        <label class="task-item__visually-hidden" :for="titleId">{{ titleLabel }}</label>
-        <textarea
-          :id="titleId"
-          class="task-item__title"
-          name="task-title"
-          rows="1"
-          enterkeyhint="next"
-          :value="title"
-          @blur="$emit('title-blur', $event)"
-          @input="$emit('update:title', $event.target.value)"
-          @keydown.enter="$emit('enter', $event)"
-        />
-      </template>
+      <JMInput
+        v-else-if="editable"
+        :id="titleId"
+        class="task-item__title"
+        name="task-title"
+        view="ghost"
+        size="s"
+        multiline
+        enterkeyhint="next"
+        :aria-label="titleLabel"
+        :model-value="title"
+        @blur="$emit('title-blur', $event)"
+        @update:model-value="$emit('update:title', $event)"
+        @keydown.enter="$emit('enter', $event)"
+      />
       <span v-else class="task-item__title">{{ title }}</span>
       <div v-if="$slots.details" class="task-item__details">
         <slot name="details" />
