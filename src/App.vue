@@ -44,7 +44,7 @@ export default {
   <a class="skip-link" href="#main-content">Skip to content</a>
 
   <p class="app-sync-status" role="status">{{ syncState.state === "saving" ? syncState.message : "" }}</p>
-  <aside v-if="!['saved', 'saving'].includes(syncState.state)" class="app-sync-error" role="alert">
+  <!-- <aside v-if="!['saved', 'saving'].includes(syncState.state)" class="app-sync-error" role="alert">
     <p>{{ syncState.message }}</p>
     <p v-if="!syncState.durable">Local backup is unavailable. Keep this tab open or download your edits.</p>
     <template v-if="syncState.state !== 'saving'">
@@ -58,7 +58,7 @@ export default {
         @click="discardAndReload"
       />
     </template>
-  </aside>
+  </aside>-->
 
   <JMHeader />
 

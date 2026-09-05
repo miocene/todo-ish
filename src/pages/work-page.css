@@ -1,32 +1,15 @@
-.work-page {
+:root {
   --calendar-accent: #1967d2;
   --work-page-border: #dadce0;
   --work-page-muted: #70757a;
-
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
-  padding-block-end: var(--space-7);
-  overflow: clip;
 }
 
-.work-page__header,
 .work-day__header,
 .work-backlog__header {
   display: flex;
   gap: var(--space-5);
   align-items: center;
   justify-content: space-between;
-}
-
-.work-page__header p {
-  margin-block-start: var(--space-2);
-  color: var(--work-page-muted);
-  font-size: 0.875rem;
-}
-
-.work-page__header .jm-button {
-  flex: none;
 }
 
 .work-page__status {

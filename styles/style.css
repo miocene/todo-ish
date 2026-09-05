@@ -44,8 +44,6 @@ body {
 }
 
 #main-content {
-  min-block-size: 0;
-  overflow: auto;
   padding-top: var(--space-6);
 }
 
@@ -87,4 +85,12 @@ h3 {
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+.page-header {
+  display: flex;
+  gap: var(--space-5);
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-6);
 }

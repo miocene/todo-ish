@@ -224,107 +224,103 @@ export default {
 </script>
 
 <template>
-  <section class="work-page" aria-labelledby="work-page-title">
-    <header class="work-page__header">
+  <header class="page-header">
+    <h1>Work</h1>
+    <JMButton
+      text="Today"
+      view="secondary"
+      :disabled="isTodaySelected && calendarRangeDate === todayIso"
+      @click="goToday"
+    />
+  </header>
+
+  <JMCalendar
+    ref="calendar"
+    :activity="activityByDate"
+    :date="focusDateIso"
+    :day-type-for-date="workStatusValue"
+    :max-date="lastAvailableDate"
+    :min-date="firstAvailableDate"
+    route-name="work"
+    show-day-type
+    @range-change="calendarRangeDate = $event"
+    @update:day-type="setDayStatus"
+  />
+
+  <p class="work-page__status" aria-live="polite" aria-atomic="true">{{ taskMoveStatus }}</p>
+
+  <section
+    class="work-day"
+    :style="{ '--color': cardColors[`work-day:${focusDateIso}`] }"
+    :class="{
+      'work-day--today': selectedDay.today,
+    }"
+    aria-labelledby="selected-work-day-title"
+  >
+    <header class="work-day__header">
       <div>
-        <h1 id="work-page-title">Work</h1>
+        <span class="work-day__eyebrow">{{ selectedDay.today ? "Today" : selectedDay.weekday }}</span>
+        <h2 id="selected-work-day-title">
+          <time :datetime="selectedDay.iso">{{ selectedDay.dateLabel }}</time>
+        </h2>
       </div>
-      <JMButton
-        text="Today"
-        view="secondary"
-        :disabled="isTodaySelected && calendarRangeDate === todayIso"
-        @click="goToday"
-      />
+
+      <div class="work-day__actions">
+        <JMButton text="Add task" view="secondary" :disabled="!canEditSelectedDay" @click="addSelectedDayTask" />
+      </div>
     </header>
 
-    <JMCalendar
-      ref="calendar"
-      :activity="activityByDate"
-      :date="focusDateIso"
-      :day-type-for-date="workStatusValue"
-      :max-date="lastAvailableDate"
-      :min-date="firstAvailableDate"
-      route-name="work"
-      show-day-type
-      @range-change="calendarRangeDate = $event"
-      @update:day-type="setDayStatus"
-    />
+    <div class="work-day__tasks">
+      <p v-if="selectedDay.tasks.length === 0" class="work-day__empty">Nothing recorded for this day.</p>
+      <JMTaskCard
+        v-for="task in selectedDay.tasks"
+        :key="task.id"
+        :task-id="task.id"
+        :title="taskTitle(task)"
+        :title-input-id="taskInputId(task)"
+        :completion-input-id="taskCheckboxId(task)"
+        :completed="isTaskComplete(task)"
+        :editable="canEditTask(selectedDay.iso)"
+        removable
+        :pin-icon="isTaskComplete(task) ? '' : 'pinned'"
+        :pin-label="`Move ${taskTitle(task) || 'untitled task'} to backlog`"
+        :remove-label="`Delete ${taskTitle(task) || 'untitled task'}`"
+        @enter="handleTaskTitleEnter(task, selectedDay.iso, selectedDay.tasks, $event)"
+        @pin="toggleTaskAssignment(task)"
+        @remove="removeTask(task)"
+        @title-blur="handleTaskTitleBlur(task)"
+        @update:completed="setTaskCompletion(task, $event)"
+        @update:title="updateTaskTitle(task, $event)"
+      />
+    </div>
+  </section>
 
-    <p class="work-page__status" aria-live="polite" aria-atomic="true">{{ taskMoveStatus }}</p>
-
-    <section
-      class="work-day"
-      :style="{ '--color': cardColors[`work-day:${focusDateIso}`] }"
-      :class="{
-        'work-day--today': selectedDay.today,
-      }"
-      aria-labelledby="selected-work-day-title"
-    >
-      <header class="work-day__header">
-        <div>
-          <span class="work-day__eyebrow">{{ selectedDay.today ? "Today" : selectedDay.weekday }}</span>
-          <h2 id="selected-work-day-title">
-            <time :datetime="selectedDay.iso">{{ selectedDay.dateLabel }}</time>
-          </h2>
-        </div>
-
-        <div class="work-day__actions">
-          <JMButton text="Add task" view="secondary" :disabled="!canEditSelectedDay" @click="addSelectedDayTask" />
-        </div>
-      </header>
-
-      <div class="work-day__tasks">
-        <p v-if="selectedDay.tasks.length === 0" class="work-day__empty">Nothing recorded for this day.</p>
-        <JMTaskCard
-          v-for="task in selectedDay.tasks"
-          :key="task.id"
-          :task-id="task.id"
-          :title="taskTitle(task)"
-          :title-input-id="taskInputId(task)"
-          :completion-input-id="taskCheckboxId(task)"
-          :completed="isTaskComplete(task)"
-          :editable="canEditTask(selectedDay.iso)"
-          removable
-          :pin-icon="isTaskComplete(task) ? '' : 'pinned'"
-          :pin-label="`Move ${taskTitle(task) || 'untitled task'} to backlog`"
-          :remove-label="`Delete ${taskTitle(task) || 'untitled task'}`"
-          @enter="handleTaskTitleEnter(task, selectedDay.iso, selectedDay.tasks, $event)"
-          @pin="toggleTaskAssignment(task)"
-          @remove="removeTask(task)"
-          @title-blur="handleTaskTitleBlur(task)"
-          @update:completed="setTaskCompletion(task, $event)"
-          @update:title="updateTaskTitle(task, $event)"
-        />
-      </div>
-    </section>
-
-    <section class="work-backlog" :style="{ '--color': cardColors.backlog }" aria-labelledby="backlog-title">
-      <header class="work-backlog__header">
-        <h2 id="backlog-title">Backlog</h2>
-        <JMButton aria-label="Add backlog task" text="Add task" view="secondary" @click="addBacklogTask" />
-      </header>
-      <div class="work-backlog__tasks">
-        <p v-if="backlogTasks.length === 0" class="work-backlog__empty">No backlog tasks</p>
-        <JMTaskCard
-          v-for="task in backlogTasks"
-          :key="task.id"
-          :task-id="task.id"
-          :title="taskTitle(task)"
-          :title-input-id="taskInputId(task)"
-          :completion-input-id="taskCheckboxId(task)"
-          :completed="isTaskComplete(task)"
-          removable
-          pin-icon="pin"
-          :pin-label="`Mark ${taskTitle(task) || 'untitled task'} ready for today`"
-          :remove-label="`Delete ${taskTitle(task) || 'untitled task'}`"
-          @enter="handleTaskTitleEnter(task, null, backlogTasks, $event)"
-          @pin="toggleTaskAssignment(task)"
-          @remove="removeTask(task)"
-          @title-blur="handleTaskTitleBlur(task)"
-          @update:completed="setTaskCompletion(task, $event)"
-          @update:title="updateTaskTitle(task, $event)"
-        />
-      </div>
-    </section>
+  <section class="work-backlog" :style="{ '--color': cardColors.backlog }" aria-labelledby="backlog-title">
+    <header class="work-backlog__header">
+      <h2 id="backlog-title">Backlog</h2>
+      <JMButton aria-label="Add backlog task" text="Add task" view="secondary" @click="addBacklogTask" />
+    </header>
+    <div class="work-backlog__tasks">
+      <p v-if="backlogTasks.length === 0" class="work-backlog__empty">No backlog tasks</p>
+      <JMTaskCard
+        v-for="task in backlogTasks"
+        :key="task.id"
+        :task-id="task.id"
+        :title="taskTitle(task)"
+        :title-input-id="taskInputId(task)"
+        :completion-input-id="taskCheckboxId(task)"
+        :completed="isTaskComplete(task)"
+        removable
+        pin-icon="pin"
+        :pin-label="`Mark ${taskTitle(task) || 'untitled task'} ready for today`"
+        :remove-label="`Delete ${taskTitle(task) || 'untitled task'}`"
+        @enter="handleTaskTitleEnter(task, null, backlogTasks, $event)"
+        @pin="toggleTaskAssignment(task)"
+        @remove="removeTask(task)"
+        @title-blur="handleTaskTitleBlur(task)"
+        @update:completed="setTaskCompletion(task, $event)"
+        @update:title="updateTaskTitle(task, $event)"
+      />
+    </div>
   </section>
 </template>
