@@ -1,4 +1,7 @@
 <script>
+import { filamentCatalog } from "../app/filament-catalog.js";
+import { flossCatalog } from "../app/floss-catalog.js";
+import JMCatalogStatus from "../components/JMCatalogStatus/JMCatalogStatus.vue";
 import { savePageTasks } from "../app/page-tasks.js";
 import {
   completedTasksLast,
@@ -16,16 +19,41 @@ import "./task-pages.css";
 
 export default {
   name: "ShoppingPage",
-  components: { JMButton, JMTaskCard },
+  components: { JMCatalogStatus, JMButton, JMTaskCard },
   data() {
     const shopping = syncSupplyShoppingLists();
     shopping.tasks = completedTasksLast(shopping.tasks);
-    return { completionMoves: createCompletionMoveScheduler(), draftTaskIds: new Set(), shopping };
+    return {
+      filamentCatalog,
+      flossCatalog,
+      completionMoves: createCompletionMoveScheduler(),
+      draftTaskIds: new Set(),
+      shopping,
+    };
+  },
+  watch: {
+    "filamentCatalog.state.status": "refreshSupplies",
+    "flossCatalog.state.status": "refreshSupplies",
   },
   beforeUnmount() {
     this.completionMoves.clear();
   },
   methods: {
+    refreshSupplies(status) {
+      if (status !== "ready") return;
+      const managed = new Map(
+        syncSupplyShoppingLists()
+          .tasks.filter((task) => task.source)
+          .map((task) => [task.id, task]),
+      );
+      this.shopping.tasks = this.shopping.tasks.flatMap((task) => {
+        if (!task.source) return [task];
+        const refreshed = managed.get(task.id);
+        managed.delete(task.id);
+        return refreshed ? [refreshed] : [];
+      });
+      this.shopping.tasks.push(...managed.values());
+    },
     taskInputId(task) {
       return `shopping-title-${task.id}`;
     },
@@ -104,6 +132,9 @@ export default {
       </div>
       <JMButton text="Add item" view="secondary" @click="addTask" />
     </header>
+
+    <JMCatalogStatus :catalog="filamentCatalog" />
+    <JMCatalogStatus :catalog="flossCatalog" />
 
     <p v-if="shopping.tasks.length === 0" class="task-page__empty">The shopping list is empty.</p>
     <ul v-else class="task-page__tasks" role="list">

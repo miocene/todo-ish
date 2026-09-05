@@ -1,5 +1,5 @@
 <script>
-import { filamentLabel, filaments, filamentsById } from "../../app/filament-catalog.js";
+import { filamentCatalog, filamentLabel, filaments, filamentsById } from "../../app/filament-catalog.js";
 import JMButton from "../JMButton/JMButton.vue";
 import JMIcon from "../JMIcon/JMIcon.vue";
 
@@ -12,7 +12,7 @@ export default {
     task: { type: Object, required: true },
   },
   data() {
-    return { filaments };
+    return { filaments, filamentCatalog, filamentsById };
   },
   methods: {
     filamentInputId(usage) {
@@ -27,12 +27,13 @@ export default {
     isMissing(usage) {
       return Boolean(
         usage.catalogId &&
-        (!filamentsById.has(usage.catalogId) || (this.supplyById.get(usage.catalogId)?.missingSpools ?? 0) > 0),
+        ((filamentCatalog.state.status === "ready" && !filamentsById.has(usage.catalogId)) ||
+          (this.supplyById.get(usage.catalogId)?.missingSpools ?? 0) > 0),
       );
     },
     missingStatus(usage) {
       const supply = this.supplyById.get(usage.catalogId);
-      if (!filamentsById.has(usage.catalogId)) {
+      if (filamentCatalog.state.status === "ready" && !filamentsById.has(usage.catalogId)) {
         return `Not in catalog · Need ${supply?.requiredSpools ?? 1} ${supply?.requiredSpools === 1 ? "spool" : "spools"}`;
       }
       return `Missing ${supply.missingSpools} ${supply.missingSpools === 1 ? "spool" : "spools"} · ${supply.ownedSpools} owned`;
@@ -56,13 +57,14 @@ export default {
         <select
           :id="filamentInputId(usage)"
           name="item-filament"
+          :disabled="filamentCatalog.state.status !== 'ready'"
           :value="usage.catalogId"
           :aria-describedby="isMissing(usage) ? filamentStatusId(usage) : undefined"
           @change="$emit('update:filament', usage, $event.target.value)"
         >
           <option value="">Choose filament</option>
-          <option v-if="isMissing(usage)" :value="usage.catalogId">
-            Missing · {{ usage.label || usage.catalogId }}
+          <option v-if="usage.catalogId && !filamentsById.has(usage.catalogId)" :value="usage.catalogId">
+            {{ usage.label || usage.catalogId }}
           </option>
           <option v-for="filament in filaments" :key="filament.id" :value="filament.id">
             {{ filamentLabel(filament) }}

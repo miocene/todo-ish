@@ -1,5 +1,5 @@
 <script>
-import { floss, flossLabel } from "../../app/floss-catalog.js";
+import { flossCatalog, flossById, floss, flossLabel } from "../../app/floss-catalog.js";
 
 export default {
   name: "JMStitchTaskDetails",
@@ -9,7 +9,7 @@ export default {
     task: { type: Object, required: true },
   },
   data() {
-    return { floss };
+    return { floss, flossCatalog, flossById };
   },
   computed: {
     shortage() {
@@ -40,11 +40,15 @@ export default {
       <select
         :id="inputId('floss')"
         name="stitch-floss"
+        :disabled="flossCatalog.state.status !== 'ready'"
         :value="task.flossId"
         :aria-describedby="isMissing ? inputId('status') : undefined"
         @change="$emit('update:floss', $event.target.value)"
       >
         <option value="">Choose DMC color</option>
+        <option v-if="task.flossId && !flossById.has(task.flossId)" :value="task.flossId">
+          {{ task.title || task.flossId }}
+        </option>
         <option v-for="thread in floss" :key="thread.id" :value="thread.id">{{ flossLabel(thread) }}</option>
       </select>
       <span v-if="isMissing" :id="inputId('status')" class="stitch-color__missing">{{ missingStatus }}</span>

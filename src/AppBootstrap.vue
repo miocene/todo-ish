@@ -1,8 +1,6 @@
 <script>
 import { getSession } from "./app/passkeys.js";
 import { initializeAppData } from "./app/app-data.js";
-import { initializeFilamentCatalog } from "./app/filament-catalog.js";
-import { initializeFlossCatalog } from "./app/floss-catalog.js";
 import JMButton from "./components/JMButton/JMButton.vue";
 import JMPasskeyGate from "./components/JMPasskeyGate/JMPasskeyGate.vue";
 
@@ -24,7 +22,7 @@ export default {
   },
   methods: {
     async initializeApplication() {
-      await Promise.all([initializeAppData(), initializeFilamentCatalog(), initializeFlossCatalog()]);
+      await initializeAppData();
       await this.startApplication();
     },
     async loadSession() {

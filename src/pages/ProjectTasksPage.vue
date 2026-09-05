@@ -1,7 +1,7 @@
 <script>
 import { randomCardColor } from "../app/card-colors.js";
-import { filamentLabel, filamentsById } from "../app/filament-catalog.js";
-import { flossById, flossLabel } from "../app/floss-catalog.js";
+import { filamentCatalog, filamentLabel, filamentsById } from "../app/filament-catalog.js";
+import { flossCatalog, flossById, flossLabel } from "../app/floss-catalog.js";
 import { loadFilamentInventory, loadFlossInventory, loadPageTasks, savePageTasks } from "../app/page-tasks.js";
 import { filamentSupplyStatus, syncFilamentShoppingList } from "../app/printing-supplies.js";
 import { flossSupplyStatus, syncFlossShoppingList } from "../app/stitching-supplies.js";
@@ -15,6 +15,7 @@ import {
   serializableTasks,
 } from "../app/task-list.js";
 import JMButton from "../components/JMButton/JMButton.vue";
+import JMCatalogStatus from "../components/JMCatalogStatus/JMCatalogStatus.vue";
 import JMPrintingTaskDetails from "../components/JMProjectTaskDetails/JMPrintingTaskDetails.vue";
 import JMStitchTaskDetails from "../components/JMProjectTaskDetails/JMStitchTaskDetails.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
@@ -28,7 +29,7 @@ function loadProjectTasks(pageKey) {
 
 export default {
   name: "ProjectTasksPage",
-  components: { JMButton, JMPrintingTaskDetails, JMStitchTaskDetails, JMTaskCard },
+  components: { JMCatalogStatus, JMButton, JMPrintingTaskDetails, JMStitchTaskDetails, JMTaskCard },
   props: {
     description: { type: String, required: true },
     pageKey: {
@@ -48,6 +49,9 @@ export default {
     };
   },
   computed: {
+    catalog() {
+      return this.isPrinting ? filamentCatalog : flossCatalog;
+    },
     isPrinting() {
       return this.pageKey === "printing";
     },
@@ -256,6 +260,8 @@ export default {
       </div>
       <JMButton v-if="isCraftProject" text="Add project" view="secondary" @click="addProject" />
     </header>
+
+    <JMCatalogStatus :catalog="catalog" />
 
     <ul class="project-grid" :class="{ 'project-grid--stitching': isCrossStitch }" role="list">
       <li v-for="project in pageData.projects" :key="project.id">

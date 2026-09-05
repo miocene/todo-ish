@@ -1,6 +1,6 @@
 <script>
-import { filamentLabel, filamentProductLink, filaments } from "../app/filament-catalog.js";
-import { floss, flossLabel, flossProductLink } from "../app/floss-catalog.js";
+import { filamentCatalog, filamentLabel, filamentProductLink, filaments } from "../app/filament-catalog.js";
+import { flossCatalog, floss, flossLabel, flossProductLink } from "../app/floss-catalog.js";
 import {
   loadFilamentInventory,
   loadFlossInventory,
@@ -10,12 +10,13 @@ import {
 } from "../app/page-tasks.js";
 import { filamentSupplyStatus, syncFilamentShoppingList } from "../app/printing-supplies.js";
 import { flossSupplyStatus, syncFlossShoppingList } from "../app/stitching-supplies.js";
+import JMCatalogStatus from "../components/JMCatalogStatus/JMCatalogStatus.vue";
 import JMCatalogCard from "../components/JMCatalogCard/JMCatalogCard.vue";
 import "./catalog-page.css";
 
 export default {
   name: "CatalogPage",
-  components: { JMCatalogCard },
+  components: { JMCatalogCard, JMCatalogStatus },
   data() {
     return {
       catalogKind: this.$route.query.catalog === "floss" ? "floss" : "filament",
@@ -30,6 +31,9 @@ export default {
     };
   },
   computed: {
+    catalog() {
+      return this.isFlossCatalog ? flossCatalog : filamentCatalog;
+    },
     isFlossCatalog() {
       return this.catalogKind === "floss";
     },
@@ -200,6 +204,8 @@ export default {
       </ul>
     </nav>
 
+    <JMCatalogStatus :catalog="catalog" />
+
     <form class="catalog-search" action="/catalog" method="get" @submit.prevent>
       <div class="catalog-search__field">
         <label for="catalog-query">Search {{ isFlossCatalog ? "floss" : "filaments" }}</label>
@@ -231,7 +237,9 @@ export default {
         {{ filteredFloss.length }} {{ filteredFloss.length === 1 ? "color" : "colors" }}
       </p>
 
-      <p v-if="filteredFloss.length === 0" class="catalog-page__empty">No DMC colors match this search.</p>
+      <p v-if="catalog.state.status === 'ready' && filteredFloss.length === 0" class="catalog-page__empty">
+        No DMC colors match this search.
+      </p>
       <ul v-else class="filament-catalog" role="list">
         <li v-for="card in flossCards" :key="card.catalogId">
           <JMCatalogCard
@@ -258,7 +266,9 @@ export default {
         {{ filteredFilaments.length }} {{ filteredFilaments.length === 1 ? "filament" : "filaments" }}
       </p>
 
-      <p v-if="filteredFilaments.length === 0" class="catalog-page__empty">No catalog filaments match this search.</p>
+      <p v-if="catalog.state.status === 'ready' && filteredFilaments.length === 0" class="catalog-page__empty">
+        No catalog filaments match this search.
+      </p>
       <ul v-else class="filament-catalog" role="list">
         <li v-for="card in filamentCards" :key="card.catalogId">
           <JMCatalogCard
