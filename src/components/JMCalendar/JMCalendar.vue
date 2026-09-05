@@ -1,7 +1,7 @@
 <script>
 import { appClock } from "../../app/clock.js";
 import JMButton from "../JMButton/JMButton.vue";
-import JMDayType from "../JMDayType/JMDayType.vue";
+import JMDayType from "./JMDayType.vue";
 import { parseIsoDate, shiftIsoDate, toIsoDate } from "../../shared/date.js";
 import "./jm-calendar.css";
 
@@ -137,38 +137,38 @@ export default {
     <JMButton
       icon-name="chevron-left"
       view="ghost"
+      class="jm-calendar__left"
       :aria-label="`Previous ${visibleDayCount} days`"
       :disabled="!canGoPrevious"
       @click="shift(-1)"
     />
-    <div class="jm-calendar__days">
-      <JMDayType
-        v-for="day in days"
-        :key="day.value"
-        class="jm-calendar__day"
-        :class="{
-          'jm-calendar__day--selected': day.value === date,
-          'jm-calendar__day--today': day.today,
-        }"
-        :aria-current="day.value === date ? 'date' : undefined"
-        :aria-label="`${day.label}. ${activityDescription(day)}`"
-        :activity-level="day.activityLevel"
-        :date-label="day.label"
-        :description="activityDescription(day)"
-        :disabled="day.disabled"
-        :editable="day.value === date && showDayType"
-        :input-id="`calendar-day-type-${day.value}`"
-        :model-value="day.dayType"
-        @activate="navigate(day.value)"
-        @update:model-value="updateDayType(day.value, $event)"
-      >
-        <strong class="jm-calendar__date">{{ day.number }}</strong>
-        <small class="jm-calendar__weekday">{{ day.day }}</small>
-      </JMDayType>
-    </div>
+    <JMDayType
+      v-for="day in days"
+      :key="day.value"
+      class="jm-calendar__day"
+      :class="{
+        'jm-calendar__day--selected': day.value === date,
+        'jm-calendar__day--today': day.today,
+      }"
+      :aria-current="day.value === date ? 'date' : undefined"
+      :aria-label="`${day.label}. ${activityDescription(day)}`"
+      :activity-level="day.activityLevel"
+      :date-label="day.label"
+      :description="activityDescription(day)"
+      :disabled="day.disabled"
+      :editable="day.value === date && showDayType"
+      :input-id="`calendar-day-type-${day.value}`"
+      :model-value="day.dayType"
+      @activate="navigate(day.value)"
+      @update:model-value="updateDayType(day.value, $event)"
+    >
+      <strong class="jm-calendar__date">{{ day.number }}</strong>
+      <small class="jm-calendar__weekday">{{ day.day }}</small>
+    </JMDayType>
     <JMButton
       icon-name="chevron-right"
       view="ghost"
+      class="jm-calendar__right"
       :aria-label="`Next ${visibleDayCount} days`"
       :disabled="!canGoNext"
       @click="shift(1)"

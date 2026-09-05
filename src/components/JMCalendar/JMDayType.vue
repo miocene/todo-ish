@@ -1,7 +1,6 @@
 <script>
 import { WORK_STATUSES } from "../../app/work-status.js";
 import JMIcon from "../JMIcon/JMIcon.vue";
-import "./jm-day-type.css";
 
 const DISPLAY_ORDER = ["conference", "work", "sick-leave", "pto", "business-trip", "holiday", "weekend"];
 
@@ -71,13 +70,11 @@ export default {
     :disabled="disabled"
     @click="$emit('activate')"
   >
-    <span class="jm-day-type__trigger" aria-hidden="true">
-      <span class="jm-day-type__icon" :data-level="activityLevel">
-        <JMIcon :name="selectedOption.icon" />
-      </span>
-      <span v-if="$slots.default" class="jm-day-type__content">
-        <slot />
-      </span>
+    <span class="jm-day-type__icon" :data-level="activityLevel">
+      <JMIcon :name="selectedOption.icon" />
+    </span>
+    <span v-if="$slots.default" class="jm-day-type__content">
+      <slot />
     </span>
   </button>
   <details
