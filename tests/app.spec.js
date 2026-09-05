@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { validateAppDataResource } from "../backend/api/src/app-data-validation.mjs";
 import { CARD_COLORS } from "../src/app/card-colors.js";
 import filamentCatalog from "../backend/catalogs/bambu-filaments.snapshot.json" with { type: "json" };
 import flossCatalog from "../backend/catalogs/dmc-floss.snapshot.json" with { type: "json" };
@@ -42,6 +43,8 @@ test.beforeEach(async ({ page }) => {
   const values = {};
   const revisions = Object.fromEntries(APP_DATA_RESOURCES.map((resource) => [resource, 0]));
   let supportsColors = true;
+  const writeFailures = new Map();
+  const validationErrors = [];
   let session = {
     authenticated: true,
     bootstrapRequired: false,
@@ -49,6 +52,8 @@ test.beforeEach(async ({ page }) => {
   };
   const controller = {
     get: (resource) => values[resource],
+    validationErrors,
+    setWriteFailure: (resource, status) => writeFailures.set(resource, status),
     set: (resource, value) => {
       values[resource] = value;
     },
@@ -86,6 +91,10 @@ test.beforeEach(async ({ page }) => {
     const resourceMatch = /^\/api\/data\/([a-z-]+)$/.exec(url.pathname);
     if (request.method() === "PUT" && resourceMatch) {
       const resource = resourceMatch[1];
+      if (writeFailures.get(resource)) {
+        await json({ error: "Simulated save failure" }, writeFailures.get(resource));
+        return;
+      }
       if (!supportsColors && resource === "colors") {
         await json({ error: "Not Found" }, 404);
         return;
@@ -96,6 +105,13 @@ test.beforeEach(async ({ page }) => {
         return;
       }
       const submittedValue = request.postDataJSON();
+      try {
+        validateAppDataResource(resource, submittedValue);
+      } catch (error) {
+        validationErrors.push(error.message);
+        await json({ error: error.message }, 400);
+        return;
+      }
       if (!supportsColors && resource === "todos") {
         for (const list of submittedValue.lists) delete list.color;
       }
@@ -1076,4 +1092,28 @@ test("unknown application routes return to work", async ({ page }) => {
   await expect(page).toHaveURL(/\/work$/);
   expect(new URL(page.url()).hash).toBe("");
   await expect(page.locator(".work-page")).toBeVisible();
+});
+
+test("new blank chores preserve a valid occurrence order", async ({ page }) => {
+  await page.goto("/chores");
+  await page.getByRole("button", { name: "Add chore" }).click();
+  const title = page.locator(".chores-all textarea").last();
+  await expect(title).toBeFocused();
+  await title.fill("Clean the desk");
+  const data = appDataByPage.get(page);
+  await expect.poll(() => data.get("chores")?.tasks.some((task) => task.title === "Clean the desk")).toBe(true);
+  expect(data.validationErrors).toEqual([]);
+});
+
+test("failed saves survive reload and clear the error after recovery", async ({ page }) => {
+  await page.goto("/work");
+  const data = appDataByPage.get(page);
+  await expect.poll(() => data.get("work-tasks")?.length).toBeGreaterThan(0);
+  data.setWriteFailure("work-tasks", 503);
+  await page.locator(".work-day textarea").first().fill("Recover this edit");
+  await expect(page.getByRole("button", { name: "Download local edits" })).toBeVisible();
+  data.setWriteFailure("work-tasks", 0);
+  await page.reload();
+  await expect.poll(() => data.get("work-tasks")?.some((task) => task.title === "Recover this edit")).toBe(true);
+  await expect(page.locator(".app-sync-error")).toHaveCount(0);
 });

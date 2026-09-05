@@ -6,7 +6,7 @@ import {
   moveItemToEnd,
   nextEntityId,
   setTaskCompletion,
-  serializableTasks,
+  serializableChores,
 } from "../app/task-list.js";
 import { calendarDate, isoDate } from "../app/work-calendar.js";
 import JMButton from "../components/JMButton/JMButton.vue";
@@ -56,10 +56,7 @@ export default {
       return DUE_DATE_FORMATTER.format(calendarDate(task.nextDue));
     },
     save() {
-      savePageTasks("chores", {
-        ...this.chores,
-        tasks: serializableTasks(this.chores.tasks, this.draftTaskIds),
-      });
+      savePageTasks("chores", serializableChores(this.chores, this.draftTaskIds));
     },
     updateTitle(task, title) {
       task.title = title;
