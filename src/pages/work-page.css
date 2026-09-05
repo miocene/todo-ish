@@ -1,0 +1,140 @@
+.work-page {
+  --calendar-accent: #1967d2;
+  --work-page-border: #dadce0;
+  --work-page-muted: #70757a;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-block-end: var(--space-6);
+  overflow: clip;
+}
+
+.work-page__header,
+.work-day__header,
+.work-backlog__header {
+  display: flex;
+  gap: var(--space-4);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.work-page__header p {
+  margin-block-start: var(--space-2);
+  color: var(--work-page-muted);
+  font-size: 0.875rem;
+}
+
+.work-page__header .jm-button {
+  flex: none;
+}
+
+.work-page__status,
+.work-page__visually-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.work-day,
+.work-backlog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-inline-size: 0;
+  min-block-size: 240px;
+  padding: var(--space-4);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--work-page-border);
+  border-radius: var(--radius-card);
+}
+
+.work-day {
+  view-transition-name: work-day;
+}
+
+.work-page--date-transitioning .work-day * {
+  view-transition-name: none !important;
+}
+
+.work-day__header {
+  align-items: flex-start;
+}
+
+.work-day__header h2,
+.work-backlog__header h2 {
+  margin-block-start: var(--space-1);
+  font-size: 1rem;
+}
+
+.work-day__eyebrow {
+  color: var(--work-page-muted);
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.work-day--today .work-day__eyebrow {
+  color: var(--calendar-accent);
+}
+
+.work-day__actions {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.work-day__tasks,
+.work-backlog__tasks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.work-day__tasks .task-item,
+.work-backlog__tasks .task-item {
+  margin-inline: 0;
+}
+
+.work-day__empty,
+.work-backlog__empty {
+  display: grid;
+  place-items: center;
+  min-block-size: 96px;
+  color: var(--work-page-muted);
+  font-size: 0.8125rem;
+  text-align: center;
+  border: 1px dashed var(--work-page-border);
+  border-radius: var(--radius-control);
+}
+
+.work-backlog__header {
+  align-items: flex-start;
+}
+
+.work-backlog__header .jm-button {
+  flex: none;
+}
+
+@media (width <= 520px) {
+  .work-day__header,
+  .work-backlog__header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .work-day__actions {
+    inline-size: 100%;
+  }
+
+  .work-day__actions .jm-button {
+    flex: 1;
+  }
+}

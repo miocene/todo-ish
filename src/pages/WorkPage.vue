@@ -1,26 +1,24 @@
 <script>
-import JMButton from "../components/JMButton/JMButton.vue";
-import JMIcon from "../components/JMIcon/JMIcon.vue";
-import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
+import { activityLevel } from "../app/activity.js";
 import { createCompletionMoveScheduler, finishTaskDraft, moveItemToEnd, serializableTasks } from "../app/task-list.js";
 import {
   calendarDate,
-  canMoveWorkRange,
-  getCalendarDays,
-  getWorkRangeBounds,
+  getCalendarDay,
+  getWorkDateBounds,
   isIsoDate,
   isoDate,
-  moveWorkRange,
   requestedDate,
 } from "../app/work-calendar.js";
-import { setWorkStatus, WORK_STATUSES } from "../app/work-status.js";
+import { getWorkStatus, setWorkStatus } from "../app/work-status.js";
 import { getAllWorkTasks, saveWorkTasks } from "../app/work-tasks.js";
-
-const BACKLOG_DROP_TARGET = "backlog";
+import JMButton from "../components/JMButton/JMButton.vue";
+import JMCalendar from "../components/JMCalendar/JMCalendar.vue";
+import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
+import "./work-page.css";
 
 export default {
   name: "WorkPage",
-  components: { JMButton, JMIcon, JMTaskCard },
+  components: { JMButton, JMCalendar, JMTaskCard },
   data() {
     const workTasks = getAllWorkTasks().map((task) => ({ ...task }));
     const nextTaskId =
@@ -29,21 +27,14 @@ export default {
         return taskId ? Math.max(largestId, Number(taskId[1])) : largestId;
       }, -1) + 1;
     return {
-      backlogDropTarget: BACKLOG_DROP_TARGET,
+      calendarRangeDate: "",
       completionMoves: createCompletionMoveScheduler(),
+      dateTransitioning: false,
       draftTaskIds: new Set(),
-      draggedTaskId: undefined,
-      dragTarget: undefined,
       midnightTimer: undefined,
       nextTaskId,
-      rangeTransitionFrame: undefined,
-      routeWatchReady: false,
-      statusOptions: WORK_STATUSES,
       taskMoveStatus: "",
       today: calendarDate(),
-      trackMoving: false,
-      transitionDirection: "next",
-      transitionFromDate: undefined,
       workTasks,
     };
   },
@@ -54,37 +45,47 @@ export default {
     },
   },
   computed: {
-    focusDate() {
-      return requestedDate(this.$route.query.date, this.today);
-    },
-    rangeBounds() {
-      return getWorkRangeBounds(this.today);
-    },
-    canGoPrevious() {
-      return canMoveWorkRange(this.focusDate, -1, this.rangeBounds);
-    },
-    canGoNext() {
-      return canMoveWorkRange(this.focusDate, 1, this.rangeBounds);
-    },
-    todayIso() {
-      return isoDate(this.today);
-    },
-    days() {
-      return this.getDaysWithTasks(this.focusDate);
+    activityByDate() {
+      const counts = new Map();
+      for (const task of this.workTasks) {
+        if (!task.checkedAt || !task.date) continue;
+        counts.set(task.date, (counts.get(task.date) ?? 0) + 1);
+      }
+
+      return Object.fromEntries([...counts].map(([date, count]) => [date, { count, level: activityLevel(count) }]));
     },
     backlogTasks() {
       return this.workTasks.filter((task) => task.date === null);
     },
-    isRangeTransitioning() {
-      return Boolean(this.transitionFromDate);
+    canEditSelectedDay() {
+      return this.canEditTask(this.selectedDay.iso);
     },
-    trackDays() {
-      if (!this.transitionFromDate) return this.days;
-      const outgoingDays = this.getDaysWithTasks(this.transitionFromDate);
-      return this.transitionDirection === "next" ? [...outgoingDays, ...this.days] : [...this.days, ...outgoingDays];
+    dateBounds() {
+      return getWorkDateBounds(this.today, this.workTasks);
     },
-    rangeLabel() {
-      return `${this.days[0].label} to ${this.days.at(-1).label}`;
+    firstAvailableDate() {
+      return this.dateBounds.firstDate ? isoDate(this.dateBounds.firstDate) : "";
+    },
+    focusDate() {
+      return requestedDate(this.$route.query.date, this.today);
+    },
+    focusDateIso() {
+      return isoDate(this.focusDate);
+    },
+    isTodaySelected() {
+      return this.focusDateIso === this.todayIso;
+    },
+    lastAvailableDate() {
+      return isoDate(this.dateBounds.lastDate);
+    },
+    selectedDay() {
+      return {
+        ...getCalendarDay(this.focusDate, this.todayIso),
+        tasks: this.workTasks.filter((task) => task.date === this.focusDateIso),
+      };
+    },
+    todayIso() {
+      return isoDate(this.today);
     },
   },
   mounted() {
@@ -93,79 +94,17 @@ export default {
   },
   beforeUnmount() {
     this.completionMoves.clear();
-    window.cancelAnimationFrame(this.rangeTransitionFrame);
     window.clearTimeout(this.midnightTimer);
   },
   methods: {
-    handleDateQueryChange(value, previousValue) {
-      const date = requestedDate(value, this.today);
-      if (this.routeWatchReady) {
-        const previousDate = requestedDate(previousValue, this.today);
-        if (isoDate(date) !== isoDate(previousDate)) this.startRangeTransition(previousDate, date);
-      }
-      this.routeWatchReady = true;
-      this.normalizeDateQuery(value, date);
+    addBacklogTask() {
+      this.focusTaskTitle(this.createTask(null));
     },
-    normalizeDateQuery(value, date = requestedDate(value, this.today)) {
-      if (value === undefined || (isIsoDate(value) && isoDate(date) !== this.todayIso)) return;
-      const query = { ...this.$route.query };
-      delete query.date;
-      this.$router.replace({ name: "work", query, hash: this.$route.hash });
-    },
-    navigateToRange(value) {
-      if (this.isRangeTransitioning) return;
-      const date = calendarDate(value);
-      const dateIso = isoDate(date);
-      const query = { ...this.$route.query };
-      if (dateIso === this.todayIso) delete query.date;
-      else query.date = dateIso;
-      if (query.date === this.$route.query.date && !this.$route.hash) return;
-      this.$router.push({ name: "work", query });
-    },
-    changeRange(amount) {
-      if (!canMoveWorkRange(this.focusDate, amount, this.rangeBounds)) return;
-      this.navigateToRange(moveWorkRange(this.focusDate, amount, this.rangeBounds));
-    },
-    goToday() {
-      this.navigateToRange(this.today);
-    },
-    setDayStatus(date, value) {
-      setWorkStatus(date, value);
-    },
-    getDaysWithTasks(focusDate) {
-      return getCalendarDays(focusDate, this.todayIso).map((day) => ({
-        ...day,
-        tasks: this.workTasks.filter((task) => task.date === day.iso),
-      }));
-    },
-    taskTitle(task) {
-      return task.title;
-    },
-    taskInputId(task) {
-      return `work-task-${task.id}`;
-    },
-    taskCheckboxId(task) {
-      return `work-task-complete-${task.id}`;
-    },
-    isTaskComplete(task) {
-      return Boolean(task.checkedAt);
+    addSelectedDayTask() {
+      if (this.canEditSelectedDay) this.focusTaskTitle(this.createTask(this.selectedDay.iso));
     },
     canEditTask(date) {
       return date === null || date >= this.todayIso;
-    },
-    canDragTask(date) {
-      return this.canEditTask(date);
-    },
-    updateTaskTitle(task, title) {
-      task.title = title;
-      this.saveTasks();
-    },
-    handleTaskTitleEnter(task, date, columnTasks, event) {
-      if (event.isComposing) return;
-      event.preventDefault();
-      const taskIndex = columnTasks.findIndex((item) => item.id === task.id);
-      const nextTask = columnTasks[taskIndex + 1] ?? this.createTask(date);
-      this.focusTaskTitle(nextTask);
     },
     createTask(date) {
       const task = { id: `new-${this.nextTaskId++}`, date, title: "" };
@@ -174,31 +113,50 @@ export default {
       this.saveTasks();
       return task;
     },
-    addBacklogTask() {
-      this.focusTaskTitle(this.createTask(null));
+    focusTaskTitle(task) {
+      this.$nextTick(() => {
+        const input = document.getElementById(this.taskInputId(task));
+        if (!input) return;
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
+      });
     },
-    saveTasks() {
-      saveWorkTasks(serializableTasks(this.workTasks, this.draftTaskIds));
+    goToday() {
+      this.$refs.calendar.showDate(this.todayIso);
+      const query = { ...this.$route.query };
+      delete query.date;
+      this.$router.push({ name: "work", query });
+    },
+    handleDateQueryChange(value) {
+      this.normalizeDateQuery(value, requestedDate(value, this.today));
     },
     handleTaskTitleBlur(task) {
       if (!finishTaskDraft(this.workTasks, task, this.draftTaskIds, (item) => this.taskTitle(item))) return;
       this.completionMoves.cancel(task.id);
       this.saveTasks();
     },
-    setTaskCompletion(task, completed) {
-      task.checkedAt = completed ? new Date().toISOString() : undefined;
-      if (completed && task.date === null) {
-        task.date = this.todayIso;
-      } else if (!completed && task.date !== null && task.date < this.todayIso) {
-        task.date = this.todayIso;
-      }
-      this.saveTasks();
-      this.scheduleCompletedTaskMove(task, completed);
+    handleTaskTitleEnter(task, date, dayTasks, event) {
+      if (event.isComposing) return;
+      event.preventDefault();
+      const taskIndex = dayTasks.findIndex((item) => item.id === task.id);
+      const nextTask = dayTasks[taskIndex + 1] ?? this.createTask(date);
+      this.focusTaskTitle(nextTask);
     },
-    scheduleCompletedTaskMove(task, completed) {
-      this.completionMoves.schedule(task.id, completed, () => {
-        if (moveItemToEnd(this.workTasks, task)) this.saveTasks();
-      });
+    isTaskComplete(task) {
+      return Boolean(task.checkedAt);
+    },
+    moveTask(task, date) {
+      if (task.date === date) return;
+      task.date = date;
+      this.saveTasks();
+      const destination = date === null ? "backlog" : date === this.todayIso ? "today" : date;
+      this.taskMoveStatus = `${this.taskTitle(task) || "Untitled task"} moved to ${destination}.`;
+    },
+    normalizeDateQuery(value, date) {
+      if (value === undefined || (isIsoDate(value) && isoDate(date) !== this.todayIso)) return;
+      const query = { ...this.$route.query };
+      delete query.date;
+      this.$router.replace({ name: "work", query, hash: this.$route.hash });
     },
     rollOverIncompleteTasks() {
       let taskMoved = false;
@@ -210,81 +168,22 @@ export default {
       }
       if (taskMoved) this.saveTasks();
     },
-    focusTaskTitle(task) {
-      this.$nextTick(() => {
-        const input = document.getElementById(this.taskInputId(task));
-        if (!input) return;
-        input.focus();
-        input.setSelectionRange(input.value.length, input.value.length);
-      });
-    },
-    toggleTaskAssignment(task) {
-      this.moveTask(task, task.date === null ? this.todayIso : null);
-    },
-    moveTask(task, date) {
-      if (task.date === date) return;
-      task.date = date;
+    removeTask(task) {
+      const taskIndex = this.workTasks.indexOf(task);
+      if (taskIndex === -1) return;
+      this.completionMoves.cancel(task.id);
+      this.draftTaskIds.delete(task.id);
+      this.workTasks.splice(taskIndex, 1);
       this.saveTasks();
-      const destination = date === null ? "backlog" : date === this.todayIso ? "today" : date;
-      this.taskMoveStatus = `${this.taskTitle(task) || "Untitled task"} moved to ${destination}.`;
+      this.taskMoveStatus = `${this.taskTitle(task) || "Untitled task"} deleted.`;
     },
-    startTaskDrag(task, event) {
-      if (!this.canDragTask(task.date)) {
-        event.preventDefault();
-        return;
-      }
-      this.draggedTaskId = task.id;
-      event.dataTransfer.effectAllowed = "move";
-      event.dataTransfer.setData("text/plain", task.id);
+    saveTasks() {
+      saveWorkTasks(serializableTasks(this.workTasks, this.draftTaskIds));
     },
-    canDropTask(target) {
-      if (!this.draggedTaskId) return false;
-      const task = this.workTasks.find((item) => item.id === this.draggedTaskId);
-      if (!task || (target === BACKLOG_DROP_TARGET && task.checkedAt)) return false;
-      const date = target === BACKLOG_DROP_TARGET ? null : target;
-      return (date === null || date >= this.todayIso) && task.date !== date;
-    },
-    handleTaskDragOver(target, event) {
-      if (!this.canDropTask(target)) return;
-      event.preventDefault();
-      event.dataTransfer.dropEffect = "move";
-      this.dragTarget = target;
-    },
-    dropTask(target, event) {
-      if (!this.canDropTask(target)) return;
-      event.preventDefault();
-      const task = this.workTasks.find((item) => item.id === this.draggedTaskId);
-      if (task) this.moveTask(task, target === BACKLOG_DROP_TARGET ? null : target);
-      this.endTaskDrag();
-    },
-    endTaskDrag() {
-      this.draggedTaskId = undefined;
-      this.dragTarget = undefined;
-    },
-    startRangeTransition(previousDate, date) {
-      window.cancelAnimationFrame(this.rangeTransitionFrame);
-      this.trackMoving = false;
-      this.transitionDirection = date > previousDate ? "next" : "previous";
-
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        this.transitionFromDate = undefined;
-        return;
-      }
-
-      this.transitionFromDate = previousDate;
-      this.$nextTick(() => {
-        this.rangeTransitionFrame = window.requestAnimationFrame(() => {
-          this.rangeTransitionFrame = window.requestAnimationFrame(() => {
-            this.trackMoving = true;
-          });
-        });
+    scheduleCompletedTaskMove(task, completed) {
+      this.completionMoves.schedule(task.id, completed, () => {
+        if (moveItemToEnd(this.workTasks, task)) this.saveTasks();
       });
-    },
-    finishRangeTransition(event) {
-      if (event.target !== this.$refs.weekGrid || event.propertyName !== "transform") return;
-      window.cancelAnimationFrame(this.rangeTransitionFrame);
-      this.trackMoving = false;
-      this.transitionFromDate = undefined;
     },
     scheduleTodayRefresh() {
       const now = new Date();
@@ -293,138 +192,136 @@ export default {
         () => {
           this.today = calendarDate();
           this.rollOverIncompleteTasks();
-          this.normalizeDateQuery(this.$route.query.date);
+          this.normalizeDateQuery(this.$route.query.date, requestedDate(this.$route.query.date, this.today));
           this.scheduleTodayRefresh();
         },
         nextMidnight.getTime() - now.getTime() + 100,
       );
+    },
+    setDayStatus({ date, value }) {
+      setWorkStatus(date, value);
+    },
+    setTaskCompletion(task, completed) {
+      task.checkedAt = completed ? new Date().toISOString() : undefined;
+      if (completed && task.date === null) {
+        task.date = this.todayIso;
+      } else if (!completed && task.date !== null && task.date < this.todayIso) {
+        task.date = this.todayIso;
+      }
+      this.saveTasks();
+      this.scheduleCompletedTaskMove(task, completed);
+    },
+    taskCheckboxId(task) {
+      return `work-task-complete-${task.id}`;
+    },
+    taskInputId(task) {
+      return `work-task-${task.id}`;
+    },
+    taskTitle(task) {
+      return task.title;
+    },
+    toggleTaskAssignment(task) {
+      this.moveTask(task, task.date === null ? this.todayIso : null);
+    },
+    workStatusValue(date) {
+      return getWorkStatus(date).value;
+    },
+    updateTaskTitle(task, title) {
+      task.title = title;
+      this.saveTasks();
     },
   },
 };
 </script>
 
 <template>
-  <section class="calendar" aria-labelledby="work-page-title">
-    <div class="calendar__header">
-      <h1 id="work-page-title">Work</h1>
-      <p class="calendar__status" aria-live="polite" aria-atomic="true">{{ rangeLabel }}</p>
-
-      <JMButton
-        aria-label="Previous three days"
-        :disabled="isRangeTransitioning || !canGoPrevious"
-        icon-name="arrow-left"
-        view="secondary"
-        @click="changeRange(-1)"
-      />
-      <JMButton :disabled="isRangeTransitioning" text="Today" view="secondary" @click="goToday" />
-      <JMButton
-        aria-label="Next three days"
-        :disabled="isRangeTransitioning || !canGoNext"
-        icon-name="arrow-right"
-        view="secondary"
-        @click="changeRange(1)"
-      />
-    </div>
-
-    <p class="calendar__status" aria-live="polite" aria-atomic="true">{{ taskMoveStatus }}</p>
-
-    <div class="calendar-board">
-      <div class="calendar-board__days">
-        <div
-          ref="weekGrid"
-          class="week-grid"
-          :class="{
-            'week-grid--moving': trackMoving,
-            'week-grid--next': isRangeTransitioning && transitionDirection === 'next',
-            'week-grid--previous': isRangeTransitioning && transitionDirection === 'previous',
-          }"
-          role="group"
-          :aria-label="rangeLabel"
-          :aria-busy="isRangeTransitioning"
-          @transitioncancel="finishRangeTransition"
-          @transitionend="finishRangeTransition"
-        >
-          <div
-            v-for="day in trackDays"
-            :key="day.iso"
-            class="week-day"
-            :class="{
-              'week-day--today': day.today,
-              'week-day--drop-target': dragTarget === day.iso,
-            }"
-            @dragover="handleTaskDragOver(day.iso, $event)"
-            @drop="dropTask(day.iso, $event)"
-          >
-            <time class="week-day__heading" :datetime="day.iso">
-              <span class="week-day__weekday">{{ day.weekday }}</span>
-              <span class="week-day__date">
-                <strong>{{ day.day }}</strong>
-                <small>{{ day.month }}</small>
-              </span>
-            </time>
-            <label class="calendar__status-select">
-              <select
-                :value="day.statusValue"
-                :aria-label="`Status for ${day.label}`"
-                @change="setDayStatus(day.iso, $event.target.value)"
-              >
-                <component :is="'button'" type="button">
-                  <component :is="'selectedcontent'" />
-                  <JMIcon name="chevron-down" />
-                </component>
-                <option v-for="status in statusOptions" :key="status.value" :value="status.value">
-                  <JMIcon :name="status.icon" />
-                  {{ status.label }}
-                  <JMIcon v-if="status.value === day.statusValue" class="calendar__status-check" name="check" />
-                </option>
-              </select>
-            </label>
-            <JMIcon v-if="!day.tasks" name="spinner" label="Loading tasks" />
-            <JMTaskCard
-              v-else
-              v-for="task in day.tasks"
-              :key="task.id"
-              :task-id="task.id"
-              :title="taskTitle(task)"
-              :title-input-id="taskInputId(task)"
-              :completion-input-id="taskCheckboxId(task)"
-              :completed="isTaskComplete(task)"
-              :editable="canEditTask(day.iso)"
-              :can-drag="canDragTask(day.iso)"
-              reserve-drag-space
-              :pin-icon="isTaskComplete(task) ? '' : 'pinned'"
-              :pin-label="`Move ${taskTitle(task) || 'untitled task'} to backlog`"
-              @drag-end="endTaskDrag"
-              @drag-start="startTaskDrag(task, $event)"
-              @enter="handleTaskTitleEnter(task, day.iso, day.tasks, $event)"
-              @pin="toggleTaskAssignment(task)"
-              @title-blur="handleTaskTitleBlur(task)"
-              @update:completed="setTaskCompletion(task, $event)"
-              @update:title="updateTaskTitle(task, $event)"
-            />
-          </div>
-        </div>
+  <section
+    class="work-page"
+    :class="{ 'work-page--date-transitioning': dateTransitioning }"
+    aria-labelledby="work-page-title"
+  >
+    <header class="work-page__header">
+      <div>
+        <h1 id="work-page-title">Work</h1>
       </div>
+      <JMButton
+        text="Today"
+        view="secondary"
+        :disabled="isTodaySelected && calendarRangeDate === todayIso"
+        @click="goToday"
+      />
+    </header>
 
-      <section
-        class="backlog"
-        :class="{ 'backlog--drop-target': dragTarget === backlogDropTarget }"
-        aria-labelledby="backlog-title"
-        @dragover="handleTaskDragOver(backlogDropTarget, $event)"
-        @drop="dropTask(backlogDropTarget, $event)"
-      >
-        <header class="backlog__heading">
-          <span class="week-day__weekday">Tasks</span>
-          <h2 id="backlog-title">Backlog</h2>
-          <JMButton
-            class="backlog__add"
-            aria-label="Add backlog task"
-            text="Add task"
-            view="secondary"
-            @click="addBacklogTask"
-          />
-        </header>
-        <p v-if="backlogTasks.length === 0" class="backlog__empty">No backlog tasks</p>
+    <JMCalendar
+      ref="calendar"
+      :activity="activityByDate"
+      :date="focusDateIso"
+      :day-type-for-date="workStatusValue"
+      :max-date="lastAvailableDate"
+      :min-date="firstAvailableDate"
+      route-name="work"
+      show-day-type
+      view-transition
+      @range-change="calendarRangeDate = $event"
+      @update:day-type="setDayStatus"
+      @view-transition="dateTransitioning = $event"
+    />
+
+    <p class="work-page__status" aria-live="polite" aria-atomic="true">{{ taskMoveStatus }}</p>
+
+    <section
+      class="work-day"
+      :class="{
+        'work-day--today': selectedDay.today,
+      }"
+      aria-labelledby="selected-work-day-title"
+      :aria-busy="dateTransitioning"
+    >
+      <header class="work-day__header">
+        <div>
+          <span class="work-day__eyebrow">{{ selectedDay.today ? "Today" : selectedDay.weekday }}</span>
+          <h2 id="selected-work-day-title">
+            <time :datetime="selectedDay.iso">{{ selectedDay.dateLabel }}</time>
+          </h2>
+        </div>
+
+        <div class="work-day__actions">
+          <JMButton text="Add task" view="secondary" :disabled="!canEditSelectedDay" @click="addSelectedDayTask" />
+        </div>
+      </header>
+
+      <div class="work-day__tasks">
+        <p v-if="selectedDay.tasks.length === 0" class="work-day__empty">Nothing recorded for this day.</p>
+        <JMTaskCard
+          v-for="task in selectedDay.tasks"
+          :key="task.id"
+          :task-id="task.id"
+          :title="taskTitle(task)"
+          :title-input-id="taskInputId(task)"
+          :completion-input-id="taskCheckboxId(task)"
+          :completed="isTaskComplete(task)"
+          :editable="canEditTask(selectedDay.iso)"
+          removable
+          :pin-icon="isTaskComplete(task) ? '' : 'pinned'"
+          :pin-label="`Move ${taskTitle(task) || 'untitled task'} to backlog`"
+          :remove-label="`Delete ${taskTitle(task) || 'untitled task'}`"
+          @enter="handleTaskTitleEnter(task, selectedDay.iso, selectedDay.tasks, $event)"
+          @pin="toggleTaskAssignment(task)"
+          @remove="removeTask(task)"
+          @title-blur="handleTaskTitleBlur(task)"
+          @update:completed="setTaskCompletion(task, $event)"
+          @update:title="updateTaskTitle(task, $event)"
+        />
+      </div>
+    </section>
+
+    <section class="work-backlog" aria-labelledby="backlog-title">
+      <header class="work-backlog__header">
+        <h2 id="backlog-title">Backlog</h2>
+        <JMButton aria-label="Add backlog task" text="Add task" view="secondary" @click="addBacklogTask" />
+      </header>
+      <div class="work-backlog__tasks">
+        <p v-if="backlogTasks.length === 0" class="work-backlog__empty">No backlog tasks</p>
         <JMTaskCard
           v-for="task in backlogTasks"
           :key="task.id"
@@ -433,18 +330,18 @@ export default {
           :title-input-id="taskInputId(task)"
           :completion-input-id="taskCheckboxId(task)"
           :completed="isTaskComplete(task)"
-          can-drag
+          removable
           pin-icon="pin"
           :pin-label="`Mark ${taskTitle(task) || 'untitled task'} ready for today`"
-          @drag-end="endTaskDrag"
-          @drag-start="startTaskDrag(task, $event)"
+          :remove-label="`Delete ${taskTitle(task) || 'untitled task'}`"
           @enter="handleTaskTitleEnter(task, null, backlogTasks, $event)"
           @pin="toggleTaskAssignment(task)"
+          @remove="removeTask(task)"
           @title-blur="handleTaskTitleBlur(task)"
           @update:completed="setTaskCompletion(task, $event)"
           @update:title="updateTaskTitle(task, $event)"
         />
-      </section>
-    </div>
+      </div>
+    </section>
   </section>
 </template>

@@ -9,6 +9,13 @@ const DAY_FORMATTER = new Intl.DateTimeFormat("en", {
 });
 const MONTH_FORMATTER = new Intl.DateTimeFormat("en", { month: "short" });
 
+export function activityLevel(count) {
+  if (!Number.isFinite(count) || count <= 0) return 0;
+  if (count === 1) return 1;
+  if (count === 2) return 2;
+  return count <= 4 ? 3 : 4;
+}
+
 function isoDate(value) {
   const pad = (part) => String(part).padStart(2, "0");
   return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
@@ -118,7 +125,7 @@ export function buildActivityCalendar(year, groups) {
       date,
       count,
       label: DAY_FORMATTER.format(cursor),
-      level: count === undefined || count === 0 ? 0 : count === 1 ? 1 : count === 2 ? 2 : count <= 4 ? 3 : 4,
+      level: activityLevel(count),
     });
   }
 

@@ -1,0 +1,56 @@
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-group(work-day) {
+    animation-duration: 280ms;
+    animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  html:active-view-transition-type(next)::view-transition-old(work-day) {
+    animation-name: work-day-exit-next;
+  }
+
+  html:active-view-transition-type(next)::view-transition-new(work-day) {
+    animation-name: work-day-enter-next;
+  }
+
+  html:active-view-transition-type(previous)::view-transition-old(work-day) {
+    animation-name: work-day-exit-previous;
+  }
+
+  html:active-view-transition-type(previous)::view-transition-new(work-day) {
+    animation-name: work-day-enter-previous;
+  }
+}
+
+@keyframes work-day-exit-next {
+  to {
+    opacity: 0;
+    transform: translateX(-12%);
+  }
+}
+
+@keyframes work-day-enter-next {
+  from {
+    opacity: 0;
+    transform: translateX(12%);
+  }
+}
+
+@keyframes work-day-exit-previous {
+  to {
+    opacity: 0;
+    transform: translateX(12%);
+  }
+}
+
+@keyframes work-day-enter-previous {
+  from {
+    opacity: 0;
+    transform: translateX(-12%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(work-day) {
+    animation: none;
+  }
+}

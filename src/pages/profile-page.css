@@ -154,7 +154,7 @@
 .activity-graph__legend i {
   inline-size: var(--activity-cell);
   block-size: var(--activity-cell);
-  background: #eef0f2;
+  background: var(--color-activity-0);
   border-radius: 2px;
 }
 
@@ -174,22 +174,22 @@ a.activity-graph__day:hover {
 
 .activity-graph__day[data-level="1"],
 .activity-graph__legend i[data-level="1"] {
-  background: #d1e7dd;
+  background: var(--color-activity-1);
 }
 
 .activity-graph__day[data-level="2"],
 .activity-graph__legend i[data-level="2"] {
-  background: #93c9ad;
+  background: var(--color-activity-2);
 }
 
 .activity-graph__day[data-level="3"],
 .activity-graph__legend i[data-level="3"] {
-  background: #5b9d7c;
+  background: var(--color-activity-3);
 }
 
 .activity-graph__day[data-level="4"],
 .activity-graph__legend i[data-level="4"] {
-  background: #2f6f51;
+  background: var(--color-activity-4);
 }
 
 .activity-graph__legend {

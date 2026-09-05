@@ -11,6 +11,10 @@ const TodoListsPage = () => import("../pages/TodoListsPage.vue");
 export const routes = [
   {
     path: "/",
+    redirect: { name: "work" },
+  },
+  {
+    path: "/work",
     name: "work",
     component: WorkPage,
     meta: { title: "Work" },

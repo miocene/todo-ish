@@ -5,9 +5,8 @@ import "./jm-task-card.css";
 export default {
   name: "JMTaskCard",
   components: { JMIcon },
-  emits: ["drag-end", "drag-start", "enter", "pin", "remove", "title-blur", "update:completed", "update:title"],
+  emits: ["enter", "pin", "remove", "title-blur", "update:completed", "update:title"],
   props: {
-    canDrag: { type: Boolean, default: false },
     completable: { type: Boolean, default: true },
     completed: { type: Boolean, default: false },
     completionInputId: { type: String, default: "" },
@@ -16,7 +15,6 @@ export default {
     pinLabel: { type: String, default: "" },
     removable: { type: Boolean, default: false },
     removeLabel: { type: String, default: "" },
-    reserveDragSpace: { type: Boolean, default: false },
     taskId: { type: String, required: true },
     title: { type: String, default: "" },
     titleHref: { type: String, default: "" },
@@ -48,22 +46,9 @@ export default {
     class="task-item"
     :class="{
       'task-item--completed': completed,
-      'task-item--drag-column': canDrag || reserveDragSpace,
       'task-item--without-checkbox': !completable,
     }"
   >
-    <span
-      v-if="canDrag"
-      class="task-item__drag-handle"
-      draggable="true"
-      aria-hidden="true"
-      @dragend="$emit('drag-end', $event)"
-      @dragstart="$emit('drag-start', $event)"
-    >
-      <JMIcon name="grip" />
-    </span>
-    <span v-else-if="reserveDragSpace" class="task-item__drag-handle-placeholder" />
-
     <label v-if="completable" class="task-item__visually-hidden" :for="completionId">
       Complete {{ title || "untitled task" }}
     </label>
@@ -109,15 +94,6 @@ export default {
 
     <div v-if="hasActions" class="task-item__actions">
       <button
-        v-if="pinIcon"
-        class="task-item__action task-item__pin"
-        type="button"
-        :aria-label="resolvedPinLabel"
-        @click="$emit('pin')"
-      >
-        <JMIcon :name="pinIcon" />
-      </button>
-      <button
         v-if="removable"
         class="task-item__action task-item__remove"
         type="button"
@@ -125,6 +101,15 @@ export default {
         @click="$emit('remove')"
       >
         <JMIcon name="remove" />
+      </button>
+      <button
+        v-if="pinIcon"
+        class="task-item__action task-item__pin"
+        type="button"
+        :aria-label="resolvedPinLabel"
+        @click="$emit('pin')"
+      >
+        <JMIcon :name="pinIcon" />
       </button>
       <slot name="actions" />
     </div>

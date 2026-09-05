@@ -1,0 +1,138 @@
+.jm-day-type {
+  position: relative;
+  flex: none;
+}
+
+.jm-day-type--static {
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  background: transparent;
+  border: 0;
+}
+
+.jm-day-type__visually-hidden,
+.jm-day-type__input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.jm-day-type__trigger {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  list-style: none;
+  cursor: pointer;
+}
+
+.jm-day-type__icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: var(--size-control);
+  block-size: var(--size-control);
+  color: var(--color-text-secondary);
+  background: var(--color-activity-0);
+  border-radius: var(--radius-control);
+  corner-shape: var(--corner-shape-default);
+}
+
+.jm-day-type__icon[data-level="1"] {
+  color: var(--color-activity-4);
+  background: var(--color-activity-1);
+}
+
+.jm-day-type__icon[data-level="2"] {
+  color: var(--color-activity-4);
+  background: var(--color-activity-2);
+}
+
+.jm-day-type__icon[data-level="3"] {
+  color: var(--color-bg-surface);
+  background: var(--color-activity-3);
+}
+
+.jm-day-type__icon[data-level="4"] {
+  color: var(--color-bg-surface);
+  background: var(--color-activity-4);
+}
+
+.jm-day-type__content {
+  display: contents;
+}
+
+.jm-day-type__trigger::-webkit-details-marker {
+  display: none;
+}
+
+.jm-day-type__trigger::marker {
+  content: "";
+}
+
+.jm-day-type__trigger:focus-visible {
+  outline: 2px solid var(--calendar-accent);
+  outline-offset: 2px;
+}
+
+.jm-day-type--static:focus-visible {
+  outline: 2px solid var(--calendar-accent);
+  outline-offset: 2px;
+}
+
+.jm-day-type__menu {
+  position: absolute;
+  z-index: 10;
+  inset-block-start: calc(100% + var(--space-3));
+  inset-inline-start: 0;
+  display: flex;
+  flex-direction: column;
+  inline-size: 14rem;
+  padding: var(--space-3);
+  margin: 0;
+  color: var(--color-text-default);
+  background: var(--control-secondary-background);
+  border: 0;
+  border-radius: var(--space-4);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 12%);
+}
+
+.jm-day-type__option {
+  display: block;
+  cursor: pointer;
+}
+
+.jm-day-type__option-content {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  min-block-size: 3rem;
+  padding-inline: var(--space-3);
+  font-size: 1rem;
+  border-radius: var(--space-3);
+}
+
+.jm-day-type__option:hover .jm-day-type__option-content {
+  background: var(--color-bg-surface);
+}
+
+.jm-day-type__input:checked + .jm-day-type__option-content {
+  color: var(--color-activity-4);
+  font-weight: var(--font-weight-bold);
+  background: var(--color-activity-1);
+}
+
+.jm-day-type__input:focus-visible + .jm-day-type__option-content {
+  outline: 2px solid var(--calendar-accent);
+  outline-offset: -2px;
+}
+
+.jm-day-type__check {
+  margin-inline-start: auto;
+}

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { activityYears, buildActivityCalendar, groupActivityByDay } from "../src/app/activity.js";
+import { activityLevel, activityYears, buildActivityCalendar, groupActivityByDay } from "../src/app/activity.js";
 import { filamentSupplyStatus } from "../src/app/printing-supplies.js";
 import { flossSupplyStatus } from "../src/app/stitching-supplies.js";
 import {
@@ -67,6 +67,10 @@ test("activity helpers group completed items and build a complete calendar year"
   assert.equal(calendar.days.filter((day) => day.count !== undefined).length, 365);
   assert.equal(calendar.days.find((day) => day.date === "2026-08-28").level, 2);
   assert.deepEqual(activityYears(items, 2026), [2026, 2025, 2024, 2023, 2022]);
+});
+
+test("activity levels use one shared productivity scale", () => {
+  assert.deepEqual([0, 1, 2, 3, 4, 5].map(activityLevel), [0, 1, 2, 3, 3, 4]);
 });
 
 test("completion moves are cancellable and use one timer per task", () => {

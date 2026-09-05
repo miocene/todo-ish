@@ -69,12 +69,6 @@ function loadTasks() {
 
 let allTasks = loadTasks();
 
-export function getFirstCheckedWorkTaskDate() {
-  return allTasks
-    .filter((task) => task.checkedAt)
-    .sort((first, second) => first.checkedAt.localeCompare(second.checkedAt))[0]?.date;
-}
-
 export function getWorkTasks(date) {
   const tasks = allTasks.filter((task) => task.date === date);
   return tasks.length ? tasks : EMPTY_TASKS;
