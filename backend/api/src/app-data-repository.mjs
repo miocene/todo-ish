@@ -276,20 +276,51 @@ async function readAppData(pool) {
   });
 }
 
-async function replaceWorkTasks(client, tasks) {
-  for (const [position, task] of tasks.entries()) {
+// Table and column names below are application constants. Row values always use bind parameters.
+async function insertRows(client, table, columns, rows, conflict = "") {
+  const batchSize = 500;
+  for (let start = 0; start < rows.length; start += batchSize) {
+    const batch = rows.slice(start, start + batchSize);
+    const placeholders = batch.map(
+      (row, index) => `(${row.map((_, column) => `$${index * columns.length + column + 1}`).join(", ")})`,
+    );
     await client.query({
-      text: `INSERT INTO work_tasks (id, title, scheduled_for, completed_at, position)
-             VALUES ($1, $2, $3, $4, $5)
-             ON CONFLICT (id) DO UPDATE SET
-               title = EXCLUDED.title,
-               scheduled_for = EXCLUDED.scheduled_for,
-               completed_at = EXCLUDED.completed_at,
-               position = EXCLUDED.position,
-               updated_at = now()`,
-      values: [task.id, task.title, task.date, task.checkedAt, position],
+      text: `INSERT INTO ${table} (${columns.join(", ")}) VALUES ${placeholders.join(", ")} ${conflict}`,
+      values: batch.flat(),
     });
   }
+}
+
+async function upsertRows(
+  client,
+  table,
+  columns,
+  rows,
+  { keys = ["id"], updatedAt = true, preserveColor = false } = {},
+) {
+  const updates = columns
+    .filter((column) => !keys.includes(column))
+    .map(
+      (column) =>
+        `${column} = ${preserveColor && column === "color" ? `coalesce(EXCLUDED.color, ${table}.color)` : `EXCLUDED.${column}`}`,
+    );
+  if (updatedAt) updates.push("updated_at = now()");
+  await insertRows(
+    client,
+    table,
+    columns,
+    rows,
+    `ON CONFLICT (${keys.join(", ")}) DO UPDATE SET ${updates.join(", ")}`,
+  );
+}
+
+async function replaceWorkTasks(client, tasks) {
+  await upsertRows(
+    client,
+    "work_tasks",
+    ["id", "title", "scheduled_for", "completed_at", "position"],
+    tasks.map((task, position) => [task.id, task.title, task.date, task.checkedAt, position]),
+  );
   await deleteMissing(
     client,
     "work_tasks",
@@ -300,38 +331,29 @@ async function replaceWorkTasks(client, tasks) {
 
 async function replaceWorkStatuses(client, statuses) {
   await client.query("DELETE FROM work_day_statuses");
-  for (const [workDate, status] of Object.entries(statuses)) {
-    await client.query({
-      text: `INSERT INTO work_day_statuses (work_date, status)
-             VALUES ($1, $2)`,
-      values: [workDate, status],
-    });
-  }
+  await insertRows(client, "work_day_statuses", ["work_date", "status"], Object.entries(statuses));
 }
 
 async function replaceChores(client, data) {
   const occurrencePosition = new Map(data.occurrenceOrder.map((id, position) => [id, position]));
-  for (const [position, chore] of data.tasks.entries()) {
-    await client.query({
-      text: `INSERT INTO chores (id, title, schedule_description, enabled, position)
-             VALUES ($1, $2, $3, true, $4)
-             ON CONFLICT (id) DO UPDATE SET
-               title = EXCLUDED.title,
-               schedule_description = EXCLUDED.schedule_description,
-               enabled = true,
-               position = EXCLUDED.position,
-               updated_at = now()`,
-      values: [chore.id, chore.title, chore.details, position],
-    });
-    await client.query({
-      text: `INSERT INTO chore_occurrences (chore_id, due_on, completed_at, position)
-             VALUES ($1, $2, $3, $4)
-             ON CONFLICT (chore_id, due_on) DO UPDATE SET
-               completed_at = EXCLUDED.completed_at,
-               position = EXCLUDED.position`,
-      values: [chore.id, chore.nextDue, chore.completedAt, occurrencePosition.get(chore.id) ?? position],
-    });
-  }
+  await upsertRows(
+    client,
+    "chores",
+    ["id", "title", "schedule_description", "enabled", "position"],
+    data.tasks.map((chore, position) => [chore.id, chore.title, chore.details, true, position]),
+  );
+  await upsertRows(
+    client,
+    "chore_occurrences",
+    ["chore_id", "due_on", "completed_at", "position"],
+    data.tasks.map((chore, position) => [
+      chore.id,
+      chore.nextDue,
+      chore.completedAt,
+      occurrencePosition.get(chore.id) ?? position,
+    ]),
+    { keys: ["chore_id", "due_on"], updatedAt: false },
+  );
   await deleteMissing(
     client,
     "chores",
@@ -341,34 +363,23 @@ async function replaceChores(client, data) {
 }
 
 async function replaceTodos(client, data) {
-  const itemIds = [];
-  for (const [listPosition, list] of data.lists.entries()) {
-    await client.query({
-      text: `INSERT INTO todo_lists (id, title, color, position)
-             VALUES ($1, $2, $3, $4)
-             ON CONFLICT (id) DO UPDATE SET
-               title = EXCLUDED.title,
-               color = coalesce(EXCLUDED.color, todo_lists.color),
-               position = EXCLUDED.position,
-               updated_at = now()`,
-      values: [list.id, list.title, list.color, listPosition],
-    });
-    for (const [itemPosition, item] of list.tasks.entries()) {
-      itemIds.push(item.id);
-      await client.query({
-        text: `INSERT INTO todo_items (id, list_id, title, completed_at, position)
-               VALUES ($1, $2, $3, $4, $5)
-               ON CONFLICT (id) DO UPDATE SET
-                 list_id = EXCLUDED.list_id,
-                 title = EXCLUDED.title,
-                 completed_at = EXCLUDED.completed_at,
-                 position = EXCLUDED.position,
-                 updated_at = now()`,
-        values: [item.id, list.id, item.title, item.completedAt, itemPosition],
-      });
-    }
-  }
-  await deleteMissing(client, "todo_items", "id", itemIds);
+  const items = data.lists.flatMap((list) =>
+    list.tasks.map((item, position) => [item.id, list.id, item.title, item.completedAt, position]),
+  );
+  await upsertRows(
+    client,
+    "todo_lists",
+    ["id", "title", "color", "position"],
+    data.lists.map((list, position) => [list.id, list.title, list.color, position]),
+    { preserveColor: true },
+  );
+  await upsertRows(client, "todo_items", ["id", "list_id", "title", "completed_at", "position"], items);
+  await deleteMissing(
+    client,
+    "todo_items",
+    "id",
+    items.map((item) => item[0]),
+  );
   await deleteMissing(
     client,
     "todo_lists",
@@ -378,19 +389,12 @@ async function replaceTodos(client, data) {
 }
 
 async function replaceShopping(client, data) {
-  for (const [position, item] of data.tasks.entries()) {
-    await client.query({
-      text: `INSERT INTO manual_shopping_items (id, title, product_url, completed_at, position)
-             VALUES ($1, $2, $3, $4, $5)
-             ON CONFLICT (id) DO UPDATE SET
-               title = EXCLUDED.title,
-               product_url = EXCLUDED.product_url,
-               completed_at = EXCLUDED.completed_at,
-               position = EXCLUDED.position,
-               updated_at = now()`,
-      values: [item.id, item.title, item.productLink, item.completedAt, position],
-    });
-  }
+  await upsertRows(
+    client,
+    "manual_shopping_items",
+    ["id", "title", "product_url", "completed_at", "position"],
+    data.tasks.map((item, position) => [item.id, item.title, item.productLink, item.completedAt, position]),
+  );
   await deleteMissing(
     client,
     "manual_shopping_items",
@@ -400,52 +404,42 @@ async function replaceShopping(client, data) {
 }
 
 async function replacePrinting(client, data) {
-  const itemIds = [];
-  const usageIds = [];
-  for (const [projectPosition, project] of data.projects.entries()) {
-    await client.query({
-      text: `INSERT INTO printing_projects (id, title, color, description, position)
-             VALUES ($1, $2, $3, $4, $5)
-             ON CONFLICT (id) DO UPDATE SET
-               title = EXCLUDED.title,
-               color = EXCLUDED.color,
-               description = EXCLUDED.description,
-               position = EXCLUDED.position,
-               updated_at = now()`,
-      values: [project.id, project.title, project.color, project.description, projectPosition],
-    });
-    for (const [itemPosition, item] of project.tasks.entries()) {
-      itemIds.push(item.id);
-      await client.query({
-        text: `INSERT INTO printing_items (id, project_id, title, completed_at, position)
-               VALUES ($1, $2, $3, $4, $5)
-               ON CONFLICT (id) DO UPDATE SET
-                 project_id = EXCLUDED.project_id,
-                 title = EXCLUDED.title,
-                 completed_at = EXCLUDED.completed_at,
-                 position = EXCLUDED.position,
-                 updated_at = now()`,
-        values: [item.id, project.id, item.title, item.completedAt, itemPosition],
-      });
+  const items = [];
+  const usages = [];
+  for (const project of data.projects) {
+    for (const [position, item] of project.tasks.entries()) {
+      items.push([item.id, project.id, item.title, item.completedAt, position]);
       for (const [usagePosition, usage] of item.filaments.entries()) {
-        usageIds.push(usage.id);
-        await client.query({
-          text: `INSERT INTO printing_item_filaments
-                   (id, printing_item_id, catalog_id, fallback_label, weight_grams, position)
-                 VALUES ($1, $2, $3, $4, $5, $6)
-                 ON CONFLICT (id) DO UPDATE SET
-                   printing_item_id = EXCLUDED.printing_item_id,
-                   catalog_id = EXCLUDED.catalog_id,
-                   fallback_label = EXCLUDED.fallback_label,
-                   weight_grams = EXCLUDED.weight_grams,
-                   position = EXCLUDED.position`,
-          values: [usage.id, item.id, usage.catalogId, usage.label, usage.weightGrams, usagePosition],
-        });
+        usages.push([usage.id, item.id, usage.catalogId, usage.label, usage.weightGrams, usagePosition]);
       }
     }
   }
-  await deleteMissing(client, "printing_item_filaments", "id", usageIds);
-  await deleteMissing(client, "printing_items", "id", itemIds);
+  await upsertRows(
+    client,
+    "printing_projects",
+    ["id", "title", "color", "description", "position"],
+    data.projects.map((project, position) => [project.id, project.title, project.color, project.description, position]),
+  );
+  await upsertRows(client, "printing_items", ["id", "project_id", "title", "completed_at", "position"], items);
+  await upsertRows(
+    client,
+    "printing_item_filaments",
+    ["id", "printing_item_id", "catalog_id", "fallback_label", "weight_grams", "position"],
+    usages,
+    { updatedAt: false },
+  );
+  await deleteMissing(
+    client,
+    "printing_item_filaments",
+    "id",
+    usages.map((usage) => usage[0]),
+  );
+  await deleteMissing(
+    client,
+    "printing_items",
+    "id",
+    items.map((item) => item[0]),
+  );
   await deleteMissing(
     client,
     "printing_projects",
@@ -455,51 +449,47 @@ async function replacePrinting(client, data) {
 }
 
 async function replaceCrossStitch(client, data) {
-  const threadIds = [];
-  for (const [projectPosition, project] of data.projects.entries()) {
-    await client.query({
-      text: `INSERT INTO stitch_projects (id, title, color, description, position)
-             VALUES ($1, $2, $3, $4, $5)
-             ON CONFLICT (id) DO UPDATE SET
-               title = EXCLUDED.title,
-               color = EXCLUDED.color,
-               description = EXCLUDED.description,
-               position = EXCLUDED.position,
-               updated_at = now()`,
-      values: [project.id, project.title, project.color, project.description, projectPosition],
-    });
-    for (const [threadPosition, thread] of project.tasks.entries()) {
-      threadIds.push(thread.id);
-      await client.query({
-        text: `INSERT INTO stitch_project_threads
-                 (id, project_id, floss_catalog_id, fallback_label, required_skeins, total_crosses,
-                  completed_crosses, completed_at, position)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-               ON CONFLICT (id) DO UPDATE SET
-                 project_id = EXCLUDED.project_id,
-                 floss_catalog_id = EXCLUDED.floss_catalog_id,
-                 fallback_label = EXCLUDED.fallback_label,
-                 required_skeins = EXCLUDED.required_skeins,
-                 total_crosses = EXCLUDED.total_crosses,
-                 completed_crosses = EXCLUDED.completed_crosses,
-                 completed_at = EXCLUDED.completed_at,
-                 position = EXCLUDED.position,
-                 updated_at = now()`,
-        values: [
-          thread.id,
-          project.id,
-          thread.flossId,
-          thread.title,
-          thread.requiredSkeins,
-          thread.crosses,
-          thread.crossesDone,
-          thread.completedAt,
-          threadPosition,
-        ],
-      });
-    }
-  }
-  await deleteMissing(client, "stitch_project_threads", "id", threadIds);
+  const threads = data.projects.flatMap((project) =>
+    project.tasks.map((thread, position) => [
+      thread.id,
+      project.id,
+      thread.flossId,
+      thread.title,
+      thread.requiredSkeins,
+      thread.crosses,
+      thread.crossesDone,
+      thread.completedAt,
+      position,
+    ]),
+  );
+  await upsertRows(
+    client,
+    "stitch_projects",
+    ["id", "title", "color", "description", "position"],
+    data.projects.map((project, position) => [project.id, project.title, project.color, project.description, position]),
+  );
+  await upsertRows(
+    client,
+    "stitch_project_threads",
+    [
+      "id",
+      "project_id",
+      "floss_catalog_id",
+      "fallback_label",
+      "required_skeins",
+      "total_crosses",
+      "completed_crosses",
+      "completed_at",
+      "position",
+    ],
+    threads,
+  );
+  await deleteMissing(
+    client,
+    "stitch_project_threads",
+    "id",
+    threads.map((thread) => thread[0]),
+  );
   await deleteMissing(
     client,
     "stitch_projects",
@@ -510,26 +500,14 @@ async function replaceCrossStitch(client, data) {
 
 async function replaceInventory(client, table, countColumn, inventory) {
   await client.query(`DELETE FROM ${table}`);
-  for (const [catalogId, count] of Object.entries(inventory)) {
-    await client.query({
-      text: `INSERT INTO ${table} (catalog_id, ${countColumn}) VALUES ($1, $2)`,
-      values: [catalogId, count],
-    });
-  }
+  await insertRows(client, table, ["catalog_id", countColumn], Object.entries(inventory));
 }
 
 const WRITERS = Object.freeze({
   "work-tasks": replaceWorkTasks,
   "work-statuses": replaceWorkStatuses,
-  colors: async (client, colors) => {
-    for (const [id, color] of Object.entries(colors)) {
-      await client.query({
-        text: `INSERT INTO colors (id, color) VALUES ($1, $2)
-               ON CONFLICT (id) DO UPDATE SET color = EXCLUDED.color`,
-        values: [id, color],
-      });
-    }
-  },
+  colors: (client, colors) =>
+    upsertRows(client, "colors", ["id", "color"], Object.entries(colors), { updatedAt: false }),
   chores: replaceChores,
   todos: replaceTodos,
   shopping: replaceShopping,
