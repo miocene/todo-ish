@@ -5,10 +5,11 @@ import { activityYears, buildActivityCalendar, collectCompletedActivity, groupAc
 import { createPasskey, signOut } from "../app/passkeys.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMIcon from "../components/JMIcon/JMIcon.vue";
+import JMTabs from "../components/JMTabs/JMTabs.vue";
 
 export default {
   name: "ProfilePage",
-  components: { JMButton, JMIcon, RouterLink },
+  components: { JMButton, JMIcon, JMTabs, RouterLink },
   data() {
     return {
       activity: collectCompletedActivity(),
@@ -22,6 +23,9 @@ export default {
     },
     years() {
       return activityYears(this.activity, this.currentYear);
+    },
+    yearTabs() {
+      return this.years.map((year) => ({ value: year, text: String(year), to: this.yearRoute(year) }));
     },
     selectedYear() {
       const requestedYear = Number(this.$route.query.year);
@@ -89,20 +93,7 @@ export default {
 
     <p v-if="authMessage" class="profile-page__auth-message" role="status">{{ authMessage }}</p>
 
-    <nav class="profile-years" aria-label="Activity years">
-      <ul class="profile-years__list" role="list">
-        <li v-for="year in years" :key="year">
-          <RouterLink
-            class="profile-years__link"
-            :class="{ 'profile-years__link--active': year === selectedYear }"
-            :to="yearRoute(year)"
-            :aria-current="year === selectedYear ? 'page' : undefined"
-          >
-            {{ year }}
-          </RouterLink>
-        </li>
-      </ul>
-    </nav>
+    <JMTabs :tabs="yearTabs" :active="selectedYear" aria-label="Activity years" />
 
     <section class="activity-summary" aria-labelledby="activity-summary-title">
       <h2 id="activity-summary-title">

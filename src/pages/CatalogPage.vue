@@ -14,12 +14,17 @@ import JMCatalogStatus from "../components/JMCatalogStatus/JMCatalogStatus.vue";
 import JMCatalogCard from "../components/JMCatalogCard/JMCatalogCard.vue";
 import JMInput from "../components/JMInput/JMInput.vue";
 import JMSelect from "../components/JMSelect/JMSelect.vue";
+import JMTabs from "../components/JMTabs/JMTabs.vue";
 
 export default {
   name: "CatalogPage",
-  components: { JMCatalogCard, JMCatalogStatus, JMInput, JMSelect },
+  components: { JMCatalogCard, JMCatalogStatus, JMInput, JMSelect, JMTabs },
   data() {
     return {
+      catalogTabs: [
+        { value: "filament", text: "3D printing filament", to: { name: "catalog" } },
+        { value: "floss", text: "DMC embroidery floss", to: { name: "catalog", query: { catalog: "floss" } } },
+      ],
       catalogKind: this.$route.query.catalog === "floss" ? "floss" : "filament",
       family: "",
       filamentInventory: loadFilamentInventory(),
@@ -183,30 +188,7 @@ export default {
       </p>
     </header>
 
-    <nav class="catalog-tabs" aria-label="Catalog">
-      <ul>
-        <li>
-          <RouterLink
-            class="catalog-tabs__link"
-            :class="{ 'catalog-tabs__link--active': !isFlossCatalog }"
-            :to="{ name: 'catalog' }"
-            :aria-current="!isFlossCatalog ? 'page' : undefined"
-          >
-            3D printing filament
-          </RouterLink>
-        </li>
-        <li>
-          <RouterLink
-            class="catalog-tabs__link"
-            :class="{ 'catalog-tabs__link--active': isFlossCatalog }"
-            :to="{ name: 'catalog', query: { catalog: 'floss' } }"
-            :aria-current="isFlossCatalog ? 'page' : undefined"
-          >
-            DMC embroidery floss
-          </RouterLink>
-        </li>
-      </ul>
-    </nav>
+    <JMTabs :tabs="catalogTabs" :active="catalogKind" aria-label="Catalog" />
 
     <JMCatalogStatus :catalog="catalog" />
 

@@ -739,6 +739,54 @@ test("profile shows yearly task activity and newly checked items", async ({ page
   await expect(page.getByText(`No checked items in ${previousYear}.`)).toBeVisible();
 });
 
+test("navigation tabs follow query changes, browser history, and reloads", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 1000 });
+  const currentYear = new Date().getFullYear();
+  const cases = [
+    { path: "/todos", name: "Todo lists", first: "General", next: "Home", query: "list", value: "home" },
+    {
+      path: "/catalog",
+      name: "Catalog",
+      first: "3D printing filament",
+      next: "DMC embroidery floss",
+      query: "catalog",
+      value: "floss",
+    },
+    {
+      path: "/profile",
+      name: "Activity years",
+      first: String(currentYear),
+      next: String(currentYear - 1),
+      query: "year",
+      value: String(currentYear - 1),
+    },
+  ];
+
+  for (const tabs of cases) {
+    await page.goto(tabs.path);
+    const navigation = page.getByRole("navigation", { name: tabs.name, exact: true });
+    const active = navigation.locator('[aria-current="page"]');
+    await expect(active).toHaveCount(1);
+    await expect(active).toHaveText(tabs.first);
+    const next = navigation.getByRole("link", { name: tabs.next, exact: true });
+    await expect(next).toHaveAttribute("href", `${tabs.path}?${tabs.query}=${tabs.value}`);
+    await next.focus();
+    await next.press("Enter");
+    await expect.poll(() => new URL(page.url()).searchParams.get(tabs.query)).toBe(tabs.value);
+    await expect(active).toHaveText(tabs.next);
+    await page.goBack();
+    await expect(active).toHaveText(tabs.first);
+    await page.goForward();
+    await expect(active).toHaveText(tabs.next);
+    await page.reload();
+    await expect(active).toHaveCount(1);
+    await expect(active).toHaveText(tabs.next);
+    await page.goto(`${tabs.path}?${tabs.query}=unknown`);
+    await expect(active).toHaveCount(1);
+    await expect(active).toHaveText(tabs.first);
+  }
+});
+
 test("task pages render their variants and save changes immediately", async ({ page }) => {
   await page.goto("/chores");
 
@@ -769,7 +817,7 @@ test("task pages render their variants and save changes immediately", async ({ p
   await expect(page.getByRole("checkbox", { name: "Complete Water all the plants" })).toBeChecked();
 
   await page.goto("/todos");
-  const listTabs = page.locator(".task-tabs__link");
+  const listTabs = page.getByRole("navigation", { name: "Todo lists" }).getByRole("link");
   await expect(listTabs).toHaveText(["General", "Home", "Travel"]);
   await expect(listTabs.first()).toHaveAttribute("aria-current", "page");
   await listTabs.getByText("Home", { exact: true }).click();
@@ -779,7 +827,7 @@ test("task pages render their variants and save changes immediately", async ({ p
   await homeTasks.last().press("Enter");
   await expect(homeTasks).toHaveCount(3);
   await expect(homeTasks.last()).toBeFocused();
-  await page.locator(".task-tabs__link--active").focus();
+  await page.getByRole("navigation", { name: "Todo lists" }).locator('[aria-current="page"]').focus();
   await expect(homeTasks).toHaveCount(2);
   await expect(page.locator(".task-item__drag-handle, .task-item__pin")).toHaveCount(0);
 

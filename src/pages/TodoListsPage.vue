@@ -1,15 +1,15 @@
 <script>
 import { createTaskEditor } from "../app/task-editor.js";
-import { RouterLink } from "vue-router";
 import { randomCardColor } from "../app/card-colors.js";
 import { loadPageTasks, savePageTasks } from "../app/page-tasks.js";
 import { completedTasksLast, nextEntityId, setTaskCompletion, serializableTasks } from "../app/task-list.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
+import JMTabs from "../components/JMTabs/JMTabs.vue";
 
 export default {
   name: "TodoListsPage",
-  components: { JMButton, JMTaskCard, RouterLink },
+  components: { JMButton, JMTaskCard, JMTabs },
   data() {
     const todos = loadPageTasks("todos");
     for (const list of todos.lists) list.tasks = completedTasksLast(list.tasks);
@@ -24,6 +24,9 @@ export default {
     this.editor.clear();
   },
   computed: {
+    listTabs() {
+      return this.todos.lists.map((list) => ({ value: list.id, text: list.title, to: this.listRoute(list) }));
+    },
     activeList() {
       return this.todos.lists.find((list) => list.id === this.$route.query.list) ?? this.todos.lists[0];
     },
@@ -102,23 +105,7 @@ export default {
       <JMButton v-if="activeList" text="Add task" view="secondary" @click="addTask" />
     </header>
 
-    <nav v-if="activeList" class="task-tabs" aria-label="Todo lists">
-      <ul class="task-tabs__list" role="list">
-        <li v-for="list in todos.lists" :key="list.id" :style="{ '--color': list.color }">
-          <RouterLink v-slot="{ href, navigate }" custom :to="listRoute(list)">
-            <a
-              class="task-tabs__link"
-              :class="{ 'task-tabs__link--active': list.id === activeList.id }"
-              :href="href"
-              :aria-current="list.id === activeList.id ? 'page' : undefined"
-              @click="navigate"
-            >
-              {{ list.title }}
-            </a>
-          </RouterLink>
-        </li>
-      </ul>
-    </nav>
+    <JMTabs v-if="activeList" :tabs="listTabs" :active="activeList.id" aria-label="Todo lists" />
 
     <p v-if="!activeList">No lists yet. Add a list to get started.</p>
     <div v-else class="task-page__section" :style="{ '--color': activeList.color }">
