@@ -1,4 +1,5 @@
-import { loadPageTasks, savePageTasks } from "./page-tasks.js";
+import { cacheAppData } from "./app-data.js";
+import { loadPageTasks } from "./page-tasks.js";
 
 export function syncManagedShoppingTasks({ createTask, resourceIdKey, shortages, source }) {
   const shopping = loadPageTasks("shopping");
@@ -9,6 +10,7 @@ export function syncManagedShoppingTasks({ createTask, resourceIdKey, shortages,
   const managedTasks = shortages.map((shortage) => createTask(shortage, existingTasks.get(shortage.catalogId)));
 
   shopping.tasks = [...unmanagedTasks, ...managedTasks];
-  savePageTasks("shopping", shopping);
+  // Shortages are derived from projects and inventory; only manual items are saved by the API.
+  cacheAppData("shopping", shopping);
   return shopping;
 }

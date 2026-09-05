@@ -168,3 +168,45 @@ test("failed local storage is visible while successful server acknowledgement st
   await f.advance();
   assert.equal(f.states.at(-1).state, "saved");
 });
+
+test("bursts debounce to the latest durable value and unchanged resources do not save again", async () => {
+  const f = fixture({ delay: 250 });
+  for (const title of ["T", "Ty", "Typing"]) f.sync.write("tasks", task(title));
+  assert.equal(f.timers.size, 1);
+  assert.equal(f.timers.values().next().value.ms, 250);
+  assert.deepEqual([...f.records.values()][0].value, task("Typing"));
+  assert.equal(f.writes.length, 0);
+  await f.advance();
+  assert.equal(f.writes.length, 1);
+  f.sync.write("tasks", [{ title: "Typing", id: "one" }]);
+  await f.advance();
+  assert.equal(f.writes.length, 1);
+  assert.equal(f.records.size, 0);
+});
+
+test("edits made during an in-flight save are sent with the acknowledged revision", async () => {
+  let acknowledge;
+  const f = fixture({
+    send: (_resource, _value, revision) =>
+      revision === 0
+        ? new Promise((resolve) => {
+            acknowledge = resolve;
+          })
+        : Promise.resolve({ revision: revision + 1 }),
+  });
+  f.sync.write("tasks", task("First"));
+  await f.advance();
+  f.sync.write("tasks", task("Second"));
+  f.sync.write("tasks", task("Third"));
+  acknowledge({ revision: 1 });
+  await tick();
+  assert.deepEqual(
+    f.writes.map((args) => args[1][0].title),
+    ["First", "Third"],
+  );
+  assert.deepEqual(
+    f.writes.map((args) => args[2]),
+    [0, 1],
+  );
+  assert.equal(f.records.size, 0);
+});

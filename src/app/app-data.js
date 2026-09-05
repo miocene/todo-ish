@@ -102,6 +102,7 @@ async function fetchRemoteState() {
 }
 
 const sync = createResourceSync({
+  delay: 250,
   storage: {
     load() {
       const entries = [];
@@ -206,4 +207,9 @@ export function writeAppData(resource, value) {
   if (!RESOURCES.includes(resource)) throw new Error(`Unknown app-data resource: ${resource}`);
   queueWrite(resource, value);
   return true;
+}
+
+export function cacheAppData(resource, value) {
+  if (!RESOURCES.includes(resource)) throw new Error(`Unknown app-data resource: ${resource}`);
+  cache.set(resource, clone(value));
 }
