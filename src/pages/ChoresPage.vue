@@ -1,14 +1,8 @@
 <script>
+import { createTaskEditor } from "../app/task-editor.js";
 import { appClock } from "../app/clock.js";
 import { loadPageTasks, savePageTasks } from "../app/page-tasks.js";
-import {
-  createCompletionMoveScheduler,
-  finishTaskDraft,
-  moveItemToEnd,
-  nextEntityId,
-  setTaskCompletion,
-  serializableChores,
-} from "../app/task-list.js";
+import { nextEntityId, setTaskCompletion, serializableChores } from "../app/task-list.js";
 import { calendarDate, isoDate } from "../app/work-calendar.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
@@ -26,12 +20,13 @@ export default {
   data() {
     return {
       chores: loadPageTasks("chores"),
-      completionMoves: createCompletionMoveScheduler(),
-      draftTaskIds: new Set(),
+      editor: createTaskEditor({
+        save: () => this.save(),
+      }),
     };
   },
   beforeUnmount() {
-    this.completionMoves.clear();
+    this.editor.clear();
   },
   computed: {
     todayIso() {
@@ -57,7 +52,7 @@ export default {
       return DUE_DATE_FORMATTER.format(calendarDate(task.nextDue));
     },
     save() {
-      savePageTasks("chores", serializableChores(this.chores, this.draftTaskIds));
+      savePageTasks("chores", serializableChores(this.chores, this.editor.drafts));
     },
     updateTitle(task, title) {
       task.title = title;
@@ -70,9 +65,7 @@ export default {
     updateCompleted(task, completed) {
       setTaskCompletion(task, completed);
       this.save();
-      this.completionMoves.schedule(task.id, completed, () => {
-        if (moveItemToEnd(this.chores.occurrenceOrder, task.id)) this.save();
-      });
+      this.editor.scheduleMove(task, completed, this.chores.occurrenceOrder, task.id);
     },
     addTask() {
       const task = {
@@ -82,33 +75,22 @@ export default {
         nextDue: this.todayIso,
         completed: false,
       };
-      this.chores.tasks.push(task);
       this.chores.occurrenceOrder.push(task.id);
-      this.draftTaskIds.add(task.id);
-      this.save();
+      this.editor.add(this.chores.tasks, task);
       this.focusTask(task);
       return task;
     },
     handleTitleBlur(task) {
-      if (!finishTaskDraft(this.chores.tasks, task, this.draftTaskIds)) return;
-      const taskIndex = this.chores.occurrenceOrder.indexOf(task.id);
-      if (taskIndex !== -1) this.chores.occurrenceOrder.splice(taskIndex, 1);
-      this.save();
+      this.editor.finish(this.chores.tasks, task, () => {
+        const index = this.chores.occurrenceOrder.indexOf(task.id);
+        if (index !== -1) this.chores.occurrenceOrder.splice(index, 1);
+      });
     },
     handleEnter(task, event) {
-      if (event.isComposing) return;
-      event.preventDefault();
-      const index = this.chores.tasks.findIndex((item) => item.id === task.id);
-      const nextTask = this.chores.tasks[index + 1];
-      if (nextTask) this.focusTask(nextTask);
-      else this.addTask();
+      this.editor.enter(this.chores.tasks, task, event, { create: this.addTask, focus: this.focusTask });
     },
     focusTask(task) {
-      if (!task) return;
-      this.$nextTick(() => {
-        const input = document.getElementById(this.taskInputId(task));
-        input?.focus();
-      });
+      if (task) this.editor.focus(this.taskInputId(task));
     },
   },
 };

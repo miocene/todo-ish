@@ -1,16 +1,9 @@
 <script>
+import { createTaskEditor } from "../app/task-editor.js";
 import { RouterLink } from "vue-router";
 import { randomCardColor } from "../app/card-colors.js";
 import { loadPageTasks, savePageTasks } from "../app/page-tasks.js";
-import {
-  completedTasksLast,
-  createCompletionMoveScheduler,
-  finishTaskDraft,
-  moveItemToEnd,
-  nextEntityId,
-  setTaskCompletion,
-  serializableTasks,
-} from "../app/task-list.js";
+import { completedTasksLast, nextEntityId, setTaskCompletion, serializableTasks } from "../app/task-list.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
 import "./task-pages.css";
@@ -21,10 +14,15 @@ export default {
   data() {
     const todos = loadPageTasks("todos");
     for (const list of todos.lists) list.tasks = completedTasksLast(list.tasks);
-    return { completionMoves: createCompletionMoveScheduler(), draftTaskIds: new Set(), todos };
+    return {
+      editor: createTaskEditor({
+        save: () => this.save(),
+      }),
+      todos,
+    };
   },
   beforeUnmount() {
-    this.completionMoves.clear();
+    this.editor.clear();
   },
   computed: {
     activeList() {
@@ -54,7 +52,7 @@ export default {
         ...this.todos,
         lists: this.todos.lists.map((list) => ({
           ...list,
-          tasks: serializableTasks(list.tasks, this.draftTaskIds),
+          tasks: serializableTasks(list.tasks, this.editor.drafts),
         })),
       });
     },
@@ -68,9 +66,7 @@ export default {
       this.scheduleCompletedTaskMove(list, task, completed);
     },
     scheduleCompletedTaskMove(list, task, completed) {
-      this.completionMoves.schedule(task.id, completed, () => {
-        if (moveItemToEnd(list.tasks, task)) this.save();
-      });
+      this.editor.scheduleMove(task, completed, list.tasks);
     },
     addTask() {
       if (!this.activeList) return;
@@ -79,27 +75,18 @@ export default {
         title: "",
         completed: false,
       };
-      this.activeList.tasks.push(task);
-      this.draftTaskIds.add(task.id);
-      this.save();
+      this.editor.add(this.activeList.tasks, task);
       this.focusTask(task);
       return task;
     },
     handleTitleBlur(list, task) {
-      if (!finishTaskDraft(list.tasks, task, this.draftTaskIds)) return;
-      this.save();
+      this.editor.finish(list.tasks, task);
     },
     handleEnter(task, event) {
-      if (event.isComposing) return;
-      event.preventDefault();
-      const index = this.activeList.tasks.findIndex((item) => item.id === task.id);
-      const nextTask = this.activeList.tasks[index + 1];
-      if (nextTask) this.focusTask(nextTask);
-      else this.addTask();
+      this.editor.enter(this.activeList.tasks, task, event, { create: this.addTask, focus: this.focusTask });
     },
     focusTask(task) {
-      if (!task) return;
-      this.$nextTick(() => document.getElementById(this.taskInputId(task))?.focus());
+      if (task) this.editor.focus(this.taskInputId(task));
     },
   },
 };

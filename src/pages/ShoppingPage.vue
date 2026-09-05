@@ -1,17 +1,10 @@
 <script>
+import { createTaskEditor } from "../app/task-editor.js";
 import { filamentCatalog } from "../app/filament-catalog.js";
 import { flossCatalog } from "../app/floss-catalog.js";
 import JMCatalogStatus from "../components/JMCatalogStatus/JMCatalogStatus.vue";
 import { savePageTasks } from "../app/page-tasks.js";
-import {
-  completedTasksLast,
-  createCompletionMoveScheduler,
-  finishTaskDraft,
-  moveItemToEnd,
-  nextEntityId,
-  setTaskCompletion,
-  serializableTasks,
-} from "../app/task-list.js";
+import { completedTasksLast, nextEntityId, setTaskCompletion, serializableTasks } from "../app/task-list.js";
 import { syncSupplyShoppingLists } from "../app/shopping-supplies.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
@@ -26,8 +19,9 @@ export default {
     return {
       filamentCatalog,
       flossCatalog,
-      completionMoves: createCompletionMoveScheduler(),
-      draftTaskIds: new Set(),
+      editor: createTaskEditor({
+        save: () => this.save(),
+      }),
       shopping,
     };
   },
@@ -36,7 +30,7 @@ export default {
     "flossCatalog.state.status": "refreshSupplies",
   },
   beforeUnmount() {
-    this.completionMoves.clear();
+    this.editor.clear();
   },
   methods: {
     refreshSupplies(status) {
@@ -60,7 +54,7 @@ export default {
     save() {
       savePageTasks("shopping", {
         ...this.shopping,
-        tasks: serializableTasks(this.shopping.tasks, this.draftTaskIds),
+        tasks: serializableTasks(this.shopping.tasks, this.editor.drafts),
       });
     },
     updateTitle(task, title) {
@@ -68,7 +62,7 @@ export default {
       this.save();
     },
     updateCompleted(task, completed) {
-      this.completionMoves.cancel(task.id);
+      this.editor.moves.cancel(task.id);
       setTaskCompletion(task, completed);
       this.save();
       if (!completed) return;
@@ -81,13 +75,11 @@ export default {
         return;
       }
 
-      this.completionMoves.schedule(task.id, completed, () => {
-        if (moveItemToEnd(this.shopping.tasks, task)) this.save();
-      });
+      this.editor.scheduleMove(task, completed, this.shopping.tasks);
     },
     removeTask(task) {
-      this.completionMoves.cancel(task.id);
-      this.draftTaskIds.delete(task.id);
+      this.editor.moves.cancel(task.id);
+      this.editor.drafts.delete(task.id);
       this.shopping.tasks = this.shopping.tasks.filter((item) => item.id !== task.id);
       this.save();
     },
@@ -97,27 +89,18 @@ export default {
         title: "",
         completed: false,
       };
-      this.shopping.tasks.push(task);
-      this.draftTaskIds.add(task.id);
-      this.save();
+      this.editor.add(this.shopping.tasks, task);
       this.focusTask(task);
       return task;
     },
     handleTitleBlur(task) {
-      if (!finishTaskDraft(this.shopping.tasks, task, this.draftTaskIds)) return;
-      this.save();
+      this.editor.finish(this.shopping.tasks, task);
     },
     handleEnter(task, event) {
-      if (event.isComposing) return;
-      event.preventDefault();
-      const index = this.shopping.tasks.findIndex((item) => item.id === task.id);
-      const nextTask = this.shopping.tasks[index + 1];
-      if (nextTask) this.focusTask(nextTask);
-      else this.addTask();
+      this.editor.enter(this.shopping.tasks, task, event, { create: this.addTask, focus: this.focusTask });
     },
     focusTask(task) {
-      if (!task) return;
-      this.$nextTick(() => document.getElementById(this.taskInputId(task))?.focus());
+      if (task) this.editor.focus(this.taskInputId(task));
     },
   },
 };

@@ -1,8 +1,9 @@
 <script>
+import { createTaskEditor } from "../app/task-editor.js";
 import { appClock } from "../app/clock.js";
 import { activityLevel } from "../app/activity.js";
 import { loadCardColors } from "../app/card-colors.js";
-import { createCompletionMoveScheduler, finishTaskDraft, moveItemToEnd, serializableTasks } from "../app/task-list.js";
+import { serializableTasks } from "../app/task-list.js";
 import {
   calendarDate,
   getCalendarDay,
@@ -34,9 +35,10 @@ export default {
         "backlog",
         ...workTasks.filter((task) => task.date).map((task) => `work-day:${task.date}`),
       ]),
-      completionMoves: createCompletionMoveScheduler(),
+      editor: createTaskEditor({
+        save: () => this.saveTasks(),
+      }),
       dateTransitioning: false,
-      draftTaskIds: new Set(),
       nextTaskId,
       taskMoveStatus: "",
       workTasks,
@@ -109,7 +111,7 @@ export default {
     this.rollOverIncompleteTasks();
   },
   beforeUnmount() {
-    this.completionMoves.clear();
+    this.editor.clear();
   },
   methods: {
     addBacklogTask() {
@@ -122,19 +124,10 @@ export default {
       return date === null || date >= this.todayIso;
     },
     createTask(date) {
-      const task = { id: `new-${this.nextTaskId++}`, date, title: "" };
-      this.workTasks.push(task);
-      this.draftTaskIds.add(task.id);
-      this.saveTasks();
-      return task;
+      return this.editor.add(this.workTasks, { id: `new-${this.nextTaskId++}`, date, title: "" });
     },
     focusTaskTitle(task) {
-      this.$nextTick(() => {
-        const input = document.getElementById(this.taskInputId(task));
-        if (!input) return;
-        input.focus();
-        input.setSelectionRange(input.value.length, input.value.length);
-      });
+      this.editor.focus(this.taskInputId(task), { caretAtEnd: true });
     },
     goToday() {
       this.$refs.calendar.showDate(this.todayIso);
@@ -146,16 +139,13 @@ export default {
       this.normalizeDateQuery(value, requestedDate(value, this.today));
     },
     handleTaskTitleBlur(task) {
-      if (!finishTaskDraft(this.workTasks, task, this.draftTaskIds, (item) => this.taskTitle(item))) return;
-      this.completionMoves.cancel(task.id);
-      this.saveTasks();
+      this.editor.finish(this.workTasks, task);
     },
     handleTaskTitleEnter(task, date, dayTasks, event) {
-      if (event.isComposing) return;
-      event.preventDefault();
-      const taskIndex = dayTasks.findIndex((item) => item.id === task.id);
-      const nextTask = dayTasks[taskIndex + 1] ?? this.createTask(date);
-      this.focusTaskTitle(nextTask);
+      this.editor.enter(dayTasks, task, event, {
+        create: () => this.focusTaskTitle(this.createTask(date)),
+        focus: this.focusTaskTitle,
+      });
     },
     isTaskComplete(task) {
       return Boolean(task.checkedAt);
@@ -186,19 +176,17 @@ export default {
     removeTask(task) {
       const taskIndex = this.workTasks.indexOf(task);
       if (taskIndex === -1) return;
-      this.completionMoves.cancel(task.id);
-      this.draftTaskIds.delete(task.id);
+      this.editor.moves.cancel(task.id);
+      this.editor.drafts.delete(task.id);
       this.workTasks.splice(taskIndex, 1);
       this.saveTasks();
       this.taskMoveStatus = `${this.taskTitle(task) || "Untitled task"} deleted.`;
     },
     saveTasks() {
-      saveWorkTasks(serializableTasks(this.workTasks, this.draftTaskIds));
+      saveWorkTasks(serializableTasks(this.workTasks, this.editor.drafts));
     },
     scheduleCompletedTaskMove(task, completed) {
-      this.completionMoves.schedule(task.id, completed, () => {
-        if (moveItemToEnd(this.workTasks, task)) this.saveTasks();
-      });
+      this.editor.scheduleMove(task, completed, this.workTasks);
     },
     setDayStatus({ date, value }) {
       setWorkStatus(date, value);

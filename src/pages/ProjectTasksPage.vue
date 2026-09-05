@@ -1,19 +1,12 @@
 <script>
+import { createTaskEditor } from "../app/task-editor.js";
 import { randomCardColor } from "../app/card-colors.js";
 import { filamentCatalog, filamentLabel, filamentsById } from "../app/filament-catalog.js";
 import { flossCatalog, flossById, flossLabel } from "../app/floss-catalog.js";
 import { loadFilamentInventory, loadFlossInventory, loadPageTasks, savePageTasks } from "../app/page-tasks.js";
 import { filamentSupplyStatus, syncFilamentShoppingList } from "../app/printing-supplies.js";
 import { flossSupplyStatus, syncFlossShoppingList } from "../app/stitching-supplies.js";
-import {
-  completedTasksLast,
-  createCompletionMoveScheduler,
-  finishTaskDraft,
-  moveItemToEnd,
-  nextEntityId,
-  setTaskCompletion,
-  serializableTasks,
-} from "../app/task-list.js";
+import { completedTasksLast, nextEntityId, setTaskCompletion, serializableTasks } from "../app/task-list.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMCatalogStatus from "../components/JMCatalogStatus/JMCatalogStatus.vue";
 import JMPrintingTaskDetails from "../components/JMProjectTaskDetails/JMPrintingTaskDetails.vue";
@@ -41,8 +34,9 @@ export default {
   },
   data() {
     return {
-      completionMoves: createCompletionMoveScheduler(),
-      draftTaskIds: new Set(),
+      editor: createTaskEditor({
+        save: () => this.save(),
+      }),
       filamentInventory: loadFilamentInventory(),
       flossInventory: loadFlossInventory(),
       pageData: loadProjectTasks(this.pageKey),
@@ -71,7 +65,6 @@ export default {
   watch: {
     pageKey(value) {
       this.clearCompletionMoveTimers();
-      this.draftTaskIds.clear();
       this.filamentInventory = loadFilamentInventory();
       this.flossInventory = loadFlossInventory();
       this.pageData = loadProjectTasks(value);
@@ -86,7 +79,7 @@ export default {
   },
   methods: {
     clearCompletionMoveTimers() {
-      this.completionMoves.clear();
+      this.editor.clear();
     },
     syncShoppingList() {
       if (this.isPrinting) syncFilamentShoppingList(this.pageData.projects, this.filamentInventory);
@@ -119,7 +112,7 @@ export default {
         ...this.pageData,
         projects: this.pageData.projects.map((project) => ({
           ...project,
-          tasks: serializableTasks(project.tasks, this.draftTaskIds),
+          tasks: serializableTasks(project.tasks, this.editor.drafts),
         })),
       });
       this.syncShoppingList();
@@ -151,7 +144,7 @@ export default {
       };
       task.filaments.push(usage);
       this.save();
-      this.$nextTick(() => document.getElementById(`printing-filament-${task.id}-${usage.id}`)?.focus());
+      this.editor.focus(`printing-filament-${task.id}-${usage.id}`);
     },
     removeFilament(task, usage) {
       const usageIndex = task.filaments.findIndex((filament) => filament.id === usage.id);
@@ -191,9 +184,7 @@ export default {
     updateCompleted(project, task, completed) {
       setTaskCompletion(task, completed);
       this.save();
-      this.completionMoves.schedule(task.id, completed, () => {
-        if (moveItemToEnd(project.tasks, task)) this.save();
-      });
+      this.editor.scheduleMove(task, completed, project.tasks);
     },
     addTask(project) {
       const task = { id: nextEntityId(project.tasks, `${project.id}-task`), title: "", completed: false };
@@ -208,11 +199,9 @@ export default {
           crossesDone: 0,
         });
       }
-      project.tasks.push(task);
-      if (!this.isCrossStitch) this.draftTaskIds.add(task.id);
-      this.save();
+      this.editor.add(project.tasks, task, { draft: !this.isCrossStitch });
       if (this.isCrossStitch) {
-        this.$nextTick(() => document.getElementById(`stitch-floss-${task.id}`)?.focus());
+        this.editor.focus(`stitch-floss-${task.id}`);
       } else {
         this.focusTask(project, task);
       }
@@ -232,20 +221,17 @@ export default {
       this.$nextTick(() => document.getElementById(this.projectTitleInputId(project))?.select());
     },
     handleTitleBlur(project, task) {
-      if (!finishTaskDraft(project.tasks, task, this.draftTaskIds)) return;
-      this.save();
+      this.editor.finish(project.tasks, task);
     },
     handleEnter(project, task, event) {
-      if (event.isComposing) return;
-      event.preventDefault();
-      const index = project.tasks.findIndex((item) => item.id === task.id);
-      const nextTask = project.tasks[index + 1];
-      if (nextTask) this.focusTask(project, nextTask);
-      else this.addTask(project);
+      this.editor.enter(project.tasks, task, event, {
+        create: () => this.addTask(project),
+        focus: (next) => this.focusTask(project, next),
+      });
     },
     focusTask(project, task) {
       if (!task) return;
-      this.$nextTick(() => document.getElementById(this.taskInputId(project, task))?.focus());
+      this.editor.focus(this.taskInputId(project, task));
     },
   },
 };
