@@ -11,29 +11,35 @@ export default {
     return { open: false };
   },
   props: {
-    activityLevel: {
-      type: Number,
-      default: 0,
-      validator: (value) => Number.isInteger(value) && value >= 0 && value <= 4,
-    },
-    dateLabel: { type: String, required: true },
-    description: { type: String, default: "" },
-    disabled: Boolean,
-    editable: { type: Boolean, default: true },
-    inputId: { type: String, required: true },
-    modelValue: {
-      type: String,
-      required: true,
-      validator: (value) => WORK_STATUSES.some((status) => status.value === value),
-    },
+    day: { type: Object, required: true },
+    selected: Boolean,
+    showDayType: Boolean,
   },
-  emits: ["activate", "update:modelValue"],
+  emits: ["activate", "update:day-type"],
   computed: {
+    editable() {
+      return this.selected && this.showDayType;
+    },
+    dayClasses() {
+      return {
+        "jm-calendar__day": true,
+        "jm-calendar__day--selected": this.selected,
+        "jm-calendar__day--today": this.day.today,
+      };
+    },
+    activityDescription() {
+      const count = this.day.activityCount;
+      if (count === 0) return "No completed tasks";
+      return `${count} completed ${count === 1 ? "task" : "tasks"}`;
+    },
+    dateLabel() {
+      return `${this.day.label}. ${this.activityDescription}`;
+    },
     options() {
       return DISPLAY_ORDER.map((value) => WORK_STATUSES.find((status) => status.value === value));
     },
     selectedOption() {
-      return WORK_STATUSES.find((status) => status.value === this.modelValue);
+      return WORK_STATUSES.find((status) => status.value === this.day.dayType);
     },
   },
   mounted() {
@@ -52,7 +58,7 @@ export default {
       if (!this.$refs.details?.contains(event.target)) this.close();
     },
     selectOption(value) {
-      this.$emit("update:modelValue", value);
+      this.$emit("update:day-type", { date: this.day.value, value });
       this.close(true);
     },
     toggle() {
@@ -66,21 +72,26 @@ export default {
   <button
     v-if="!editable"
     class="jm-day-type jm-day-type--static"
+    :class="dayClasses"
     type="button"
-    :disabled="disabled"
-    @click="$emit('activate')"
+    :aria-current="selected ? 'date' : undefined"
+    :aria-label="dateLabel"
+    :disabled="day.disabled"
+    @click="$emit('activate', day.value)"
   >
-    <span class="jm-day-type__icon" :data-level="activityLevel">
+    <span class="jm-day-type__icon" :data-level="day.activityLevel" aria-hidden="true">
       <JMIcon :name="selectedOption.icon" />
     </span>
-    <span v-if="$slots.default" class="jm-day-type__content">
-      <slot />
-    </span>
+    <strong class="jm-calendar__date">{{ day.number }}</strong>
+    <small class="jm-calendar__weekday">{{ day.day }}</small>
   </button>
   <details
     v-else
     ref="details"
     class="jm-day-type"
+    :class="dayClasses"
+    :aria-current="selected ? 'date' : undefined"
+    :aria-label="dateLabel"
     @keydown.esc.prevent.stop="close(true)"
     @toggle="open = $event.target.open"
   >
@@ -89,43 +100,33 @@ export default {
       class="jm-day-type__trigger"
       role="button"
       :aria-expanded="open"
+      :aria-label="`Change day type for ${day.label}. Current type: ${selectedOption.label}. ${activityDescription}`"
       @keydown.enter.prevent="toggle"
       @keydown.space.prevent
       @keyup.space.prevent="toggle"
     >
-      <span class="jm-day-type__visually-hidden">
-        Change day type for {{ dateLabel }}. Current type: {{ selectedOption.label
-        }}<template v-if="description">. {{ description }}</template>
-      </span>
-      <span class="jm-day-type__icon" :data-level="activityLevel" aria-hidden="true">
+      <span class="jm-day-type__icon" :data-level="day.activityLevel" aria-hidden="true">
         <JMIcon :name="selectedOption.icon" />
       </span>
-      <span v-if="$slots.default" class="jm-day-type__content" aria-hidden="true">
-        <slot />
-      </span>
+      <strong class="jm-calendar__date" aria-hidden="true">{{ day.number }}</strong>
+      <small class="jm-calendar__weekday" aria-hidden="true">{{ day.day }}</small>
     </summary>
 
     <fieldset class="jm-day-type__menu">
-      <legend class="jm-day-type__visually-hidden">Day type for {{ dateLabel }}</legend>
-      <label
-        v-for="option in options"
-        :key="option.value"
-        class="jm-day-type__option"
-        :for="`${inputId}-${option.value}`"
-      >
+      <legend class="jm-day-type__visually-hidden">Day type for {{ day.label }}</legend>
+      <label v-for="option in options" :key="option.value" class="jm-day-type__option">
         <input
-          :id="`${inputId}-${option.value}`"
           class="jm-day-type__input"
           type="radio"
-          :name="inputId"
+          :name="`calendar-day-type-${day.value}`"
           :value="option.value"
-          :checked="option.value === modelValue"
+          :checked="option.value === day.dayType"
           @change="selectOption(option.value)"
         />
         <span class="jm-day-type__option-content">
           <JMIcon :name="option.icon" />
           <span class="jm-day-type__option-label">{{ option.label }}</span>
-          <JMIcon v-if="option.value === modelValue" class="jm-day-type__check" name="check" />
+          <JMIcon v-if="option.value === day.dayType" class="jm-day-type__check" name="check" />
         </span>
       </label>
     </fieldset>

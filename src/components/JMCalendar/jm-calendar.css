@@ -138,10 +138,6 @@
   background: var(--color-activity-4);
 }
 
-.jm-day-type__content {
-  display: contents;
-}
-
 .jm-day-type__trigger::-webkit-details-marker {
   display: none;
 }

@@ -83,10 +83,6 @@ export default {
     for (const query of this.mediaQueries) query.removeEventListener("change", this.updateVisibleDayCount);
   },
   methods: {
-    activityDescription(day) {
-      if (day.activityCount === 0) return "No completed tasks";
-      return `${day.activityCount} completed ${day.activityCount === 1 ? "task" : "tasks"}`;
-    },
     canNavigate(date) {
       return (!this.minDate || date >= this.minDate) && (!this.maxDate || date <= this.maxDate);
     },
@@ -101,9 +97,6 @@ export default {
       const count = this.mediaQueries[0]?.matches ? 3 : this.mediaQueries[1]?.matches ? 5 : 7;
       if (count === this.visibleDayCount) return;
       this.visibleDayCount = count;
-    },
-    updateDayType(date, value) {
-      this.$emit("update:day-type", { date, value });
     },
     async navigate(date) {
       if (date === this.date || !this.canNavigate(date)) return;
@@ -145,26 +138,12 @@ export default {
     <JMDayType
       v-for="day in days"
       :key="day.value"
-      class="jm-calendar__day"
-      :class="{
-        'jm-calendar__day--selected': day.value === date,
-        'jm-calendar__day--today': day.today,
-      }"
-      :aria-current="day.value === date ? 'date' : undefined"
-      :aria-label="`${day.label}. ${activityDescription(day)}`"
-      :activity-level="day.activityLevel"
-      :date-label="day.label"
-      :description="activityDescription(day)"
-      :disabled="day.disabled"
-      :editable="day.value === date && showDayType"
-      :input-id="`calendar-day-type-${day.value}`"
-      :model-value="day.dayType"
-      @activate="navigate(day.value)"
-      @update:model-value="updateDayType(day.value, $event)"
-    >
-      <strong class="jm-calendar__date">{{ day.number }}</strong>
-      <small class="jm-calendar__weekday">{{ day.day }}</small>
-    </JMDayType>
+      :day="day"
+      :selected="day.value === date"
+      :show-day-type="showDayType"
+      @activate="navigate"
+      @update:day-type="$emit('update:day-type', $event)"
+    />
     <JMButton
       icon-name="chevron-right"
       view="ghost"
