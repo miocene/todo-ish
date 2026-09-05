@@ -1179,3 +1179,21 @@ test("catalog failures stay local and retry independently without blocking task 
   await expect(page.locator(".catalog-card").first()).toBeVisible();
   expect(filamentRequests).toBe(requestsAfterLoad);
 });
+
+test("pending todo edits recover against the older API while colors remain mocked", async ({ page }) => {
+  const data = appDataByPage.get(page);
+  data.setColorSupport(false);
+  data.set("todos", {
+    lists: [{ id: "general", title: "General", tasks: [{ id: "todo-1", title: "Before", completed: false }] }],
+  });
+  await page.goto("/todos");
+  data.setWriteFailure("todos", 503);
+  await page.getByRole("textbox", { name: "Task title" }).fill("Recover this edit");
+  await expect(page.getByRole("button", { name: "Download local edits" })).toBeVisible();
+  data.setWriteFailure("todos", 0);
+  await page.reload();
+  await expect(page.getByRole("textbox", { name: "Task title" })).toHaveValue("Recover this edit");
+  await expect.poll(() => data.get("todos").lists[0].tasks[0].title).toBe("Recover this edit");
+  await expect(page.locator(".app-sync-error")).toHaveCount(0);
+  expect(data.get("todos").lists[0].color).toBeUndefined();
+});

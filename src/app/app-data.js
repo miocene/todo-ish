@@ -140,7 +140,14 @@ const sync = createResourceSync({
     save: (entry) => localStorage.setItem(`${PENDING_PREFIX}${entry.id}`, JSON.stringify(entry)),
     remove: (id) => localStorage.removeItem(`${PENDING_PREFIX}${id}`),
   },
-  normalize: validateAppDataResource,
+  normalize(resource, value) {
+    const normalized = validateAppDataResource(resource, value);
+    // The older development API discards these mock-only fields. Exclude them from revision comparisons.
+    if (mockColors && COLOR_COLLECTIONS[resource]) {
+      for (const item of normalized[COLOR_COLLECTIONS[resource]]) delete item.color;
+    }
+    return normalized;
+  },
   remoteValue,
   readRemote: fetchRemoteState,
   async send(resource, value, revision) {
