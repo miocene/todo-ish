@@ -728,7 +728,7 @@ test("profile shows yearly task activity and newly checked items", async ({ page
     "aria-current",
     "page",
   );
-  await expect(page.locator(".activity-graph__day:not(.activity-graph__day--outside)")).toHaveCount(
+  await expect(page.locator(".jm-activity-graph__days > :not(.jm-activity-graph__cell--outside)")).toHaveCount(
     currentYear % 4 === 0 ? 366 : 365,
   );
   await expect(page.getByRole("heading", { level: 2, name: /checked items? in/ })).toContainText(String(currentYear));

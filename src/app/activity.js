@@ -117,20 +117,21 @@ export function buildActivityCalendar(year, groups) {
   for (const cursor = new Date(gridStart); cursor <= gridEnd; cursor.setDate(cursor.getDate() + 1)) {
     const date = isoDate(cursor);
     const count = cursor.getFullYear() === year ? (countByDate.get(date) ?? 0) : undefined;
+    const label = DAY_FORMATTER.format(cursor);
     days.push({
       date,
       count,
-      label: DAY_FORMATTER.format(cursor),
+      description:
+        count > 0 ? `${count} checked ${count === 1 ? "item" : "items"} on ${label}` : `No checked items on ${label}`,
       level: activityLevel(count),
     });
   }
 
-  const weekCount = days.length / 7;
   const months = Array.from({ length: 12 }, (_, month) => {
     const firstOfMonth = new Date(year, month, 1, 12);
     const dayOffset = Math.round((firstOfMonth - gridStart) / 86_400_000);
     return { label: MONTH_FORMATTER.format(firstOfMonth), column: Math.floor(dayOffset / 7) + 1 };
   });
 
-  return { days, months, weekCount };
+  return { days, months };
 }
