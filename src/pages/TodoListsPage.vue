@@ -1,5 +1,6 @@
 <script>
 import { RouterLink } from "vue-router";
+import { randomCardColor } from "../app/card-colors.js";
 import { loadPageTasks, savePageTasks } from "../app/page-tasks.js";
 import {
   completedTasksLast,
@@ -31,6 +32,17 @@ export default {
     },
   },
   methods: {
+    addList() {
+      const list = {
+        id: nextEntityId(this.todos.lists, "list"),
+        title: "New list",
+        color: randomCardColor(),
+        tasks: [],
+      };
+      this.todos.lists.push(list);
+      this.save();
+      this.$router.push(this.listRoute(list));
+    },
     listRoute(list) {
       return { name: "todos", query: list.id === this.todos.lists[0].id ? {} : { list: list.id } };
     },
@@ -61,6 +73,7 @@ export default {
       });
     },
     addTask() {
+      if (!this.activeList) return;
       const task = {
         id: nextEntityId(this.activeList.tasks, `todo-${this.activeList.id}`),
         title: "",
@@ -99,10 +112,11 @@ export default {
         <h1 id="todos-title">Todo lists</h1>
         <p>A general inbox and focused lists for everything else.</p>
       </div>
-      <JMButton text="Add task" view="secondary" @click="addTask" />
+      <JMButton text="Add list" view="secondary" @click="addList" />
+      <JMButton v-if="activeList" text="Add task" view="secondary" @click="addTask" />
     </header>
 
-    <nav class="task-tabs" aria-label="Todo lists">
+    <nav v-if="activeList" class="task-tabs" aria-label="Todo lists">
       <ul class="task-tabs__list" role="list">
         <li v-for="list in todos.lists" :key="list.id" :style="{ '--color': list.color }">
           <RouterLink v-slot="{ href, navigate }" custom :to="listRoute(list)">
@@ -120,7 +134,8 @@ export default {
       </ul>
     </nav>
 
-    <div class="task-page__section" :style="{ '--color': activeList.color }">
+    <p v-if="!activeList">No lists yet. Add a list to get started.</p>
+    <div v-else class="task-page__section" :style="{ '--color': activeList.color }">
       <h2 :id="`todo-list-${activeList.id}`">{{ activeList.title }}</h2>
       <ul class="task-page__tasks" role="list">
         <li v-for="task in activeList.tasks" :key="task.id">

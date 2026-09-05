@@ -1117,3 +1117,22 @@ test("failed saves survive reload and clear the error after recovery", async ({ 
   await expect.poll(() => data.get("work-tasks")?.some((task) => task.title === "Recover this edit")).toBe(true);
   await expect(page.locator(".app-sync-error")).toHaveCount(0);
 });
+
+test("an empty todo collection can create its first list and save a task", async ({ page }) => {
+  const data = appDataByPage.get(page);
+  data.set("todos", { lists: [] });
+  await page.goto("/todos?list=missing");
+  await expect(page.getByText("No lists yet. Add a list to get started.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add task", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "Add list", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "New list" })).toBeVisible();
+  await page.getByRole("button", { name: "Add task", exact: true }).click();
+  await page.getByRole("textbox", { name: "Task title" }).fill("First task");
+  await expect.poll(() => data.get("todos").lists[0].tasks[0]?.title).toBe("First task");
+  expect(CARD_COLORS).toContain(data.get("todos").lists[0].color);
+  await page.reload();
+  await expect(page.getByRole("textbox", { name: "Task title" })).toHaveValue("First task");
+  await page.getByRole("button", { name: "Add list", exact: true }).click();
+  await expect.poll(() => data.get("todos").lists.length).toBe(2);
+  expect(new Set(data.get("todos").lists.map((list) => list.id)).size).toBe(2);
+});
