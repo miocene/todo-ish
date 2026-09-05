@@ -150,6 +150,85 @@ test("anonymous visitors see passkey setup before application data", async ({ pa
   await expect(page.locator(".jm-header")).toHaveCount(0);
 });
 
+test("startup waits for saved data before loading the application", async ({ page }) => {
+  const data = appDataByPage.get(page);
+  data.set("work-tasks", [{ id: "saved-task", title: "Saved task", date: "2026-09-06" }]);
+  data.set("work-statuses", { "2026-09-05": "pto" });
+  await page.clock.install({ time: new Date(2026, 8, 5, 12) });
+
+  let releaseData;
+  const dataReady = new Promise((resolve) => {
+    releaseData = resolve;
+  });
+  await page.route("**/api/data", async (route) => {
+    await dataReady;
+    await route.fallback();
+  });
+  await page.goto("/work?date=2026-09-06");
+  await expect(page.getByRole("status")).toHaveText("Opening Done-ish…");
+  await expect(page.locator(".jm-header")).toHaveCount(0);
+
+  releaseData();
+  await expect(page.getByRole("textbox", { name: "Task title" })).toHaveValue("Saved task");
+  await expect(page.getByRole("link", { name: "Work", exact: true }).locator("use")).toHaveAttribute(
+    "href",
+    /#icon-pto$/,
+  );
+  await expect(page).toHaveURL(/\/work\?date=2026-09-06$/);
+  await expect(page).toHaveTitle("Work — Done-ish");
+});
+
+for (const resource of ["auth/session", "data"]) {
+  test(`startup retries a failed ${resource} request without reloading`, async ({ page }) => {
+    await page.route(
+      `**/api/${resource}`,
+      (route) =>
+        route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: "Offline" }) }),
+      { times: 1 },
+    );
+    await page.goto("/shopping");
+    await expect(page.getByRole("alert")).toBeVisible();
+    await expect(page.locator(".jm-header")).toHaveCount(0);
+
+    await page.getByRole("button", { name: "Try again", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Shopping cart", exact: true })).toBeVisible();
+    await expect(page.getByRole("alert")).toHaveCount(0);
+    await expect(page).toHaveURL(/\/shopping$/);
+  });
+}
+
+test("passkey sign-in opens the requested page after loading data", async ({ page }) => {
+  appDataByPage.get(page).setSession({ authenticated: false, bootstrapRequired: false, user: null });
+  let dataRequests = 0;
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname === "/api/data") dataRequests += 1;
+  });
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator.credentials, "get", {
+      value: async () => ({ toJSON: () => ({ id: "test-passkey" }) }),
+    });
+  });
+  await page.route("**/api/auth/authentication/*", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(
+        route.request().url().endsWith("/options")
+          ? { challenge: "dGVzdA", rpId: "todo-ish.today" }
+          : { user: { username: "owner", displayName: "Owner" } },
+      ),
+    }),
+  );
+  await page.goto("/shopping");
+  await expect(page.getByRole("heading", { name: "Welcome back", exact: true })).toBeVisible();
+  expect(dataRequests).toBe(0);
+
+  await page.getByRole("button", { name: "Sign in with passkey", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Shopping cart", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Welcome back", exact: true })).toHaveCount(0);
+  await expect(page).toHaveURL(/\/shopping$/);
+  expect(dataRequests).toBe(1);
+});
+
 function localIsoDate(dayOffset = 0) {
   const date = new Date();
   date.setHours(12, 0, 0, 0);

@@ -1,4 +1,5 @@
 <script>
+import { markRaw } from "vue";
 import { getSession } from "./app/passkeys.js";
 import { initializeAppData, initializeDemoData } from "./app/app-data.js";
 import JMButton from "./components/JMButton/JMButton.vue";
@@ -8,10 +9,11 @@ export default {
   name: "AppBootstrap",
   components: { JMButton, JMPasskeyGate },
   props: {
-    startApplication: { type: Function, required: true },
+    loadApplication: { type: Function, required: true },
   },
   data() {
     return {
+      applicationComponent: null,
       bootstrapRequired: false,
       error: "",
       state: "loading",
@@ -23,7 +25,9 @@ export default {
   methods: {
     async initializeApplication() {
       await Promise.all([initializeAppData(), initializeDemoData()]);
-      await this.startApplication();
+      // The shell and route modules read the data cache when they are imported.
+      this.applicationComponent = markRaw(await this.loadApplication());
+      this.state = "ready";
     },
     async loadSession() {
       this.error = "";
@@ -68,4 +72,6 @@ export default {
     :bootstrap-required="bootstrapRequired"
     @authenticated="handleAuthenticated"
   />
+
+  <component :is="applicationComponent" v-else-if="state === 'ready'" />
 </template>
