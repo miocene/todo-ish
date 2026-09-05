@@ -6,7 +6,9 @@ To populate **uninitialized resources** with sample tasks/projects/inventory, ex
 
 Development mock colors still work with the older API. This change does not apply any database migration.
 
-Run `yarn quality` for linting, formatting, tests, and the production build. API dependencies live in `backend/api`; install them with `yarn --cwd backend/api install --frozen-lockfile`.
+Run `yarn setup` once to install frontend and API dependencies, Python tools, and the Chromium browser used by tests. Node.js 22+, Yarn, and Python 3.12+ must already be installed. On Linux, `yarn setup --with-deps` also installs Chromium's system dependencies; CI uses this command.
+
+Use `yarn dev` to start development, `yarn lint` to check JavaScript/Vue, CSS, and Python, and `yarn format` to format the repository. Run `yarn quality` for linting, formatting checks, tests, and the production build. The unit, API, browser, and database integration suites remain available individually.
 
 ## PostgreSQL integration tests
 
