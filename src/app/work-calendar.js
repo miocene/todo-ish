@@ -1,7 +1,8 @@
+import { calendarDate, shiftCalendarDays, isIsoDate, toIsoDate as isoDate } from "../shared/date.js";
+export { calendarDate, shiftCalendarDays, isIsoDate, isoDate };
 import { getWorkStatus } from "./work-status.js";
 import { getAllWorkTasks, getWorkTasks } from "./work-tasks.js";
 
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const FUTURE_DAY_LIMIT = 14;
 const WEEKDAY_FORMATTER = new Intl.DateTimeFormat("en", { weekday: "short" });
 const DAY_FORMATTER = new Intl.DateTimeFormat("en", { day: "numeric" });
@@ -17,29 +18,6 @@ const LABEL_FORMATTER = new Intl.DateTimeFormat("en", {
   month: "long",
   year: "numeric",
 });
-
-export function calendarDate(value = new Date()) {
-  if (typeof value === "string") return new Date(`${value}T12:00:00`);
-  return new Date(value.getFullYear(), value.getMonth(), value.getDate(), 12);
-}
-
-export function shiftCalendarDays(value, amount) {
-  const date = calendarDate(value);
-  date.setDate(date.getDate() + amount);
-  return date;
-}
-
-export function isoDate(value) {
-  const date = calendarDate(value);
-  const pad = (part) => String(part).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
-
-export function isIsoDate(value) {
-  if (!ISO_DATE.test(value)) return false;
-  const date = calendarDate(value);
-  return !Number.isNaN(date.valueOf()) && isoDate(date) === value;
-}
 
 export function requestedDate(value, fallback = new Date()) {
   return isIsoDate(value) ? calendarDate(value) : calendarDate(fallback);

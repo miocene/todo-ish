@@ -1136,3 +1136,31 @@ test("an empty todo collection can create its first list and save a task", async
   await expect.poll(() => data.get("todos").lists.length).toBe(2);
   expect(new Set(data.get("todos").lists.map((list) => list.id)).size).toBe(2);
 });
+
+test("today updates across midnight without reloading the application", async ({ page }) => {
+  const data = appDataByPage.get(page);
+  data.set("work-tasks", [{ id: "midnight-task", title: "Carry into tomorrow", date: "2026-12-31" }]);
+  data.set("work-statuses", { "2027-01-01": "pto" });
+  data.set("chores", {
+    occurrenceOrder: ["midnight-chore"],
+    tasks: [
+      {
+        id: "midnight-chore",
+        title: "New year chore",
+        details: "Yearly",
+        nextDue: "2027-01-01",
+        completed: false,
+      },
+    ],
+  });
+  await page.clock.install({ time: new Date(2026, 11, 31, 23, 59, 50) });
+  await page.goto("/work");
+  await expect(page.locator(".work-day time")).toHaveAttribute("datetime", "2026-12-31");
+  await page.clock.runFor(10200);
+  await expect(page.locator(".work-day time")).toHaveAttribute("datetime", "2027-01-01");
+  await expect(page.locator(".jm-calendar__day--today")).toHaveAttribute("aria-current", "date");
+  await expect(page.getByRole("textbox", { name: "Task title" })).toHaveValue("Carry into tomorrow");
+  await expect(page.locator(".jm-navigation__link").first().locator("use")).toHaveAttribute("href", /#icon-pto$/);
+  await page.getByRole("link", { name: "Chores", exact: true }).click();
+  await expect(page.getByText("Today", { exact: true })).toBeVisible();
+});

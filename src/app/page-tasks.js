@@ -1,3 +1,4 @@
+import { toIsoDate as isoDate } from "../shared/date.js";
 import { initializeAppDataResource, readAppData, writeAppData } from "./app-data.js";
 import { normalizeCardColor } from "./card-colors.js";
 
@@ -8,11 +9,6 @@ const DEFAULT_FILAMENT_INVENTORY = Object.freeze({
   "bambu-pla-basic-filament-10601": 1,
 });
 const DEFAULT_FLOSS_INVENTORY = Object.freeze({ dmc310: 1, dmc321: 1, dmc3347: 1 });
-
-function isoDate(value) {
-  const pad = (part) => String(part).padStart(2, "0");
-  return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
-}
 
 function nextWeekdayIso(weekday) {
   const date = new Date();

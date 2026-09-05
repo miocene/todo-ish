@@ -1,7 +1,8 @@
 <script>
+import { appClock } from "../../app/clock.js";
 import JMButton from "../JMButton/JMButton.vue";
 import JMDayType from "../JMDayType/JMDayType.vue";
-import { parseIsoDate, shiftIsoDate, toIsoDate, todayIso } from "../../shared/date.js";
+import { parseIsoDate, shiftIsoDate, toIsoDate } from "../../shared/date.js";
 import "./jm-calendar.css";
 
 export default {
@@ -22,11 +23,13 @@ export default {
     return {
       mediaQueries: [],
       rangeDate: this.date,
-      today: todayIso(),
       visibleDayCount: 7,
     };
   },
   computed: {
+    today() {
+      return appClock.state.today;
+    },
     canGoNext() {
       return !this.maxDate || this.days.at(-1).value < this.maxDate;
     },

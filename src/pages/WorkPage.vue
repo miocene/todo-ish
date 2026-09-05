@@ -1,4 +1,5 @@
 <script>
+import { appClock } from "../app/clock.js";
 import { activityLevel } from "../app/activity.js";
 import { loadCardColors } from "../app/card-colors.js";
 import { createCompletionMoveScheduler, finishTaskDraft, moveItemToEnd, serializableTasks } from "../app/task-list.js";
@@ -36,14 +37,16 @@ export default {
       completionMoves: createCompletionMoveScheduler(),
       dateTransitioning: false,
       draftTaskIds: new Set(),
-      midnightTimer: undefined,
       nextTaskId,
       taskMoveStatus: "",
-      today: calendarDate(),
       workTasks,
     };
   },
   watch: {
+    today() {
+      this.rollOverIncompleteTasks();
+      this.normalizeDateQuery(this.$route.query.date, requestedDate(this.$route.query.date, this.today));
+    },
     focusDateIso: {
       immediate: true,
       handler(date) {
@@ -56,6 +59,9 @@ export default {
     },
   },
   computed: {
+    today() {
+      return calendarDate(appClock.state.today);
+    },
     activityByDate() {
       const counts = new Map();
       for (const task of this.workTasks) {
@@ -101,11 +107,9 @@ export default {
   },
   mounted() {
     this.rollOverIncompleteTasks();
-    this.scheduleTodayRefresh();
   },
   beforeUnmount() {
     this.completionMoves.clear();
-    window.clearTimeout(this.midnightTimer);
   },
   methods: {
     addBacklogTask() {
@@ -195,19 +199,6 @@ export default {
       this.completionMoves.schedule(task.id, completed, () => {
         if (moveItemToEnd(this.workTasks, task)) this.saveTasks();
       });
-    },
-    scheduleTodayRefresh() {
-      const now = new Date();
-      const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-      this.midnightTimer = window.setTimeout(
-        () => {
-          this.today = calendarDate();
-          this.rollOverIncompleteTasks();
-          this.normalizeDateQuery(this.$route.query.date, requestedDate(this.$route.query.date, this.today));
-          this.scheduleTodayRefresh();
-        },
-        nextMidnight.getTime() - now.getTime() + 100,
-      );
     },
     setDayStatus({ date, value }) {
       setWorkStatus(date, value);

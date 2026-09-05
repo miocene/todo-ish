@@ -1,4 +1,5 @@
 <script>
+import { appClock } from "../app/clock.js";
 import { RouterLink } from "vue-router";
 import { activityYears, buildActivityCalendar, collectCompletedActivity, groupActivityByDay } from "../app/activity.js";
 import { createPasskey, signOut } from "../app/passkeys.js";
@@ -14,10 +15,12 @@ export default {
       activity: collectCompletedActivity(),
       authBusy: false,
       authMessage: "",
-      currentYear: new Date().getFullYear(),
     };
   },
   computed: {
+    currentYear() {
+      return Number(appClock.state.today.slice(0, 4));
+    },
     years() {
       return activityYears(this.activity, this.currentYear);
     },

@@ -1,3 +1,4 @@
+import { toIsoDate as isoDate } from "../shared/date.js";
 import { initializeAppDataResource, readAppData, writeAppData } from "./app-data.js";
 
 const EMPTY_TASKS = Object.freeze([]);
@@ -20,11 +21,6 @@ const TASK_GROUPS = [
   },
   { dayOffset: 1, tasks: [{ title: "Document the release process and share it with the team" }] },
 ];
-
-function isoDate(value) {
-  const pad = (part) => String(part).padStart(2, "0");
-  return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
-}
 
 function dateFromToday(dayOffset) {
   const date = new Date(TODAY);

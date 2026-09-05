@@ -1,4 +1,5 @@
 <script>
+import { appClock } from "./app/clock.js";
 import { RouterView } from "vue-router";
 import { syncState, retryPendingWrites, downloadPendingWrites, discardPendingWrites } from "./app/app-data.js";
 import JMButton from "./components/JMButton/JMButton.vue";
@@ -10,6 +11,12 @@ export default {
   components: { JMButton, JMHeader, JMNavigation, RouterView },
   data() {
     return { syncState };
+  },
+  mounted() {
+    appClock.start();
+  },
+  beforeUnmount() {
+    appClock.stop();
   },
   watch: {
     "$route.meta.title": {

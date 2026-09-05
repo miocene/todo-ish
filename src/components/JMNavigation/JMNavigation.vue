@@ -1,4 +1,5 @@
 <script>
+import { appClock } from "../../app/clock.js";
 import { RouterLink } from "vue-router";
 import { getWorkStatus } from "../../app/work-status.js";
 import JMIcon from "../JMIcon/JMIcon.vue";
@@ -14,21 +15,15 @@ const navigationItems = [
   { icon: "catalog", label: "Catalog", to: { name: "catalog" } },
 ];
 
-function todayIso() {
-  const today = new Date();
-  const pad = (part) => String(part).padStart(2, "0");
-  return `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
-}
-
 export default {
   name: "JMNavigation",
   components: { JMIcon, RouterLink },
   data() {
-    return { navigationItems, today: todayIso() };
+    return { navigationItems };
   },
   computed: {
     workIcon() {
-      return getWorkStatus(this.today).icon;
+      return getWorkStatus(appClock.state.today).icon;
     },
   },
 };

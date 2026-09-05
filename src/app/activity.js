@@ -1,3 +1,4 @@
+import { toIsoDate as isoDate } from "../shared/date.js";
 import { loadPageTasks } from "./page-tasks.js";
 import { getAllWorkTasks } from "./work-tasks.js";
 
@@ -14,11 +15,6 @@ export function activityLevel(count) {
   if (count === 1) return 1;
   if (count === 2) return 2;
   return count <= 4 ? 3 : 4;
-}
-
-function isoDate(value) {
-  const pad = (part) => String(part).padStart(2, "0");
-  return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
 }
 
 function localDateFromTimestamp(timestamp) {

@@ -1,4 +1,5 @@
 <script>
+import { appClock } from "../app/clock.js";
 import { loadPageTasks, savePageTasks } from "../app/page-tasks.js";
 import {
   createCompletionMoveScheduler,
@@ -34,7 +35,7 @@ export default {
   },
   computed: {
     todayIso() {
-      return isoDate(new Date());
+      return appClock.state.today;
     },
     upcomingChores() {
       const tasksById = new Map(this.chores.tasks.map((task) => [task.id, task]));
