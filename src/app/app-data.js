@@ -18,6 +18,28 @@ const LEGACY_STORAGE_KEYS = Object.freeze({
   "floss-inventory": "done-ish.floss-inventory.v1",
 });
 
+const emptyData = Object.freeze({
+  "work-tasks": [],
+  "work-statuses": {},
+  colors: {},
+  chores: { tasks: [], occurrenceOrder: [] },
+  todos: { lists: [] },
+  shopping: { tasks: [] },
+  printing: { projects: [] },
+  "cross-stitch": { projects: [] },
+  "filament-inventory": {},
+  "floss-inventory": {},
+});
+let demoData = {};
+export async function initializeDemoData() {
+  if (import.meta.env.DEV && import.meta.env.VITE_DEMO_DATA === "true") {
+    demoData = (await import("../dev/demo-data.js")).demoData;
+  }
+}
+export function initialAppData(resource) {
+  return clone(demoData[resource] ?? emptyData[resource]);
+}
+
 const cache = new Map();
 const initializedResources = new Set();
 const clone = (value) => JSON.parse(JSON.stringify(value));

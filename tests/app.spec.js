@@ -1128,7 +1128,7 @@ test("an empty todo collection can create its first list and save a task", async
   await expect(page.getByRole("heading", { name: "New list" })).toBeVisible();
   await page.getByRole("button", { name: "Add task", exact: true }).click();
   await page.getByRole("textbox", { name: "Task title" }).fill("First task");
-  await expect.poll(() => data.get("todos").lists[0].tasks[0]?.title).toBe("First task");
+  await expect.poll(() => data.get("todos").lists[0]?.tasks[0]?.title).toBe("First task");
   expect(CARD_COLORS).toContain(data.get("todos").lists[0].color);
   await page.reload();
   await expect(page.getByRole("textbox", { name: "Task title" })).toHaveValue("First task");

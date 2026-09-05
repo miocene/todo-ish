@@ -48,6 +48,8 @@ assert.match(read("backend/deploy/raspberry-pi/web/Dockerfile"), /COPY styles \.
 await build({
   root: fileURLToPath(root),
   logLevel: "error",
+  // Include explicitly enabled development fixtures when checking reachability.
+  define: { "import.meta.env.DEV": "true", "import.meta.env.VITE_DEMO_DATA": '"true"' },
   build: { write: false },
   plugins: [
     {
