@@ -26,6 +26,7 @@
 
   --corner-shape-default: superellipse(1.5);
 
+  --size-control-s: 32px;
   --size-control: 40px;
   --size-checkbox: 16px;
   --size-header: 50px;
