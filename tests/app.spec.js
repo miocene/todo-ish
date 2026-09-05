@@ -1105,35 +1105,39 @@ test("future work is limited to fourteen days from today", async ({ page }) => {
 test("work day types are saved by date and update today's navigation icon", async ({ page }) => {
   await page.goto("/");
 
-  const dayTypeTrigger = page.getByRole("button", { name: /^Change day type for / });
+  const dayTypeTrigger = page.getByRole("combobox", { name: /^Change day type for / });
   const workNavigationIcon = page.getByRole("link", { name: "Work" }).locator("use");
 
   await expect(
-    page.locator(".jm-calendar__day--selected").getByRole("button", { name: /^Change day type for / }),
+    page.locator(".jm-calendar__day--selected").getByRole("combobox", { name: /^Change day type for / }),
   ).toBeVisible();
-  await expect(page.locator(".work-day").getByRole("button", { name: /^Change day type for / })).toHaveCount(0);
+  await expect(page.locator(".work-day").getByRole("combobox", { name: /^Change day type for / })).toHaveCount(0);
 
   await dayTypeTrigger.click();
-  await page.getByText("PTO", { exact: true }).click();
+  await page.getByRole("option", { name: "PTO", exact: true }).click();
   await expect(workNavigationIcon).toHaveAttribute("href", /#icon-pto$/);
 
   await page.reload();
   await dayTypeTrigger.click();
-  await expect(page.getByRole("radio", { name: "PTO" })).toBeChecked();
+  await expect(dayTypeTrigger).toHaveValue("pto");
   await expect(workNavigationIcon).toHaveAttribute("href", /#icon-pto$/);
+  await page.keyboard.press("Escape");
+  await expect(dayTypeTrigger).toBeFocused();
 
   await page.goto("/work?date=2000-01-03");
   await dayTypeTrigger.click();
-  await page.getByText("Conference", { exact: true }).click();
+  await page.keyboard.press("Home");
+  await page.keyboard.press("Enter");
+  await expect(dayTypeTrigger).toHaveValue("conference");
   await expect(workNavigationIcon).toHaveAttribute("href", /#icon-pto$/);
 
   await page.reload();
   await dayTypeTrigger.click();
-  await expect(page.getByRole("radio", { name: "Conference" })).toBeChecked();
+  await expect(dayTypeTrigger).toHaveValue("conference");
 
   await page.getByRole("button", { name: "Today" }).click();
   await dayTypeTrigger.click();
-  await expect(page.getByRole("radio", { name: "PTO" })).toBeChecked();
+  await expect(dayTypeTrigger).toHaveValue("pto");
 });
 
 test("work entry points return the calendar to today without a date query", async ({ page }) => {

@@ -1,19 +1,27 @@
 <script>
 import { flossCatalog, flossById, floss, flossLabel } from "../../app/floss-catalog.js";
 import JMInput from "../JMInput/JMInput.vue";
+import JMSelect from "../JMSelect/JMSelect.vue";
 
 export default {
   name: "JMStitchTaskDetails",
-  components: { JMInput },
+  components: { JMInput, JMSelect },
   emits: ["update:crosses", "update:crosses-done", "update:floss", "update:skeins"],
   props: {
     supplyById: { type: Map, required: true },
     task: { type: Object, required: true },
   },
   data() {
-    return { floss, flossCatalog, flossById };
+    return { flossCatalog };
   },
   computed: {
+    flossOptions() {
+      const options = [{ value: "", text: "Choose DMC color" }];
+      if (this.task.flossId && !flossById.has(this.task.flossId)) {
+        options.push({ value: this.task.flossId, text: this.task.title || this.task.flossId });
+      }
+      return [...options, ...floss.map((thread) => ({ value: thread.id, text: flossLabel(thread) }))];
+    },
     shortage() {
       return this.supplyById.get(this.task.flossId);
     },
@@ -29,7 +37,6 @@ export default {
     inputId(field) {
       return `stitch-${field}-${this.task.id}`;
     },
-    flossLabel,
   },
 };
 </script>
@@ -39,20 +46,16 @@ export default {
     <legend class="task-page__visually-hidden">Thread and progress for {{ task.title }}</legend>
     <div class="stitch-color__field stitch-color__field--thread">
       <label :for="inputId('floss')">Thread color</label>
-      <select
+      <JMSelect
         :id="inputId('floss')"
         name="stitch-floss"
+        size="s"
         :disabled="flossCatalog.state.status !== 'ready'"
-        :value="task.flossId"
+        :model-value="task.flossId"
+        :options="flossOptions"
         :aria-describedby="isMissing ? inputId('status') : undefined"
-        @change="$emit('update:floss', $event.target.value)"
-      >
-        <option value="">Choose DMC color</option>
-        <option v-if="task.flossId && !flossById.has(task.flossId)" :value="task.flossId">
-          {{ task.title || task.flossId }}
-        </option>
-        <option v-for="thread in floss" :key="thread.id" :value="thread.id">{{ flossLabel(thread) }}</option>
-      </select>
+        @update:model-value="$emit('update:floss', $event)"
+      />
       <span v-if="isMissing" :id="inputId('status')" class="stitch-color__missing">{{ missingStatus }}</span>
     </div>
     <JMInput

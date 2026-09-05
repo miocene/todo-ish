@@ -3,19 +3,32 @@ import { filamentCatalog, filamentLabel, filaments, filamentsById } from "../../
 import JMButton from "../JMButton/JMButton.vue";
 import JMIcon from "../JMIcon/JMIcon.vue";
 import JMInput from "../JMInput/JMInput.vue";
+import JMSelect from "../JMSelect/JMSelect.vue";
 
 export default {
   name: "JMPrintingTaskDetails",
-  components: { JMButton, JMIcon, JMInput },
+  components: { JMButton, JMIcon, JMInput, JMSelect },
   emits: ["add", "remove", "update:filament", "update:weight"],
   props: {
     supplyById: { type: Map, required: true },
     task: { type: Object, required: true },
   },
   data() {
-    return { filaments, filamentCatalog, filamentsById };
+    return { filamentCatalog };
+  },
+  computed: {
+    catalogOptions() {
+      return filaments.map((filament) => ({ value: filament.id, text: filamentLabel(filament) }));
+    },
   },
   methods: {
+    filamentOptions(usage) {
+      const options = [{ value: "", text: "Choose filament" }];
+      if (usage.catalogId && !filamentsById.has(usage.catalogId)) {
+        options.push({ value: usage.catalogId, text: usage.label || usage.catalogId });
+      }
+      return [...options, ...this.catalogOptions];
+    },
     filamentInputId(usage) {
       return `printing-filament-${this.task.id}-${usage.id}`;
     },
@@ -39,7 +52,6 @@ export default {
       }
       return `Missing ${supply.missingSpools} ${supply.missingSpools === 1 ? "spool" : "spools"} · ${supply.ownedSpools} owned`;
     },
-    filamentLabel,
   },
 };
 </script>
@@ -55,22 +67,16 @@ export default {
     >
       <div class="printing-item__field printing-item__field--filament">
         <label :for="filamentInputId(usage)">Filament {{ usageIndex + 1 }}</label>
-        <select
+        <JMSelect
           :id="filamentInputId(usage)"
           name="item-filament"
+          size="s"
           :disabled="filamentCatalog.state.status !== 'ready'"
-          :value="usage.catalogId"
+          :model-value="usage.catalogId"
+          :options="filamentOptions(usage)"
           :aria-describedby="isMissing(usage) ? filamentStatusId(usage) : undefined"
-          @change="$emit('update:filament', usage, $event.target.value)"
-        >
-          <option value="">Choose filament</option>
-          <option v-if="usage.catalogId && !filamentsById.has(usage.catalogId)" :value="usage.catalogId">
-            {{ usage.label || usage.catalogId }}
-          </option>
-          <option v-for="filament in filaments" :key="filament.id" :value="filament.id">
-            {{ filamentLabel(filament) }}
-          </option>
-        </select>
+          @update:model-value="$emit('update:filament', usage, $event)"
+        />
         <span v-if="isMissing(usage)" :id="filamentStatusId(usage)" class="printing-item__missing">
           {{ missingStatus(usage) }}
         </span>

@@ -13,10 +13,11 @@ import { flossSupplyStatus, syncFlossShoppingList } from "../app/stitching-suppl
 import JMCatalogStatus from "../components/JMCatalogStatus/JMCatalogStatus.vue";
 import JMCatalogCard from "../components/JMCatalogCard/JMCatalogCard.vue";
 import JMInput from "../components/JMInput/JMInput.vue";
+import JMSelect from "../components/JMSelect/JMSelect.vue";
 
 export default {
   name: "CatalogPage",
-  components: { JMCatalogCard, JMCatalogStatus, JMInput },
+  components: { JMCatalogCard, JMCatalogStatus, JMInput, JMSelect },
   data() {
     return {
       catalogKind: this.$route.query.catalog === "floss" ? "floss" : "filament",
@@ -41,6 +42,9 @@ export default {
       return [...new Set(this.filaments.map((filament) => filament.family))].sort((first, second) =>
         first.localeCompare(second),
       );
+    },
+    familyOptions() {
+      return [{ value: "", text: "All types" }, ...this.families.map((family) => ({ value: family, text: family }))];
     },
     supplyById() {
       return filamentSupplyStatus(this.printingProjects, this.filamentInventory);
@@ -221,12 +225,7 @@ export default {
       />
       <div v-if="!isFlossCatalog" class="catalog-search__field">
         <label for="catalog-family">Filament type</label>
-        <select id="catalog-family" v-model="family" name="family">
-          <option value="">All types</option>
-          <option v-for="filamentFamily in families" :key="filamentFamily" :value="filamentFamily">
-            {{ filamentFamily }}
-          </option>
-        </select>
+        <JMSelect id="catalog-family" v-model="family" name="family" :options="familyOptions" />
       </div>
       <button type="submit">Search</button>
     </form>
