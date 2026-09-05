@@ -48,27 +48,20 @@ const missing = [...referenced].filter((name) => !defined.has(name) && !structur
 const unused = [...defined]
   .filter((name) => name !== "css" && !referenced.has(name) && !generatedClasses.has(name))
   .sort();
-const bemName = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:__[a-z0-9]+(?:-[a-z0-9]+)*)?(?:--[a-z0-9]+(?:-[a-z0-9]+)*)?$/;
-const invalidNames = [...new Set([...referenced, ...defined])].filter((name) => !bemName.test(name)).sort();
-const nonBemState = [...defined].filter((name) => /^(?:is|has)-/.test(name)).sort();
-
 console.log(`Referenced classes: ${referenced.size}`);
 console.log(`Defined classes: ${defined.size}`);
 console.log(`Referenced without CSS: ${missing.length}`);
 console.log(`CSS classes without a static reference: ${unused.length}`);
-console.log(`Invalid BEM names: ${invalidNames.length}`);
-console.log(`Non-BEM state classes: ${nonBemState.length}`);
 
-const failures = [
+// Static matching cannot prove whether dynamic Vue classes are used. Stylelint owns naming rules.
+const findings = [
   ["Referenced without CSS", missing],
   ["CSS classes without a static reference", unused],
-  ["Invalid BEM names", invalidNames],
-  ["Non-BEM state classes", nonBemState],
 ].filter(([, values]) => values.length);
 
-if (failures.length) {
-  for (const [label, values] of failures) console.error(`\n${label}:\n${values.join("\n")}`);
-  process.exitCode = 1;
+if (findings.length) {
+  for (const [label, values] of findings) console.log(`\n${label}:\n${values.join("\n")}`);
+  console.log("CSS usage findings are informational; verify dynamic classes before removing styles.");
 } else {
   console.log("CSS audit passed");
 }
