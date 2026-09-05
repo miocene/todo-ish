@@ -36,11 +36,8 @@ export default {
 <template>
   <a class="skip-link" href="#main-content">Skip to content</a>
 
-  <aside
-    v-if="syncState.state !== 'saved'"
-    class="app-sync-error"
-    :role="syncState.state === 'saving' ? 'status' : 'alert'"
-  >
+  <p class="app-sync-status" role="status">{{ syncState.state === "saving" ? syncState.message : "" }}</p>
+  <aside v-if="!['saved', 'saving'].includes(syncState.state)" class="app-sync-error" role="alert">
     <p>{{ syncState.message }}</p>
     <p v-if="!syncState.durable">Local backup is unavailable. Keep this tab open or download your edits.</p>
     <template v-if="syncState.state !== 'saving'">
