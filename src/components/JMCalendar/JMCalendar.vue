@@ -16,9 +16,8 @@ export default {
     minDate: { type: String, default: "" },
     routeName: { type: String, default: "work" },
     showDayType: Boolean,
-    viewTransition: Boolean,
   },
-  emits: ["range-change", "update:day-type", "view-transition"],
+  emits: ["range-change", "update:day-type"],
   data() {
     return {
       mediaQueries: [],
@@ -98,28 +97,9 @@ export default {
       if (count === this.visibleDayCount) return;
       this.visibleDayCount = count;
     },
-    async navigate(date) {
+    navigate(date) {
       if (date === this.date || !this.canNavigate(date)) return;
-
-      const changeDate = async () => {
-        await this.$router.push({ name: this.routeName, query: { ...this.$route.query, date } });
-        await this.$nextTick();
-      };
-      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      if (!this.viewTransition || !document.startViewTransition || reduceMotion) {
-        await changeDate();
-        return;
-      }
-
-      this.$emit("view-transition", true);
-      await this.$nextTick();
-      const direction = date > this.date ? "next" : "previous";
-      const transition = document.startViewTransition({ update: changeDate, types: [direction] });
-      try {
-        await transition.finished;
-      } finally {
-        this.$emit("view-transition", false);
-      }
+      return this.$router.push({ name: this.routeName, query: { ...this.$route.query, date } });
     },
   },
 };

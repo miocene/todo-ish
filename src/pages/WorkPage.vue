@@ -38,7 +38,6 @@ export default {
       editor: createTaskEditor({
         save: () => this.saveTasks(),
       }),
-      dateTransitioning: false,
       nextTaskId,
       taskMoveStatus: "",
       workTasks,
@@ -225,11 +224,7 @@ export default {
 </script>
 
 <template>
-  <section
-    class="work-page"
-    :class="{ 'work-page--date-transitioning': dateTransitioning }"
-    aria-labelledby="work-page-title"
-  >
+  <section class="work-page" aria-labelledby="work-page-title">
     <header class="work-page__header">
       <div>
         <h1 id="work-page-title">Work</h1>
@@ -251,10 +246,8 @@ export default {
       :min-date="firstAvailableDate"
       route-name="work"
       show-day-type
-      view-transition
       @range-change="calendarRangeDate = $event"
       @update:day-type="setDayStatus"
-      @view-transition="dateTransitioning = $event"
     />
 
     <p class="work-page__status" aria-live="polite" aria-atomic="true">{{ taskMoveStatus }}</p>
@@ -266,7 +259,6 @@ export default {
         'work-day--today': selectedDay.today,
       }"
       aria-labelledby="selected-work-day-title"
-      :aria-busy="dateTransitioning"
     >
       <header class="work-day__header">
         <div>

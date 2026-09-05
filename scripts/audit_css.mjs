@@ -26,9 +26,6 @@ for (const match of source.matchAll(/classList\.(?:add|remove|toggle)\(["']([^"'
 for (const match of source.matchAll(/["']([a-z][a-z0-9_-]*(?:__|--)[a-z0-9_-]+)["']/g)) {
   referenced.add(match[1]);
 }
-for (const match of css.matchAll(/view-transition-class:\s*([a-z][a-z0-9_-]+)/g)) {
-  referenced.add(match[1]);
-}
 
 const defined = new Set([...css.matchAll(/\.([a-z_][a-z0-9_-]*)/gi)].map((match) => match[1]));
 // These classes identify DOM elements without requiring their own CSS rule.

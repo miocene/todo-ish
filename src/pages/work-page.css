@@ -50,14 +50,6 @@
   border-radius: var(--radius-card);
 }
 
-.work-day {
-  view-transition-name: work-day;
-}
-
-.work-page--date-transitioning .work-day * {
-  view-transition-name: none !important;
-}
-
 .work-day__header {
   align-items: flex-start;
 }
