@@ -4,5 +4,5 @@ export function apiUrl(path) {
 }
 
 export function apiFetch(path, options = {}) {
-  return fetch(apiUrl(path), { credentials: "include", ...options });
+  return fetch(apiUrl(path), { credentials: "include", signal: AbortSignal.timeout(15_000), ...options });
 }

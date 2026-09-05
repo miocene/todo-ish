@@ -61,7 +61,7 @@ test.beforeEach(async ({ page }) => {
   };
   appDataByPage.set(page, controller);
 
-  await page.route("**/api/**", async (route) => {
+  await page.route(/^https?:\/\/[^/]+\/api\//, async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const json = (body, status = 200, headers = {}) =>

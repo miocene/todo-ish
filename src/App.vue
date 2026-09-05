@@ -1,5 +1,6 @@
 <script>
 import { RouterView } from "vue-router";
+import { syncState, retryPendingWrites, downloadPendingWrites, discardPendingWrites } from "./app/app-data.js";
 import JMButton from "./components/JMButton/JMButton.vue";
 import JMHeader from "./components/JMHeader/JMHeader.vue";
 import JMNavigation from "./components/JMNavigation/JMNavigation.vue";
@@ -8,13 +9,7 @@ export default {
   name: "App",
   components: { JMButton, JMHeader, JMNavigation, RouterView },
   data() {
-    return { syncError: "" };
-  },
-  mounted() {
-    window.addEventListener("done-ish:sync-error", this.handleSyncError);
-  },
-  beforeUnmount() {
-    window.removeEventListener("done-ish:sync-error", this.handleSyncError);
+    return { syncState };
   },
   watch: {
     "$route.meta.title": {
@@ -25,8 +20,11 @@ export default {
     },
   },
   methods: {
-    handleSyncError(event) {
-      this.syncError = event.detail?.message || "Changes could not be saved.";
+    retryPendingWrites,
+    downloadPendingWrites,
+    discardAndReload() {
+      discardPendingWrites();
+      window.location.reload();
     },
     reload() {
       window.location.reload();
@@ -38,9 +36,24 @@ export default {
 <template>
   <a class="skip-link" href="#main-content">Skip to content</a>
 
-  <aside v-if="syncError" class="app-sync-error" role="alert">
-    <p>{{ syncError }}</p>
-    <JMButton text="Reload" view="secondary" @click="reload" />
+  <aside
+    v-if="syncState.state !== 'saved'"
+    class="app-sync-error"
+    :role="syncState.state === 'saving' ? 'status' : 'alert'"
+  >
+    <p>{{ syncState.message }}</p>
+    <p v-if="!syncState.durable">Local backup is unavailable. Keep this tab open or download your edits.</p>
+    <template v-if="syncState.state !== 'saving'">
+      <JMButton text="Retry" view="secondary" @click="retryPendingWrites" />
+      <JMButton text="Download local edits" view="secondary" @click="downloadPendingWrites" />
+      <JMButton v-if="syncState.durable" text="Reload" view="secondary" @click="reload" />
+      <JMButton
+        v-if="syncState.state === 'conflict'"
+        text="Discard local edits and reload"
+        view="secondary"
+        @click="discardAndReload"
+      />
+    </template>
   </aside>
 
   <JMHeader />

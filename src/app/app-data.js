@@ -1,17 +1,9 @@
+import { reactive } from "vue";
 import { apiFetch } from "./api.js";
+import { APP_DATA_RESOURCES, validateAppDataResource } from "../../backend/api/src/app-data-validation.mjs";
+import { createResourceSync } from "./resource-sync.js";
 
-const RESOURCES = Object.freeze([
-  "work-tasks",
-  "work-statuses",
-  "colors",
-  "chores",
-  "todos",
-  "shopping",
-  "printing",
-  "cross-stitch",
-  "filament-inventory",
-  "floss-inventory",
-]);
+const RESOURCES = APP_DATA_RESOURCES;
 
 const LEGACY_STORAGE_KEYS = Object.freeze({
   "work-tasks": "done-ish.work-tasks.v1",
@@ -28,9 +20,6 @@ const LEGACY_STORAGE_KEYS = Object.freeze({
 
 const cache = new Map();
 const initializedResources = new Set();
-const pendingWrites = new Map();
-const revisions = Object.fromEntries(RESOURCES.map((resource) => [resource, 0]));
-const writers = new Map();
 const clone = (value) => JSON.parse(JSON.stringify(value));
 const MOCK_COLORS_STORAGE_KEY = "done-ish.mock-colors.v1";
 const COLOR_COLLECTIONS = Object.freeze({ todos: "lists", printing: "projects", "cross-stitch": "projects" });
@@ -101,54 +90,54 @@ function clearLegacyValue(resource) {
   }
 }
 
-function announceSyncError(resource, error) {
-  window.dispatchEvent(
-    new CustomEvent("done-ish:sync-error", {
-      detail: {
-        resource,
-        message:
-          error.name === "AppDataConflictError"
-            ? "This data changed in another browser. Reload before editing it again."
-            : "Changes could not be saved to the home server. The app will retry while this page stays open.",
-      },
-    }),
-  );
+const PENDING_PREFIX = "done-ish.pending-write.v1:";
+export const syncState = reactive({ state: "saved", message: "", pending: 0, durable: true });
+
+async function fetchRemoteState() {
+  const response = await apiFetch("/data", { headers: { accept: "application/json" } });
+  if (!response.ok) {
+    throw Object.assign(new Error(`Could not load saved data (${response.status}).`), { status: response.status });
+  }
+  return response.json();
 }
 
-async function writeResource(resource) {
-  let retryDelay = 1_000;
-  while (pendingWrites.has(resource)) {
-    const value = pendingWrites.get(resource);
-    pendingWrites.delete(resource);
-    try {
-      const response = await apiFetch(`/data/${resource}`, {
-        method: "PUT",
-        headers: {
-          "content-type": "application/json",
-          "if-match": `"${revisions[resource]}"`,
-        },
-        body: JSON.stringify(value),
-      });
-      const result = await response.json().catch(() => ({}));
-      if (response.status === 409) {
-        const error = new Error(result.error || "App data revision conflict");
-        error.name = "AppDataConflictError";
-        throw error;
+const sync = createResourceSync({
+  storage: {
+    load() {
+      const entries = [];
+      for (let index = 0; index < localStorage.length; index++) {
+        const key = localStorage.key(index);
+        if (!key?.startsWith(PENDING_PREFIX)) continue;
+        const entry = JSON.parse(localStorage.getItem(key));
+        if (entry && typeof entry.id === "string" && RESOURCES.includes(entry.resource) && entry.value !== undefined)
+          entries.push(entry);
       }
-      if (!response.ok) throw new Error(result.error || `App data request failed with status ${response.status}`);
-      revisions[resource] = result.revision;
-      initializedResources.add(resource);
-      clearLegacyValue(resource);
-      retryDelay = 1_000;
-    } catch (error) {
-      announceSyncError(resource, error);
-      if (error.name === "AppDataConflictError") return;
-      if (!pendingWrites.has(resource)) pendingWrites.set(resource, value);
-      await new Promise((resolve) => window.setTimeout(resolve, retryDelay));
-      retryDelay = Math.min(retryDelay * 2, 30_000);
-    }
-  }
-}
+      return entries;
+    },
+    save: (entry) => localStorage.setItem(`${PENDING_PREFIX}${entry.id}`, JSON.stringify(entry)),
+    remove: (id) => localStorage.removeItem(`${PENDING_PREFIX}${id}`),
+  },
+  normalize: validateAppDataResource,
+  remoteValue,
+  readRemote: fetchRemoteState,
+  async send(resource, value, revision) {
+    const response = await apiFetch(`/data/${resource}`, {
+      method: "PUT",
+      headers: { "content-type": "application/json", "if-match": `"${revision}"` },
+      body: JSON.stringify(value),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok)
+      throw Object.assign(new Error(result.error || "Changes could not be saved."), { status: response.status });
+    if (!Number.isInteger(result.revision)) throw new Error("The save response did not include a revision.");
+    return result;
+  },
+  onChange: (state) => Object.assign(syncState, state),
+  onSaved(resource) {
+    initializedResources.add(resource);
+    clearLegacyValue(resource);
+  },
+});
 
 function queueWrite(resource, value) {
   cache.set(resource, clone(value));
@@ -156,26 +145,27 @@ function queueWrite(resource, value) {
     saveMockColors(resource, value);
     if (resource === "colors") return;
   }
-  pendingWrites.set(resource, clone(value));
-  if (!writers.has(resource)) {
-    const writer = writeResource(resource).finally(() => {
-      writers.delete(resource);
-      if (pendingWrites.has(resource)) queueWrite(resource, pendingWrites.get(resource));
-    });
-    writers.set(resource, writer);
-  }
+  sync.write(resource, value);
+}
+
+export const retryPendingWrites = () => sync.retry();
+export const discardPendingWrites = () => sync.discard();
+export function downloadPendingWrites() {
+  const url = URL.createObjectURL(new Blob([JSON.stringify(sync.pending(), null, 2)], { type: "application/json" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "done-ish-local-edits.json";
+  link.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 export async function initializeAppData() {
-  const response = await apiFetch("/data", { headers: { accept: "application/json" } });
-  if (!response.ok) throw new Error(`App data request failed with status ${response.status}`);
-  const state = await response.json();
+  const state = await fetchRemoteState();
   if (!state || typeof state !== "object") throw new Error("App data response is invalid");
 
   mockColors = Boolean(import.meta.env.DEV && !Object.hasOwn(state.revisions ?? {}, "colors"));
   if (mockColors) cache.set("colors", readMockColors());
 
-  for (const resource of RESOURCES) revisions[resource] = state.revisions?.[resource] ?? 0;
   for (const resource of state.initializedResources ?? []) {
     if (!RESOURCES.includes(resource)) continue;
     if (mockColors && resource === "colors") continue;
@@ -184,6 +174,12 @@ export async function initializeAppData() {
     initializedResources.add(resource);
     cache.set(resource, value);
     clearLegacyValue(resource);
+  }
+  const resources = RESOURCES.filter((resource) => !mockColors || resource !== "colors");
+  sync.hydrate(state, resources);
+  for (const resource of resources) {
+    const pending = sync.value(resource);
+    if (pending !== undefined) cache.set(resource, pending);
   }
   hydrated = true;
 }
