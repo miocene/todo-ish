@@ -1,13 +1,13 @@
 <script>
 import { appClock } from "../../app/clock.js";
 import JMButton from "../JMButton/JMButton.vue";
-import JMDayType from "./JMDayType.vue";
+import JMCalendarDay from "./JMCalendarDay.vue";
 import { parseIsoDate, shiftIsoDate, toIsoDate } from "../../shared/date.js";
 import "./jm-calendar.css";
 
 export default {
   name: "JMCalendar",
-  components: { JMButton, JMDayType },
+  components: { JMButton, JMCalendarDay },
   props: {
     activity: { type: Object, default: () => ({}) },
     date: { type: String, required: true },
@@ -135,7 +135,7 @@ export default {
       :disabled="!canGoPrevious"
       @click="shift(-1)"
     />
-    <JMDayType
+    <JMCalendarDay
       v-for="day in days"
       :key="day.value"
       :day="day"

@@ -42,7 +42,7 @@ No actionable P0, P1, or P2 differences remain.
 - Earlier fix: moved the day-type picker from the Work card header into the selected calendar date.
 - Earlier P2 fix: made the selected date's icon square activity-colored and removed its duplicate small activity square.
 - Latest user review: surrounding dates still used the older vertical number/weekday/small-square design.
-- Fix applied: every date is now rendered through `JMDayType`; unselected dates use its non-editable navigation mode, while the selected date uses its picker mode.
+- Fix applied: every date is now rendered through `JMCalendarDay`; unselected dates use its non-editable navigation mode, while the selected date uses its picker mode.
 - Post-fix evidence: `/private/tmp/todo-ish-calendar-all-days-comparison.png` shows the reference composition repeated across every visible date.
 
 ## Follow-up polish

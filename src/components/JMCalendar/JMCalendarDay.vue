@@ -5,7 +5,7 @@ import JMIcon from "../JMIcon/JMIcon.vue";
 const DISPLAY_ORDER = ["conference", "work", "sick-leave", "pto", "business-trip", "holiday", "weekend"];
 
 export default {
-  name: "JMDayType",
+  name: "JMCalendarDay",
   components: { JMIcon },
   data() {
     return { open: false };
