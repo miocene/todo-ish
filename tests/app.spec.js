@@ -935,9 +935,13 @@ test("task pages render their variants and save changes immediately", async ({ p
   await expect(stitchColors).toHaveCount(3);
   await expect(stitchProject.locator(".stitch-color__fields--missing")).toHaveCount(2);
   await expect(stitchProject.getByText("971 / 2,400 crosses · 40%", { exact: true })).toBeVisible();
+  const stitchProgress = stitchProject.getByRole("progressbar", { name: "Progress for Botanical sampler" });
+  await expect(stitchProgress).toHaveAttribute("value", "971");
+  await expect(stitchProgress).toHaveAttribute("max", "2400");
   await stitchProject.getByLabel("Crosses done").first().fill("1200");
   await expect(stitchProject.locator(".task-item--completed")).toHaveCount(2);
   await expect(stitchProject.getByText("1,600 / 2,400 crosses · 67%", { exact: true })).toBeVisible();
+  await expect(stitchProgress).toHaveAttribute("value", "1600");
   await stitchProject.getByRole("button", { name: "Add color" }).click();
   await expect(stitchColors).toHaveCount(4);
   await expect(stitchColors.last()).toBeFocused();

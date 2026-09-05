@@ -9,6 +9,7 @@ import { flossSupplyStatus, syncFlossShoppingList } from "../app/stitching-suppl
 import { completedTasksLast, nextEntityId, setTaskCompletion, serializableTasks } from "../app/task-list.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMInput from "../components/JMInput/JMInput.vue";
+import JMProgress from "../components/JMProgress/JMProgress.vue";
 import JMCatalogStatus from "../components/JMCatalogStatus/JMCatalogStatus.vue";
 import JMPrintingTaskDetails from "../components/JMProjectTaskDetails/JMPrintingTaskDetails.vue";
 import JMStitchTaskDetails from "../components/JMProjectTaskDetails/JMStitchTaskDetails.vue";
@@ -22,7 +23,15 @@ function loadProjectTasks(pageKey) {
 
 export default {
   name: "ProjectTasksPage",
-  components: { JMCatalogStatus, JMButton, JMInput, JMPrintingTaskDetails, JMStitchTaskDetails, JMTaskCard },
+  components: {
+    JMCatalogStatus,
+    JMButton,
+    JMInput,
+    JMProgress,
+    JMPrintingTaskDetails,
+    JMStitchTaskDetails,
+    JMTaskCard,
+  },
   props: {
     description: { type: String, required: true },
     pageKey: {
@@ -282,13 +291,12 @@ export default {
 
         <div v-if="isCrossStitch" class="stitch-project__progress">
           <p>{{ projectTotalCrosses(project).toLocaleString() }} total crosses</p>
-          <progress :max="projectTotalCrosses(project) || 1" :value="projectCrossesDone(project)">
-            {{ projectProgress(project) }}%
-          </progress>
-          <p>
-            {{ projectCrossesDone(project).toLocaleString() }} /
-            {{ projectTotalCrosses(project).toLocaleString() }} crosses · {{ projectProgress(project) }}%
-          </p>
+          <JMProgress
+            :value="projectCrossesDone(project)"
+            :max="projectTotalCrosses(project)"
+            :label="`Progress for ${project.title || 'untitled cross stitch project'}`"
+            :text="`${projectCrossesDone(project).toLocaleString()} / ${projectTotalCrosses(project).toLocaleString()} crosses · ${projectProgress(project)}%`"
+          />
         </div>
 
         <ul class="task-page__tasks" role="list">

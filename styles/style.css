@@ -800,6 +800,42 @@ textarea.jm-input__control {
   border: 0;
 }
 
+/* Progress */
+
+.jm-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.jm-progress__bar {
+  inline-size: 100%;
+  block-size: 12px;
+  overflow: hidden;
+  appearance: none;
+  background: var(--color-bg-selection);
+  border: 0;
+  border-radius: 999px;
+}
+
+.jm-progress__bar::-webkit-progress-bar {
+  background: var(--color-bg-selection);
+}
+
+.jm-progress__bar::-webkit-progress-value {
+  background: var(--color-text-secondary);
+}
+
+.jm-progress__bar::-moz-progress-bar {
+  background: var(--color-text-secondary);
+}
+
+.jm-progress__text {
+  margin: 0;
+  color: #f0f;
+  font-size: 0.75rem;
+}
+
 /* Catalog items */
 
 .jm-catalog-item {
@@ -1089,28 +1125,6 @@ span.jm-catalog-item__swatch {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-}
-
-.stitch-project__progress progress {
-  inline-size: 100%;
-  block-size: 12px;
-  overflow: hidden;
-  appearance: none;
-  background: var(--color-bg-selection);
-  border: 0;
-  border-radius: 999px;
-}
-
-.stitch-project__progress progress::-webkit-progress-bar {
-  background: var(--color-bg-selection);
-}
-
-.stitch-project__progress progress::-webkit-progress-value {
-  background: var(--color-text-secondary);
-}
-
-.stitch-project__progress progress::-moz-progress-bar {
-  background: var(--color-text-secondary);
 }
 
 .stitch-project__progress > p {
