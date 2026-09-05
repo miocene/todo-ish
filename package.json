@@ -28,7 +28,8 @@
     "db:catalogs:seed": "node backend/scripts/build_catalog_seed.mjs",
     "db:generate": "drizzle-kit generate --config=backend/drizzle.config.ts",
     "deploy:pi": "sh backend/scripts/deploy_raspberry_pi.sh",
-    "update:catalogs": "python3 backend/scripts/update_catalogs.py"
+    "update:catalogs": "python3 backend/scripts/update_catalogs.py",
+    "test:integration": "yarn --cwd backend/api test:integration"
   },
   "dependencies": {
     "vue": "^3.5.41",
