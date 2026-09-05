@@ -5,61 +5,66 @@ import "./jm-catalog-item.css";
 export default {
   name: "JMCatalogItem",
   components: { JMInput },
-  emits: ["update:inventory"],
   props: {
-    catalogGroup: { type: String, required: true },
-    catalogId: { type: String, required: true },
-    detailText: { type: String, default: "" },
-    inventoryLabel: { type: String, required: true },
-    inventoryName: { type: String, required: true },
-    inventoryValue: { type: Number, required: true },
-    missing: { type: Boolean, default: false },
-    missingText: { type: String, default: "" },
-    requiredText: { type: String, default: "" },
-    status: { type: String, default: "" },
-    swatchSrc: { type: String, default: "" },
-    title: { type: String, required: true },
-    titleHref: { type: String, required: true },
+    item: { type: Object, required: true },
+    modelValue: { type: Number, default: 0 },
+    unit: {
+      type: String,
+      required: true,
+      validator: (value) => ["skeins", "spools"].includes(value),
+    },
+  },
+  emits: ["update:modelValue"],
+  methods: {
+    updateQuantity(value) {
+      this.$emit("update:modelValue", Math.max(0, Math.floor(Number(value) || 0)));
+    },
   },
 };
 </script>
 
 <template>
-  <li class="jm-catalog-item" :class="{ 'jm-catalog-item--missing': missing }" :data-catalog-group="catalogGroup">
+  <li
+    class="jm-catalog-item"
+    :class="{ 'jm-catalog-item--missing': item.group === 'needed' }"
+    :data-catalog-group="item.group"
+  >
     <img
-      v-if="swatchSrc"
+      v-if="item.swatch"
       class="jm-catalog-item__swatch"
-      :src="swatchSrc"
+      :src="item.swatch"
       alt=""
       loading="lazy"
       width="48"
       height="48"
     />
     <span v-else class="jm-catalog-item__swatch" aria-hidden="true" />
-    <div>
-      <h2>
-        <a :href="titleHref" target="_blank" rel="noopener noreferrer">
-          {{ title }}
-          <span class="jm-catalog-item__visually-hidden"> (opens in a new tab)</span>
-        </a>
-      </h2>
-      <p v-if="status" :class="{ 'jm-catalog-item__missing': catalogGroup === 'needed' }">{{ status }}</p>
-      <p v-if="detailText">{{ detailText }}</p>
-      <code>{{ catalogId }}</code>
-      <p v-if="requiredText" class="jm-catalog-item__required">{{ requiredText }}</p>
-      <p v-if="missingText" class="jm-catalog-item__missing">{{ missingText }}</p>
+    <h2>
+      <a :href="item.href" target="_blank" rel="noopener noreferrer">
+        {{ item.title }}
+        <span class="jm-catalog-item__visually-hidden"> (opens in a new tab)</span>
+      </a>
+    </h2>
+    <div class="jm-catalog-item__inventory">
+      <JMInput
+        class="jm-catalog-item__quantity"
+        :aria-label="`${unit === 'skeins' ? 'Skeins' : 'Spools'} owned for ${item.title}`"
+        :aria-describedby="item.required > 0 ? `catalog-required-${item.id}` : undefined"
+        :name="`${unit}-owned`"
+        type="number"
+        size="s"
+        inputmode="numeric"
+        min="0"
+        step="1"
+        :model-value="modelValue"
+        @update:model-value="updateQuantity"
+      />
+      <template v-if="item.required > 0">
+        <span class="jm-catalog-item__required" aria-hidden="true">/ {{ item.required }}</span>
+        <span :id="`catalog-required-${item.id}`" class="jm-catalog-item__visually-hidden">
+          Required {{ unit }}: {{ item.required }}
+        </span>
+      </template>
     </div>
-    <JMInput
-      class="jm-catalog-item__inventory"
-      :label="inventoryLabel"
-      :name="inventoryName"
-      type="number"
-      size="s"
-      inputmode="numeric"
-      min="0"
-      step="1"
-      :model-value="inventoryValue"
-      @update:model-value="$emit('update:inventory', $event)"
-    />
   </li>
 </template>

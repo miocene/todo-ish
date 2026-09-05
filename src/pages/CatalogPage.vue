@@ -84,48 +84,27 @@ export default {
           return priority || first.number.localeCompare(second.number, undefined, { numeric: true });
         });
     },
-    filamentItems() {
-      return this.filteredFilaments.map((filament) => {
-        const supply = this.supplyById.get(filament.id);
-        const group = this.catalogGroup(filament);
-        const missingSpools = supply?.missingSpools ?? 0;
-        return {
-          catalogGroup: group,
-          catalogId: filament.id,
-          detailText: filament.productCode ? `Product ${filament.productCode}` : "",
-          inventoryValue: this.filamentInventory[filament.id] ?? 0,
-          item: filament,
-          missing: missingSpools > 0,
-          missingText: missingSpools ? `Missing ${missingSpools} ${missingSpools === 1 ? "spool" : "spools"}` : "",
-          requiredText: supply
-            ? `Required ${supply.requiredGrams} g · ${supply.requiredSpools} ${supply.requiredSpools === 1 ? "spool" : "spools"}`
-            : "",
-          status: group === "owned" ? "In stock" : group === "needed" ? "Needed" : "",
-          title: filamentLabel(filament),
-          titleHref: filamentProductLink(filament),
-        };
-      });
+    inventory() {
+      return this.isFlossCatalog ? this.flossInventory : this.filamentInventory;
     },
-    flossItems() {
-      return this.filteredFloss.map((thread) => {
-        const supply = this.flossSupplyById.get(thread.id);
-        const group = this.flossCatalogGroup(thread);
-        const missingSkeins = supply?.missingSkeins ?? 0;
-        return {
-          catalogGroup: group,
-          catalogId: thread.id,
-          inventoryValue: this.flossInventory[thread.id] ?? 0,
-          item: thread,
-          missing: missingSkeins > 0,
-          missingText: missingSkeins ? `Missing ${missingSkeins} ${missingSkeins === 1 ? "skein" : "skeins"}` : "",
-          requiredText: supply
-            ? `Required ${supply.requiredSkeins} ${supply.requiredSkeins === 1 ? "skein" : "skeins"}`
-            : "",
-          status: group === "owned" ? "In stock" : group === "needed" ? "Needed" : "",
+    items() {
+      if (this.isFlossCatalog) {
+        return this.filteredFloss.map((thread) => ({
+          id: thread.id,
           title: flossLabel(thread),
-          titleHref: flossProductLink(thread),
-        };
-      });
+          href: flossProductLink(thread),
+          group: this.flossCatalogGroup(thread),
+          required: this.flossSupplyById.get(thread.id)?.requiredSkeins ?? 0,
+        }));
+      }
+      return this.filteredFilaments.map((filament) => ({
+        id: filament.id,
+        title: filamentLabel(filament),
+        href: filamentProductLink(filament),
+        swatch: filament.swatch,
+        group: this.catalogGroup(filament),
+        required: this.supplyById.get(filament.id)?.requiredSpools ?? 0,
+      }));
     },
   },
   watch: {
@@ -136,10 +115,6 @@ export default {
     },
   },
   methods: {
-    filamentLabel,
-    filamentProductLink,
-    flossLabel,
-    flossProductLink,
     catalogGroup(filament) {
       return ["owned", "needed", "other"][this.catalogPriority(filament)];
     },
@@ -160,17 +135,14 @@ export default {
       if (missingSkeins > 0) return 1;
       return 2;
     },
-    updateSpools(filament, value) {
-      const count = Math.max(0, Math.floor(Number(value) || 0));
-      this.filamentInventory[filament.id] = count;
-      saveFilamentInventory(this.filamentInventory);
-      syncFilamentShoppingList(this.printingProjects, this.filamentInventory);
-    },
-    updateSkeins(thread, value) {
-      const count = Math.max(0, Math.floor(Number(value) || 0));
-      this.flossInventory[thread.id] = count;
-      saveFlossInventory(this.flossInventory);
-      syncFlossShoppingList(this.stitchingProjects, this.flossInventory);
+    saveInventory() {
+      if (this.isFlossCatalog) {
+        saveFlossInventory(this.flossInventory);
+        syncFlossShoppingList(this.stitchingProjects, this.flossInventory);
+      } else {
+        saveFilamentInventory(this.filamentInventory);
+        syncFilamentShoppingList(this.printingProjects, this.filamentInventory);
+      }
     },
   },
 };
@@ -212,62 +184,22 @@ export default {
       <button type="submit">Search</button>
     </form>
 
-    <template v-if="isFlossCatalog">
-      <p class="catalog-page__count" aria-live="polite">
-        {{ filteredFloss.length }} {{ filteredFloss.length === 1 ? "color" : "colors" }}
-      </p>
+    <p class="catalog-page__count" aria-live="polite">
+      {{ items.length }} {{ isFlossCatalog ? "color" : "filament" }}{{ items.length === 1 ? "" : "s" }}
+    </p>
 
-      <p v-if="catalog.state.status === 'ready' && filteredFloss.length === 0" class="catalog-page__empty">
-        No DMC colors match this search.
-      </p>
-      <ul v-else class="catalog-list" role="list">
-        <JMCatalogItem
-          v-for="entry in flossItems"
-          :key="entry.catalogId"
-          :catalog-group="entry.catalogGroup"
-          :catalog-id="entry.catalogId"
-          inventory-label="Skeins owned"
-          inventory-name="skeins-owned"
-          :inventory-value="entry.inventoryValue"
-          :missing="entry.missing"
-          :missing-text="entry.missingText"
-          :required-text="entry.requiredText"
-          :status="entry.status"
-          :title="entry.title"
-          :title-href="entry.titleHref"
-          @update:inventory="updateSkeins(entry.item, $event)"
-        />
-      </ul>
-    </template>
-
-    <template v-else>
-      <p class="catalog-page__count" aria-live="polite">
-        {{ filteredFilaments.length }} {{ filteredFilaments.length === 1 ? "filament" : "filaments" }}
-      </p>
-
-      <p v-if="catalog.state.status === 'ready' && filteredFilaments.length === 0" class="catalog-page__empty">
-        No catalog filaments match this search.
-      </p>
-      <ul v-else class="catalog-list" role="list">
-        <JMCatalogItem
-          v-for="entry in filamentItems"
-          :key="entry.catalogId"
-          :catalog-group="entry.catalogGroup"
-          :catalog-id="entry.catalogId"
-          :detail-text="entry.detailText"
-          inventory-label="Spools owned"
-          inventory-name="spools-owned"
-          :inventory-value="entry.inventoryValue"
-          :missing="entry.missing"
-          :missing-text="entry.missingText"
-          :required-text="entry.requiredText"
-          :status="entry.status"
-          :swatch-src="entry.item.swatch"
-          :title="entry.title"
-          :title-href="entry.titleHref"
-          @update:inventory="updateSpools(entry.item, $event)"
-        />
-      </ul>
-    </template>
+    <p v-if="catalog.state.status === 'ready' && items.length === 0" class="catalog-page__empty">
+      {{ isFlossCatalog ? "No DMC colors match this search." : "No catalog filaments match this search." }}
+    </p>
+    <ul v-else class="catalog-list" role="list">
+      <JMCatalogItem
+        v-for="item in items"
+        :key="item.id"
+        v-model="inventory[item.id]"
+        :item="item"
+        :unit="isFlossCatalog ? 'skeins' : 'spools'"
+        @update:model-value="saveInventory"
+      />
+    </ul>
   </section>
 </template>

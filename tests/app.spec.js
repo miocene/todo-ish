@@ -974,11 +974,14 @@ test("task pages render their variants and save changes immediately", async ({ p
     "href",
     "https://eu.store.bambulab.com/products/pla-basic-filament",
   );
-  await expect(page.getByText("Required 1002 g · 2 spools")).toBeVisible();
-  await expect(page.getByText("Missing 1 spool", { exact: true })).toBeVisible();
+  await expect(page.locator(".jm-catalog-item__required")).toHaveText("/ 2");
+  await expect(page.getByLabel("Spools owned")).toHaveAccessibleDescription("Required spools: 2");
   await expect(page.getByLabel("Spools owned")).toHaveValue("1");
   await page.getByLabel("Spools owned").fill("2");
   await expect(page.locator(".jm-catalog-item--missing")).toHaveCount(0);
+  await expect
+    .poll(() => appDataByPage.get(page).get("filament-inventory")?.["bambu-pla-basic-filament-10601"])
+    .toBe(2);
 
   await page.goto("/printing");
   await expect(page.locator(".printing-filament--missing")).toHaveCount(1);
@@ -993,10 +996,11 @@ test("task pages render their variants and save changes immediately", async ({ p
     "href",
     "https://www.breibrink.nl/dmc-3853.html",
   );
-  await expect(page.getByText("Required 1 skein", { exact: true })).toBeVisible();
-  await expect(page.getByText("Missing 1 skein", { exact: true })).toBeVisible();
+  await expect(page.locator(".jm-catalog-item__required")).toHaveText("/ 1");
+  await expect(page.getByLabel("Skeins owned")).toHaveAccessibleDescription("Required skeins: 1");
   await page.getByLabel("Skeins owned").fill("1");
   await expect(page.locator(".jm-catalog-item--missing")).toHaveCount(0);
+  await expect.poll(() => appDataByPage.get(page).get("floss-inventory")?.dmc3853).toBe(1);
 
   await page.goto("/shopping");
   await expect(page.getByLabel("Task title")).toHaveCount(2);
