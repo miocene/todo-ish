@@ -9,7 +9,7 @@
   gap: var(--space-3);
   align-items: center;
   justify-content: center;
-  padding: var(--space-4);
+  padding: var(--space-5);
   color: var(--color-text-default);
   background: var(--color-bg-surface);
 }
@@ -38,8 +38,8 @@ html {
 }
 
 body {
-  inline-size: min(450px, calc(100% - var(--space-8)));
-  padding-bottom: var(--space-11);
+  inline-size: min(450px, calc(100% - var(--space-9)));
+  padding-bottom: var(--space-12);
   color: var(--color-text-default);
   font: var(--font-weight-normal) 16px/1.4 var(--font-default);
 }
@@ -47,7 +47,7 @@ body {
 #main-content {
   min-block-size: 0;
   overflow: auto;
-  padding-top: var(--space-5);
+  padding-top: var(--space-6);
 }
 
 h1,
@@ -69,11 +69,11 @@ h3 {
   inset-block-start: var(--space-3);
   inset-inline-start: var(--space-3);
   z-index: 2;
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-3) var(--space-5);
   color: var(--color-bg-surface);
   background: var(--color-text-default);
   border-radius: var(--radius-control);
-  transform: translateY(calc(-100% - var(--space-4)));
+  transform: translateY(calc(-100% - var(--space-5)));
 }
 
 .skip-link:focus {

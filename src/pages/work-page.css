@@ -5,8 +5,8 @@
 
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
-  padding-block-end: var(--space-6);
+  gap: var(--space-6);
+  padding-block-end: var(--space-7);
   overflow: clip;
 }
 
@@ -14,7 +14,7 @@
 .work-day__header,
 .work-backlog__header {
   display: flex;
-  gap: var(--space-4);
+  gap: var(--space-5);
   align-items: center;
   justify-content: space-between;
 }
@@ -46,10 +46,10 @@
 .work-backlog {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-5);
   min-inline-size: 0;
   min-block-size: 240px;
-  padding: var(--space-4);
+  padding: var(--space-5);
   background: var(--color-bg-surface);
   border: 1px solid var(--work-page-border);
   border-radius: var(--radius-card);

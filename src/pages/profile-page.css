@@ -6,8 +6,8 @@
 
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
-  padding-block-end: calc(var(--space-9) + var(--size-control));
+  gap: var(--space-6);
+  padding-block-end: calc(var(--space-10) + var(--size-control));
 }
 
 .profile-page__header p {
@@ -53,7 +53,7 @@
   justify-content: center;
   min-inline-size: 64px;
   min-block-size: 44px;
-  padding-inline: var(--space-4);
+  padding-inline: var(--space-5);
   color: var(--profile-muted);
   border-block-end: 2px solid transparent;
 }
@@ -82,7 +82,7 @@
 }
 
 .activity-graph {
-  padding: var(--space-4);
+  padding: var(--space-5);
   background: var(--color-bg-surface);
   border: 1px solid var(--profile-border);
   border-radius: var(--radius-control);
@@ -208,7 +208,7 @@ a.activity-graph__day:hover {
 }
 
 .activity-list__empty {
-  padding: var(--space-5);
+  padding: var(--space-6);
   color: var(--profile-muted);
   text-align: center;
   border: 1px dashed var(--profile-border);
@@ -216,7 +216,7 @@ a.activity-graph__day:hover {
 }
 
 .activity-day {
-  scroll-margin-block-start: calc(var(--size-header) + var(--space-4));
+  scroll-margin-block-start: calc(var(--size-header) + var(--space-5));
 }
 
 .activity-day h3 {
@@ -226,7 +226,7 @@ a.activity-graph__day:hover {
 }
 
 .activity-day ul {
-  margin-inline-start: var(--space-4);
+  margin-inline-start: var(--space-5);
   border-inline-start: 2px solid var(--profile-border);
 }
 
@@ -234,7 +234,7 @@ a.activity-graph__day:hover {
   display: flex;
   gap: var(--space-3);
   align-items: flex-start;
-  padding: var(--space-4) 0 var(--space-4) var(--space-5);
+  padding: var(--space-5) 0 var(--space-5) var(--space-6);
 }
 
 .activity-day__check {
