@@ -1,5 +1,6 @@
 import { createApp } from "vue";
 import AppBootstrap from "./AppBootstrap.vue";
+import "../styles/normalisation.css";
 import "../styles/style.css";
 
 let bootstrapApp;
