@@ -953,11 +953,11 @@ test("task pages render their variants and save changes immediately", async ({ p
   await expect(page.getByLabel("Search floss")).toBeVisible();
   await page.getByRole("link", { name: "3D printing filament" }).click();
   await expect(page.getByLabel("Search filaments")).toBeVisible();
-  await expect(page.locator(".catalog-card")).toHaveCount(265);
+  await expect(page.locator(".jm-catalog-item")).toHaveCount(265);
   await expect(page.getByText("265 filaments", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Filament type")).toHaveValue("");
   const catalogGroups = await page
-    .locator(".catalog-card")
+    .locator(".jm-catalog-item")
     .evaluateAll((cards) => cards.map((card) => card.dataset.catalogGroup));
   expect(catalogGroups).toEqual(
     [...catalogGroups].sort(
@@ -965,10 +965,10 @@ test("task pages render their variants and save changes immediately", async ({ p
     ),
   );
   await page.getByLabel("Filament type").selectOption("PLA Basic");
-  await expect(page.locator(".catalog-card")).toHaveCount(30);
+  await expect(page.locator(".jm-catalog-item")).toHaveCount(30);
   await page.getByLabel("Filament type").selectOption("");
   await page.getByLabel("Search filaments").fill("bambu-pla-basic-filament-10601");
-  await expect(page.locator(".catalog-card")).toHaveCount(1);
+  await expect(page.locator(".jm-catalog-item")).toHaveCount(1);
   await expect(page.getByRole("heading", { level: 2, name: "PLA Basic · Blue" })).toBeVisible();
   await expect(page.getByRole("link", { name: /PLA Basic · Blue/ })).toHaveAttribute(
     "href",
@@ -978,7 +978,7 @@ test("task pages render their variants and save changes immediately", async ({ p
   await expect(page.getByText("Missing 1 spool", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Spools owned")).toHaveValue("1");
   await page.getByLabel("Spools owned").fill("2");
-  await expect(page.locator(".catalog-card--missing")).toHaveCount(0);
+  await expect(page.locator(".jm-catalog-item--missing")).toHaveCount(0);
 
   await page.goto("/printing");
   await expect(page.locator(".printing-filament--missing")).toHaveCount(1);
@@ -987,7 +987,7 @@ test("task pages render their variants and save changes immediately", async ({ p
   await page.goto("/catalog?catalog=floss&q=dmc3853");
   await expect(page.getByRole("link", { name: "DMC embroidery floss" })).toHaveAttribute("aria-current", "page");
   await expect(page.getByLabel("Search floss")).toHaveValue("dmc3853");
-  await expect(page.locator(".catalog-card")).toHaveCount(1);
+  await expect(page.locator(".jm-catalog-item")).toHaveCount(1);
   await expect(page.getByRole("heading", { level: 2, name: "DMC 3853 · Autumn Gold Dk" })).toBeVisible();
   await expect(page.getByRole("link", { name: /DMC 3853 · Autumn Gold Dk/ })).toHaveAttribute(
     "href",
@@ -996,7 +996,7 @@ test("task pages render their variants and save changes immediately", async ({ p
   await expect(page.getByText("Required 1 skein", { exact: true })).toBeVisible();
   await expect(page.getByText("Missing 1 skein", { exact: true })).toBeVisible();
   await page.getByLabel("Skeins owned").fill("1");
-  await expect(page.locator(".catalog-card--missing")).toHaveCount(0);
+  await expect(page.locator(".jm-catalog-item--missing")).toHaveCount(0);
 
   await page.goto("/shopping");
   await expect(page.getByLabel("Task title")).toHaveCount(2);
@@ -1010,7 +1010,7 @@ test("task pages render their variants and save changes immediately", async ({ p
 
   await page.goto("/catalog");
   await page.getByLabel("Search filaments").fill("discontinued-petg-charcoal");
-  await expect(page.locator(".catalog-card")).toHaveCount(0);
+  await expect(page.locator(".jm-catalog-item")).toHaveCount(0);
   await expect(page.getByText("No catalog filaments match this search.")).toBeVisible();
 });
 
@@ -1303,17 +1303,17 @@ test("catalog failures stay local and retry independently without blocking task 
   await page.getByRole("link", { name: "Catalog", exact: true }).click();
   await expect(page.getByRole("button", { name: "Retry filament catalog" })).toBeVisible();
   await page.getByRole("link", { name: "DMC embroidery floss" }).click();
-  await expect(page.locator(".catalog-card").first()).toBeVisible();
+  await expect(page.locator(".jm-catalog-item").first()).toBeVisible();
   await page.getByRole("link", { name: "3D printing filament" }).click();
   await expect(page.getByRole("button", { name: "Retry filament catalog" })).toBeVisible();
   fail = false;
   await page.getByRole("button", { name: "Retry filament catalog" }).click();
-  await expect(page.locator(".catalog-card").first()).toBeVisible();
+  await expect(page.locator(".jm-catalog-item").first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Retry filament catalog" })).toHaveCount(0);
   const requestsAfterLoad = filamentRequests;
   await page.getByRole("link", { name: "Work", exact: true }).click();
   await page.getByRole("link", { name: "Catalog", exact: true }).click();
-  await expect(page.locator(".catalog-card").first()).toBeVisible();
+  await expect(page.locator(".jm-catalog-item").first()).toBeVisible();
   expect(filamentRequests).toBe(requestsAfterLoad);
 });
 

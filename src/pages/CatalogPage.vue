@@ -11,14 +11,14 @@ import {
 import { filamentSupplyStatus, syncFilamentShoppingList } from "../app/printing-supplies.js";
 import { flossSupplyStatus, syncFlossShoppingList } from "../app/stitching-supplies.js";
 import JMCatalogStatus from "../components/JMCatalogStatus/JMCatalogStatus.vue";
-import JMCatalogCard from "../components/JMCatalogCard/JMCatalogCard.vue";
+import JMCatalogItem from "../components/JMCatalogItem/JMCatalogItem.vue";
 import JMInput from "../components/JMInput/JMInput.vue";
 import JMSelect from "../components/JMSelect/JMSelect.vue";
 import JMTabs from "../components/JMTabs/JMTabs.vue";
 
 export default {
   name: "CatalogPage",
-  components: { JMCatalogCard, JMCatalogStatus, JMInput, JMSelect, JMTabs },
+  components: { JMCatalogItem, JMCatalogStatus, JMInput, JMSelect, JMTabs },
   data() {
     return {
       catalogTabs: [
@@ -84,7 +84,7 @@ export default {
           return priority || first.number.localeCompare(second.number, undefined, { numeric: true });
         });
     },
-    filamentCards() {
+    filamentItems() {
       return this.filteredFilaments.map((filament) => {
         const supply = this.supplyById.get(filament.id);
         const group = this.catalogGroup(filament);
@@ -106,7 +106,7 @@ export default {
         };
       });
     },
-    flossCards() {
+    flossItems() {
       return this.filteredFloss.map((thread) => {
         const supply = this.flossSupplyById.get(thread.id);
         const group = this.flossCatalogGroup(thread);
@@ -220,22 +220,22 @@ export default {
       <p v-if="catalog.state.status === 'ready' && filteredFloss.length === 0" class="catalog-page__empty">
         No DMC colors match this search.
       </p>
-      <ul v-else class="filament-catalog" role="list">
-        <JMCatalogCard
-          v-for="card in flossCards"
-          :key="card.catalogId"
-          :catalog-group="card.catalogGroup"
-          :catalog-id="card.catalogId"
+      <ul v-else class="catalog-list" role="list">
+        <JMCatalogItem
+          v-for="entry in flossItems"
+          :key="entry.catalogId"
+          :catalog-group="entry.catalogGroup"
+          :catalog-id="entry.catalogId"
           inventory-label="Skeins owned"
           inventory-name="skeins-owned"
-          :inventory-value="card.inventoryValue"
-          :missing="card.missing"
-          :missing-text="card.missingText"
-          :required-text="card.requiredText"
-          :status="card.status"
-          :title="card.title"
-          :title-href="card.titleHref"
-          @update:inventory="updateSkeins(card.item, $event)"
+          :inventory-value="entry.inventoryValue"
+          :missing="entry.missing"
+          :missing-text="entry.missingText"
+          :required-text="entry.requiredText"
+          :status="entry.status"
+          :title="entry.title"
+          :title-href="entry.titleHref"
+          @update:inventory="updateSkeins(entry.item, $event)"
         />
       </ul>
     </template>
@@ -248,24 +248,24 @@ export default {
       <p v-if="catalog.state.status === 'ready' && filteredFilaments.length === 0" class="catalog-page__empty">
         No catalog filaments match this search.
       </p>
-      <ul v-else class="filament-catalog" role="list">
-        <JMCatalogCard
-          v-for="card in filamentCards"
-          :key="card.catalogId"
-          :catalog-group="card.catalogGroup"
-          :catalog-id="card.catalogId"
-          :detail-text="card.detailText"
+      <ul v-else class="catalog-list" role="list">
+        <JMCatalogItem
+          v-for="entry in filamentItems"
+          :key="entry.catalogId"
+          :catalog-group="entry.catalogGroup"
+          :catalog-id="entry.catalogId"
+          :detail-text="entry.detailText"
           inventory-label="Spools owned"
           inventory-name="spools-owned"
-          :inventory-value="card.inventoryValue"
-          :missing="card.missing"
-          :missing-text="card.missingText"
-          :required-text="card.requiredText"
-          :status="card.status"
-          :swatch-src="card.item.swatch"
-          :title="card.title"
-          :title-href="card.titleHref"
-          @update:inventory="updateSpools(card.item, $event)"
+          :inventory-value="entry.inventoryValue"
+          :missing="entry.missing"
+          :missing-text="entry.missingText"
+          :required-text="entry.requiredText"
+          :status="entry.status"
+          :swatch-src="entry.item.swatch"
+          :title="entry.title"
+          :title-href="entry.titleHref"
+          @update:inventory="updateSpools(entry.item, $event)"
         />
       </ul>
     </template>
