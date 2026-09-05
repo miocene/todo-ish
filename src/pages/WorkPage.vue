@@ -17,7 +17,6 @@ import { getAllWorkTasks, saveWorkTasks } from "../app/work-tasks.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMCalendar from "../components/JMCalendar/JMCalendar.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
-import "./work-page.css";
 
 export default {
   name: "WorkPage",

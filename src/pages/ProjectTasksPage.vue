@@ -12,7 +12,6 @@ import JMCatalogStatus from "../components/JMCatalogStatus/JMCatalogStatus.vue";
 import JMPrintingTaskDetails from "../components/JMProjectTaskDetails/JMPrintingTaskDetails.vue";
 import JMStitchTaskDetails from "../components/JMProjectTaskDetails/JMStitchTaskDetails.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
-import "./task-pages.css";
 
 function loadProjectTasks(pageKey) {
   const pageData = loadPageTasks(pageKey);

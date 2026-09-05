@@ -8,7 +8,6 @@ import { completedTasksLast, nextEntityId, setTaskCompletion, serializableTasks 
 import { syncSupplyShoppingLists } from "../app/shopping-supplies.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
-import "./task-pages.css";
 
 export default {
   name: "ShoppingPage",

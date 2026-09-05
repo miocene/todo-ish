@@ -6,7 +6,6 @@ import { loadPageTasks, savePageTasks } from "../app/page-tasks.js";
 import { completedTasksLast, nextEntityId, setTaskCompletion, serializableTasks } from "../app/task-list.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
-import "./task-pages.css";
 
 export default {
   name: "TodoListsPage",

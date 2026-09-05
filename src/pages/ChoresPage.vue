@@ -6,7 +6,6 @@ import { nextEntityId, setTaskCompletion, serializableChores } from "../app/task
 import { calendarDate, isoDate } from "../app/work-calendar.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
-import "./task-pages.css";
 
 const DUE_DATE_FORMATTER = new Intl.DateTimeFormat("en", {
   weekday: "short",

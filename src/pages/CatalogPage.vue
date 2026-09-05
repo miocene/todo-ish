@@ -12,7 +12,6 @@ import { filamentSupplyStatus, syncFilamentShoppingList } from "../app/printing-
 import { flossSupplyStatus, syncFlossShoppingList } from "../app/stitching-supplies.js";
 import JMCatalogStatus from "../components/JMCatalogStatus/JMCatalogStatus.vue";
 import JMCatalogCard from "../components/JMCatalogCard/JMCatalogCard.vue";
-import "./catalog-page.css";
 
 export default {
   name: "CatalogPage",

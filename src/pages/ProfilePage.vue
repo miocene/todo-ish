@@ -5,7 +5,6 @@ import { activityYears, buildActivityCalendar, collectCompletedActivity, groupAc
 import { createPasskey, signOut } from "../app/passkeys.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMIcon from "../components/JMIcon/JMIcon.vue";
-import "./profile-page.css";
 
 export default {
   name: "ProfilePage",
