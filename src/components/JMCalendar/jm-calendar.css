@@ -5,19 +5,6 @@
   align-items: center;
 }
 
-.jm-calendar::before {
-  position: absolute;
-  z-index: 0;
-  inset-block-start: anchor(top);
-  inset-inline-start: anchor(left);
-  inline-size: anchor-size(width);
-  block-size: anchor-size(height);
-  content: "";
-  background: var(--color-bg-selection);
-  border-radius: calc(var(--radius-card) - var(--space-2));
-  position-anchor: --jm-calendar-day;
-}
-
 .jm-calendar__left {
   position: absolute;
   left: 0;
@@ -70,17 +57,9 @@
   line-height: 1;
 }
 
-.jm-calendar__day--selected {
-  anchor-name: --jm-calendar-day;
-}
-
-.jm-calendar:has(> .jm-calendar__day:not(.jm-calendar__day--selected, :disabled):is(:hover, :focus-visible))
-  > .jm-calendar__day--selected {
-  anchor-name: none;
-}
-
-.jm-calendar__day:not(.jm-calendar__day--selected, :disabled):is(:hover, :focus-visible) {
-  anchor-name: --jm-calendar-day;
+.jm-calendar__day--selected,
+.jm-calendar__day:not(:disabled):is(:hover, :focus-visible) {
+  background: var(--color-bg-selection);
 }
 
 .jm-calendar__day--today .jm-calendar__weekday,
@@ -201,27 +180,6 @@
 
 .jm-day-type__check {
   margin-inline-start: auto;
-}
-
-@supports not (anchor-name: --jm-calendar-day) {
-  .jm-calendar::before {
-    display: none;
-  }
-
-  .jm-calendar__day--selected {
-    background: var(--color-bg-selection);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .jm-calendar::before {
-    transition:
-      inset-block-start 180ms ease,
-      inset-inline-start 180ms ease,
-      inline-size 180ms ease,
-      block-size 180ms ease,
-      opacity 100ms ease;
-  }
 }
 
 @media (width <= 720px) {
