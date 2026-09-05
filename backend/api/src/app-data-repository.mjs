@@ -69,6 +69,7 @@ async function readAppData(pool) {
        FROM work_day_statuses
        ORDER BY work_date`,
     );
+    const colorRows = await queryRows(client, "SELECT id, color FROM colors ORDER BY id");
     const choreRows = await queryRows(
       client,
       `SELECT
@@ -91,7 +92,7 @@ async function readAppData(pool) {
     );
     const todoListRows = await queryRows(
       client,
-      `SELECT id, title
+      `SELECT id, title, color
        FROM todo_lists
        ORDER BY position, created_at, id`,
     );
@@ -217,6 +218,7 @@ async function readAppData(pool) {
         ...(item.checkedAt && { checkedAt: timestamp(item.checkedAt) }),
       })),
       workStatuses: Object.fromEntries(workStatusRows.map((row) => [row.date, row.status])),
+      colors: Object.fromEntries(colorRows.map((row) => [row.id, row.color])),
       pages: {
         chores: {
           occurrenceOrder: choreRows
@@ -237,6 +239,7 @@ async function readAppData(pool) {
           lists: todoListRows.map((list) => ({
             id: list.id,
             title: list.title,
+            color: list.color,
             tasks: todoItemsByList.get(list.id) ?? [],
           })),
         },
@@ -341,13 +344,14 @@ async function replaceTodos(client, data) {
   const itemIds = [];
   for (const [listPosition, list] of data.lists.entries()) {
     await client.query({
-      text: `INSERT INTO todo_lists (id, title, position)
-             VALUES ($1, $2, $3)
+      text: `INSERT INTO todo_lists (id, title, color, position)
+             VALUES ($1, $2, $3, $4)
              ON CONFLICT (id) DO UPDATE SET
                title = EXCLUDED.title,
+               color = coalesce(EXCLUDED.color, todo_lists.color),
                position = EXCLUDED.position,
                updated_at = now()`,
-      values: [list.id, list.title, listPosition],
+      values: [list.id, list.title, list.color, listPosition],
     });
     for (const [itemPosition, item] of list.tasks.entries()) {
       itemIds.push(item.id);
@@ -517,6 +521,15 @@ async function replaceInventory(client, table, countColumn, inventory) {
 const WRITERS = Object.freeze({
   "work-tasks": replaceWorkTasks,
   "work-statuses": replaceWorkStatuses,
+  colors: async (client, colors) => {
+    for (const [id, color] of Object.entries(colors)) {
+      await client.query({
+        text: `INSERT INTO colors (id, color) VALUES ($1, $2)
+               ON CONFLICT (id) DO UPDATE SET color = EXCLUDED.color`,
+        values: [id, color],
+      });
+    }
+  },
   chores: replaceChores,
   todos: replaceTodos,
   shopping: replaceShopping,

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { CARD_COLORS } from "../src/app/card-colors.js";
 import filamentCatalog from "../backend/catalogs/bambu-filaments.snapshot.json" with { type: "json" };
 import flossCatalog from "../backend/catalogs/dmc-floss.snapshot.json" with { type: "json" };
 
@@ -6,6 +7,7 @@ const appDataByPage = new WeakMap();
 const APP_DATA_RESOURCES = [
   "work-tasks",
   "work-statuses",
+  "colors",
   "chores",
   "todos",
   "shopping",
@@ -21,6 +23,7 @@ function emptyAppData(values, revisions) {
     revisions,
     workTasks: values["work-tasks"] ?? [],
     workStatuses: values["work-statuses"] ?? {},
+    colors: values["colors"] ?? {},
     pages: {
       chores: values.chores ?? { occurrenceOrder: [], tasks: [] },
       todos: values.todos ?? { lists: [] },
@@ -38,6 +41,7 @@ function emptyAppData(values, revisions) {
 test.beforeEach(async ({ page }) => {
   const values = {};
   const revisions = Object.fromEntries(APP_DATA_RESOURCES.map((resource) => [resource, 0]));
+  let supportsColors = true;
   let session = {
     authenticated: true,
     bootstrapRequired: false,
@@ -50,6 +54,9 @@ test.beforeEach(async ({ page }) => {
     },
     setSession: (value) => {
       session = value;
+    },
+    setColorSupport: (value) => {
+      supportsColors = value;
     },
   };
   appDataByPage.set(page, controller);
@@ -66,19 +73,32 @@ test.beforeEach(async ({ page }) => {
     }
 
     if (request.method() === "GET" && url.pathname === "/api/data") {
-      await json(emptyAppData(values, revisions));
+      const data = emptyAppData(values, { ...revisions });
+      if (!supportsColors) {
+        delete data.colors;
+        delete data.revisions.colors;
+        data.initializedResources = data.initializedResources.filter((resource) => resource !== "colors");
+      }
+      await json(data);
       return;
     }
 
     const resourceMatch = /^\/api\/data\/([a-z-]+)$/.exec(url.pathname);
     if (request.method() === "PUT" && resourceMatch) {
       const resource = resourceMatch[1];
+      if (!supportsColors && resource === "colors") {
+        await json({ error: "Not Found" }, 404);
+        return;
+      }
       const expectedRevision = Number(/^"(\d+)"$/.exec(request.headers()["if-match"] || "")?.[1]);
       if (expectedRevision !== revisions[resource]) {
         await json({ error: "Revision conflict", currentRevision: revisions[resource] }, 409);
         return;
       }
       const submittedValue = request.postDataJSON();
+      if (!supportsColors && resource === "todos") {
+        for (const list of submittedValue.lists) delete list.color;
+      }
       values[resource] =
         resource === "shopping" ? { tasks: submittedValue.tasks.filter((task) => !task.source) } : submittedValue;
       revisions[resource] += 1;
@@ -152,6 +172,136 @@ function localFullDateLabel(dayOffset = 0) {
     year: "numeric",
   }).format(date);
 }
+
+test("development mocks colors locally when the API has no color storage", async ({ page }) => {
+  const data = appDataByPage.get(page);
+  data.setColorSupport(false);
+  data.set("todos", {
+    lists: [{ id: "general", title: "General", tasks: [{ id: "task-1", title: "Original task", completed: false }] }],
+  });
+  data.set("printing", {
+    projects: [{ id: "existing-project", title: "Existing project", color: "#123456", description: "", tasks: [] }],
+  });
+  const colorRequests = [];
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname === "/api/data/colors") colorRequests.push(request.url());
+  });
+  const colorOf = (locator) => locator.evaluate((element) => element.style.getPropertyValue("--color"));
+
+  await page.goto("/work");
+  const todayColor = await colorOf(page.locator(".work-day"));
+  const backlogColor = await colorOf(page.locator(".work-backlog"));
+  expect(CARD_COLORS).toContain(todayColor);
+  expect(CARD_COLORS).toContain(backlogColor);
+  await page.reload();
+  expect(await colorOf(page.locator(".work-day"))).toBe(todayColor);
+  expect(await colorOf(page.locator(".work-backlog"))).toBe(backlogColor);
+
+  await page.goto("/todos");
+  const listColor = await colorOf(page.locator(".task-page__section"));
+  expect(CARD_COLORS).toContain(listColor);
+  expect(data.get("todos").lists[0]).not.toHaveProperty("color");
+  await page.getByRole("textbox", { name: "Task title", exact: true }).fill("Still saved to the API");
+  await expect.poll(() => data.get("todos").lists[0].tasks[0].title).toBe("Still saved to the API");
+  await page.reload();
+  expect(await colorOf(page.locator(".task-page__section"))).toBe(listColor);
+  await expect(page.getByRole("textbox", { name: "Task title", exact: true })).toHaveValue("Still saved to the API");
+  expect(data.get("todos").lists[0]).not.toHaveProperty("color");
+
+  await page.goto("/printing");
+  const projectColor = await colorOf(page.locator(".project-card"));
+  expect(CARD_COLORS).toContain(projectColor);
+  expect(data.get("printing").projects[0].color).toBe("#123456");
+  await page.reload();
+  expect(await colorOf(page.locator(".project-card"))).toBe(projectColor);
+  expect(colorRequests).toEqual([]);
+});
+
+test("card colors migrate into the palette and persist without visible color controls", async ({ page }) => {
+  const data = appDataByPage.get(page);
+  data.set("todos", {
+    lists: [
+      { id: "general", title: "General", tasks: [] },
+      { id: "home", title: "Home", color: "#e9c46a", tasks: [] },
+    ],
+  });
+  data.set("printing", {
+    projects: [{ id: "legacy-project", title: "Existing project", color: "#123456", description: "", tasks: [] }],
+  });
+  data.set("colors", { [`work-day:${localIsoDate(-1)}`]: "#633533" });
+
+  const colorOf = (locator) => locator.evaluate((element) => element.style.getPropertyValue("--color"));
+  await page.goto("/work");
+  const todayColor = await colorOf(page.locator(".work-day"));
+  const backlogColor = await colorOf(page.locator(".work-backlog"));
+  expect(CARD_COLORS).toContain(todayColor);
+  expect(CARD_COLORS).toContain(backlogColor);
+  await expect
+    .poll(() => data.get("colors"))
+    .toMatchObject({
+      [`work-day:${localIsoDate()}`]: todayColor,
+      [`work-day:${localIsoDate(-1)}`]: "#633533",
+      backlog: backlogColor,
+    });
+  expect(data.get("colors")).not.toHaveProperty("today");
+  await page.getByRole("button", { name: `${localFullDateLabel(-1)}. No completed tasks`, exact: true }).click();
+  await expect(page.locator(".work-day time")).toHaveAttribute("datetime", localIsoDate(-1));
+  expect(await colorOf(page.locator(".work-day"))).toBe("#633533");
+  await page.getByRole("button", { name: `${localFullDateLabel(-2)}. No completed tasks`, exact: true }).click();
+  await expect(page.locator(".work-day time")).toHaveAttribute("datetime", localIsoDate(-2));
+  const pastDayColor = await colorOf(page.locator(".work-day"));
+  expect(CARD_COLORS).toContain(pastDayColor);
+  await expect.poll(() => data.get("colors")[`work-day:${localIsoDate(-2)}`]).toBe(pastDayColor);
+  await page.reload();
+  expect(await colorOf(page.locator(".work-day"))).toBe(pastDayColor);
+  await page.getByRole("button", { name: "Today", exact: true }).click();
+  await expect(page.locator(".work-day time")).toHaveAttribute("datetime", localIsoDate());
+  await page.reload();
+  expect(await colorOf(page.locator(".work-day"))).toBe(todayColor);
+  expect(await colorOf(page.locator(".work-backlog"))).toBe(backlogColor);
+
+  await page.goto("/todos");
+  const listColor = await colorOf(page.locator(".task-page__section"));
+  expect(CARD_COLORS).toContain(listColor);
+  await expect.poll(() => data.get("todos").lists[0].color).toBe(listColor);
+  await page.getByRole("link", { name: "Home", exact: true }).click();
+  expect(await colorOf(page.locator(".task-page__section"))).toBe("#E9C46A");
+  await page.reload();
+  expect(await colorOf(page.locator(".task-page__section"))).toBe("#E9C46A");
+  await page.getByRole("link", { name: "General", exact: true }).click();
+  expect(await colorOf(page.locator(".task-page__section"))).toBe(listColor);
+
+  // List creation uses the same save boundary, including callers without a color field.
+  await page.evaluate(async () => {
+    const { loadPageTasks, savePageTasks } = await import("/src/app/page-tasks.js");
+    const todos = loadPageTasks("todos");
+    todos.lists.push({ id: "new-list", title: "New list", tasks: [] });
+    savePageTasks("todos", todos);
+  });
+  await expect.poll(() => data.get("todos").lists.length).toBe(3);
+  const newListColor = data.get("todos").lists.at(-1).color;
+  expect(CARD_COLORS).toContain(newListColor);
+  await page.reload();
+  await page.getByRole("link", { name: "New list", exact: true }).click();
+  expect(await colorOf(page.locator(".task-page__section"))).toBe(newListColor);
+
+  await page.goto("/printing");
+  const projectColor = await colorOf(page.locator(".project-card"));
+  expect(CARD_COLORS).toContain(projectColor);
+  await expect.poll(() => data.get("printing").projects[0].color).toBe(projectColor);
+  await expect(page.locator('input[type="color"]')).toHaveCount(0);
+  await expect(page.locator(".project-card")).toHaveCSS("border-top-width", "1px");
+  await page.reload();
+  expect(await colorOf(page.locator(".project-card"))).toBe(projectColor);
+
+  await page.goto("/cross-stitch");
+  await page.getByRole("button", { name: "Add project" }).click();
+  const newProjectColor = await colorOf(page.locator(".project-card").last());
+  expect(CARD_COLORS).toContain(newProjectColor);
+  await expect.poll(() => data.get("cross-stitch")?.projects.at(-1).color).toBe(newProjectColor);
+  await page.reload();
+  expect(await colorOf(page.locator(".project-card").last())).toBe(newProjectColor);
+});
 
 test("the root redirects to the single-day work calendar", async ({ page }) => {
   await page.goto("/");
@@ -587,7 +737,8 @@ test("task pages render their variants and save changes immediately", async ({ p
   await expect(projects).toHaveCount(2);
   await expect(projects.getByRole("heading", { level: 2 })).toHaveText(["Desk cable clips", "Miniature planter"]);
   await expect(page.locator(".task-item__drag-handle, .task-item__pin, .task-item__remove")).toHaveCount(0);
-  await expect(projects.first().getByLabel("Project color")).toHaveValue("#446e5c");
+  await expect(projects.first().getByLabel("Project color")).toHaveCount(0);
+  expect(CARD_COLORS).toContain(await projects.first().evaluate((card) => card.style.getPropertyValue("--color")));
   await expect(projects.first().getByLabel(/^Filament \d+$/)).toHaveCount(4);
   expect(
     await projects
@@ -609,7 +760,8 @@ test("task pages render their variants and save changes immediately", async ({ p
   const newProject = projects.last();
   await expect(newProject.getByLabel("Project title")).toBeFocused();
   await newProject.getByLabel("Project title").fill("Headphone stand");
-  await newProject.getByLabel("Project color").fill("#704f8a");
+  const projectColor = await newProject.evaluate((card) => card.style.getPropertyValue("--color"));
+  expect(CARD_COLORS).toContain(projectColor);
   await newProject.getByRole("button", { name: "Add item" }).click();
   await newProject.getByLabel("Item name").fill("Weighted base");
   await newProject.getByLabel("Filament 1", { exact: true }).selectOption("bambu-pla-basic-filament-10101");
@@ -621,7 +773,7 @@ test("task pages render their variants and save changes immediately", async ({ p
   await page.reload();
   const savedProject = page.locator(".project-card").last();
   await expect(savedProject.getByLabel("Project title")).toHaveValue("Headphone stand");
-  await expect(savedProject.getByLabel("Project color")).toHaveValue("#704f8a");
+  expect(await savedProject.evaluate((card) => card.style.getPropertyValue("--color"))).toBe(projectColor);
   await expect(savedProject.getByLabel("Item name")).toHaveValue("Weighted base");
   expect(
     await savedProject.getByLabel(/^Filament \d+$/).evaluateAll((selects) => selects.map((select) => select.value)),
@@ -638,7 +790,8 @@ test("task pages render their variants and save changes immediately", async ({ p
   ]);
   const stitchProject = page.locator(".project-card").first();
   await expect(stitchProject.getByLabel("Project title")).toHaveValue("Botanical sampler");
-  await expect(stitchProject.getByLabel("Project color")).toHaveValue("#71935c");
+  await expect(stitchProject.getByLabel("Project color")).toHaveCount(0);
+  expect(CARD_COLORS).toContain(await stitchProject.evaluate((card) => card.style.getPropertyValue("--color")));
   await expect(stitchProject.getByText("2,400 total crosses", { exact: true })).toBeVisible();
   await expect(stitchProject.getByRole("checkbox")).toHaveCount(0);
   const stitchColors = stitchProject.locator('select[name="stitch-floss"]');

@@ -1,5 +1,6 @@
 <script>
 import { activityLevel } from "../app/activity.js";
+import { loadCardColors } from "../app/card-colors.js";
 import { createCompletionMoveScheduler, finishTaskDraft, moveItemToEnd, serializableTasks } from "../app/task-list.js";
 import {
   calendarDate,
@@ -28,6 +29,10 @@ export default {
       }, -1) + 1;
     return {
       calendarRangeDate: "",
+      cardColors: loadCardColors([
+        "backlog",
+        ...workTasks.filter((task) => task.date).map((task) => `work-day:${task.date}`),
+      ]),
       completionMoves: createCompletionMoveScheduler(),
       dateTransitioning: false,
       draftTaskIds: new Set(),
@@ -39,6 +44,12 @@ export default {
     };
   },
   watch: {
+    focusDateIso: {
+      immediate: true,
+      handler(date) {
+        this.cardColors = loadCardColors([`work-day:${date}`]);
+      },
+    },
     "$route.query.date": {
       immediate: true,
       handler: "handleDateQueryChange",
@@ -271,6 +282,7 @@ export default {
 
     <section
       class="work-day"
+      :style="{ '--color': cardColors[`work-day:${focusDateIso}`] }"
       :class="{
         'work-day--today': selectedDay.today,
       }"
@@ -315,7 +327,7 @@ export default {
       </div>
     </section>
 
-    <section class="work-backlog" aria-labelledby="backlog-title">
+    <section class="work-backlog" :style="{ '--color': cardColors.backlog }" aria-labelledby="backlog-title">
       <header class="work-backlog__header">
         <h2 id="backlog-title">Backlog</h2>
         <JMButton aria-label="Add backlog task" text="Add task" view="secondary" @click="addBacklogTask" />

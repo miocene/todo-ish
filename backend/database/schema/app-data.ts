@@ -34,9 +34,21 @@ export const appDataRevisions = pgTable(
   (table) => [
     check(
       "app_data_revisions_resource_valid",
-      sql`${table.resource} IN ('work-tasks', 'work-statuses', 'chores', 'todos', 'shopping', 'printing', 'cross-stitch', 'filament-inventory', 'floss-inventory')`,
+      sql`${table.resource} IN ('work-tasks', 'work-statuses', 'colors', 'chores', 'todos', 'shopping', 'printing', 'cross-stitch', 'filament-inventory', 'floss-inventory')`,
     ),
     check("app_data_revisions_revision_non_negative", sql`${table.revision} >= 0`),
+  ],
+);
+
+export const colors = pgTable(
+  "colors",
+  {
+    id: text("id").primaryKey(),
+    color: text("color").notNull(),
+  },
+  (table) => [
+    check("colors_id_not_blank", sql`length(trim(${table.id})) > 0`),
+    check("colors_color_format", sql`${table.color} ~ '^#[0-9A-Fa-f]{6}$'`),
   ],
 );
 
@@ -155,11 +167,13 @@ export const todoLists = pgTable(
   {
     id: text("id").primaryKey(),
     title: text("title").notNull(),
+    color: text("color"),
     ...orderedEntityColumns(),
   },
   (table) => [
     check("todo_lists_id_not_blank", sql`length(trim(${table.id})) > 0`),
     check("todo_lists_title_not_blank", sql`length(trim(${table.title})) > 0`),
+    check("todo_lists_color_format", sql`${table.color} ~ '^#[0-9A-Fa-f]{6}$'`),
     check("todo_lists_position_non_negative", sql`${table.position} >= 0`),
   ],
 );

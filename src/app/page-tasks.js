@@ -1,4 +1,5 @@
 import { initializeAppDataResource, readAppData, writeAppData } from "./app-data.js";
+import { normalizeCardColor } from "./card-colors.js";
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const DEFAULT_FILAMENT_INVENTORY = Object.freeze({
@@ -101,7 +102,6 @@ const DEFAULT_PAGE_DATA = Object.freeze({
       {
         id: "printing-cable-clips",
         title: "Desk cable clips",
-        color: "#446e5c",
         description: "Small clips for routing charging cables under the desk.",
         tasks: [
           {
@@ -155,7 +155,6 @@ const DEFAULT_PAGE_DATA = Object.freeze({
       {
         id: "printing-planter",
         title: "Miniature planter",
-        color: "#bd6a43",
         description: "A self-watering planter for the kitchen windowsill.",
         tasks: [
           {
@@ -193,7 +192,6 @@ const DEFAULT_PAGE_DATA = Object.freeze({
       {
         id: "stitch-botanical",
         title: "Botanical sampler",
-        color: "#71935c",
         totalCrosses: 2400,
         description: "A small sampler with herbs and wildflowers.",
         tasks: [
@@ -230,7 +228,6 @@ const DEFAULT_PAGE_DATA = Object.freeze({
       {
         id: "stitch-canal-house",
         title: "Amsterdam canal house",
-        color: "#c72b3b",
         totalCrosses: 1800,
         description: "A narrow canal-house pattern for the hallway.",
         tasks: [
@@ -302,9 +299,9 @@ function normalizePrinting(data) {
   if (!data || typeof data !== "object" || !isProjectData(data)) return undefined;
   return {
     ...data,
-    projects: data.projects.map((project, projectIndex) => ({
+    projects: data.projects.map((project) => ({
       ...project,
-      color: /^#[\da-f]{6}$/i.test(project.color) ? project.color : ["#446e5c", "#bd6a43", "#526d9c"][projectIndex % 3],
+      color: normalizeCardColor(project.color),
       tasks: project.tasks.map((task) => {
         const { filamentId, filamentLabel, weightGrams, ...taskData } = task;
         const savedFilaments = Array.isArray(task.filaments) ? task.filaments : [];
@@ -333,9 +330,9 @@ function normalizeCrossStitch(data) {
   if (!data || typeof data !== "object" || !isProjectData(data)) return undefined;
   return {
     ...data,
-    projects: data.projects.map((project, projectIndex) => ({
+    projects: data.projects.map((project) => ({
       ...project,
-      color: /^#[\da-f]{6}$/i.test(project.color) ? project.color : ["#71935c", "#c72b3b"][projectIndex % 2],
+      color: normalizeCardColor(project.color),
       totalCrosses: project.tasks.reduce((total, task) => total + (Number(task.crosses) || 0), 0),
       tasks: project.tasks.map((task) => {
         const crosses = Number.isFinite(task.crosses) && task.crosses >= 0 ? Math.floor(task.crosses) : 0;
@@ -387,7 +384,7 @@ function normalizeTodos(data) {
   return data.lists.every(
     (list) => list && typeof list.id === "string" && typeof list.title === "string" && isTaskList(list.tasks),
   )
-    ? data
+    ? { ...data, lists: data.lists.map((list) => ({ ...list, color: normalizeCardColor(list.color) })) }
     : undefined;
 }
 
@@ -405,11 +402,24 @@ export function loadPageTasks(page) {
   if (!defaultData || !normalize) throw new Error(`Unknown task page: ${page}`);
 
   const resource = page === "crossStitch" ? "cross-stitch" : page;
-  const data = normalize(readAppData(resource)) ?? normalize(defaultData);
-  return initializeAppDataResource(resource, data);
+  const saved = readAppData(resource);
+  const normalized = normalize(saved);
+  const data = normalized ?? normalize(defaultData);
+  const collection = data.projects ? "projects" : data.lists ? "lists" : "";
+  const migrate =
+    Boolean(normalized && collection) &&
+    data[collection].some((item, index) => item.color !== saved[collection][index].color);
+  const value = migrate
+    ? {
+        ...saved,
+        [collection]: saved[collection].map((item, index) => ({ ...item, color: data[collection][index].color })),
+      }
+    : data;
+  return initializeAppDataResource(resource, value, { migrate });
 }
 
 export function savePageTasks(page, data) {
+  for (const item of data.projects ?? data.lists ?? []) item.color = normalizeCardColor(item.color);
   writeAppData(page === "crossStitch" ? "cross-stitch" : page, data);
 }
 

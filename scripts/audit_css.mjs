@@ -31,11 +31,15 @@ for (const match of css.matchAll(/view-transition-class:\s*([a-z][a-z0-9_-]+)/g)
 }
 
 const defined = new Set([...css.matchAll(/\.([a-z_][a-z0-9_-]*)/gi)].map((match) => match[1]));
+// These classes identify DOM elements without requiring their own CSS rule.
 const structuralHooks = new Set([
   "chores-all",
   "chores-upcoming",
+  "jm-day-type__option-label",
   "jm-navigation__item",
   "printing-item__field--filament",
+  "project-card--printing",
+  "project-card--stitching",
   "task-item__pin",
   "task-item__remove",
 ]);

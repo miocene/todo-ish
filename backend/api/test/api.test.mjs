@@ -267,6 +267,36 @@ test("app-data API reads state and performs revision-checked writes", async () =
   });
 });
 
+test("app-data API preserves card colors and validates their format", async () => {
+  const calls = [];
+  const repository = fakeRepository({
+    replace: async (resource, value) => {
+      calls.push({ resource, value });
+      return 1;
+    },
+  });
+  await withServer(repository, async (origin) => {
+    const write = (resource, value) =>
+      fetch(`${origin}/api/data/${resource}`, {
+        method: "PUT",
+        headers: { "content-type": "application/json", "if-match": '"0"' },
+        body: JSON.stringify(value),
+      });
+    const colors = { "work-day:2026-09-04": "#633533", "work-day:2026-09-05": "#8FB7B0", backlog: "#E9B6B4" };
+    assert.equal((await write("colors", colors)).status, 200);
+    const todos = { lists: [{ id: "general", title: "General", color: "#8FB7B0", tasks: [] }] };
+    assert.equal((await write("todos", todos)).status, 200);
+    assert.deepEqual(calls, [
+      { resource: "colors", value: colors },
+      { resource: "todos", value: todos },
+    ]);
+    assert.equal((await write("colors", { ...colors, "work-day:2026-09-05": "red" })).status, 400);
+    assert.equal((await write("colors", { ...colors, "work-day:2026-02-30": "#633533" })).status, 400);
+    assert.equal((await write("colors", { today: "#633533" })).status, 400);
+    assert.equal((await write("todos", { lists: [{ ...todos.lists[0], color: "red" }] })).status, 400);
+  });
+});
+
 test("app-data API validates preconditions, payloads, and revision conflicts", async () => {
   const repository = fakeRepository({
     replace: async (resource, _data, expectedRevision) => {

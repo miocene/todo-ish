@@ -1,4 +1,5 @@
 <script>
+import { randomCardColor } from "../app/card-colors.js";
 import { filamentLabel, filamentsById } from "../app/filament-catalog.js";
 import { flossById, flossLabel } from "../app/floss-catalog.js";
 import { loadFilamentInventory, loadFlossInventory, loadPageTasks, savePageTasks } from "../app/page-tasks.js";
@@ -93,9 +94,6 @@ export default {
     projectTitleInputId(project) {
       return `${this.pageKey}-project-title-${project.id}`;
     },
-    projectColorInputId(project) {
-      return `${this.pageKey}-project-color-${project.id}`;
-    },
     taskInputId(project, task) {
       return `${this.pageKey}-title-${project.id}-${task.id}`;
     },
@@ -128,10 +126,6 @@ export default {
     },
     updateProjectTitle(project, title) {
       project.title = title;
-      this.save();
-    },
-    updateProjectColor(project, color) {
-      project.color = color;
       this.save();
     },
     updateFilament(usage, catalogId) {
@@ -224,7 +218,7 @@ export default {
       const project = {
         id: nextEntityId(this.pageData.projects, this.isPrinting ? "printing-project" : "stitch-project"),
         title: this.isPrinting ? "New 3D project" : "New cross stitch project",
-        color: this.isPrinting ? "#526d9c" : "#a6638d",
+        color: randomCardColor(),
         description: "",
         tasks: [],
       };
@@ -268,7 +262,7 @@ export default {
         <article
           class="project-card"
           :class="{ 'project-card--printing': isPrinting, 'project-card--stitching': isCrossStitch }"
-          :style="isCraftProject ? { '--project-color': project.color } : undefined"
+          :style="{ '--color': project.color }"
           :aria-labelledby="projectTitleId(project)"
         >
           <header class="project-card__header">
@@ -285,16 +279,6 @@ export default {
                 :value="project.title"
                 @input="updateProjectTitle(project, $event.target.value)"
               />
-              <label class="project-card__color-field" :for="projectColorInputId(project)">
-                <span>Project color</span>
-                <input
-                  :id="projectColorInputId(project)"
-                  name="project-color"
-                  type="color"
-                  :value="project.color"
-                  @input="updateProjectColor(project, $event.target.value)"
-                />
-              </label>
             </div>
             <div v-else>
               <h2 :id="projectTitleId(project)">{{ project.title }}</h2>

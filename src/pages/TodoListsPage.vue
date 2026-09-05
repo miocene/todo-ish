@@ -104,7 +104,7 @@ export default {
 
     <nav class="task-tabs" aria-label="Todo lists">
       <ul class="task-tabs__list" role="list">
-        <li v-for="list in todos.lists" :key="list.id">
+        <li v-for="list in todos.lists" :key="list.id" :style="{ '--color': list.color }">
           <RouterLink v-slot="{ href, navigate }" custom :to="listRoute(list)">
             <a
               class="task-tabs__link"
@@ -120,7 +120,7 @@ export default {
       </ul>
     </nav>
 
-    <div class="task-page__section">
+    <div class="task-page__section" :style="{ '--color': activeList.color }">
       <h2 :id="`todo-list-${activeList.id}`">{{ activeList.title }}</h2>
       <ul class="task-page__tasks" role="list">
         <li v-for="task in activeList.tasks" :key="task.id">

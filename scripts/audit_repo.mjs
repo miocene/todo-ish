@@ -6,6 +6,14 @@ const exists = (path) => existsSync(new URL(path, root));
 const read = (path) => readFileSync(new URL(path, root), "utf8");
 const readJson = (path) => JSON.parse(read(path));
 
+function clientFiles(directory = "src") {
+  return readdirSync(new URL(`${directory}/`, root), { withFileTypes: true }).flatMap((entry) => {
+    const path = `${directory}/${entry.name}`;
+    if (entry.isDirectory()) return clientFiles(path);
+    return /\.(?:js|vue)$/.test(entry.name) ? [path] : [];
+  });
+}
+
 const packageJson = readJson("package.json");
 const runtimeDependencies = Object.keys(packageJson.dependencies || {}).sort();
 
@@ -49,16 +57,18 @@ assert.deepEqual(readdirSync(new URL("src/pages/", root)).sort(), [
   "catalog-page.css",
   "profile-page.css",
   "task-pages.css",
+  "work-page.css",
 ]);
 assert.deepEqual(readdirSync(new URL("src/app/", root)).sort(), [
   "activity.js",
   "api.js",
   "app-data.js",
+  "card-colors.js",
   "filament-catalog.js",
   "floss-catalog.js",
   "managed-shopping.js",
-  "passkeys.js",
   "page-tasks.js",
+  "passkeys.js",
   "printing-supplies.js",
   "router.js",
   "shopping-supplies.js",
@@ -70,7 +80,9 @@ assert.deepEqual(readdirSync(new URL("src/app/", root)).sort(), [
 ]);
 assert.deepEqual(readdirSync(new URL("src/components/", root)).sort(), [
   "JMButton",
+  "JMCalendar",
   "JMCatalogCard",
+  "JMDayType",
   "JMHeader",
   "JMIcon",
   "JMNavigation",
@@ -91,38 +103,41 @@ assert.deepEqual(readdirSync(new URL("src/components/JMIcon/", root)).sort(), [
 ]);
 const iconSprite = read("src/components/JMIcon/icons.svg");
 const iconNames = [...iconSprite.matchAll(/<symbol id="icon-([^"]+)"/g)].map(([, name]) => name);
-assert.deepEqual(iconNames, [
-  "chevron-up",
-  "chevron-right",
-  "chevron-down",
-  "chevron-left",
-  "check",
-  "work",
-  "user",
-  "spinner",
-  "pto",
-  "chores",
-  "todo",
-  "shopping",
-  "sick-leave",
-  "work-trip",
-  "printer",
-  "weekend",
-  "yarn",
-  "holiday",
-  "catalog",
-  "grip",
-  "pin",
-  "pinned",
-  "remove",
-  "conference",
-  "arrow-left",
-  "arrow-right",
-  "arrow-up",
-  "arrow-down",
-  "search",
-  "close",
-]);
+assert.deepEqual(
+  iconNames.sort(),
+  [
+    "chevron-up",
+    "chevron-right",
+    "chevron-down",
+    "chevron-left",
+    "check",
+    "work",
+    "user",
+    "spinner",
+    "pto",
+    "chores",
+    "todo",
+    "shopping",
+    "sick-leave",
+    "work-trip",
+    "printer",
+    "weekend",
+    "yarn",
+    "holiday",
+    "catalog",
+    "grip",
+    "pin",
+    "pinned",
+    "remove",
+    "conference",
+    "arrow-left",
+    "arrow-right",
+    "arrow-up",
+    "arrow-down",
+    "search",
+    "close",
+  ].sort(),
+);
 assert.doesNotMatch(iconSprite, /#333333/i);
 assert.doesNotMatch(iconSprite, /id="icon-profile"/);
 assert.deepEqual(readdirSync(new URL("src/components/JMNavigation/", root)).sort(), [
@@ -137,47 +152,18 @@ assert.deepEqual(readdirSync(new URL("src/components/JMTaskCard/", root)).sort()
   "JMTaskCard.vue",
   "jm-task-card.css",
 ]);
-for (const removedDirectory of ["src/data", "src/domain", "src/persistence", "src/shared"]) {
+for (const removedDirectory of ["src/data", "src/domain", "src/persistence"]) {
   assert.ok(!exists(removedDirectory), `${removedDirectory} should not remain in the client`);
 }
+assert.deepEqual(readdirSync(new URL("src/shared/", root)).sort(), ["date.js"]);
+assert.deepEqual(readdirSync(new URL("scripts/", root)).sort(), [
+  "audit_css.mjs",
+  "audit_repo.mjs",
+  "dev.sh",
+  "prepare_github_pages.mjs",
+]);
 
-const clientSource = [
-  "src/App.vue",
-  "src/AppBootstrap.vue",
-  "src/main.js",
-  "src/app/activity.js",
-  "src/app/api.js",
-  "src/app/app-data.js",
-  "src/app/filament-catalog.js",
-  "src/app/floss-catalog.js",
-  "src/app/managed-shopping.js",
-  "src/app/passkeys.js",
-  "src/app/printing-supplies.js",
-  "src/app/shopping-supplies.js",
-  "src/app/stitching-supplies.js",
-  "src/app/router.js",
-  "src/app/task-list.js",
-  "src/app/work-status.js",
-  "src/app/work-tasks.js",
-  "src/components/JMButton/JMButton.vue",
-  "src/components/JMCatalogCard/JMCatalogCard.vue",
-  "src/components/JMHeader/JMHeader.vue",
-  "src/components/JMIcon/JMIcon.vue",
-  "src/components/JMNavigation/JMNavigation.vue",
-  "src/components/JMPasskeyGate/JMPasskeyGate.vue",
-  "src/components/JMProjectTaskDetails/JMPrintingTaskDetails.vue",
-  "src/components/JMProjectTaskDetails/JMStitchTaskDetails.vue",
-  "src/components/JMTaskCard/JMTaskCard.vue",
-  "src/pages/CatalogPage.vue",
-  "src/pages/ChoresPage.vue",
-  "src/pages/ProfilePage.vue",
-  "src/pages/ProjectTasksPage.vue",
-  "src/pages/ShoppingPage.vue",
-  "src/pages/TodoListsPage.vue",
-  "src/pages/WorkPage.vue",
-]
-  .map(read)
-  .join("\n");
+const clientSource = clientFiles().sort().map(read).join("\n");
 assert.doesNotMatch(clientSource, /demo-state|catalog-api/i);
 assert.doesNotMatch(clientSource.replace(read("src/app/app-data.js"), ""), /localStorage/);
 assert.match(read("src/app/app-data.js"), /LEGACY_STORAGE_KEYS/);

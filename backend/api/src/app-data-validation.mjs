@@ -8,6 +8,7 @@ const URL_LIMIT = 2_000;
 export const APP_DATA_RESOURCES = Object.freeze([
   "work-tasks",
   "work-statuses",
+  "colors",
   "chores",
   "todos",
   "shopping",
@@ -170,6 +171,7 @@ function todos(value) {
       return {
         id: id(list.id, `todos.lists[${listIndex}].id`),
         title: text(list.title, `todos.lists[${listIndex}].title`),
+        color: list.color == null ? null : color(list.color, `todos.lists[${listIndex}].color`),
         tasks: uniqueIds(
           array(list.tasks, `todos.lists[${listIndex}].tasks`).map((item, itemIndex) =>
             task(item, `todos.lists[${listIndex}].tasks[${itemIndex}]`),
@@ -314,6 +316,19 @@ function inventory(value, resource) {
 const VALIDATORS = Object.freeze({
   "work-tasks": workTasks,
   "work-statuses": workStatuses,
+  colors: (value) => {
+    const source = object(value, "colors");
+    if (Object.keys(source).length > RESOURCE_LIMIT) fail("colors", `must contain at most ${RESOURCE_LIMIT} entries`);
+    return Object.fromEntries(
+      Object.entries(source).map(([key, value]) => {
+        if (key !== "backlog") {
+          if (!key.startsWith("work-day:")) fail(`colors.${key}`, "must identify a work date or backlog");
+          date(key.slice("work-day:".length), `colors.${key}`);
+        }
+        return [key, color(value, `colors.${key}`)];
+      }),
+    );
+  },
   chores,
   todos,
   shopping,
