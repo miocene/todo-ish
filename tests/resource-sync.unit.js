@@ -150,6 +150,10 @@ test("multiple local drafts are preserved without choosing one to overwrite the 
   assert.equal(f.states.at(-1).state, "conflict");
   assert.equal(f.writes.length, 0);
   assert.equal(f.sync.pending().length, 2);
+  await f.sync.retry();
+  await f.advance();
+  assert.equal(f.writes.length, 0);
+  assert.equal(f.sync.pending().length, 2);
 });
 
 test("failed local storage is visible while successful server acknowledgement still clears the draft", async () => {

@@ -29,6 +29,7 @@ export function createResourceSync({
   const states = new Map();
   const running = new Set();
   const timers = new Map();
+  const multipleDrafts = new Set();
   let durable = true;
   const canonical = (resource, value) => stableJson(normalize(resource, value));
 
@@ -185,7 +186,9 @@ export function createResourceSync({
       }
       for (const entry of restored) {
         if (!resources.includes(entry.resource)) continue;
-        if (entries.has(entry.resource)) {
+        if (restored.filter((item) => item.resource === entry.resource).length > 1) {
+          multipleDrafts.add(entry.resource);
+          if (!entries.has(entry.resource)) entries.set(entry.resource, entry);
           status(
             entry.resource,
             "conflict",
@@ -221,6 +224,7 @@ export function createResourceSync({
       try {
         const state = await readRemote();
         for (const entry of entries.values()) {
+          if (multipleDrafts.has(entry.resource)) continue;
           if (reconcile(entry, state) && entries.has(entry.resource)) schedule(entry.resource, 0);
         }
       } catch (error) {
@@ -240,6 +244,7 @@ export function createResourceSync({
     discard() {
       for (const entry of this.pending()) storage.remove(entry.id);
       entries.clear();
+      multipleDrafts.clear();
       states.clear();
       for (const timer of timers.values()) clock.clearTimeout(timer);
       timers.clear();
