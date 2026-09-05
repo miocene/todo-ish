@@ -117,7 +117,7 @@ export default {
           aria-label="Year activity graph, scroll horizontally"
           tabindex="0"
         >
-          <div class="activity-graph__canvas" :style="{ '--activity-weeks': calendar.weekCount }">
+          <div class="activity-graph__canvas">
             <div class="activity-graph__months" aria-hidden="true">
               <span v-for="month in calendar.months" :key="month.label" :style="{ gridColumn: month.column }">
                 {{ month.label }}

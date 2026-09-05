@@ -1,8 +1,4 @@
 .task-item {
-  --task-item-accent: var(--calendar-accent, #1967d2);
-  --task-item-border: var(--calendar-border, #dadce0);
-  --task-item-muted: var(--calendar-muted, #70757a);
-
   display: grid;
   grid-template-columns: 16px minmax(0, 1fr) auto;
   gap: var(--space-1);
@@ -11,7 +7,7 @@
   margin-inline: var(--space-2);
   padding: var(--space-2);
   background: var(--color-bg-surface);
-  border: 1px solid var(--task-item-border);
+  border: 1px solid #f0f;
   border-radius: var(--radius-control);
 }
 
@@ -24,7 +20,7 @@
   inline-size: 16px;
   block-size: 16px;
   margin: 2px 0 0;
-  accent-color: var(--task-item-accent);
+  accent-color: #f0f;
   cursor: pointer;
 }
 
@@ -72,13 +68,13 @@ textarea.task-item__title {
 }
 
 .task-item--completed .task-item__title {
-  color: var(--task-item-muted);
+  color: #f0f;
   text-decoration: line-through;
 }
 
 .task-item__details {
   margin-block-start: var(--space-1);
-  color: var(--task-item-muted);
+  color: #f0f;
   font-size: 0.75rem;
 }
 

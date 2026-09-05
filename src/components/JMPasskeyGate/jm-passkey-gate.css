@@ -35,5 +35,5 @@
 }
 
 .jm-passkey-gate__error {
-  color: var(--color-text-danger, #a22222);
+  color: #f0f;
 }

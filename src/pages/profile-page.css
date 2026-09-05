@@ -1,9 +1,4 @@
 .profile-page {
-  --profile-border: #dadce0;
-  --profile-muted: #70757a;
-  --activity-cell: 10px;
-  --activity-gap: 3px;
-
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
@@ -12,7 +7,7 @@
 
 .profile-page__header p {
   margin-block-start: var(--space-2);
-  color: var(--profile-muted);
+  color: #f0f;
   font-size: 0.875rem;
 }
 
@@ -33,13 +28,13 @@
 }
 
 .profile-page__auth-message {
-  color: var(--profile-muted);
+  color: #f0f;
   font-size: 0.875rem;
 }
 
 .profile-years {
   overflow-x: auto;
-  border-block-end: 1px solid var(--profile-border);
+  border-block-end: 1px solid #f0f;
 }
 
 .profile-years__list {
@@ -54,7 +49,7 @@
   min-inline-size: 64px;
   min-block-size: 44px;
   padding-inline: var(--space-5);
-  color: var(--profile-muted);
+  color: #f0f;
   border-block-end: 2px solid transparent;
 }
 
@@ -84,7 +79,7 @@
 .activity-graph {
   padding: var(--space-5);
   background: var(--color-bg-surface);
-  border: 1px solid var(--profile-border);
+  border: 1px solid #f0f;
   border-radius: var(--radius-control);
 }
 
@@ -105,14 +100,14 @@
 .activity-graph__months,
 .activity-graph__days {
   display: grid;
-  grid-template-columns: repeat(var(--activity-weeks), var(--activity-cell));
-  column-gap: var(--activity-gap);
+  grid-auto-columns: 10px;
+  column-gap: 3px;
 }
 
 .activity-graph__months {
   grid-column: 2;
   grid-row: 1;
-  color: var(--profile-muted);
+  color: #f0f;
   font-size: 0.6875rem;
 }
 
@@ -123,11 +118,11 @@
 .activity-graph__weekdays {
   display: grid;
   grid-row: 2;
-  grid-template-rows: repeat(7, var(--activity-cell));
-  row-gap: var(--activity-gap);
-  color: var(--profile-muted);
+  grid-template-rows: repeat(7, 10px);
+  row-gap: 3px;
+  color: #f0f;
   font-size: 0.625rem;
-  line-height: var(--activity-cell);
+  line-height: 10px;
 }
 
 .activity-graph__weekdays span:nth-child(1) {
@@ -146,14 +141,14 @@
   grid-row: 2;
   grid-column: 2;
   grid-auto-flow: column;
-  grid-template-rows: repeat(7, var(--activity-cell));
-  row-gap: var(--activity-gap);
+  grid-template-rows: repeat(7, 10px);
+  row-gap: 3px;
 }
 
 .activity-graph__day,
 .activity-graph__legend i {
-  inline-size: var(--activity-cell);
-  block-size: var(--activity-cell);
+  inline-size: 10px;
+  block-size: 10px;
   background: var(--color-activity-0);
   border-radius: 2px;
 }
@@ -198,7 +193,7 @@ a.activity-graph__day:hover {
   align-items: center;
   justify-content: flex-end;
   margin-block-start: var(--space-3);
-  color: var(--profile-muted);
+  color: #f0f;
   font-size: 0.6875rem;
 }
 
@@ -209,9 +204,9 @@ a.activity-graph__day:hover {
 
 .activity-list__empty {
   padding: var(--space-6);
-  color: var(--profile-muted);
+  color: #f0f;
   text-align: center;
-  border: 1px dashed var(--profile-border);
+  border: 1px dashed #f0f;
   border-radius: var(--radius-control);
 }
 
@@ -222,12 +217,12 @@ a.activity-graph__day:hover {
 .activity-day h3 {
   padding-block-end: var(--space-2);
   font-size: 0.8125rem;
-  border-block-end: 1px solid var(--profile-border);
+  border-block-end: 1px solid #f0f;
 }
 
 .activity-day ul {
   margin-inline-start: var(--space-5);
-  border-inline-start: 2px solid var(--profile-border);
+  border-inline-start: 2px solid #f0f;
 }
 
 .activity-day li {
@@ -257,7 +252,7 @@ a.activity-graph__day:hover {
 
 .activity-day li a,
 .activity-day li div > span {
-  color: var(--profile-muted);
+  color: #f0f;
   font-size: 0.75rem;
 }
 

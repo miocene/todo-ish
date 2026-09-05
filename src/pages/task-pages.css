@@ -1,7 +1,4 @@
 .task-page {
-  --task-page-border: #dadce0;
-  --task-page-muted: #70757a;
-
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
@@ -24,7 +21,7 @@
 .task-page__header p,
 .project-card__header p {
   margin-block-start: var(--space-2);
-  color: var(--task-page-muted);
+  color: #f0f;
   font-size: 0.875rem;
 }
 
@@ -68,21 +65,21 @@
   color: inherit;
   font: inherit;
   background: var(--color-bg-selection);
-  border: 1px solid var(--task-page-border);
+  border: 1px solid #f0f;
   border-radius: calc(var(--radius-control) / 2);
 }
 
 .task-page__empty {
   padding: var(--space-6);
-  color: var(--task-page-muted);
+  color: #f0f;
   text-align: center;
-  border: 1px dashed var(--task-page-border);
+  border: 1px dashed #f0f;
   border-radius: var(--radius-control);
 }
 
 .task-tabs {
   overflow-x: auto;
-  border-block-end: 1px solid var(--task-page-border);
+  border-block-end: 1px solid #f0f;
 }
 
 .task-tabs__list {
@@ -95,7 +92,7 @@
   align-items: center;
   min-block-size: 44px;
   padding-inline: var(--space-5);
-  color: var(--task-page-muted);
+  color: #f0f;
   border-block-end: 2px solid transparent;
 }
 
@@ -123,7 +120,7 @@
   block-size: 100%;
   padding: var(--space-5);
   background: var(--color-bg-surface);
-  border: 1px solid var(--task-page-border);
+  border: 1px solid #f0f;
   border-radius: var(--radius-card);
 }
 
@@ -138,7 +135,7 @@
 .project-card__field-label,
 .printing-item__field > label,
 .stitch-color__field > label {
-  color: var(--task-page-muted);
+  color: #f0f;
   font-size: 0.6875rem;
   font-weight: var(--font-weight-bold);
   letter-spacing: 0.04em;
@@ -182,7 +179,7 @@
 .stitch-project__progress > p {
   grid-column: 1 / -1;
   margin: 0;
-  color: var(--task-page-muted);
+  color: #f0f;
   font-size: 0.75rem;
 }
 
@@ -219,7 +216,7 @@
   font: inherit;
   font-size: 0.8125rem;
   background: var(--color-bg-surface);
-  border: 1px solid var(--task-page-border);
+  border: 1px solid #f0f;
   border-radius: var(--radius-control);
 }
 
@@ -232,7 +229,7 @@
 .stitch-color__progress {
   grid-column: 1 / -1;
   margin: 0;
-  color: var(--task-page-muted);
+  color: #f0f;
   font-size: 0.75rem;
 }
 
@@ -274,7 +271,7 @@
   align-items: end;
   min-inline-size: 0;
   padding-block-end: var(--space-3);
-  border-block-end: 1px solid var(--task-page-border);
+  border-block-end: 1px solid #f0f;
 }
 
 .printing-item__field {
@@ -294,7 +291,7 @@
   font: inherit;
   font-size: 0.8125rem;
   background: var(--color-bg-surface);
-  border: 1px solid var(--task-page-border);
+  border: 1px solid #f0f;
   border-radius: var(--radius-control);
 }
 
@@ -323,7 +320,7 @@
   position: absolute;
   inset-block-start: 50%;
   inset-inline-end: var(--space-3);
-  color: var(--task-page-muted);
+  color: #f0f;
   transform: translateY(-50%);
   pointer-events: none;
 }
@@ -334,7 +331,7 @@
   inline-size: 28px;
   block-size: 32px;
   padding: 0;
-  color: var(--task-page-muted);
+  color: #f0f;
   background: transparent;
   border: 0;
   border-radius: var(--radius-control);
