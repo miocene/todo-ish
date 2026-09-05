@@ -13,3 +13,7 @@ Run `yarn quality` for linting, formatting, tests, and the production build. API
 `TEST_DATABASE_URL=postgres://… yarn test:integration` runs the real migrations and repository against a **disposable PostgreSQL instance**. The account must be able to create databases and roles. The suite creates a uniquely named database and runtime role, tests with the migration's runtime grants, and removes both afterwards. It never migrates the database named in the connection URL.
 
 These checks cover all resource round trips, date/timezone preservation, revision races, transaction rollback, nested ordering, and deletion. The command fails with a setup message when `TEST_DATABASE_URL` is missing. CI supplies a temporary PostgreSQL service; the ordinary API unit suite needs no database. Do not point this command at the live Pi.
+
+## CI and deployment
+
+Pull requests run the reusable quality workflow: linting, formatting, unit/API/browser tests, production build, PostgreSQL integration tests, and the web container build. The Pages deployment calls the same workflow and waits for it to pass before building or publishing an artifact. Workflow files are committed locally; they run only after a future push or manual dispatch.
