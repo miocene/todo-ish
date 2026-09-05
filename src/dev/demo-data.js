@@ -1,4 +1,4 @@
-import { toIsoDate as isoDate } from "../shared/date.js";
+import { toIsoDate as isoDate } from "../app/date.js";
 
 const DEFAULT_FILAMENT_INVENTORY = Object.freeze({
   "bambu-pla-basic-filament-10101": 1,

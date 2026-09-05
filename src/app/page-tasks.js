@@ -1,4 +1,4 @@
-import { todayIso } from "../shared/date.js";
+import { todayIso } from "./date.js";
 import { initialAppData, initializeAppDataResource, readAppData, writeAppData } from "./app-data.js";
 import { normalizeCardColor } from "./card-colors.js";
 

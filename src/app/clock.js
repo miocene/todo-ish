@@ -1,5 +1,5 @@
 import { reactive, readonly } from "vue";
-import { toIsoDate } from "../shared/date.js";
+import { toIsoDate } from "./date.js";
 
 export function createDayClock({
   now = () => new Date(),

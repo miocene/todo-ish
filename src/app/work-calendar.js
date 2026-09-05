@@ -1,4 +1,4 @@
-import { calendarDate, shiftCalendarDays, isIsoDate, toIsoDate as isoDate } from "../shared/date.js";
+import { calendarDate, shiftCalendarDays, isIsoDate, toIsoDate as isoDate } from "./date.js";
 export { calendarDate, shiftCalendarDays, isIsoDate, isoDate };
 import { getWorkStatus } from "./work-status.js";
 import { getAllWorkTasks, getWorkTasks } from "./work-tasks.js";

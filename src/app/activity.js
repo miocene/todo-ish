@@ -1,4 +1,4 @@
-import { toIsoDate as isoDate } from "../shared/date.js";
+import { toIsoDate as isoDate } from "./date.js";
 import { loadPageTasks } from "./page-tasks.js";
 import { getAllWorkTasks } from "./work-tasks.js";
 

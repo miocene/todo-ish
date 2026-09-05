@@ -3,7 +3,7 @@ import test from "node:test";
 import { activityLevel, activityYears, buildActivityCalendar, groupActivityByDay } from "../src/app/activity.js";
 import { filamentSupplyStatus } from "../src/app/printing-supplies.js";
 import { flossSupplyStatus } from "../src/app/stitching-supplies.js";
-import { dateKey, shiftIsoDate } from "../src/shared/date.js";
+import { dateKey, shiftIsoDate } from "../src/app/date.js";
 import {
   completedTasksLast,
   createCompletionMoveScheduler,

@@ -29,7 +29,7 @@ export default [
     },
   },
   {
-    files: ["*.{js,mjs}", "backend/**/*.{js,mjs}", "scripts/**/*.{js,mjs}", "tests/**/*.js"],
+    files: ["*.{js,mjs}", "backend/**/*.{js,mjs}", "tools/**/*.{js,mjs}", "tests/**/*.js"],
     languageOptions: {
       ecmaVersion: "latest",
       globals: globals.node,

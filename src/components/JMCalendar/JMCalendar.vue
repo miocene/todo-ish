@@ -2,7 +2,7 @@
 import { appClock } from "../../app/clock.js";
 import JMButton from "../JMButton/JMButton.vue";
 import JMCalendarDay from "./JMCalendarDay.vue";
-import { parseIsoDate, shiftIsoDate, toIsoDate } from "../../shared/date.js";
+import { parseIsoDate, shiftIsoDate, toIsoDate } from "../../app/date.js";
 import "./jm-calendar.css";
 
 export default {
