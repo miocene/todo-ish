@@ -298,6 +298,15 @@ test("development mocks colors locally when the API has no color storage", async
   expect(data.get("printing").projects[0].color).toBe("#123456");
   await page.reload();
   expect(await colorOf(page.locator(".project-card"))).toBe(projectColor);
+  await page.goto("/chores");
+  const choreColors = await page
+    .locator(".jm-card")
+    .evaluateAll((cards) => cards.map((card) => card.style.getPropertyValue("--color")));
+  for (const color of choreColors) expect(CARD_COLORS).toContain(color);
+  await page.reload();
+  expect(
+    await page.locator(".jm-card").evaluateAll((cards) => cards.map((card) => card.style.getPropertyValue("--color"))),
+  ).toEqual(choreColors);
   expect(colorRequests).toEqual([]);
 });
 
@@ -886,19 +895,27 @@ test("task pages render their variants and save changes immediately", async ({ p
   await expect(projects.first().locator(".printing-filament--missing")).toHaveCount(2);
   await expect(projects.first().getByText("Not in catalog · Need 1 spool")).toBeVisible();
   await expect(projects.first().getByText("Missing 1 spool · 1 owned")).toBeVisible();
+  await projects
+    .first()
+    .getByLabel(/^Actions for/)
+    .click();
   await projects.first().getByRole("button", { name: "Add item" }).click();
   await expect(projects.first().locator(".task-item__title textarea")).toHaveCount(4);
   await expect(projects.first().locator(".task-item__title textarea").last()).toBeFocused();
-  await projects.first().getByRole("button", { name: "Add item" }).focus();
+  await projects
+    .first()
+    .getByLabel(/^Actions for/)
+    .focus();
   await expect(projects.first().locator(".task-item__title textarea")).toHaveCount(3);
 
   await page.getByRole("button", { name: "Add project" }).click();
   await expect(projects).toHaveCount(3);
   const newProject = projects.last();
-  await expect(newProject.getByLabel("Project title")).toBeFocused();
-  await newProject.getByLabel("Project title").fill("Headphone stand");
+  await expect(newProject.getByLabel("Card title")).toBeFocused();
+  await newProject.getByLabel("Card title").fill("Headphone stand");
   const projectColor = await newProject.evaluate((card) => card.style.getPropertyValue("--color"));
   expect(CARD_COLORS).toContain(projectColor);
+  await newProject.getByLabel(/^Actions for/).click();
   await newProject.getByRole("button", { name: "Add item" }).click();
   await newProject.getByLabel("Item name").fill("Weighted base");
   await newProject.getByLabel("Filament 1", { exact: true }).selectOption("bambu-pla-basic-filament-10101");
@@ -909,7 +926,7 @@ test("task pages render their variants and save changes immediately", async ({ p
   await newProject.getByLabel("Weight 2", { exact: true }).fill("7.5");
   await page.reload();
   const savedProject = page.locator(".project-card").last();
-  await expect(savedProject.getByLabel("Project title")).toHaveValue("Headphone stand");
+  await expect(savedProject.getByRole("heading", { name: "Headphone stand" })).toBeVisible();
   expect(await savedProject.evaluate((card) => card.style.getPropertyValue("--color"))).toBe(projectColor);
   await expect(savedProject.getByLabel("Item name")).toHaveValue("Weighted base");
   expect(
@@ -926,10 +943,9 @@ test("task pages render their variants and save changes immediately", async ({ p
     "Amsterdam canal house",
   ]);
   const stitchProject = page.locator(".project-card").first();
-  await expect(stitchProject.getByLabel("Project title")).toHaveValue("Botanical sampler");
+  await expect(stitchProject.getByRole("heading", { name: "Botanical sampler" })).toBeVisible();
   await expect(stitchProject.getByLabel("Project color")).toHaveCount(0);
   expect(CARD_COLORS).toContain(await stitchProject.evaluate((card) => card.style.getPropertyValue("--color")));
-  await expect(stitchProject.getByText("2,400 total crosses", { exact: true })).toBeVisible();
   await expect(stitchProject.getByRole("checkbox")).toHaveCount(0);
   const stitchColors = stitchProject.locator('select[name="stitch-floss"]');
   await expect(stitchColors).toHaveCount(3);
@@ -942,6 +958,7 @@ test("task pages render their variants and save changes immediately", async ({ p
   await expect(stitchProject.locator(".task-item--completed")).toHaveCount(2);
   await expect(stitchProject.getByText("1,600 / 2,400 crosses · 67%", { exact: true })).toBeVisible();
   await expect(stitchProgress).toHaveAttribute("value", "1600");
+  await stitchProject.getByLabel(/^Actions for/).click();
   await stitchProject.getByRole("button", { name: "Add color" }).click();
   await expect(stitchColors).toHaveCount(4);
   await expect(stitchColors.last()).toBeFocused();
@@ -1021,6 +1038,117 @@ test("task pages render their variants and save changes immediately", async ({ p
   await expect(page.locator(".jm-catalog-item")).toHaveCount(0);
   await expect(page.getByText("No catalog filaments match this search.")).toBeVisible();
 });
+
+test("work and chore cards expose only their supported actions", async ({ page }) => {
+  await page.goto("/work");
+  const workCards = page.locator(".jm-card");
+  await expect(workCards).toHaveCount(2);
+  await expect(workCards.getByRole("button", { name: /^Actions for|^Collapse|^Expand/ })).toHaveCount(0);
+  await expect(workCards.getByRole("progressbar")).toHaveCount(0);
+  await page.locator(".work-backlog").getByRole("button", { name: "Add backlog task" }).click();
+  await expect(page.locator(".work-backlog textarea").last()).toBeFocused();
+
+  await page.goto("/chores");
+  const today = page.locator(".chores-upcoming");
+  const all = page.locator(".chores-all");
+  await expect(today.getByRole("button")).toHaveCount(0);
+  await expect(page.locator(".jm-card").getByRole("progressbar")).toHaveCount(0);
+  await expect(all.getByRole("button")).toHaveText(["Add chore", ""]);
+  const colors = await page
+    .locator(".jm-card")
+    .evaluateAll((cards) => cards.map((card) => card.style.getPropertyValue("--color")));
+  await expect
+    .poll(() => appDataByPage.get(page).get("colors"))
+    .toMatchObject({
+      "chores-today": colors[0],
+      "chores-all": colors[1],
+    });
+  await all.getByRole("button", { name: "Collapse All chores" }).click();
+  await expect(all.getByRole("textbox", { name: "Task title", exact: true })).toHaveCount(0);
+  await expect(today.getByRole("checkbox")).toHaveCount(3);
+  await all.getByRole("button", { name: "Add chore" }).click();
+  await expect(all.getByRole("button", { name: "Collapse All chores" })).toHaveAttribute("aria-expanded", "true");
+  await expect(all.getByRole("textbox", { name: "Task title", exact: true })).toHaveCount(4);
+  await expect(all.getByRole("textbox", { name: "Task title", exact: true }).last()).toBeFocused();
+});
+
+for (const route of ["printing", "cross-stitch"]) {
+  test(`${route} cards support editing, collapsing, adding, and removing projects`, async ({ page }) => {
+    await page.goto(`/${route}`);
+    const projects = page.locator(".project-card");
+    const project = projects.first();
+    const menu = project.getByLabel(/^Actions for/);
+    const progress = project.getByRole("progressbar");
+    const originalTitle = await project.getByRole("heading").textContent();
+    const addLabel = route === "printing" ? "Add item" : "Add color";
+
+    await menu.focus();
+    await menu.press("Enter");
+    await expect(project.locator(".jm-card__menu-actions").getByRole("button")).toHaveText([
+      "Edit",
+      "Remove",
+      addLabel,
+    ]);
+    await page.keyboard.press("Tab");
+    await expect(project.getByRole("button", { name: "Edit", exact: true })).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(menu).toBeFocused();
+    await expect(project.getByRole("button", { name: "Edit", exact: true })).toBeHidden();
+    await menu.click();
+    await page.getByRole("heading", { level: 1 }).click();
+    await expect(project.getByRole("button", { name: "Edit", exact: true })).toBeHidden();
+
+    await menu.click();
+    await project.getByRole("button", { name: "Edit", exact: true }).click();
+    const titleInput = project.getByRole("textbox", { name: "Card title", exact: true });
+    await expect(titleInput).toBeFocused();
+    await titleInput.fill("Discard this title");
+    await titleInput.press("Escape");
+    await expect(project.getByRole("heading")).toHaveText(originalTitle);
+    await expect(menu).toBeFocused();
+    await menu.click();
+    await project.getByRole("button", { name: "Edit", exact: true }).click();
+    await titleInput.fill("Renamed project");
+    await titleInput.press("Enter");
+    await expect(project.getByRole("heading")).toHaveText("Renamed project");
+    await expect(progress).toHaveAccessibleName("Progress for Renamed project");
+    await expect.poll(() => appDataByPage.get(page).get(route).projects[0].title).toBe("Renamed project");
+
+    if (route === "printing") {
+      await expect(progress).toHaveAttribute("value", "1");
+      await expect(progress).toHaveAttribute("max", "3");
+      await project.getByRole("checkbox", { name: "Complete Large cable clip" }).check();
+      await expect(progress).toHaveAttribute("value", "2");
+    }
+    const count = await project.locator(".task-item").count();
+    await project.getByRole("button", { name: "Collapse Renamed project" }).click();
+    await expect(project.locator(".jm-card__tasks")).toBeHidden();
+    await expect(progress).toBeVisible();
+    await menu.click();
+    await project.getByRole("button", { name: addLabel, exact: true }).click();
+    await expect(project.locator(".jm-card__tasks")).toBeVisible();
+    await expect(project.locator(".task-item")).toHaveCount(count + 1);
+    await expect(project.getByRole("button", { name: "Collapse Renamed project" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    if (route === "printing") {
+      await expect(page.locator(":focus")).toHaveAccessibleName("Item name");
+      await expect(page.locator(":focus")).toHaveValue("");
+    } else {
+      await expect(project.locator('select[name="stitch-floss"]').last()).toBeFocused();
+    }
+
+    await menu.click();
+    await project.getByRole("button", { name: "Remove", exact: true }).click();
+    await expect(projects).toHaveCount(1);
+    await expect(page.getByRole("button", { name: "Add project" })).toBeFocused();
+    await expect.poll(() => appDataByPage.get(page).get(route).projects.length).toBe(1);
+    await page.reload();
+    await expect(projects).toHaveCount(1);
+    await expect(page.getByRole("heading", { name: "Renamed project" })).toHaveCount(0);
+  });
+}
 
 test("completed items move to the bottom after 500 milliseconds on every task page", async ({ page }) => {
   const testTime = Date.now();

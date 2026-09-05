@@ -311,8 +311,8 @@ const VALIDATORS = Object.freeze({
     if (Object.keys(source).length > RESOURCE_LIMIT) fail("colors", `must contain at most ${RESOURCE_LIMIT} entries`);
     return Object.fromEntries(
       Object.entries(source).map(([key, value]) => {
-        if (key !== "backlog") {
-          if (!key.startsWith("work-day:")) fail(`colors.${key}`, "must identify a work date or backlog");
+        if (!["backlog", "chores-today", "chores-all"].includes(key)) {
+          if (!key.startsWith("work-day:")) fail(`colors.${key}`, "must identify a work date, backlog, or chores card");
           date(key.slice("work-day:".length), `colors.${key}`);
         }
         return [key, color(value, `colors.${key}`)];

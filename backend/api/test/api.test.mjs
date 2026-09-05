@@ -282,7 +282,13 @@ test("app-data API preserves card colors and validates their format", async () =
         headers: { "content-type": "application/json", "if-match": '"0"' },
         body: JSON.stringify(value),
       });
-    const colors = { "work-day:2026-09-04": "#633533", "work-day:2026-09-05": "#8FB7B0", backlog: "#E9B6B4" };
+    const colors = {
+      "work-day:2026-09-04": "#633533",
+      "work-day:2026-09-05": "#8FB7B0",
+      backlog: "#E9B6B4",
+      "chores-today": "#287271",
+      "chores-all": "#E9C46A",
+    };
     assert.equal((await write("colors", colors)).status, 200);
     const todos = { lists: [{ id: "general", title: "General", color: "#8FB7B0", tasks: [] }] };
     assert.equal((await write("todos", todos)).status, 200);

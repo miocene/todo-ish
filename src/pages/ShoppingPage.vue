@@ -108,10 +108,7 @@ export default {
 <template>
   <section class="task-page" aria-labelledby="shopping-title">
     <header class="task-page__header">
-      <div>
-        <h1 id="shopping-title">Shopping cart</h1>
-        <p>Everything to pick up on the next shop.</p>
-      </div>
+      <h1 id="shopping-title">Shopping cart</h1>
       <JMButton text="Add item" view="secondary" @click="addTask" />
     </header>
 

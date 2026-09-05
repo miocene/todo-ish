@@ -1,10 +1,11 @@
 <script>
 import { createTaskEditor } from "../app/task-editor.js";
+import { loadCardColors } from "../app/card-colors.js";
 import { appClock } from "../app/clock.js";
 import { loadPageTasks, savePageTasks } from "../app/page-tasks.js";
 import { nextEntityId, setTaskCompletion, serializableChores } from "../app/task-list.js";
 import { calendarDate, isoDate } from "../app/work-calendar.js";
-import JMButton from "../components/JMButton/JMButton.vue";
+import JMCard from "../components/JMCard/JMCard.vue";
 import JMInput from "../components/JMInput/JMInput.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
 
@@ -16,9 +17,10 @@ const DUE_DATE_FORMATTER = new Intl.DateTimeFormat("en", {
 
 export default {
   name: "ChoresPage",
-  components: { JMButton, JMInput, JMTaskCard },
+  components: { JMCard, JMInput, JMTaskCard },
   data() {
     return {
+      cardColors: loadCardColors(["chores-today", "chores-all"]),
       chores: loadPageTasks("chores"),
       editor: createTaskEditor({
         save: () => this.save(),
@@ -99,62 +101,57 @@ export default {
 <template>
   <section class="task-page" aria-labelledby="chores-title">
     <header class="task-page__header">
-      <div>
-        <h1 id="chores-title">Chores</h1>
-        <p>Recurring jobs around the house.</p>
-      </div>
+      <h1 id="chores-title">Chores</h1>
     </header>
 
-    <section class="task-page__section chores-upcoming" aria-labelledby="upcoming-chores-title">
-      <h2 id="upcoming-chores-title">Today and upcoming</h2>
-      <ul class="task-page__tasks" role="list">
-        <li v-for="task in upcomingChores" :key="`occurrence-${task.id}`">
-          <JMTaskCard
-            :task-id="`occurrence-${task.id}`"
-            :title="task.title"
-            :completed="task.completed"
-            :editable="false"
-            @update:completed="updateCompleted(task, $event)"
-          >
-            <template #details>
-              <time :datetime="task.nextDue">{{ dueLabel(task) }}</time>
-              <span aria-hidden="true"> · </span>
-              <span>{{ task.details }}</span>
-            </template>
-          </JMTaskCard>
-        </li>
-      </ul>
-    </section>
+    <JMCard class="chores-upcoming" title="Today and upcoming" :color="cardColors['chores-today']">
+      <li v-for="task in upcomingChores" :key="`occurrence-${task.id}`">
+        <JMTaskCard
+          :task-id="`occurrence-${task.id}`"
+          :title="task.title"
+          :completed="task.completed"
+          :editable="false"
+          @update:completed="updateCompleted(task, $event)"
+        >
+          <template #details>
+            <time :datetime="task.nextDue">{{ dueLabel(task) }}</time>
+            <span aria-hidden="true"> · </span>
+            <span>{{ task.details }}</span>
+          </template>
+        </JMTaskCard>
+      </li>
+    </JMCard>
 
-    <section class="task-page__section chores-all" aria-labelledby="all-chores-title">
-      <header class="task-page__section-header">
-        <h2 id="all-chores-title">All chores</h2>
-        <JMButton text="Add chore" view="secondary" @click="addTask" />
-      </header>
-      <ul class="task-page__tasks" role="list">
-        <li v-for="task in chores.tasks" :key="task.id">
-          <JMTaskCard
-            :task-id="task.id"
-            :title="task.title"
-            :title-input-id="taskInputId(task)"
-            :completable="false"
-            @enter="handleEnter(task, $event)"
-            @title-blur="handleTitleBlur(task)"
-            @update:title="updateTitle(task, $event)"
-          >
-            <template #details>
-              <JMInput
-                :id="ruleInputId(task)"
-                name="chore-repeat-rule"
-                size="s"
-                :aria-label="`Repeating rule for ${task.title || 'untitled chore'}`"
-                :model-value="task.details"
-                @update:model-value="updateRule(task, $event)"
-              />
-            </template>
-          </JMTaskCard>
-        </li>
-      </ul>
-    </section>
+    <JMCard
+      class="chores-all"
+      title="All chores"
+      :color="cardColors['chores-all']"
+      :actions="[{ id: 'add', label: 'Add chore' }]"
+      collapsible
+      @action="addTask"
+    >
+      <li v-for="task in chores.tasks" :key="task.id">
+        <JMTaskCard
+          :task-id="task.id"
+          :title="task.title"
+          :title-input-id="taskInputId(task)"
+          :completable="false"
+          @enter="handleEnter(task, $event)"
+          @title-blur="handleTitleBlur(task)"
+          @update:title="updateTitle(task, $event)"
+        >
+          <template #details>
+            <JMInput
+              :id="ruleInputId(task)"
+              name="chore-repeat-rule"
+              size="s"
+              :aria-label="`Repeating rule for ${task.title || 'untitled chore'}`"
+              :model-value="task.details"
+              @update:model-value="updateRule(task, $event)"
+            />
+          </template>
+        </JMTaskCard>
+      </li>
+    </JMCard>
   </section>
 </template>

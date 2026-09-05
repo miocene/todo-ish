@@ -15,12 +15,13 @@ import {
 import { getWorkStatus, setWorkStatus } from "../app/work-status.js";
 import { getAllWorkTasks, saveWorkTasks } from "../app/work-tasks.js";
 import JMButton from "../components/JMButton/JMButton.vue";
+import JMCard from "../components/JMCard/JMCard.vue";
 import JMCalendar from "../components/JMCalendar/JMCalendar.vue";
 import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
 
 export default {
   name: "WorkPage",
-  components: { JMButton, JMCalendar, JMTaskCard },
+  components: { JMButton, JMCalendar, JMCard, JMTaskCard },
   data() {
     const workTasks = getAllWorkTasks().map((task) => ({ ...task }));
     const nextTaskId =
@@ -248,36 +249,21 @@ export default {
 
   <p class="work-page__status" aria-live="polite" aria-atomic="true">{{ taskMoveStatus }}</p>
 
-  <section
+  <JMCard
     class="work-day"
-    :style="{ '--color': cardColors[`work-day:${focusDateIso}`] }"
-    :class="{
-      'work-day--today': selectedDay.today,
-    }"
-    aria-labelledby="selected-work-day-title"
+    :class="{ 'work-day--today': selectedDay.today }"
+    :title="`${selectedDay.today ? 'Today' : selectedDay.weekday}, ${selectedDay.dateLabel}`"
+    :color="cardColors[`work-day:${focusDateIso}`]"
+    :actions="[{ id: 'add', label: 'Add task', disabled: !canEditSelectedDay }]"
+    @action="addSelectedDayTask"
   >
-    <header class="work-day__header">
-      <div>
-        <span class="work-day__eyebrow">{{ selectedDay.today ? "Today" : selectedDay.weekday }}</span>
-        <h2 id="selected-work-day-title">
-          <time :datetime="selectedDay.iso">{{ selectedDay.dateLabel }}</time>
-        </h2>
-      </div>
-
-      <JMButton
-        class="work-day__actions"
-        text="Add task"
-        view="secondary"
-        :disabled="!canEditSelectedDay"
-        @click="addSelectedDayTask"
-      />
-    </header>
-
-    <div class="work-day__tasks">
-      <p v-if="selectedDay.tasks.length === 0" class="work-day__empty">Nothing recorded for this day.</p>
+    <template #title>
+      <span class="work-day__eyebrow">{{ selectedDay.today ? "Today" : selectedDay.weekday }}</span>
+      <time :datetime="selectedDay.iso">{{ selectedDay.dateLabel }}</time>
+    </template>
+    <li v-if="selectedDay.tasks.length === 0" class="work-day__empty">Nothing recorded for this day.</li>
+    <li v-for="task in selectedDay.tasks" :key="task.id">
       <JMTaskCard
-        v-for="task in selectedDay.tasks"
-        :key="task.id"
         :task-id="task.id"
         :title="taskTitle(task)"
         :title-input-id="taskInputId(task)"
@@ -295,19 +281,19 @@ export default {
         @update:completed="setTaskCompletion(task, $event)"
         @update:title="updateTaskTitle(task, $event)"
       />
-    </div>
-  </section>
+    </li>
+  </JMCard>
 
-  <section class="work-backlog" :style="{ '--color': cardColors.backlog }" aria-labelledby="backlog-title">
-    <header class="work-backlog__header">
-      <h2 id="backlog-title">Backlog</h2>
-      <JMButton aria-label="Add backlog task" text="Add task" view="secondary" @click="addBacklogTask" />
-    </header>
-    <div class="work-backlog__tasks">
-      <p v-if="backlogTasks.length === 0" class="work-backlog__empty">No backlog tasks</p>
+  <JMCard
+    class="work-backlog"
+    title="Backlog"
+    :color="cardColors.backlog"
+    :actions="[{ id: 'add', label: 'Add task', ariaLabel: 'Add backlog task' }]"
+    @action="addBacklogTask"
+  >
+    <li v-if="backlogTasks.length === 0" class="work-backlog__empty">No backlog tasks</li>
+    <li v-for="task in backlogTasks" :key="task.id">
       <JMTaskCard
-        v-for="task in backlogTasks"
-        :key="task.id"
         :task-id="task.id"
         :title="taskTitle(task)"
         :title-input-id="taskInputId(task)"
@@ -324,6 +310,6 @@ export default {
         @update:completed="setTaskCompletion(task, $event)"
         @update:title="updateTaskTitle(task, $event)"
       />
-    </div>
-  </section>
+    </li>
+  </JMCard>
 </template>

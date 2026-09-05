@@ -49,7 +49,6 @@ export const routes = [
     component: ProjectTasksPage,
     props: {
       title: "3D printing",
-      description: "Active prints and the next steps for each project.",
       pageKey: "printing",
     },
     meta: { title: "3D printing" },
@@ -60,7 +59,6 @@ export const routes = [
     component: ProjectTasksPage,
     props: {
       title: "Cross stitch",
-      description: "Patterns in progress and the details left to stitch.",
       pageKey: "crossStitch",
     },
     meta: { title: "Cross stitch" },

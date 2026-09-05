@@ -152,12 +152,6 @@ export default {
   <section class="catalog-page" aria-labelledby="catalog-title">
     <header class="catalog-page__header">
       <h1 id="catalog-title">Catalog</h1>
-      <p v-if="isFlossCatalog">
-        DMC thread colors for cross-stitch projects. Stocked colors appear first, followed by colors you need.
-      </p>
-      <p v-else>
-        Filaments available for 3D project items. Missing project references are highlighted on the project card.
-      </p>
     </header>
 
     <JMTabs :tabs="catalogTabs" :active="catalogKind" aria-label="Catalog" />
@@ -169,7 +163,6 @@ export default {
         id="catalog-query"
         v-model="query"
         class="catalog-search__field"
-        :label="`Search ${isFlossCatalog ? 'floss' : 'filaments'}`"
         name="q"
         type="search"
         autocomplete="off"
@@ -178,15 +171,10 @@ export default {
         "
       />
       <div v-if="!isFlossCatalog" class="catalog-search__field">
-        <label for="catalog-family">Filament type</label>
         <JMSelect id="catalog-family" v-model="family" name="family" :options="familyOptions" />
       </div>
       <button type="submit">Search</button>
     </form>
-
-    <p class="catalog-page__count" aria-live="polite">
-      {{ items.length }} {{ isFlossCatalog ? "color" : "filament" }}{{ items.length === 1 ? "" : "s" }}
-    </p>
 
     <p v-if="catalog.state.status === 'ready' && items.length === 0" class="catalog-page__empty">
       {{ isFlossCatalog ? "No DMC colors match this search." : "No catalog filaments match this search." }}

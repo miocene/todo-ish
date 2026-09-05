@@ -97,10 +97,7 @@ export default {
 <template>
   <section class="task-page" aria-labelledby="todos-title">
     <header class="task-page__header">
-      <div>
-        <h1 id="todos-title">Todo lists</h1>
-        <p>A general inbox and focused lists for everything else.</p>
-      </div>
+      <h1 id="todos-title">Todo lists</h1>
       <JMButton text="Add list" view="secondary" @click="addList" />
       <JMButton v-if="activeList" text="Add task" view="secondary" @click="addTask" />
     </header>

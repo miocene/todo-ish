@@ -75,10 +75,7 @@ export default {
 <template>
   <section class="profile-page" aria-labelledby="profile-title">
     <header class="profile-page__header">
-      <div>
-        <h1 id="profile-title">Profile</h1>
-        <p>Your completed tasks, day by day.</p>
-      </div>
+      <h1 id="profile-title">Profile</h1>
       <div class="profile-page__auth-actions">
         <JMButton text="Add passkey" view="secondary" :disabled="authBusy" @click="addPasskey" />
         <JMButton text="Sign out" view="ghost" :disabled="authBusy" @click="logout" />
