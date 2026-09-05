@@ -22,6 +22,6 @@ export default {
 <template>
   <button class="jm-button" :class="`jm-button--${view}`" type="button">
     <JMIcon v-if="iconName" :name="iconName" />
-    <span v-if="text">{{ text }}</span>
+    {{ text }}
   </button>
 </template>

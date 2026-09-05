@@ -250,88 +250,88 @@ export default {
     <JMCatalogStatus :catalog="catalog" />
 
     <ul class="project-grid" :class="{ 'project-grid--stitching': isCrossStitch }" role="list">
-      <li v-for="project in pageData.projects" :key="project.id">
-        <article
-          class="project-card"
-          :class="{ 'project-card--printing': isPrinting, 'project-card--stitching': isCrossStitch }"
-          :style="{ '--color': project.color }"
-          :aria-labelledby="projectTitleId(project)"
-        >
-          <header class="project-card__header">
-            <div v-if="isCraftProject" class="project-card__identity">
-              <h2 :id="projectTitleId(project)" class="task-page__visually-hidden">
-                {{ project.title || (isPrinting ? "Untitled 3D project" : "Untitled cross stitch project") }}
-              </h2>
-              <label class="project-card__field-label" :for="projectTitleInputId(project)">Project title</label>
-              <input
-                :id="projectTitleInputId(project)"
-                class="project-card__title-input"
-                name="project-title"
-                type="text"
-                :value="project.title"
-                @input="updateProjectTitle(project, $event.target.value)"
-              />
-            </div>
-            <div v-else>
-              <h2 :id="projectTitleId(project)">{{ project.title }}</h2>
-              <p>{{ project.description }}</p>
-            </div>
-            <JMButton :text="isCrossStitch ? 'Add color' : 'Add item'" view="ghost" @click="addTask(project)" />
-          </header>
-
-          <div v-if="isCrossStitch" class="stitch-project__progress">
-            <p>{{ projectTotalCrosses(project).toLocaleString() }} total crosses</p>
-            <progress :max="projectTotalCrosses(project) || 1" :value="projectCrossesDone(project)">
-              {{ projectProgress(project) }}%
-            </progress>
-            <p>
-              {{ projectCrossesDone(project).toLocaleString() }} /
-              {{ projectTotalCrosses(project).toLocaleString() }} crosses · {{ projectProgress(project) }}%
-            </p>
+      <li
+        v-for="project in pageData.projects"
+        :key="project.id"
+        class="project-card"
+        :class="{ 'project-card--printing': isPrinting, 'project-card--stitching': isCrossStitch }"
+        :style="{ '--color': project.color }"
+        :aria-labelledby="projectTitleId(project)"
+      >
+        <header class="project-card__header">
+          <div v-if="isCraftProject" class="project-card__identity">
+            <h2 :id="projectTitleId(project)" class="task-page__visually-hidden">
+              {{ project.title || (isPrinting ? "Untitled 3D project" : "Untitled cross stitch project") }}
+            </h2>
+            <label class="project-card__field-label" :for="projectTitleInputId(project)">Project title</label>
+            <input
+              :id="projectTitleInputId(project)"
+              class="project-card__title-input"
+              name="project-title"
+              type="text"
+              :value="project.title"
+              @input="updateProjectTitle(project, $event.target.value)"
+            />
           </div>
+          <div v-else>
+            <h2 :id="projectTitleId(project)">{{ project.title }}</h2>
+            <p>{{ project.description }}</p>
+          </div>
+          <JMButton :text="isCrossStitch ? 'Add color' : 'Add item'" view="ghost" @click="addTask(project)" />
+        </header>
 
-          <ul class="task-page__tasks" role="list">
-            <li v-for="task in project.tasks" :key="task.id">
-              <JMTaskCard
-                :task-id="task.id"
-                :title="task.title"
-                :title-input-id="taskInputId(project, task)"
-                :title-label="isPrinting ? 'Item name' : 'Task title'"
-                :completed="task.completed"
-                :completable="!isCrossStitch"
-                :editable="!isCrossStitch"
-                :removable="isCrossStitch"
-                :remove-label="`Remove ${task.title || 'thread color'} from ${project.title}`"
-                @enter="handleEnter(project, task, $event)"
-                @remove="removeStitchColor(project, task)"
-                @title-blur="handleTitleBlur(project, task)"
-                @update:completed="updateCompleted(project, task, $event)"
-                @update:title="updateTitle(task, $event)"
-              >
-                <template #details>
-                  <JMPrintingTaskDetails
-                    v-if="isPrinting"
-                    :supply-by-id="supplyById"
-                    :task="task"
-                    @add="addFilament(project, task)"
-                    @remove="removeFilament(task, $event)"
-                    @update:filament="updateFilament"
-                    @update:weight="updateWeight"
-                  />
-                  <JMStitchTaskDetails
-                    v-else-if="isCrossStitch"
-                    :supply-by-id="flossSupplyById"
-                    :task="task"
-                    @update:crosses="updateCrosses(task, $event)"
-                    @update:crosses-done="updateCrossesDone(task, $event)"
-                    @update:floss="updateFloss(task, $event)"
-                    @update:skeins="updateSkeins(task, $event)"
-                  />
-                </template>
-              </JMTaskCard>
-            </li>
-          </ul>
-        </article>
+        <div v-if="isCrossStitch" class="stitch-project__progress">
+          <p>{{ projectTotalCrosses(project).toLocaleString() }} total crosses</p>
+          <progress :max="projectTotalCrosses(project) || 1" :value="projectCrossesDone(project)">
+            {{ projectProgress(project) }}%
+          </progress>
+          <p>
+            {{ projectCrossesDone(project).toLocaleString() }} /
+            {{ projectTotalCrosses(project).toLocaleString() }} crosses · {{ projectProgress(project) }}%
+          </p>
+        </div>
+
+        <ul class="task-page__tasks" role="list">
+          <li v-for="task in project.tasks" :key="task.id">
+            <JMTaskCard
+              :task-id="task.id"
+              :title="task.title"
+              :title-input-id="taskInputId(project, task)"
+              :title-label="isPrinting ? 'Item name' : 'Task title'"
+              :completed="task.completed"
+              :completable="!isCrossStitch"
+              :editable="!isCrossStitch"
+              :removable="isCrossStitch"
+              :remove-label="`Remove ${task.title || 'thread color'} from ${project.title}`"
+              @enter="handleEnter(project, task, $event)"
+              @remove="removeStitchColor(project, task)"
+              @title-blur="handleTitleBlur(project, task)"
+              @update:completed="updateCompleted(project, task, $event)"
+              @update:title="updateTitle(task, $event)"
+            >
+              <template #details>
+                <JMPrintingTaskDetails
+                  v-if="isPrinting"
+                  :supply-by-id="supplyById"
+                  :task="task"
+                  @add="addFilament(project, task)"
+                  @remove="removeFilament(task, $event)"
+                  @update:filament="updateFilament"
+                  @update:weight="updateWeight"
+                />
+                <JMStitchTaskDetails
+                  v-else-if="isCrossStitch"
+                  :supply-by-id="flossSupplyById"
+                  :task="task"
+                  @update:crosses="updateCrosses(task, $event)"
+                  @update:crosses-done="updateCrossesDone(task, $event)"
+                  @update:floss="updateFloss(task, $event)"
+                  @update:skeins="updateSkeins(task, $event)"
+                />
+              </template>
+            </JMTaskCard>
+          </li>
+        </ul>
       </li>
     </ul>
   </section>

@@ -110,7 +110,6 @@ export default {
     <JMButton
       icon-name="chevron-left"
       view="ghost"
-      class="jm-calendar__left"
       :aria-label="`Previous ${visibleDayCount} days`"
       :disabled="!canGoPrevious"
       @click="shift(-1)"
@@ -127,7 +126,6 @@ export default {
     <JMButton
       icon-name="chevron-right"
       view="ghost"
-      class="jm-calendar__right"
       :aria-label="`Next ${visibleDayCount} days`"
       :disabled="!canGoNext"
       @click="shift(1)"

@@ -241,23 +241,23 @@ export default {
         No DMC colors match this search.
       </p>
       <ul v-else class="filament-catalog" role="list">
-        <li v-for="card in flossCards" :key="card.catalogId">
-          <JMCatalogCard
-            :catalog-group="card.catalogGroup"
-            :catalog-id="card.catalogId"
-            inventory-label="Skeins owned"
-            inventory-name="skeins-owned"
-            :inventory-value="card.inventoryValue"
-            :missing="card.missing"
-            :missing-text="card.missingText"
-            :required-text="card.requiredText"
-            :status="card.status"
-            :swatch-color="card.item.color"
-            :title="card.title"
-            :title-href="card.titleHref"
-            @update:inventory="updateSkeins(card.item, $event)"
-          />
-        </li>
+        <JMCatalogCard
+          v-for="card in flossCards"
+          :key="card.catalogId"
+          :catalog-group="card.catalogGroup"
+          :catalog-id="card.catalogId"
+          inventory-label="Skeins owned"
+          inventory-name="skeins-owned"
+          :inventory-value="card.inventoryValue"
+          :missing="card.missing"
+          :missing-text="card.missingText"
+          :required-text="card.requiredText"
+          :status="card.status"
+          :swatch-color="card.item.color"
+          :title="card.title"
+          :title-href="card.titleHref"
+          @update:inventory="updateSkeins(card.item, $event)"
+        />
       </ul>
     </template>
 
@@ -270,24 +270,24 @@ export default {
         No catalog filaments match this search.
       </p>
       <ul v-else class="filament-catalog" role="list">
-        <li v-for="card in filamentCards" :key="card.catalogId">
-          <JMCatalogCard
-            :catalog-group="card.catalogGroup"
-            :catalog-id="card.catalogId"
-            :detail-text="card.detailText"
-            inventory-label="Spools owned"
-            inventory-name="spools-owned"
-            :inventory-value="card.inventoryValue"
-            :missing="card.missing"
-            :missing-text="card.missingText"
-            :required-text="card.requiredText"
-            :status="card.status"
-            :swatch-src="card.item.swatch"
-            :title="card.title"
-            :title-href="card.titleHref"
-            @update:inventory="updateSpools(card.item, $event)"
-          />
-        </li>
+        <JMCatalogCard
+          v-for="card in filamentCards"
+          :key="card.catalogId"
+          :catalog-group="card.catalogGroup"
+          :catalog-id="card.catalogId"
+          :detail-text="card.detailText"
+          inventory-label="Spools owned"
+          inventory-name="spools-owned"
+          :inventory-value="card.inventoryValue"
+          :missing="card.missing"
+          :missing-text="card.missingText"
+          :required-text="card.requiredText"
+          :status="card.status"
+          :swatch-src="card.item.swatch"
+          :title="card.title"
+          :title-href="card.titleHref"
+          @update:inventory="updateSpools(card.item, $event)"
+        />
       </ul>
     </template>
   </section>

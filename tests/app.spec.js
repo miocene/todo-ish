@@ -1079,7 +1079,7 @@ test("unknown application routes return to work", async ({ page }) => {
 
   await expect(page).toHaveURL(/\/work$/);
   expect(new URL(page.url()).hash).toBe("");
-  await expect(page.locator(".work-page")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Work", exact: true })).toBeVisible();
 });
 
 test("new blank chores preserve a valid occurrence order", async ({ page }) => {
@@ -1150,7 +1150,7 @@ test("today updates across midnight without reloading the application", async ({
   await expect(page.getByRole("textbox", { name: "Task title" })).toHaveValue("Carry into tomorrow");
   await expect(page.locator(".jm-navigation__link").first().locator("use")).toHaveAttribute("href", /#icon-pto$/);
   await page.getByRole("link", { name: "Chores", exact: true }).click();
-  await expect(page.getByText("Today", { exact: true })).toBeVisible();
+  await expect(page.locator(".chores-upcoming").getByText("Today", { exact: true })).toBeVisible();
 });
 
 test("catalog failures stay local and retry independently without blocking task pages", async ({ page }) => {

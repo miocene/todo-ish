@@ -1,8 +1,9 @@
 .jm-passkey-gate {
-  display: grid;
+  display: flex;
   min-block-size: 100dvb;
   padding: var(--space-5);
-  place-items: center;
+  align-items: center;
+  justify-content: center;
 }
 
 .jm-passkey-gate__panel {

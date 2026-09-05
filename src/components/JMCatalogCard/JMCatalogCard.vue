@@ -24,7 +24,7 @@ export default {
 </script>
 
 <template>
-  <article class="catalog-card" :class="{ 'catalog-card--missing': missing }" :data-catalog-group="catalogGroup">
+  <li class="catalog-card" :class="{ 'catalog-card--missing': missing }" :data-catalog-group="catalogGroup">
     <img v-if="swatchSrc" class="catalog-card__swatch" :src="swatchSrc" alt="" loading="lazy" width="48" height="48" />
     <span v-else class="catalog-card__swatch" :style="{ backgroundColor: swatchColor }" aria-hidden="true" />
     <div>
@@ -41,7 +41,7 @@ export default {
       <p v-if="missingText" class="catalog-card__missing">{{ missingText }}</p>
     </div>
     <label class="catalog-card__inventory">
-      <span>{{ inventoryLabel }}</span>
+      {{ inventoryLabel }}
       <input
         :name="inventoryName"
         type="number"
@@ -52,5 +52,5 @@ export default {
         @input="$emit('update:inventory', $event.target.value)"
       />
     </label>
-  </article>
+  </li>
 </template>

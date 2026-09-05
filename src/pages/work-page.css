@@ -50,9 +50,7 @@
 }
 
 .work-day__actions {
-  display: flex;
-  gap: var(--space-2);
-  align-items: center;
+  flex: none;
 }
 
 .work-day__tasks,
@@ -69,8 +67,9 @@
 
 .work-day__empty,
 .work-backlog__empty {
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-block-size: 96px;
   color: #f0f;
   font-size: 0.8125rem;
@@ -96,9 +95,5 @@
 
   .work-day__actions {
     inline-size: 100%;
-  }
-
-  .work-day__actions .jm-button {
-    flex: 1;
   }
 }

@@ -265,9 +265,13 @@ export default {
         </h2>
       </div>
 
-      <div class="work-day__actions">
-        <JMButton text="Add task" view="secondary" :disabled="!canEditSelectedDay" @click="addSelectedDayTask" />
-      </div>
+      <JMButton
+        class="work-day__actions"
+        text="Add task"
+        view="secondary"
+        :disabled="!canEditSelectedDay"
+        @click="addSelectedDayTask"
+      />
     </header>
 
     <div class="work-day__tasks">

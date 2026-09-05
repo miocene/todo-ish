@@ -42,13 +42,7 @@ export default {
 </script>
 
 <template>
-  <div
-    class="task-item"
-    :class="{
-      'task-item--completed': completed,
-      'task-item--without-checkbox': !completable,
-    }"
-  >
+  <div class="task-item" :class="{ 'task-item--completed': completed }">
     <label v-if="completable" class="task-item__visually-hidden" :for="completionId">
       Complete {{ title || "untitled task" }}
     </label>

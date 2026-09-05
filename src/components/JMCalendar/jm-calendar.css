@@ -1,18 +1,6 @@
 .jm-calendar {
-  position: relative;
   display: flex;
   align-items: center;
-}
-
-.jm-calendar__left {
-  position: absolute;
-  left: 0;
-  translate: -100%;
-}
-
-.jm-calendar__right {
-  position: absolute;
-  left: 100%;
 }
 
 .jm-day-type {
@@ -92,9 +80,10 @@
 }
 
 .jm-day-type__icon {
-  display: grid;
+  display: flex;
   flex: none;
-  place-items: center;
+  align-items: center;
+  justify-content: center;
   inline-size: var(--size-control);
   block-size: var(--size-control);
   color: var(--color-text-secondary);

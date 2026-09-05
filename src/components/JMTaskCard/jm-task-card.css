@@ -1,8 +1,7 @@
 .task-item {
-  display: grid;
-  grid-template-columns: 16px minmax(0, 1fr) auto;
+  display: flex;
   gap: var(--space-1);
-  align-items: start;
+  align-items: flex-start;
   min-inline-size: 0;
   margin-inline: var(--space-2);
   padding: var(--space-2);
@@ -11,12 +10,8 @@
   border-radius: var(--radius-control);
 }
 
-.task-item--without-checkbox {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
 .task-item__checkbox {
-  grid-column: 1;
+  flex: none;
   inline-size: 16px;
   block-size: 16px;
   margin: 2px 0 0;
@@ -25,12 +20,8 @@
 }
 
 .task-item__content {
-  grid-column: 2;
+  flex: 1;
   min-inline-size: 0;
-}
-
-.task-item--without-checkbox .task-item__content {
-  grid-column: 1;
 }
 
 .task-item__title {
@@ -79,18 +70,15 @@ textarea.task-item__title {
 }
 
 .task-item__actions {
-  grid-column: 3;
   display: inline-flex;
+  flex: none;
   gap: var(--space-1);
 }
 
-.task-item--without-checkbox .task-item__actions {
-  grid-column: 2;
-}
-
 .task-item__action {
-  display: inline-grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   inline-size: 28px;
   block-size: 28px;
   padding: 0;
