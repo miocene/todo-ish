@@ -10,6 +10,7 @@ RUN corepack enable \
 COPY index.html vite.config.js ./
 COPY styles ./styles
 COPY src ./src
+COPY backend/api/src/app-data-contract.mjs backend/api/src/app-data-validation.mjs ./backend/api/src/
 
 RUN yarn build
 

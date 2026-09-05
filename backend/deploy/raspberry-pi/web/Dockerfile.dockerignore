@@ -5,7 +5,11 @@
 .npmrc
 .venv
 .ruff_cache
-backend/api
+backend/api/*
+!backend/api/src
+backend/api/src/*
+!backend/api/src/app-data-contract.mjs
+!backend/api/src/app-data-validation.mjs
 backend/catalogs
 backend/database
 backend/scripts
