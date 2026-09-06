@@ -7,7 +7,6 @@ export default {
     value: { type: Number, default: 0 },
     max: { type: Number, default: 100 },
     label: { type: String, required: true },
-    text: { type: String, default: "" },
   },
 };
 </script>
@@ -21,6 +20,5 @@ export default {
       :aria-label="label"
       :aria-valuetext="text || undefined"
     />
-    <p v-if="text" class="jm-progress__text">{{ text }}</p>
   </div>
 </template>

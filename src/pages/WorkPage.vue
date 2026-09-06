@@ -17,11 +17,11 @@ import { getAllWorkTasks, saveWorkTasks } from "../app/work-tasks.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMCard from "../components/JMCard/JMCard.vue";
 import JMCalendar from "../components/JMCalendar/JMCalendar.vue";
-import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
+import JMTaskItem from "../components/JMTaskItem/JMTaskItem.vue";
 
 export default {
   name: "WorkPage",
-  components: { JMButton, JMCalendar, JMCard, JMTaskCard },
+  components: { JMButton, JMCalendar, JMCard, JMTaskItem },
   data() {
     const workTasks = getAllWorkTasks().map((task) => ({ ...task }));
     const nextTaskId =
@@ -250,38 +250,35 @@ export default {
   <p class="work-page__status" aria-live="polite" aria-atomic="true">{{ taskMoveStatus }}</p>
 
   <JMCard
-    class="work-day"
-    :class="{ 'work-day--today': selectedDay.today }"
     :title="`${selectedDay.today ? 'Today' : selectedDay.weekday}, ${selectedDay.dateLabel}`"
     :color="cardColors[`work-day:${focusDateIso}`]"
-    :actions="[{ id: 'add', label: 'Add task', disabled: !canEditSelectedDay }]"
+    :actions="[{ id: 'add', label: 'Add task', icon: 'plus', disabled: !canEditSelectedDay }]"
     @action="addSelectedDayTask"
   >
     <template #title>
-      <span class="work-day__eyebrow">{{ selectedDay.today ? "Today" : selectedDay.weekday }}</span>
+      <span class="eyebrow">{{ selectedDay.today ? "Today" : selectedDay.weekday }}</span>
       <time :datetime="selectedDay.iso">{{ selectedDay.dateLabel }}</time>
     </template>
     <li v-if="selectedDay.tasks.length === 0" class="work-day__empty">Nothing recorded for this day.</li>
-    <li v-for="task in selectedDay.tasks" :key="task.id">
-      <JMTaskCard
-        :task-id="task.id"
-        :title="taskTitle(task)"
-        :title-input-id="taskInputId(task)"
-        :completion-input-id="taskCheckboxId(task)"
-        :completed="isTaskComplete(task)"
-        :editable="canEditTask(selectedDay.iso)"
-        removable
-        :pin-icon="isTaskComplete(task) ? '' : 'pinned'"
-        :pin-label="`Move ${taskTitle(task) || 'untitled task'} to backlog`"
-        :remove-label="`Delete ${taskTitle(task) || 'untitled task'}`"
-        @enter="handleTaskTitleEnter(task, selectedDay.iso, selectedDay.tasks, $event)"
-        @pin="toggleTaskAssignment(task)"
-        @remove="removeTask(task)"
-        @title-blur="handleTaskTitleBlur(task)"
-        @update:completed="setTaskCompletion(task, $event)"
-        @update:title="updateTaskTitle(task, $event)"
-      />
-    </li>
+    <JMTaskItem
+      v-for="task in selectedDay.tasks" :key="task.id"
+      :task-id="task.id"
+      :title="taskTitle(task)"
+      :title-input-id="taskInputId(task)"
+      :completion-input-id="taskCheckboxId(task)"
+      :completed="isTaskComplete(task)"
+      :editable="canEditTask(selectedDay.iso)"
+      removable
+      :pin-icon="isTaskComplete(task) ? '' : 'pinned'"
+      :pin-label="`Move ${taskTitle(task) || 'untitled task'} to backlog`"
+      :remove-label="`Delete ${taskTitle(task) || 'untitled task'}`"
+      @enter="handleTaskTitleEnter(task, selectedDay.iso, selectedDay.tasks, $event)"
+      @pin="toggleTaskAssignment(task)"
+      @remove="removeTask(task)"
+      @title-blur="handleTaskTitleBlur(task)"
+      @update:completed="setTaskCompletion(task, $event)"
+      @update:title="updateTaskTitle(task, $event)"
+    />
   </JMCard>
 
   <JMCard
@@ -293,7 +290,7 @@ export default {
   >
     <li v-if="backlogTasks.length === 0" class="work-backlog__empty">No backlog tasks</li>
     <li v-for="task in backlogTasks" :key="task.id">
-      <JMTaskCard
+      <JMTaskItem
         :task-id="task.id"
         :title="taskTitle(task)"
         :title-input-id="taskInputId(task)"

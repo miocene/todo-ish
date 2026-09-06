@@ -2,16 +2,16 @@
 import { createTaskEditor } from "../app/task-editor.js";
 import { filamentCatalog } from "../app/filament-catalog.js";
 import { flossCatalog } from "../app/floss-catalog.js";
-import JMCatalogStatus from "../components/JMCatalogStatus/JMCatalogStatus.vue";
+import JMCatalogLoader from "../components/JMCatalogLoader/JMCatalogLoader.vue";
 import { savePageTasks } from "../app/page-tasks.js";
 import { completedTasksLast, nextEntityId, setTaskCompletion, serializableTasks } from "../app/task-list.js";
 import { syncSupplyShoppingLists } from "../app/shopping-supplies.js";
 import JMButton from "../components/JMButton/JMButton.vue";
-import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
+import JMTaskItem from "../components/JMTaskItem/JMTaskItem.vue";
 
 export default {
   name: "ShoppingPage",
-  components: { JMCatalogStatus, JMButton, JMTaskCard },
+  components: { JMCatalogLoader, JMButton, JMTaskItem },
   data() {
     const shopping = syncSupplyShoppingLists();
     shopping.tasks = completedTasksLast(shopping.tasks);
@@ -106,33 +106,31 @@ export default {
 </script>
 
 <template>
-  <section class="task-page" aria-labelledby="shopping-title">
-    <header class="task-page__header">
-      <h1 id="shopping-title">Shopping cart</h1>
-      <JMButton text="Add item" view="secondary" @click="addTask" />
-    </header>
+  <header class="page-header">
+    <h1>Shopping cart</h1>
+    <JMButton text="Add item" view="secondary" @click="addTask" />
+  </header>
 
-    <JMCatalogStatus :catalog="filamentCatalog" />
-    <JMCatalogStatus :catalog="flossCatalog" />
+  <JMCatalogLoader :catalog="filamentCatalog" />
+  <JMCatalogLoader :catalog="flossCatalog" />
 
-    <p v-if="shopping.tasks.length === 0" class="task-page__empty">The shopping list is empty.</p>
-    <ul v-else class="task-page__tasks" role="list">
-      <li v-for="task in shopping.tasks" :key="task.id">
-        <JMTaskCard
-          :task-id="task.id"
-          :title="task.title"
-          :title-href="task.productLink || ''"
-          :title-input-id="taskInputId(task)"
-          :completed="task.completed"
-          removable
-          :remove-label="`Remove ${task.title || 'untitled item'} from shopping list`"
-          @enter="handleEnter(task, $event)"
-          @remove="removeTask(task)"
-          @title-blur="handleTitleBlur(task)"
-          @update:completed="updateCompleted(task, $event)"
-          @update:title="updateTitle(task, $event)"
-        />
-      </li>
-    </ul>
-  </section>
+  <p v-if="shopping.tasks.length === 0" class="task-page__empty">The shopping list is empty.</p>
+  <ul v-else class="task-page__tasks" role="list">
+    <li v-for="task in shopping.tasks" :key="task.id">
+      <JMTaskItem
+        :task-id="task.id"
+        :title="task.title"
+        :title-href="task.productLink || ''"
+        :title-input-id="taskInputId(task)"
+        :completed="task.completed"
+        removable
+        :remove-label="`Remove ${task.title || 'untitled item'} from shopping list`"
+        @enter="handleEnter(task, $event)"
+        @remove="removeTask(task)"
+        @title-blur="handleTitleBlur(task)"
+        @update:completed="updateCompleted(task, $event)"
+        @update:title="updateTitle(task, $event)"
+      />
+    </li>
+  </ul>
 </template>

@@ -10,7 +10,7 @@ import {
 } from "../app/page-tasks.js";
 import { filamentSupplyStatus, syncFilamentShoppingList } from "../app/printing-supplies.js";
 import { flossSupplyStatus, syncFlossShoppingList } from "../app/stitching-supplies.js";
-import JMCatalogStatus from "../components/JMCatalogStatus/JMCatalogStatus.vue";
+import JMCatalogLoader from "../components/JMCatalogLoader/JMCatalogLoader.vue";
 import JMCatalogItem from "../components/JMCatalogItem/JMCatalogItem.vue";
 import JMInput from "../components/JMInput/JMInput.vue";
 import JMSelect from "../components/JMSelect/JMSelect.vue";
@@ -18,7 +18,7 @@ import JMTabs from "../components/JMTabs/JMTabs.vue";
 
 export default {
   name: "CatalogPage",
-  components: { JMCatalogItem, JMCatalogStatus, JMInput, JMSelect, JMTabs },
+  components: { JMCatalogItem, JMCatalogLoader, JMInput, JMSelect, JMTabs },
   data() {
     return {
       catalogTabs: [
@@ -156,7 +156,7 @@ export default {
 
     <JMTabs :tabs="catalogTabs" :active="catalogKind" aria-label="Catalog" />
 
-    <JMCatalogStatus :catalog="catalog" />
+    <JMCatalogLoader :catalog="catalog" />
 
     <form class="catalog-search" action="/catalog" method="get" @submit.prevent>
       <JMInput

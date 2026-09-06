@@ -15,7 +15,6 @@ export default {
     maxDate: { type: String, default: "" },
     minDate: { type: String, default: "" },
     routeName: { type: String, default: "work" },
-    showDayType: Boolean,
   },
   emits: ["range-change", "update:day-type"],
   data() {
@@ -110,6 +109,7 @@ export default {
     <JMButton
       icon-name="chevron-left"
       view="ghost"
+      class="left"
       :aria-label="`Previous ${visibleDayCount} days`"
       :disabled="!canGoPrevious"
       @click="shift(-1)"
@@ -119,13 +119,13 @@ export default {
       :key="day.value"
       :day="day"
       :selected="day.value === date"
-      :show-day-type="showDayType"
       @activate="navigate"
       @update:day-type="$emit('update:day-type', $event)"
     />
     <JMButton
       icon-name="chevron-right"
       view="ghost"
+      class="right"
       :aria-label="`Next ${visibleDayCount} days`"
       :disabled="!canGoNext"
       @click="shift(1)"

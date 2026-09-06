@@ -1,0 +1,33 @@
+.jm-header {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-block-size: var(--size-header);
+  background: color-mix(in srgb, var(--color-bg-default) 92%, transparent);
+  backdrop-filter: blur(var(--blur-m));
+  
+  .logo {
+    display: inline-flex;
+    align-items: baseline;
+    margin-inline-end: auto;
+    line-height: 1;
+    border-radius: var(--radius-control);
+  }
+  
+  .logo-main,
+  .logo-suffix {
+    font-size: var(--font-size-logo);
+  }
+  
+  .logo-main {
+    font-weight: var(--font-weight-bold);
+  }
+  
+  .logo-suffix {
+    color: var(--color-text-secondary);
+    font-style: italic;
+  }
+}

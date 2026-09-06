@@ -4,12 +4,12 @@ import { randomCardColor } from "../app/card-colors.js";
 import { loadPageTasks, savePageTasks } from "../app/page-tasks.js";
 import { completedTasksLast, nextEntityId, setTaskCompletion, serializableTasks } from "../app/task-list.js";
 import JMButton from "../components/JMButton/JMButton.vue";
-import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
+import JMTaskItem from "../components/JMTaskItem/JMTaskItem.vue";
 import JMTabs from "../components/JMTabs/JMTabs.vue";
 
 export default {
   name: "TodoListsPage",
-  components: { JMButton, JMTaskCard, JMTabs },
+  components: { JMButton, JMTaskItem, JMTabs },
   data() {
     const todos = loadPageTasks("todos");
     for (const list of todos.lists) list.tasks = completedTasksLast(list.tasks);
@@ -95,32 +95,30 @@ export default {
 </script>
 
 <template>
-  <section class="task-page" aria-labelledby="todos-title">
-    <header class="task-page__header">
-      <h1 id="todos-title">Todo lists</h1>
-      <JMButton text="Add list" view="secondary" @click="addList" />
-      <JMButton v-if="activeList" text="Add task" view="secondary" @click="addTask" />
-    </header>
+  <header class="page-header">
+    <h1>Todo lists</h1>
+    <JMButton text="Add list" view="secondary" @click="addList" />
+    <JMButton v-if="activeList" text="Add task" view="secondary" @click="addTask" />
+  </header>
 
-    <JMTabs v-if="activeList" :tabs="listTabs" :active="activeList.id" aria-label="Todo lists" />
+  <JMTabs v-if="activeList" :tabs="listTabs" :active="activeList.id" aria-label="Todo lists" />
 
-    <p v-if="!activeList">No lists yet. Add a list to get started.</p>
-    <div v-else class="task-page__section" :style="{ '--color': activeList.color }">
-      <h2 :id="`todo-list-${activeList.id}`">{{ activeList.title }}</h2>
-      <ul class="task-page__tasks" role="list">
-        <li v-for="task in activeList.tasks" :key="task.id">
-          <JMTaskCard
-            :task-id="task.id"
-            :title="task.title"
-            :title-input-id="taskInputId(task)"
-            :completed="task.completed"
-            @enter="handleEnter(task, $event)"
-            @title-blur="handleTitleBlur(activeList, task)"
-            @update:completed="updateCompleted(activeList, task, $event)"
-            @update:title="updateTitle(task, $event)"
-          />
-        </li>
-      </ul>
-    </div>
-  </section>
+  <p v-if="!activeList">No lists yet. Add a list to get started.</p>
+  <div v-else class="task-page__section" :style="{ '--color': activeList.color }">
+    <h2 :id="`todo-list-${activeList.id}`">{{ activeList.title }}</h2>
+    <ul class="task-page__tasks" role="list">
+      <li v-for="task in activeList.tasks" :key="task.id">
+        <JMTaskItem
+          :task-id="task.id"
+          :title="task.title"
+          :title-input-id="taskInputId(task)"
+          :completed="task.completed"
+          @enter="handleEnter(task, $event)"
+          @title-blur="handleTitleBlur(activeList, task)"
+          @update:completed="updateCompleted(activeList, task, $event)"
+          @update:title="updateTitle(task, $event)"
+        />
+      </li>
+    </ul>
+  </div>
 </template>

@@ -911,8 +911,7 @@ test("task pages render their variants and save changes immediately", async ({ p
   await page.getByRole("button", { name: "Add project" }).click();
   await expect(projects).toHaveCount(3);
   const newProject = projects.last();
-  await expect(newProject.getByLabel("Card title")).toBeFocused();
-  await newProject.getByLabel("Card title").fill("Headphone stand");
+  await expect(newProject.getByRole("heading", { name: "New 3D project" })).toBeVisible();
   const projectColor = await newProject.evaluate((card) => card.style.getPropertyValue("--color"));
   expect(CARD_COLORS).toContain(projectColor);
   await newProject.getByLabel(/^Actions for/).click();
@@ -926,7 +925,7 @@ test("task pages render their variants and save changes immediately", async ({ p
   await newProject.getByLabel("Weight 2", { exact: true }).fill("7.5");
   await page.reload();
   const savedProject = page.locator(".project-card").last();
-  await expect(savedProject.getByRole("heading", { name: "Headphone stand" })).toBeVisible();
+  await expect(savedProject.getByRole("heading", { name: "New 3D project" })).toBeVisible();
   expect(await savedProject.evaluate((card) => card.style.getPropertyValue("--color"))).toBe(projectColor);
   await expect(savedProject.getByLabel("Item name")).toHaveValue("Weighted base");
   expect(
@@ -1073,13 +1072,13 @@ test("work and chore cards expose only their supported actions", async ({ page }
 });
 
 for (const route of ["printing", "cross-stitch"]) {
-  test(`${route} cards support editing, collapsing, adding, and removing projects`, async ({ page }) => {
+  test(`${route} cards open an edit modal and support project actions`, async ({ page }) => {
     await page.goto(`/${route}`);
     const projects = page.locator(".project-card");
     const project = projects.first();
     const menu = project.getByLabel(/^Actions for/);
     const progress = project.getByRole("progressbar");
-    const originalTitle = await project.getByRole("heading").textContent();
+    const originalTitle = (await project.getByRole("heading").textContent()).trim();
     const addLabel = route === "printing" ? "Add item" : "Add color";
 
     await menu.focus();
@@ -1100,19 +1099,27 @@ for (const route of ["printing", "cross-stitch"]) {
 
     await menu.click();
     await project.getByRole("button", { name: "Edit", exact: true }).click();
-    const titleInput = project.getByRole("textbox", { name: "Card title", exact: true });
-    await expect(titleInput).toBeFocused();
-    await titleInput.fill("Discard this title");
-    await titleInput.press("Escape");
-    await expect(project.getByRole("heading")).toHaveText(originalTitle);
+    const dialog = page.getByRole("dialog", { name: `Edit ${originalTitle}`, exact: true });
+    await expect(dialog).toBeVisible();
+    expect(await dialog.evaluate((element) => element.matches(":modal"))).toBe(true);
+    await expect(dialog).toBeFocused();
+    await expect(dialog).toHaveText("");
+    await expect(dialog.locator(":scope > *")).toHaveCount(0);
+    await expect(project.locator('input[name="card-title"]')).toHaveCount(0);
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
     await expect(menu).toBeFocused();
+    await expect(project.getByRole("heading")).toHaveText(originalTitle);
+
     await menu.click();
     await project.getByRole("button", { name: "Edit", exact: true }).click();
-    await titleInput.fill("Renamed project");
-    await titleInput.press("Enter");
-    await expect(project.getByRole("heading")).toHaveText("Renamed project");
-    await expect(progress).toHaveAccessibleName("Progress for Renamed project");
-    await expect.poll(() => appDataByPage.get(page).get(route).projects[0].title).toBe("Renamed project");
+    await expect(dialog).toBeVisible();
+    await dialog.click();
+    await expect(dialog).toBeVisible();
+    await page.mouse.click(1, 1);
+    await expect(dialog).toBeHidden();
+    await expect(menu).toBeFocused();
+    await expect.poll(() => appDataByPage.get(page).get(route).projects[0].title).toBe(originalTitle);
 
     if (route === "printing") {
       await expect(progress).toHaveAttribute("value", "1");
@@ -1121,14 +1128,14 @@ for (const route of ["printing", "cross-stitch"]) {
       await expect(progress).toHaveAttribute("value", "2");
     }
     const count = await project.locator(".task-item").count();
-    await project.getByRole("button", { name: "Collapse Renamed project" }).click();
+    await project.getByRole("button", { name: `Collapse ${originalTitle}` }).click();
     await expect(project.locator(".jm-card__tasks")).toBeHidden();
     await expect(progress).toBeVisible();
     await menu.click();
     await project.getByRole("button", { name: addLabel, exact: true }).click();
     await expect(project.locator(".jm-card__tasks")).toBeVisible();
     await expect(project.locator(".task-item")).toHaveCount(count + 1);
-    await expect(project.getByRole("button", { name: "Collapse Renamed project" })).toHaveAttribute(
+    await expect(project.getByRole("button", { name: `Collapse ${originalTitle}` })).toHaveAttribute(
       "aria-expanded",
       "true",
     );
@@ -1146,7 +1153,7 @@ for (const route of ["printing", "cross-stitch"]) {
     await expect.poll(() => appDataByPage.get(page).get(route).projects.length).toBe(1);
     await page.reload();
     await expect(projects).toHaveCount(1);
-    await expect(page.getByRole("heading", { name: "Renamed project" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: originalTitle })).toHaveCount(0);
   });
 }
 

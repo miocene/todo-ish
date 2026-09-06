@@ -11,18 +11,17 @@ export default {
   props: {
     day: { type: Object, required: true },
     selected: Boolean,
-    showDayType: Boolean,
   },
   emits: ["activate", "update:day-type"],
   computed: {
     editable() {
-      return this.selected && this.showDayType;
+      return this.selected;
     },
     dayClasses() {
       return {
-        "jm-calendar__day": true,
-        "jm-calendar__day--selected": this.selected,
-        "jm-calendar__day--today": this.day.today,
+        "day": true,
+        "selected": this.selected,
+        "today": this.day.today,
       };
     },
     activityDescription() {
@@ -52,7 +51,6 @@ export default {
 <template>
   <button
     v-if="!editable"
-    class="jm-day-type jm-day-type--static"
     :class="dayClasses"
     type="button"
     :aria-current="selected ? 'date' : undefined"
@@ -60,23 +58,24 @@ export default {
     :disabled="day.disabled"
     @click="$emit('activate', day.value)"
   >
-    <span class="jm-day-type__icon" :data-level="day.activityLevel" aria-hidden="true">
+    <small class="weekday">{{ day.day }}</small>
+    <strong class="date">{{ day.number }}</strong>
+    <span class="icon" :data-level="day.activityLevel" aria-hidden="true">
       <JMIcon :name="selectedOption.icon" />
     </span>
-    <strong class="jm-calendar__date">{{ day.number }}</strong>
-    <small class="jm-calendar__weekday">{{ day.day }}</small>
   </button>
   <label
     v-else
-    class="jm-day-type jm-day-type--editable"
     :class="dayClasses"
     :for="inputId"
     :aria-current="selected ? 'date' : undefined"
     :aria-label="dateLabel"
   >
+    <small class="weekday" aria-hidden="true">{{ day.day }}</small>
+    <strong class="date" aria-hidden="true">{{ day.number }}</strong>
     <JMSelect
       :id="inputId"
-      class="jm-day-type__icon"
+      class="icon"
       :name="inputId"
       view="ghost"
       icon-only
@@ -86,7 +85,5 @@ export default {
       :options="options"
       @update:model-value="$emit('update:day-type', { date: day.value, value: $event })"
     />
-    <strong class="jm-calendar__date" aria-hidden="true">{{ day.number }}</strong>
-    <small class="jm-calendar__weekday" aria-hidden="true">{{ day.day }}</small>
   </label>
 </template>

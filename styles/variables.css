@@ -1,36 +1,35 @@
 :root {
   color-scheme: light;
 
-  --font-default: "IBM Plex Sans", "Segoe UI", arial, sans-serif;
-  --font-mono: "IBM Plex Mono", "SFMono-Regular", consolas, monospace;
-
-  --color-bg-default: light-dark(#fafafa, #fafafa);
-  --color-bg-surface: light-dark(#fff, #fff);
-  --color-bg-selection: light-dark(#f5f5f5, #f5f5f5);
-  --color-text-default: light-dark(#333, #333);
-  --color-text-secondary: light-dark(rgb(51 51 51 / 52%), rgb(51 51 51 / 52%));
+  --color-bg-default: light-dark(#F6F6F6, #F6F6F6);
+  --color-bg-surface: light-dark(rgba(250, 250, 250, 0.95), rgba(250, 250, 250, 0.95));
+  --color-bg-selection: light-dark(#fff, #fff);
+  
   --color-activity-0: #eef0f2;
   --color-activity-1: #d1e7dd;
   --color-activity-2: #93c9ad;
   --color-activity-3: #5b9d7c;
   --color-activity-4: #2f6f51;
 
-  --font-weight-normal: 400;
-  --font-weight-bold: 700;
-
+  --blur-s: 8px;
   --blur-m: 12px;
 
-  --radius-checkbox: 8px;
+  --radius-checkbox: 6px;
   --radius-control: 12px;
+  --radius-calendar: 24px;
   --radius-card: 40px;
 
   --corner-shape-default: superellipse(1.5);
 
   --size-control-s: 32px;
   --size-control: 40px;
-  --size-checkbox: 16px;
+  --size-checkbox: 20px;
   --size-header: 50px;
 
+  --control-default-background: light-dark(#fff, #fff);
+  --control-default-border: light-dark(#ccc, #ccc);
+  --control-default-text: light-dark(#333, #333);
+  
   --control-primary-background: light-dark(transparent, transparent);
   --control-primary-background-hover: light-dark(transparent, transparent);
   --control-primary-text: light-dark(var(--color-text-default), var(--color-text-default));

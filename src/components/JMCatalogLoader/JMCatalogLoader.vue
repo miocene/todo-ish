@@ -2,7 +2,7 @@
 import JMButton from "../JMButton/JMButton.vue";
 
 export default {
-  name: "JMCatalogStatus",
+  name: "JMCatalogLoader",
   components: { JMButton },
   props: { catalog: { type: Object, required: true } },
   watch: {

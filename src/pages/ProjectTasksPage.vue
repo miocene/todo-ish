@@ -9,10 +9,10 @@ import { flossSupplyStatus, syncFlossShoppingList } from "../app/stitching-suppl
 import { completedTasksLast, nextEntityId, setTaskCompletion, serializableTasks } from "../app/task-list.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMCard from "../components/JMCard/JMCard.vue";
-import JMCatalogStatus from "../components/JMCatalogStatus/JMCatalogStatus.vue";
+import JMCatalogLoader from "../components/JMCatalogLoader/JMCatalogLoader.vue";
 import JMPrintingTaskDetails from "../components/JMProjectTaskDetails/JMPrintingTaskDetails.vue";
 import JMStitchTaskDetails from "../components/JMProjectTaskDetails/JMStitchTaskDetails.vue";
-import JMTaskCard from "../components/JMTaskCard/JMTaskCard.vue";
+import JMTaskItem from "../components/JMTaskItem/JMTaskItem.vue";
 
 function loadProjectTasks(pageKey) {
   const pageData = loadPageTasks(pageKey);
@@ -23,12 +23,12 @@ function loadProjectTasks(pageKey) {
 export default {
   name: "ProjectTasksPage",
   components: {
-    JMCatalogStatus,
+    JMCatalogLoader,
     JMButton,
     JMCard,
     JMPrintingTaskDetails,
     JMStitchTaskDetails,
-    JMTaskCard,
+    JMTaskItem,
   },
   props: {
     description: { type: String, required: true },
@@ -145,10 +145,6 @@ export default {
       task.title = title;
       this.save();
     },
-    updateProjectTitle(project, title) {
-      project.title = title;
-      this.save();
-    },
     updateFilament(usage, catalogId) {
       const filament = filamentsById.get(catalogId);
       usage.catalogId = catalogId;
@@ -242,7 +238,6 @@ export default {
       if (this.isCrossStitch) project.totalCrosses = 0;
       this.pageData.projects.push(project);
       this.save();
-      this.$nextTick(() => this.$refs[project.id]?.[0]?.editTitle());
     },
     handleTitleBlur(project, task) {
       this.editor.finish(project.tasks, task);
@@ -262,73 +257,66 @@ export default {
 </script>
 
 <template>
-  <section class="task-page" :aria-labelledby="`${pageKey}-title`">
-    <header class="task-page__header">
-      <div>
-        <h1 :id="`${pageKey}-title`">{{ title }}</h1>
-        <p>{{ description }}</p>
-      </div>
-      <JMButton ref="addProject" text="Add project" view="secondary" @click="addProject" />
-    </header>
+  <header class="page-header">
+    <h1>{{ title }}</h1>
+    <JMButton ref="addProject" text="Add project" view="secondary" @click="addProject" />
+  </header>
 
-    <JMCatalogStatus :catalog="catalog" />
+  <JMCatalogLoader :catalog="catalog" />
 
-    <ul class="project-list" role="list">
-      <JMCard
-        v-for="project in pageData.projects"
-        :key="`${pageKey}-${project.id}`"
-        :ref="project.id"
-        tag="li"
-        class="project-card"
-        :class="{ 'project-card--printing': isPrinting, 'project-card--stitching': isCrossStitch }"
-        :title="project.title || (isPrinting ? 'Untitled 3D project' : 'Untitled cross stitch project')"
-        :color="project.color"
-        :progress="projectProgress(project)"
-        :actions="cardActions"
-        collapsible
-        @action="handleProjectAction(project, $event)"
-        @update:title="updateProjectTitle(project, $event)"
-      >
-        <li v-for="task in project.tasks" :key="task.id">
-          <JMTaskCard
-            :task-id="task.id"
-            :title="task.title"
-            :title-input-id="taskInputId(project, task)"
-            :title-label="isPrinting ? 'Item name' : 'Task title'"
-            :completed="task.completed"
-            :completable="!isCrossStitch"
-            :editable="!isCrossStitch"
-            :removable="isCrossStitch"
-            :remove-label="`Remove ${task.title || 'thread color'} from ${project.title}`"
-            @enter="handleEnter(project, task, $event)"
-            @remove="removeStitchColor(project, task)"
-            @title-blur="handleTitleBlur(project, task)"
-            @update:completed="updateCompleted(project, task, $event)"
-            @update:title="updateTitle(task, $event)"
-          >
-            <template #details>
-              <JMPrintingTaskDetails
-                v-if="isPrinting"
-                :supply-by-id="supplyById"
-                :task="task"
-                @add="addFilament(project, task)"
-                @remove="removeFilament(task, $event)"
-                @update:filament="updateFilament"
-                @update:weight="updateWeight"
-              />
-              <JMStitchTaskDetails
-                v-else-if="isCrossStitch"
-                :supply-by-id="flossSupplyById"
-                :task="task"
-                @update:crosses="updateCrosses(task, $event)"
-                @update:crosses-done="updateCrossesDone(task, $event)"
-                @update:floss="updateFloss(task, $event)"
-                @update:skeins="updateSkeins(task, $event)"
-              />
-            </template>
-          </JMTaskCard>
-        </li>
-      </JMCard>
-    </ul>
-  </section>
+  <ul class="project-list" role="list">
+    <JMCard
+      v-for="project in pageData.projects"
+      :key="`${pageKey}-${project.id}`"
+      tag="li"
+      class="project-card"
+      :class="{ 'project-card--printing': isPrinting, 'project-card--stitching': isCrossStitch }"
+      :title="project.title || (isPrinting ? 'Untitled 3D project' : 'Untitled cross stitch project')"
+      :color="project.color"
+      :progress="projectProgress(project)"
+      :actions="cardActions"
+      collapsible
+      @action="handleProjectAction(project, $event)"
+    >
+      <li v-for="task in project.tasks" :key="task.id">
+        <JMTaskItem
+          :task-id="task.id"
+          :title="task.title"
+          :title-input-id="taskInputId(project, task)"
+          :title-label="isPrinting ? 'Item name' : 'Task title'"
+          :completed="task.completed"
+          :completable="!isCrossStitch"
+          :editable="!isCrossStitch"
+          :removable="isCrossStitch"
+          :remove-label="`Remove ${task.title || 'thread color'} from ${project.title}`"
+          @enter="handleEnter(project, task, $event)"
+          @remove="removeStitchColor(project, task)"
+          @title-blur="handleTitleBlur(project, task)"
+          @update:completed="updateCompleted(project, task, $event)"
+          @update:title="updateTitle(task, $event)"
+        >
+          <template #details>
+            <JMPrintingTaskDetails
+              v-if="isPrinting"
+              :supply-by-id="supplyById"
+              :task="task"
+              @add="addFilament(project, task)"
+              @remove="removeFilament(task, $event)"
+              @update:filament="updateFilament"
+              @update:weight="updateWeight"
+            />
+            <JMStitchTaskDetails
+              v-else-if="isCrossStitch"
+              :supply-by-id="flossSupplyById"
+              :task="task"
+              @update:crosses="updateCrosses(task, $event)"
+              @update:crosses-done="updateCrossesDone(task, $event)"
+              @update:floss="updateFloss(task, $event)"
+              @update:skeins="updateSkeins(task, $event)"
+            />
+          </template>
+        </JMTaskItem>
+      </li>
+    </JMCard>
+  </ul>
 </template>

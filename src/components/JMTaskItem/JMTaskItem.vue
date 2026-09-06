@@ -1,11 +1,11 @@
 <script>
-import JMIcon from "../JMIcon/JMIcon.vue";
+import JMButton from "../JMButton/JMButton.vue";
 import JMInput from "../JMInput/JMInput.vue";
-import "./jm-task-card.css";
+import "./jm-task-item.css";
 
 export default {
-  name: "JMTaskCard",
-  components: { JMIcon, JMInput },
+  name: "JMTaskItem",
+  components: { JMButton, JMInput },
   emits: ["enter", "pin", "remove", "title-blur", "update:completed", "update:title"],
   props: {
     completable: { type: Boolean, default: true },
@@ -24,7 +24,7 @@ export default {
   },
   computed: {
     completionId() {
-      return this.completionInputId || `task-card-complete-${this.taskId}`;
+      return this.completionInputId || `task-item-complete-${this.taskId}`;
     },
     hasActions() {
       return Boolean(this.pinIcon || this.removable || this.$slots.actions);
@@ -36,27 +36,27 @@ export default {
       return this.removeLabel || `Remove ${this.title || "untitled task"}`;
     },
     titleId() {
-      return this.titleInputId || `task-card-title-${this.taskId}`;
+      return this.titleInputId || `task-item-title-${this.taskId}`;
     },
   },
 };
 </script>
 
 <template>
-  <div class="task-item" :class="{ 'task-item--completed': completed }">
-    <label v-if="completable" class="task-item__visually-hidden" :for="completionId">
+  <li class="task-item" :class="{ 'task-item--completed': completed }">
+    <label v-if="completable" class="sr-only" :for="completionId">
       Complete {{ title || "untitled task" }}
     </label>
     <input
       v-if="completable"
       :id="completionId"
-      class="task-item__checkbox"
+      class="checkbox"
       type="checkbox"
       :checked="completed"
       @change="$emit('update:completed', $event.target.checked)"
     />
 
-    <div class="task-item__content">
+    <div class="content">
       <a
         v-if="titleHref"
         class="task-item__title task-item__title-link"
@@ -65,7 +65,7 @@ export default {
         rel="noopener noreferrer"
       >
         {{ title }}
-        <span class="task-item__visually-hidden"> (opens in a new tab)</span>
+        <span class="sr-only"> (opens in a new tab)</span>
       </a>
       <JMInput
         v-else-if="editable"
@@ -89,25 +89,25 @@ export default {
     </div>
 
     <div v-if="hasActions" class="task-item__actions">
-      <button
+      <JMButton
         v-if="removable"
-        class="task-item__action task-item__remove"
-        type="button"
+        class="task-item__remove"
+        icon-name="remove"
+        size="s"
+        view="ghost"
         :aria-label="resolvedRemoveLabel"
         @click="$emit('remove')"
-      >
-        <JMIcon name="remove" />
-      </button>
-      <button
+      />
+      <JMButton
         v-if="pinIcon"
-        class="task-item__action task-item__pin"
-        type="button"
+        class="task-item__pin"
+        :icon-name="pinIcon"
+        size="s"
+        view="ghost"
         :aria-label="resolvedPinLabel"
         @click="$emit('pin')"
-      >
-        <JMIcon :name="pinIcon" />
-      </button>
+      />
       <slot name="actions" />
     </div>
-  </div>
+  </li>
 </template>

@@ -12,8 +12,8 @@ export default {
 
 <template>
   <header class="jm-header">
-    <RouterLink class="jm-header__logo" :to="{ name: 'work' }" aria-label="ToDo-ish, Work">
-      <span class="jm-header__logo-main">ToDo</span><span class="jm-header__logo-suffix">-ish</span>
+    <RouterLink class="logo" :to="{ name: 'work' }" aria-label="toto-ish, work">
+      <span class="logo-main">todo</span><span class="logo-suffix">-ish</span>
     </RouterLink>
 
     <JMButton aria-label="Search" icon-name="search" view="ghost" @click="$emit('search')" />
