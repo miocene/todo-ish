@@ -78,6 +78,7 @@ export default {
       class="icon"
       :name="inputId"
       view="ghost"
+      size="xs"
       icon-only
       :data-level="day.activityLevel"
       :aria-label="`Change day type for ${day.label}. Current type: ${selectedOption.label}. ${activityDescription}`"

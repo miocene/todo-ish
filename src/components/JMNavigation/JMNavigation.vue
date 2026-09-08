@@ -31,11 +31,11 @@ export default {
 
 <template>
   <nav class="jm-navigation" aria-label="Primary">
-    <ul class="jm-navigation__list" role="list">
-      <li v-for="item in navigationItems" :key="item.label" class="jm-navigation__item">
-        <RouterLink class="jm-navigation__link" exact-active-class="jm-navigation__link--active" :to="item.to">
+    <ul class="list" role="list">
+      <li v-for="item in navigationItems" :key="item.label" class="item">
+        <RouterLink class="link" exact-active-class="link--active" :to="item.to">
           <JMIcon :name="item.to.name === 'work' ? workIcon : item.icon" />
-          <span class="jm-navigation__label">{{ item.label }}</span>
+          <span class="label">{{ item.label }}</span>
         </RouterLink>
       </li>
     </ul>

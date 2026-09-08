@@ -26,6 +26,12 @@ input, button, textarea, select {
   font: inherit;
 }
 
+textarea {
+  display: block;
+  field-sizing: content;
+  color: inherit;
+}
+
 a {
   text-decoration: none;
 }

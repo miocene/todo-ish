@@ -43,10 +43,7 @@ export default {
 </script>
 
 <template>
-  <li class="task-item" :class="{ 'task-item--completed': completed }">
-    <label v-if="completable" class="sr-only" :for="completionId">
-      Complete {{ title || "untitled task" }}
-    </label>
+  <li class="task-item" :class="{ 'completed': completed }">
     <input
       v-if="completable"
       :id="completionId"
@@ -70,7 +67,7 @@ export default {
       <JMInput
         v-else-if="editable"
         :id="titleId"
-        class="task-item__title"
+        class="task-title"
         name="task-title"
         view="ghost"
         size="s"
@@ -88,10 +85,9 @@ export default {
       </div>
     </div>
 
-    <div v-if="hasActions" class="task-item__actions">
+    <div v-if="hasActions" class="actions">
       <JMButton
         v-if="removable"
-        class="task-item__remove"
         icon-name="remove"
         size="s"
         view="ghost"
@@ -100,7 +96,6 @@ export default {
       />
       <JMButton
         v-if="pinIcon"
-        class="task-item__pin"
         :icon-name="pinIcon"
         size="s"
         view="ghost"

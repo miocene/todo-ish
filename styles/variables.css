@@ -16,11 +16,13 @@
 
   --radius-checkbox: 6px;
   --radius-control: 12px;
+  --radius-popover: 16px;
   --radius-calendar: 24px;
-  --radius-card: 40px;
+  --radius-card: 32px;
 
   --corner-shape-default: superellipse(1.5);
 
+  --size-control-xs: 24px;
   --size-control-s: 32px;
   --size-control: 40px;
   --size-checkbox: 20px;

@@ -13,8 +13,8 @@
     z-index: -1;
   }
 
-  &:hover .left, 
-  &:hover .right {
+  &:hover .left:not(:disabled), 
+  &:hover .right:not(:disabled) {
     opacity: 1;
   }
 
@@ -48,6 +48,15 @@
     &.selected, &:hover {
       background: var(--color-bg-selection);
     }
+
+    &:disabled, &:hover:disabled {
+      cursor: not-allowed;
+      background-color: transparent;
+      
+      .date {
+        color: var(--color-text-secondary);
+      }
+    }
   }
   
   .weekday {
@@ -67,9 +76,12 @@
   }
 
   .icon {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
+    display: grid;
+    place-content: center;
+    width: var(--size-control-xs);
+    height: var(--size-control-xs);
+    padding: 0;
+    border-radius: var(--radius-control);
 
     &[data-level="1"] {
       color: var(--color-activity-4);
