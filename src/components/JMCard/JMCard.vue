@@ -61,18 +61,13 @@ export default {
     <header class="header">
       <h2 :id="`${id}-title`" class="title">
         <slot name="title">{{ title }}</slot>
-        <JMProgress
-          v-if="progress"
-          :value="progress.value"
-          :max="progress.max"
-          :label="`Progress for ${title}`"
-        />
+        <JMProgress v-if="progress" :value="progress.value" :max="progress.max" :label="`Progress for ${title}`" />
       </h2>
       <template v-if="actions.length || collapsible">
         <JMButton
           v-if="actions.length === 1"
           :icon-name="actions[0].icon"
-          :aria-label="actions[0].ariaLabel"
+          :aria-label="actions[0].ariaLabel || actions[0].label"
           :disabled="actions[0].disabled"
           view="ghost"
           @click="runAction(actions[0])"
@@ -116,8 +111,14 @@ export default {
         />
       </template>
     </header>
-    <ul v-if="$slots.list" v-show="!collapsible || expanded" :id="`${id}-tasks`" class="task-list" role="list">
-      <slot name="list" />
+    <ul
+      v-if="$slots.list || $slots.default"
+      v-show="!collapsible || expanded"
+      :id="`${id}-tasks`"
+      class="task-list"
+      role="list"
+    >
+      <slot name="list"><slot /></slot>
     </ul>
     <div v-else class="empty">
       {{ emptyText }}

@@ -1,26 +1,16 @@
 import { calendarDate, shiftCalendarDays, isIsoDate, toIsoDate as isoDate } from "./date.js";
-export { calendarDate, shiftCalendarDays, isIsoDate, isoDate };
-import { getWorkStatus } from "./work-status.js";
-import { getAllWorkTasks, getWorkTasks } from "./work-tasks.js";
+export { calendarDate, isIsoDate, isoDate };
 
+const PAST_DAY_LIMIT = 3;
 const FUTURE_DAY_LIMIT = 14;
 const WEEKDAY_FORMATTER = new Intl.DateTimeFormat("en", { weekday: "short" });
-const DAY_FORMATTER = new Intl.DateTimeFormat("en", { day: "numeric" });
-const MONTH_FORMATTER = new Intl.DateTimeFormat("en", { month: "short" });
-const DATE_FORMATTER = new Intl.DateTimeFormat("en", {
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-});
-const LABEL_FORMATTER = new Intl.DateTimeFormat("en", {
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-});
+const DATE_FORMATTER = new Intl.DateTimeFormat("en", { day: "numeric", month: "long", year: "numeric" });
 
-export function requestedDate(value, fallback = new Date()) {
-  return isIsoDate(value) ? calendarDate(value) : calendarDate(fallback);
+export function requestedDate(value, fallback = new Date(), bounds) {
+  let date = isIsoDate(value) ? calendarDate(value) : calendarDate(fallback);
+  if (bounds?.firstDate && date < bounds.firstDate) date = bounds.firstDate;
+  if (bounds?.lastDate && date > bounds.lastDate) date = bounds.lastDate;
+  return date;
 }
 
 export function getCalendarDay(value, todayIso) {
@@ -29,23 +19,20 @@ export function getCalendarDay(value, todayIso) {
   return {
     iso,
     weekday: WEEKDAY_FORMATTER.format(date),
-    day: DAY_FORMATTER.format(date),
-    month: MONTH_FORMATTER.format(date),
     dateLabel: DATE_FORMATTER.format(date),
-    label: LABEL_FORMATTER.format(date),
-    statusValue: getWorkStatus(iso).value,
-    tasks: getWorkTasks(iso),
     today: iso === todayIso,
   };
 }
 
-export function getWorkDateBounds(today, tasks = getAllWorkTasks()) {
-  const firstCheckedTaskDate = tasks
-    .filter((task) => task.completedAt && task.date)
-    .map((task) => task.date)
-    .sort()[0];
+export function getWorkDateBounds(today, tasks = []) {
+  const firstAssignableDate = shiftCalendarDays(today, -PAST_DAY_LIMIT);
+  let firstDateIso = isoDate(firstAssignableDate);
+  for (const task of tasks) {
+    if (task.completedAt && task.date && task.date < firstDateIso) firstDateIso = task.date;
+  }
   return {
-    firstDate: firstCheckedTaskDate ? calendarDate(firstCheckedTaskDate) : undefined,
+    firstDate: calendarDate(firstDateIso),
+    firstAssignableDate,
     lastDate: shiftCalendarDays(today, FUTURE_DAY_LIMIT),
   };
 }

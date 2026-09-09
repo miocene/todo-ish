@@ -210,3 +210,79 @@ test("edits made during an in-flight save are sent with the acknowledged revisio
   );
   assert.equal(f.records.size, 0);
 });
+
+test("duplicate drafts already saved remotely clear without another write", async () => {
+  const value = task("Already saved");
+  const records = new Map(["a", "b"].map((id) => [id, { id, resource: "tasks", revision: 0, base: "[]", value }]));
+  const f = fixture({ records, remote: { revisions: { tasks: 1 }, tasks: value } });
+  await f.advance();
+  assert.equal(f.records.size, 0);
+  assert.equal(f.writes.length, 0);
+  assert.equal(f.states.at(-1).state, "saved");
+});
+
+test("identical unsaved drafts consolidate and save once", async () => {
+  const records = new Map(
+    ["a", "b"].map((id) => [id, { id, resource: "tasks", revision: 0, base: "[]", value: task("Same edit") }]),
+  );
+  const f = fixture({ records });
+  assert.equal(f.sync.pending().length, 1);
+  await f.advance();
+  assert.equal(f.writes.length, 1);
+  assert.deepEqual(f.writes[0][1], task("Same edit"));
+  assert.equal(f.records.size, 0);
+});
+
+test("saved copies do not block the remaining newer draft", async () => {
+  const old = task("Old");
+  const records = new Map([
+    ["a", { id: "a", resource: "tasks", revision: 0, base: "[]", value: old }],
+    ["b", { id: "b", resource: "tasks", revision: 1, base: JSON.stringify(old), value: task("New") }],
+  ]);
+  const f = fixture({ records, remote: { revisions: { tasks: 1 }, tasks: old } });
+  await f.advance();
+  assert.deepEqual(f.writes[0][1], task("New"));
+  assert.equal(f.records.size, 0);
+});
+
+test("Retry rechecks multiple drafts after the server acknowledges one", async () => {
+  const first = task("First");
+  const second = task("Second");
+  const records = new Map([
+    ["a", { id: "a", resource: "tasks", revision: 0, base: "[]", value: first }],
+    ["b", { id: "b", resource: "tasks", revision: 0, base: "[]", value: second }],
+  ]);
+  const f = fixture({ records });
+  assert.equal(f.states.at(-1).state, "conflict");
+  f.remote.tasks = first;
+  f.remote.revisions.tasks = 1;
+  await f.sync.retry();
+  await f.advance();
+  assert.equal(f.sync.pending().length, 1);
+  assert.deepEqual(f.sync.pending()[0].value, second);
+  // A different edit still conflicts: it must not overwrite the saved first edit.
+  assert.equal(f.states.at(-1).state, "conflict");
+  assert.equal(f.writes.length, 0);
+});
+
+test("unchanged initialized data does not create a local draft", () => {
+  const f = fixture({ remote: { revisions: { tasks: 1 }, tasks: task("Saved") } });
+  f.sync.write("tasks", task("Saved"));
+  assert.equal(f.records.size, 0);
+  assert.equal(f.timers.size, 0);
+});
+
+test("Retry removes all pending entries when both drafts become acknowledged", async () => {
+  const records = new Map([
+    ["a", { id: "a", resource: "tasks", revision: 0, base: "[]", value: task("First") }],
+    ["b", { id: "b", resource: "tasks", revision: 0, base: "[]", value: task("Second") }],
+  ]);
+  const f = fixture({ records });
+  f.remote.tasks = task("First");
+  await f.sync.retry();
+  f.remote.tasks = task("Second");
+  await f.sync.retry();
+  assert.equal(f.sync.pending().length, 0);
+  assert.equal(f.sync.value("tasks"), undefined);
+  assert.equal(f.states.at(-1).state, "saved");
+});

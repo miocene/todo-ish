@@ -57,7 +57,7 @@ export function createResourceSync({
     } catch {
       durable = false;
     }
-    if (entries.get(entry.resource) === entry) entries.delete(entry.resource);
+    if (entries.get(entry.resource)?.id === entry.id) entries.delete(entry.resource);
     states.delete(entry.resource);
     notify();
   }
@@ -168,6 +168,52 @@ export function createResourceSync({
       running.delete(resource);
     }
   }
+  function restoreResource(resource, state, drafts) {
+    const remote = saved.get(resource);
+    const remaining = [];
+    for (const draft of drafts) {
+      // An acknowledged copy is not a conflicting edit, even if another tab
+      // left its pending record behind before receiving the save response.
+      if (remote?.initialized && remote.serialized !== undefined && matches(resource, draft.value, remote.serialized)) {
+        remove(draft);
+      } else remaining.push(draft);
+    }
+    multipleDrafts.delete(resource);
+    if (!remaining.length) return;
+
+    // Collapse equivalent payloads only; never pick between different edits.
+    const first = remaining[0];
+    let serialized;
+    try {
+      serialized = canonical(resource, first.value);
+    } catch {
+      // Invalid drafts must remain available for recovery.
+    }
+    const equivalent =
+      serialized !== undefined && remaining.every((draft) => matches(resource, draft.value, serialized));
+    if (remaining.length > 1 && !equivalent) {
+      multipleDrafts.add(resource);
+      entries.set(resource, first);
+      status(
+        resource,
+        "conflict",
+        `Different local drafts exist for ${resource}. Download local edits before choosing a saved version.`,
+      );
+      return;
+    }
+    const entry =
+      remaining.find(
+        (draft) =>
+          draft.base === remote?.serialized ||
+          (draft.attempted !== undefined && draft.attempted === remote?.serialized),
+      ) ?? first;
+    entries.set(resource, entry);
+    for (const duplicate of remaining) {
+      if (duplicate !== entry) remove(duplicate);
+    }
+    if (reconcile(entry, state) && entries.has(resource)) schedule(resource);
+  }
+
   return {
     hydrate(state, resources) {
       for (const resource of resources) {
@@ -184,25 +230,25 @@ export function createResourceSync({
       } catch {
         durable = false;
       }
-      for (const entry of restored) {
-        if (!resources.includes(entry.resource)) continue;
-        if (restored.filter((item) => item.resource === entry.resource).length > 1) {
-          multipleDrafts.add(entry.resource);
-          if (!entries.has(entry.resource)) entries.set(entry.resource, entry);
-          status(
-            entry.resource,
-            "conflict",
-            "Several local drafts exist for this data. Download them before choosing a saved version.",
-          );
-          continue;
-        }
-        entries.set(entry.resource, entry);
-        if (reconcile(entry, state) && entries.has(entry.resource)) schedule(entry.resource);
+      for (const resource of resources) {
+        restoreResource(
+          resource,
+          state,
+          restored.filter((entry) => entry.resource === resource),
+        );
       }
       notify();
     },
     write(resource, value) {
       const current = entries.get(resource);
+      const remote = saved.get(resource);
+      if (
+        !current &&
+        remote?.initialized &&
+        remote.serialized !== undefined &&
+        matches(resource, value, remote.serialized)
+      )
+        return;
       const entry = current ?? {
         id: makeId(),
         resource,
@@ -224,8 +270,21 @@ export function createResourceSync({
       try {
         const state = await readRemote();
         for (const entry of entries.values()) {
-          if (multipleDrafts.has(entry.resource)) continue;
-          if (reconcile(entry, state) && entries.has(entry.resource)) schedule(entry.resource, 0);
+          if (running.has(entry.resource)) continue;
+          if (multipleDrafts.has(entry.resource)) {
+            const resource = entry.resource;
+            const value = remoteValue(state, resource);
+            saved.set(resource, {
+              revision: state.revisions?.[resource] ?? 0,
+              initialized: !state.initializedResources || state.initializedResources.includes(resource),
+              serialized: value === undefined ? undefined : canonical(resource, value),
+            });
+            restoreResource(
+              resource,
+              state,
+              this.pending().filter((draft) => draft.resource === resource),
+            );
+          } else if (reconcile(entry, state) && entries.has(entry.resource)) schedule(entry.resource, 0);
         }
       } catch (error) {
         for (const resource of entries.keys())

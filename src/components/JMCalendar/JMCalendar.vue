@@ -5,6 +5,14 @@ import JMCalendarDay from "./JMCalendarDay.vue";
 import { parseIsoDate, shiftIsoDate, toIsoDate } from "../../app/date.js";
 import "./jm-calendar.css";
 
+const WEEKDAY_FORMATTER = new Intl.DateTimeFormat("en", { weekday: "short" });
+const DATE_FORMATTER = new Intl.DateTimeFormat("en", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+});
+
 export default {
   name: "JMCalendar",
   components: { JMButton, JMCalendarDay },
@@ -48,14 +56,9 @@ export default {
           dayType: this.dayTypeForDate(value),
           disabled: !this.canNavigate(value),
           value,
-          day: date.toLocaleDateString("en", { weekday: "short" }).toUpperCase(),
+          day: WEEKDAY_FORMATTER.format(date),
           number: date.getDate(),
-          label: date.toLocaleDateString("en", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          }),
+          label: DATE_FORMATTER.format(date),
           today: value === this.today,
         };
       });
@@ -94,11 +97,15 @@ export default {
     updateVisibleDayCount() {
       const count = this.mediaQueries[0]?.matches ? 3 : this.mediaQueries[1]?.matches ? 5 : 7;
       if (count === this.visibleDayCount) return;
+      const selectionWasVisible = this.days.some((day) => day.value === this.date);
       this.visibleDayCount = count;
+      if (selectionWasVisible && !this.days.some((day) => day.value === this.date)) this.rangeDate = this.date;
     },
-    navigate(date) {
+    async navigate(date) {
       if (date === this.date || !this.canNavigate(date)) return;
-      return this.$router.push({ name: this.routeName, query: { ...this.$route.query, date } });
+      await this.$router.push({ name: this.routeName, query: { ...this.$route.query, date } });
+      await this.$nextTick();
+      document.getElementById(`calendar-day-type-${date}`)?.focus();
     },
   },
 };

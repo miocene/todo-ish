@@ -2,7 +2,6 @@ import { workTaskFromApi, workTaskToApi } from "../../backend/api/src/app-data-c
 
 import { initialAppData, initializeAppDataResource, readAppData, writeAppData } from "./app-data.js";
 
-const EMPTY_TASKS = Object.freeze([]);
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 function isStoredTask(task) {
   return (
@@ -25,11 +24,6 @@ function loadTasks() {
 }
 
 let allTasks = loadTasks();
-
-export function getWorkTasks(date) {
-  const tasks = allTasks.filter((task) => task.date === date);
-  return tasks.length ? tasks : EMPTY_TASKS;
-}
 
 /** @returns {ReadonlyArray<import("../../backend/api/src/app-data-contract.mjs").WorkTask>} */
 export function getAllWorkTasks() {

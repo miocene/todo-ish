@@ -43,13 +43,14 @@ export default {
 </script>
 
 <template>
-  <li class="task-item" :class="{ 'completed': completed }">
+  <li class="task-item" :class="{ completed: completed }">
     <input
       v-if="completable"
       :id="completionId"
       class="checkbox"
       type="checkbox"
       :checked="completed"
+      :aria-label="`Complete ${title || 'untitled task'}`"
       @change="$emit('update:completed', $event.target.checked)"
     />
 

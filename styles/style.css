@@ -16,10 +16,11 @@ main {
   padding-top: var(--space-6);
 }
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   corner-shape: var(--corner-shape-default);
 }
-
 
 /* shared page styles */
 .page-header {
@@ -44,14 +45,53 @@ main {
 }
 
 /* temp */
-.skip-link,
-.app-sync-status,
-.work-page__status {
-  display: none;
+
+.skip-link {
+  position: fixed;
+  inset-block-start: var(--space-3);
+  inset-inline-start: var(--space-3);
+  z-index: 5;
+  padding: var(--space-3);
+  background: var(--color-bg-surface);
+  transform: translateY(-200%);
 }
 
+.skip-link:focus {
+  transform: none;
+}
 
+.app-sync-status {
+  position: fixed;
+  inset-block-end: calc(var(--size-control-m) + var(--space-9));
+  inset-inline-end: var(--space-3);
+  z-index: 4;
+  margin: 0;
+  padding: var(--space-2);
+  background: var(--color-bg-surface);
+  font-size: 0.8125rem;
+}
 
+.app-sync-status:empty {
+  padding: 0;
+}
+
+.app-sync-error {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--control-default-border);
+  border-radius: var(--radius-control);
+}
+
+.app-sync-error p {
+  flex-basis: 100%;
+  margin: 0;
+}
 
 n {
   /* Application base */
@@ -444,48 +484,21 @@ n {
     border: 0;
   }
 
-/* JMModal */
+  /* JMModal */
 
-.jm-modal {
-  inline-size: min(28rem, calc(100% - var(--space-9)));
-  min-block-size: 12rem;
-  padding: var(--space-5);
-  color: var(--color-text-default);
-  background: var(--color-bg-surface);
-  border: 0;
-  border-radius: var(--radius-card);
-}
-
-.jm-modal::backdrop {
-  background: #f0f;
-  opacity: 0.3;
-}
-
-  /* Work page */
-
-  .work-page__status {
-    position: absolute;
-    inline-size: 1px;
-    block-size: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
+  .jm-modal {
+    inline-size: min(28rem, calc(100% - var(--space-9)));
+    min-block-size: 12rem;
+    padding: var(--space-5);
+    color: var(--color-text-default);
+    background: var(--color-bg-surface);
     border: 0;
+    border-radius: var(--radius-card);
   }
 
-  .work-day__empty,
-  .work-backlog__empty {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-block-size: 96px;
-    color: #f0f;
-    font-size: 0.8125rem;
-    text-align: center;
-    border: 1px dashed #f0f;
-    border-radius: var(--radius-control);
+  .jm-modal::backdrop {
+    background: #f0f;
+    opacity: 0.3;
   }
 
   /* Task pages */
@@ -1037,5 +1050,4 @@ n {
       align-items: stretch;
     }
   }
-
 }

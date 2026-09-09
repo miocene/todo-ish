@@ -3,7 +3,10 @@ import { WORK_STATUSES } from "../../app/work-status.js";
 import JMIcon from "../JMIcon/JMIcon.vue";
 import JMSelect from "../JMSelect/JMSelect.vue";
 
-const DISPLAY_ORDER = ["conference", "work", "sick-leave", "pto", "business-trip", "holiday", "weekend"];
+const OPTIONS = ["conference", "work", "sick-leave", "pto", "business-trip", "holiday", "weekend"].map((value) => {
+  const status = WORK_STATUSES.find((status) => status.value === value);
+  return { value, text: status.label, iconName: status.icon };
+});
 
 export default {
   name: "JMCalendarDay",
@@ -13,15 +16,15 @@ export default {
     selected: Boolean,
   },
   emits: ["activate", "update:day-type"],
+  data() {
+    return { options: OPTIONS };
+  },
   computed: {
-    editable() {
-      return this.selected;
-    },
     dayClasses() {
       return {
-        "day": true,
-        "selected": this.selected,
-        "today": this.day.today,
+        day: true,
+        selected: this.selected,
+        today: this.day.today,
       };
     },
     activityDescription() {
@@ -31,12 +34,6 @@ export default {
     },
     dateLabel() {
       return `${this.day.label}. ${this.activityDescription}`;
-    },
-    options() {
-      return DISPLAY_ORDER.map((value) => {
-        const status = WORK_STATUSES.find((status) => status.value === value);
-        return { value, text: status.label, iconName: status.icon };
-      });
     },
     selectedOption() {
       return WORK_STATUSES.find((status) => status.value === this.day.dayType);
@@ -50,7 +47,7 @@ export default {
 
 <template>
   <button
-    v-if="!editable"
+    v-if="!selected"
     :class="dayClasses"
     type="button"
     :aria-current="selected ? 'date' : undefined"

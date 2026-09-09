@@ -4,14 +4,7 @@ import { appClock } from "../app/clock.js";
 import { activityLevel } from "../app/activity.js";
 import { loadCardColors } from "../app/card-colors.js";
 import { setTaskCompletion as completeTask, serializableTasks } from "../app/task-list.js";
-import {
-  calendarDate,
-  getCalendarDay,
-  getWorkDateBounds,
-  isIsoDate,
-  isoDate,
-  requestedDate,
-} from "../app/work-calendar.js";
+import { calendarDate, getCalendarDay, getWorkDateBounds, isoDate, requestedDate } from "../app/work-calendar.js";
 import { getWorkStatus, setWorkStatus } from "../app/work-status.js";
 import { getAllWorkTasks, saveWorkTasks } from "../app/work-tasks.js";
 import JMButton from "../components/JMButton/JMButton.vue";
@@ -31,10 +24,7 @@ export default {
       }, -1) + 1;
     return {
       calendarRangeDate: "",
-      cardColors: loadCardColors([
-        "backlog",
-        ...workTasks.filter((task) => task.date).map((task) => `work-day:${task.date}`),
-      ]),
+      cardColors: {},
       editor: createTaskEditor({
         save: () => this.saveTasks(),
       }),
@@ -46,17 +36,18 @@ export default {
   watch: {
     today() {
       this.rollOverIncompleteTasks();
-      this.normalizeDateQuery(this.$route.query.date, requestedDate(this.$route.query.date, this.today));
+      this.normalizeDateQuery();
     },
     focusDateIso: {
       immediate: true,
       handler(date) {
-        this.cardColors = loadCardColors([`work-day:${date}`]);
+        this.cardColors = loadCardColors(["backlog", `work-day:${date}`]);
+        this.normalizeDateQuery();
       },
     },
     "$route.query.date": {
       immediate: true,
-      handler: "handleDateQueryChange",
+      handler: "normalizeDateQuery",
     },
   },
   computed: {
@@ -85,7 +76,7 @@ export default {
       return this.dateBounds.firstDate ? isoDate(this.dateBounds.firstDate) : "";
     },
     focusDate() {
-      return requestedDate(this.$route.query.date, this.today);
+      return requestedDate(this.$route.query.date, this.today, this.dateBounds);
     },
     focusDateIso() {
       return isoDate(this.focusDate);
@@ -120,10 +111,13 @@ export default {
       if (this.canEditSelectedDay) this.focusTaskTitle(this.createTask(this.selectedDay.iso));
     },
     canEditTask(date) {
-      return date === null || date >= this.todayIso;
+      return date === null || (date >= isoDate(this.dateBounds.firstAssignableDate) && date <= this.lastAvailableDate);
     },
     createTask(date) {
-      return this.editor.add(this.workTasks, { id: `new-${this.nextTaskId++}`, date, title: "", completed: false });
+      if (!this.canEditTask(date)) return;
+      const task = { id: `new-${this.nextTaskId++}`, date, title: "", completed: false };
+      if (date !== null && date < this.todayIso) completeTask(task, true);
+      return this.editor.add(this.workTasks, task);
     },
     focusTaskTitle(task) {
       this.editor.focus(this.taskInputId(task), { caretAtEnd: true });
@@ -134,9 +128,6 @@ export default {
       delete query.date;
       this.$router.push({ name: "work", query });
     },
-    handleDateQueryChange(value) {
-      this.normalizeDateQuery(value, requestedDate(value, this.today));
-    },
     handleTaskTitleBlur(task) {
       this.editor.finish(this.workTasks, task);
     },
@@ -146,26 +137,49 @@ export default {
         focus: this.focusTaskTitle,
       });
     },
-    isTaskComplete(task) {
-      return task.completed;
-    },
     moveTask(task, date) {
-      if (task.date === date) return;
+      if (task.date === date || !this.canEditTask(date)) return;
+      this.editor.moves.cancel(task.id);
       task.date = date;
+      completeTask(task, date !== null && date < this.todayIso);
       this.saveTasks();
       const destination = date === null ? "backlog" : date === this.todayIso ? "today" : date;
-      this.taskMoveStatus = `${this.taskTitle(task) || "Untitled task"} moved to ${destination}.`;
+      this.taskMoveStatus = `${task.title || "Untitled task"} moved to ${destination}${task.completed ? " and marked completed" : ""}.`;
+      this.focusTask(task);
     },
-    normalizeDateQuery(value, date) {
-      if (value === undefined || (isIsoDate(value) && isoDate(date) !== this.todayIso)) return;
+    normalizeDateQuery() {
+      const value = this.$route.query.date;
+      const date = this.focusDateIso;
+      const normalized = date === this.todayIso ? undefined : date;
+      if (value === normalized) return;
       const query = { ...this.$route.query };
-      delete query.date;
-      this.$router.replace({ name: "work", query, hash: this.$route.hash });
+      if (normalized) query.date = normalized;
+      else delete query.date;
+      return this.$router.replace({ name: "work", query, hash: this.$route.hash });
+    },
+    focusTask(task) {
+      this.$nextTick(() => {
+        const input = document.getElementById(this.taskInputId(task));
+        const checkbox = document.getElementById(this.taskCheckboxId(task));
+        (input || checkbox)?.focus();
+      });
+    },
+    focusAfterRemoval(tasks, index, date) {
+      const next = tasks[index + 1] || tasks[index - 1];
+      if (next) this.focusTask(next);
+      else
+        this.$nextTick(async () => {
+          await this.normalizeDateQuery();
+          await this.$nextTick();
+          const card = date === null ? this.$refs.backlogCard : this.$refs.dayCard;
+          const button = card?.$el.querySelector(".header button");
+          (button || this.$refs.calendar.$el.querySelector("select"))?.focus();
+        });
     },
     rollOverIncompleteTasks() {
       let taskMoved = false;
       for (const task of this.workTasks) {
-        if (!this.isTaskComplete(task) && task.date !== null && task.date < this.todayIso) {
+        if (!task.completed && task.date !== null && task.date < this.todayIso) {
           task.date = this.todayIso;
           taskMoved = true;
         }
@@ -175,11 +189,14 @@ export default {
     removeTask(task) {
       const taskIndex = this.workTasks.indexOf(task);
       if (taskIndex === -1) return;
+      const list = task.date === null ? this.backlogTasks : this.selectedDay.tasks;
+      const listIndex = list.indexOf(task);
       this.editor.moves.cancel(task.id);
       this.editor.drafts.delete(task.id);
       this.workTasks.splice(taskIndex, 1);
       this.saveTasks();
-      this.taskMoveStatus = `${this.taskTitle(task) || "Untitled task"} deleted.`;
+      this.taskMoveStatus = `${task.title || "Untitled task"} deleted.`;
+      this.focusAfterRemoval(list, listIndex, task.date);
     },
     saveTasks() {
       saveWorkTasks(serializableTasks(this.workTasks, this.editor.drafts));
@@ -191,6 +208,9 @@ export default {
       setWorkStatus(date, value);
     },
     setTaskCompletion(task, completed) {
+      const previousDate = task.date;
+      const previousTasks = previousDate === null ? this.backlogTasks : this.selectedDay.tasks;
+      const index = previousTasks.indexOf(task);
       completeTask(task, completed);
       if (completed && task.date === null) {
         task.date = this.todayIso;
@@ -199,15 +219,17 @@ export default {
       }
       this.saveTasks();
       this.scheduleCompletedTaskMove(task, completed);
+      if (previousDate !== task.date) {
+        this.taskMoveStatus = `${task.title || "Untitled task"} moved to today.`;
+        if (this.isTodaySelected) this.focusTask(task);
+        else this.focusAfterRemoval(previousTasks, index, previousDate);
+      }
     },
     taskCheckboxId(task) {
       return `work-task-complete-${task.id}`;
     },
     taskInputId(task) {
       return `work-task-${task.id}`;
-    },
-    taskTitle(task) {
-      return task.title;
     },
     toggleTaskAssignment(task) {
       this.moveTask(task, task.date === null ? this.focusDateIso : null);
@@ -242,14 +264,14 @@ export default {
     :max-date="lastAvailableDate"
     :min-date="firstAvailableDate"
     route-name="work"
-    show-day-type
     @range-change="calendarRangeDate = $event"
     @update:day-type="setDayStatus"
   />
 
-  <p class="work-page__status" aria-live="polite" aria-atomic="true">{{ taskMoveStatus }}</p>
+  <p class="work-page__status sr-only" aria-live="polite" aria-atomic="true">{{ taskMoveStatus }}</p>
 
   <JMCard
+    ref="dayCard"
     :title="`${selectedDay.today ? 'Today' : selectedDay.weekday}, ${selectedDay.dateLabel}`"
     empty-text="Nothing recorded for this day"
     :color="cardColors[`work-day:${focusDateIso}`]"
@@ -262,17 +284,18 @@ export default {
     </template>
     <template #list v-if="selectedDay.tasks.length !== 0">
       <JMTaskItem
-        v-for="task in selectedDay.tasks" :key="task.id"
+        v-for="task in selectedDay.tasks"
+        :key="task.id"
         :task-id="task.id"
-        :title="taskTitle(task)"
+        :title="task.title"
         :title-input-id="taskInputId(task)"
         :completion-input-id="taskCheckboxId(task)"
-        :completed="isTaskComplete(task)"
+        :completed="task.completed"
         :editable="canEditTask(selectedDay.iso)"
         removable
-        :pin-icon="isTaskComplete(task) ? '' : 'pinned'"
-        :pin-label="`Move ${taskTitle(task) || 'untitled task'} to backlog`"
-        :remove-label="`Delete ${taskTitle(task) || 'untitled task'}`"
+        :pin-icon="task.completed ? '' : 'pinned'"
+        :pin-label="`Move ${task.title || 'untitled task'} to backlog`"
+        :remove-label="`Delete ${task.title || 'untitled task'}`"
         @enter="handleTaskTitleEnter(task, selectedDay.iso, selectedDay.tasks, $event)"
         @pin="toggleTaskAssignment(task)"
         @remove="removeTask(task)"
@@ -284,6 +307,7 @@ export default {
   </JMCard>
 
   <JMCard
+    ref="backlogCard"
     class="work-backlog"
     title="Backlog"
     empty-text="No backlog tasks"
@@ -293,16 +317,17 @@ export default {
   >
     <template #list v-if="backlogTasks.length !== 0">
       <JMTaskItem
-        v-for="task in backlogTasks" :key="task.id"
+        v-for="task in backlogTasks"
+        :key="task.id"
         :task-id="task.id"
-        :title="taskTitle(task)"
+        :title="task.title"
         :title-input-id="taskInputId(task)"
         :completion-input-id="taskCheckboxId(task)"
-        :completed="isTaskComplete(task)"
+        :completed="task.completed"
         removable
-        pin-icon="pin"
-        :pin-label="`Move ${taskTitle(task) || 'untitled task'} to ${isTodaySelected ? 'today' : focusDateIso}`"
-        :remove-label="`Delete ${taskTitle(task) || 'untitled task'}`"
+        :pin-icon="canEditSelectedDay ? 'pin' : ''"
+        :pin-label="`Move ${task.title || 'untitled task'} to ${isTodaySelected ? 'today' : focusDateIso}`"
+        :remove-label="`Delete ${task.title || 'untitled task'}`"
         @enter="handleTaskTitleEnter(task, null, backlogTasks, $event)"
         @pin="toggleTaskAssignment(task)"
         @remove="removeTask(task)"

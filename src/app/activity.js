@@ -25,7 +25,7 @@ function localDateFromTimestamp(timestamp) {
 
 function activityItem(task, source, context, route) {
   const completedAt = task.completedAt;
-  const date = localDateFromTimestamp(completedAt);
+  const date = completedAt && source === "Work" && task.date ? task.date : localDateFromTimestamp(completedAt);
   if (!date || !task.title?.trim()) return undefined;
   return {
     id: `${source}-${task.id}`,
@@ -45,7 +45,12 @@ export function collectCompletedActivity() {
   };
 
   for (const task of getAllWorkTasks()) {
-    add(activityItem(task, "Work", task.date ? "Scheduled work" : "Backlog", { name: "work" }));
+    add(
+      activityItem(task, "Work", task.date ? "Scheduled work" : "Backlog", {
+        name: "work",
+        query: task.date ? { date: task.date } : {},
+      }),
+    );
   }
 
   const chores = loadPageTasks("chores");

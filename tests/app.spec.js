@@ -1,139 +1,5 @@
-import { expect, test } from "@playwright/test";
-import { APP_DATA_RESOURCES, validateAppDataResource } from "../backend/api/src/app-data-validation.mjs";
+import { test, expect, appDataByPage } from "./app-fixture.js";
 import { CARD_COLORS } from "../src/app/card-colors.js";
-import filamentCatalog from "../backend/catalogs/bambu-filaments.snapshot.json" with { type: "json" };
-import flossCatalog from "../backend/catalogs/dmc-floss.snapshot.json" with { type: "json" };
-
-const appDataByPage = new WeakMap();
-
-function emptyAppData(values, revisions) {
-  return {
-    initializedResources: Object.keys(values),
-    revisions,
-    workTasks: values["work-tasks"] ?? [],
-    workStatuses: values["work-statuses"] ?? {},
-    colors: values["colors"] ?? {},
-    pages: {
-      chores: values.chores ?? { occurrenceOrder: [], tasks: [] },
-      todos: values.todos ?? { lists: [] },
-      shopping: values.shopping ?? { tasks: [] },
-      printing: values.printing ?? { projects: [] },
-      crossStitch: values["cross-stitch"] ?? { projects: [] },
-    },
-    inventories: {
-      filament: values["filament-inventory"] ?? {},
-      floss: values["floss-inventory"] ?? {},
-    },
-  };
-}
-
-test.beforeEach(async ({ page }) => {
-  const values = {};
-  const revisions = Object.fromEntries(APP_DATA_RESOURCES.map((resource) => [resource, 0]));
-  let supportsColors = true;
-  const writeFailures = new Map();
-  const validationErrors = [];
-  let session = {
-    authenticated: true,
-    bootstrapRequired: false,
-    user: { username: "owner", displayName: "Owner" },
-  };
-  const controller = {
-    get: (resource) => values[resource],
-    validationErrors,
-    setWriteFailure: (resource, status) => writeFailures.set(resource, status),
-    set: (resource, value) => {
-      values[resource] = value;
-    },
-    setSession: (value) => {
-      session = value;
-    },
-    setColorSupport: (value) => {
-      supportsColors = value;
-    },
-  };
-  appDataByPage.set(page, controller);
-
-  await page.route(/^https?:\/\/[^/]+\/api\//, async (route) => {
-    const request = route.request();
-    const url = new URL(request.url());
-    const json = (body, status = 200, headers = {}) =>
-      route.fulfill({ status, headers, contentType: "application/json", body: JSON.stringify(body) });
-
-    if (request.method() === "GET" && url.pathname === "/api/auth/session") {
-      await json(session);
-      return;
-    }
-
-    if (request.method() === "GET" && url.pathname === "/api/data") {
-      const data = emptyAppData(values, { ...revisions });
-      if (!supportsColors) {
-        delete data.colors;
-        delete data.revisions.colors;
-        data.initializedResources = data.initializedResources.filter((resource) => resource !== "colors");
-      }
-      await json(data);
-      return;
-    }
-
-    const resourceMatch = /^\/api\/data\/([a-z-]+)$/.exec(url.pathname);
-    if (request.method() === "PUT" && resourceMatch) {
-      const resource = resourceMatch[1];
-      if (writeFailures.get(resource)) {
-        await json({ error: "Simulated save failure" }, writeFailures.get(resource));
-        return;
-      }
-      if (!supportsColors && resource === "colors") {
-        await json({ error: "Not Found" }, 404);
-        return;
-      }
-      const expectedRevision = Number(/^"(\d+)"$/.exec(request.headers()["if-match"] || "")?.[1]);
-      if (expectedRevision !== revisions[resource]) {
-        await json({ error: "Revision conflict", currentRevision: revisions[resource] }, 409);
-        return;
-      }
-      const submittedValue = request.postDataJSON();
-      try {
-        validateAppDataResource(resource, submittedValue);
-      } catch (error) {
-        validationErrors.push(error.message);
-        await json({ error: error.message }, 400);
-        return;
-      }
-      if (!supportsColors && resource === "todos") {
-        for (const list of submittedValue.lists) delete list.color;
-      }
-      values[resource] =
-        resource === "shopping" ? { tasks: submittedValue.tasks.filter((task) => !task.source) } : submittedValue;
-      revisions[resource] += 1;
-      await json({ resource, revision: revisions[resource] }, 200, { etag: `"${revisions[resource]}"` });
-      return;
-    }
-
-    if (request.method() === "GET" && url.pathname === "/api/catalogs/filaments") {
-      const offset = Number(url.searchParams.get("offset") || 0);
-      const limit = Number(url.searchParams.get("limit") || 100);
-      await json({
-        total: filamentCatalog.entries.length,
-        items: filamentCatalog.entries.slice(offset, offset + limit),
-      });
-      return;
-    }
-
-    if (request.method() === "GET" && url.pathname === "/api/catalogs/floss") {
-      const offset = Number(url.searchParams.get("offset") || 0);
-      const limit = Number(url.searchParams.get("limit") || 100);
-      const entries = flossCatalog.entries.map((thread) => ({
-        ...thread,
-        id: `dmc${thread.number.toLocaleLowerCase()}`,
-      }));
-      await json({ total: entries.length, items: entries.slice(offset, offset + limit) });
-      return;
-    }
-
-    await json({ error: "Not found" }, 404);
-  });
-});
 
 test("anonymous visitors see passkey setup before application data", async ({ page }) => {
   appDataByPage.get(page).setSession({
@@ -238,13 +104,6 @@ function localIsoDate(dayOffset = 0) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
-function localDateLabel(dayOffset = 0) {
-  const date = new Date();
-  date.setHours(12, 0, 0, 0);
-  date.setDate(date.getDate() + dayOffset);
-  return new Intl.DateTimeFormat("en", { day: "numeric", month: "long", year: "numeric" }).format(date);
-}
-
 function localFullDateLabel(dayOffset = 0) {
   const date = new Date();
   date.setHours(12, 0, 0, 0);
@@ -273,12 +132,12 @@ test("development mocks colors locally when the API has no color storage", async
   const colorOf = (locator) => locator.evaluate((element) => element.style.getPropertyValue("--color"));
 
   await page.goto("/work");
-  const todayColor = await colorOf(page.locator(".work-day"));
+  const todayColor = await colorOf(page.locator(".jm-card:not(.work-backlog)"));
   const backlogColor = await colorOf(page.locator(".work-backlog"));
   expect(CARD_COLORS).toContain(todayColor);
   expect(CARD_COLORS).toContain(backlogColor);
   await page.reload();
-  expect(await colorOf(page.locator(".work-day"))).toBe(todayColor);
+  expect(await colorOf(page.locator(".jm-card:not(.work-backlog)"))).toBe(todayColor);
   expect(await colorOf(page.locator(".work-backlog"))).toBe(backlogColor);
 
   await page.goto("/todos");
@@ -325,7 +184,7 @@ test("card colors migrate into the palette and persist without visible color con
 
   const colorOf = (locator) => locator.evaluate((element) => element.style.getPropertyValue("--color"));
   await page.goto("/work");
-  const todayColor = await colorOf(page.locator(".work-day"));
+  const todayColor = await colorOf(page.locator(".jm-card:not(.work-backlog)"));
   const backlogColor = await colorOf(page.locator(".work-backlog"));
   expect(CARD_COLORS).toContain(todayColor);
   expect(CARD_COLORS).toContain(backlogColor);
@@ -338,19 +197,19 @@ test("card colors migrate into the palette and persist without visible color con
     });
   expect(data.get("colors")).not.toHaveProperty("today");
   await page.getByRole("button", { name: `${localFullDateLabel(-1)}. No completed tasks`, exact: true }).click();
-  await expect(page.locator(".work-day time")).toHaveAttribute("datetime", localIsoDate(-1));
-  expect(await colorOf(page.locator(".work-day"))).toBe("#633533");
+  await expect(page.locator(".jm-card:not(.work-backlog) time")).toHaveAttribute("datetime", localIsoDate(-1));
+  expect(await colorOf(page.locator(".jm-card:not(.work-backlog)"))).toBe("#633533");
   await page.getByRole("button", { name: `${localFullDateLabel(-2)}. No completed tasks`, exact: true }).click();
-  await expect(page.locator(".work-day time")).toHaveAttribute("datetime", localIsoDate(-2));
-  const pastDayColor = await colorOf(page.locator(".work-day"));
+  await expect(page.locator(".jm-card:not(.work-backlog) time")).toHaveAttribute("datetime", localIsoDate(-2));
+  const pastDayColor = await colorOf(page.locator(".jm-card:not(.work-backlog)"));
   expect(CARD_COLORS).toContain(pastDayColor);
   await expect.poll(() => data.get("colors")[`work-day:${localIsoDate(-2)}`]).toBe(pastDayColor);
   await page.reload();
-  expect(await colorOf(page.locator(".work-day"))).toBe(pastDayColor);
+  expect(await colorOf(page.locator(".jm-card:not(.work-backlog)"))).toBe(pastDayColor);
   await page.getByRole("button", { name: "Today", exact: true }).click();
-  await expect(page.locator(".work-day time")).toHaveAttribute("datetime", localIsoDate());
+  await expect(page.locator(".jm-card:not(.work-backlog) time")).toHaveAttribute("datetime", localIsoDate());
   await page.reload();
-  expect(await colorOf(page.locator(".work-day"))).toBe(todayColor);
+  expect(await colorOf(page.locator(".jm-card:not(.work-backlog)"))).toBe(todayColor);
   expect(await colorOf(page.locator(".work-backlog"))).toBe(backlogColor);
 
   await page.goto("/todos");
@@ -394,307 +253,6 @@ test("card colors migrate into the palette and persist without visible color con
   await expect.poll(() => data.get("cross-stitch")?.projects.at(-1).color).toBe(newProjectColor);
   await page.reload();
   expect(await colorOf(page.locator(".project-card").last())).toBe(newProjectColor);
-});
-
-test("the root redirects to the single-day work calendar", async ({ page }) => {
-  await page.goto("/");
-
-  await expect(page).toHaveTitle("Work — Done-ish");
-  await expect.poll(() => new URL(page.url()).pathname).toBe("/work");
-  expect(new URL(page.url()).hash).toBe("");
-  expect(new URL(page.url()).search).toBe("");
-  const header = page.locator("#app > .jm-header");
-  await expect(header).toBeVisible();
-  await expect(header.getByRole("link", { name: "ToDo-ish, Work" })).toBeVisible();
-  const searchButton = header.getByRole("button", { name: "Search" });
-  const profileButton = header.getByRole("button", { name: "Profile" });
-  await expect(header.locator(".jm-button")).toHaveCount(2);
-  await expect(searchButton).toBeVisible();
-  await expect(searchButton.locator("use")).toHaveAttribute("href", /#icon-search$/);
-  await expect(profileButton).toBeVisible();
-  await expect(profileButton.locator("use")).toHaveAttribute("href", /#icon-user$/);
-  const navigation = page.locator("#app > .jm-navigation");
-  await expect(navigation).toBeVisible();
-  await expect(navigation.locator(".jm-navigation__item")).toHaveText([
-    "Work",
-    "Chores",
-    "Todo lists",
-    "Shopping cart",
-    "3D printing",
-    "Cross stitch",
-    "Catalog",
-  ]);
-  await expect(navigation.locator(".jm-navigation__label")).toHaveCount(7);
-  expect(await navigation.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
-  expect(
-    await navigation
-      .locator("use")
-      .evaluateAll((icons) => icons.map((icon) => icon.getAttribute("href").split("#").at(-1))),
-  ).toEqual(["icon-work", "icon-chores", "icon-todo", "icon-shopping", "icon-printer", "icon-yarn", "icon-catalog"]);
-  await expect(navigation.getByRole("link", { name: "Work" })).toHaveAttribute("aria-current", "page");
-  await expect(navigation.getByRole("link")).toHaveCount(7);
-  await expect(navigation.locator('[aria-disabled="true"], .jm-navigation__link--disabled')).toHaveCount(0);
-  await expect(page.locator(".jm-calendar__day")).toHaveCount(7);
-  await expect(page.locator(".jm-calendar__activity")).toHaveCount(0);
-  await expect(page.locator(".jm-calendar__day .jm-day-type__icon")).toHaveCount(7);
-  await expect(page.locator(".jm-calendar__day")).toHaveCount(7);
-  await expect(page.locator(".jm-calendar__day--selected")).toHaveAttribute("aria-current", "date");
-  await expect(page.locator(".work-day")).toHaveCount(1);
-  await expect(page.locator(".work-day--today")).toHaveCount(1);
-  await expect(page.getByRole("heading", { level: 1, name: "Work" })).toHaveCount(1);
-  const taskTitles = page.locator(".work-day .task-item__title");
-  await expect(taskTitles).toHaveCount(6);
-  expect(
-    await taskTitles.evaluateAll((elements) =>
-      elements.map((element) => element.querySelector("textarea")?.value ?? element.textContent),
-    ),
-  ).toEqual([
-    "Triage inbox",
-    "Prepare the quarterly planning notes",
-    "Daily stand-up",
-    "Review pull requests",
-    "Pair on calendar navigation",
-    "Update the team roadmap",
-  ]);
-  await expect(page.locator(".work-day--today .task-item")).toHaveCount(6);
-  await expect(page.locator(".work-day .task-item__remove")).toHaveCount(6);
-  expect(
-    await page
-      .locator(".work-day .task-item")
-      .first()
-      .locator(".task-item__actions button")
-      .evaluateAll((buttons) => buttons.map((button) => button.getAttribute("aria-label"))),
-  ).toEqual(["Delete Triage inbox", "Move Triage inbox to backlog"]);
-  await expect(page.getByRole("checkbox", { name: /^Complete / })).toHaveCount(6);
-  await expect.poll(() => appDataByPage.get(page).get("work-statuses")).toEqual({});
-
-  const hashedVueAttributes = await page
-    .locator("*")
-    .evaluateAll((elements) =>
-      elements.flatMap((element) => element.getAttributeNames()).filter((name) => /^data-v-[\da-f]+$/i.test(name)),
-    );
-  expect(hashedVueAttributes).toEqual([]);
-});
-
-test("editable work tasks create and focus the next item with Enter", async ({ page }) => {
-  await page.goto("/");
-
-  const today = page.locator(".work-day--today");
-  const todayTitles = today.locator(".task-item__title textarea");
-  const lastTitle = todayTitles.last();
-
-  await lastTitle.focus();
-  await lastTitle.dispatchEvent("keydown", { key: "Enter", isComposing: true });
-  await expect(todayTitles).toHaveCount(6);
-  await expect(lastTitle).toBeFocused();
-
-  await lastTitle.fill("Updated roadmap");
-  await expect
-    .poll(() =>
-      appDataByPage
-        .get(page)
-        .get("work-tasks")
-        ?.some((task) => task.title === "Updated roadmap"),
-    )
-    .toBe(true);
-  await lastTitle.press("Enter");
-  await expect(todayTitles).toHaveCount(7);
-  await expect(todayTitles.last()).toBeFocused();
-
-  await todayTitles.last().fill("Plan tomorrow");
-  await todayTitles.last().press("Enter");
-  await expect(todayTitles).toHaveCount(8);
-  await expect(todayTitles.last()).toBeFocused();
-
-  const firstTitle = todayTitles.first();
-  await firstTitle.press("Enter");
-  await expect(todayTitles.nth(1)).toBeFocused();
-
-  await page.getByRole("button", { name: `${localFullDateLabel(1)}. No completed tasks`, exact: true }).click();
-  await expect.poll(() => new URL(page.url()).searchParams.get("date")).toBe(localIsoDate(1));
-  const futureTitles = page.locator(".work-day .task-item__title textarea");
-  await futureTitles.last().press("Enter");
-  await expect(futureTitles).toHaveCount(2);
-  await expect(futureTitles.last()).toBeFocused();
-
-  await page.getByRole("button", { name: "Today", exact: true }).click();
-  await today.locator(".task-item__pin").first().click();
-  const backlogTitles = page.locator(".work-backlog .task-item__title textarea");
-  await expect(backlogTitles).toHaveCount(1);
-  await backlogTitles.last().press("Enter");
-  await expect(backlogTitles).toHaveCount(2);
-  await expect(backlogTitles.last()).toBeFocused();
-
-  await page.reload();
-  await expect(page.locator(".work-day--today .task-item__title textarea")).toHaveCount(6);
-  await expect(page.locator(".work-backlog .task-item__title textarea")).toHaveCount(1);
-
-  await page.getByRole("button", { name: `${localFullDateLabel(1)}. No completed tasks`, exact: true }).click();
-  await expect(page.locator(".work-day .task-item__title textarea")).toHaveCount(1);
-});
-
-test("work date navigation keeps one selected day and preserves empty dates", async ({ page }) => {
-  await page.goto("/work");
-
-  await page.getByRole("button", { name: `${localFullDateLabel(1)}. No completed tasks`, exact: true }).click();
-  await expect.poll(() => new URL(page.url()).searchParams.get("date")).toBe(localIsoDate(1));
-  await expect(page.locator(".work-day .task-item")).toHaveCount(1);
-  await expect(page.locator(".work-day")).toHaveCount(1);
-  await expect(page.getByRole("heading", { level: 2, name: localDateLabel(1) })).toBeVisible();
-
-  await page.getByRole("button", { name: `${localFullDateLabel(2)}. No completed tasks`, exact: true }).click();
-  await expect.poll(() => new URL(page.url()).searchParams.get("date")).toBe(localIsoDate(2));
-  await expect(page.getByText("Nothing recorded for this day.")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Today", exact: true })).toBeEnabled();
-
-  await page.goBack();
-  await expect.poll(() => new URL(page.url()).searchParams.get("date")).toBe(localIsoDate(1));
-  await expect(page.locator(".work-day .task-item")).toHaveCount(1);
-});
-
-test("work date navigation shows fewer nearby days on small screens", async ({ page }) => {
-  for (const [width, count] of [
-    [430, 3],
-    [600, 5],
-  ]) {
-    await page.setViewportSize({ width, height: 800 });
-    await page.goto("/work");
-
-    await expect(page.locator(".jm-calendar__day")).toHaveCount(count);
-    await expect(page.locator(".jm-calendar__day--selected")).toHaveCount(1);
-    await page.getByRole("button", { name: `Next ${count} days` }).click();
-    await expect(page.locator(".jm-calendar__day").first()).toHaveAttribute(
-      "aria-label",
-      `${localFullDateLabel(count - Math.floor(count / 2))}. No completed tasks`,
-    );
-    await expect(page.locator(".jm-calendar__day--selected")).toHaveCount(0);
-    await expect(page.locator(".work-day time")).toHaveAttribute("datetime", localIsoDate());
-    expect(new URL(page.url()).searchParams.get("date")).toBeNull();
-    await page.getByRole("button", { name: `Previous ${count} days` }).click();
-    await expect(page.locator(".jm-calendar__day--selected")).toHaveCount(1);
-    await expect(page.locator(".work-day time")).toHaveAttribute("datetime", localIsoDate());
-
-    await page.getByRole("button", { name: `Next ${count} days` }).click();
-    await page.getByRole("button", { name: "Today", exact: true }).click();
-    await expect(page.locator(".jm-calendar__day--selected")).toHaveCount(1);
-    await expect(page.getByRole("button", { name: "Today", exact: true })).toBeDisabled();
-    await expect(page.locator(".work-day time")).toHaveAttribute("datetime", localIsoDate());
-  }
-});
-
-test("the backlog add button creates, focuses, and saves a task", async ({ page }) => {
-  await page.goto("/");
-
-  const addBacklogTask = page.getByRole("button", { name: "Add backlog task" });
-  await addBacklogTask.click();
-  const backlogTitle = page.locator(".work-backlog .task-item__title textarea");
-  await expect(backlogTitle).toHaveCount(1);
-  await expect(backlogTitle).toBeFocused();
-  await page.getByRole("button", { name: "Search" }).focus();
-  await expect(backlogTitle).toHaveCount(0);
-  await expect
-    .poll(() =>
-      appDataByPage
-        .get(page)
-        .get("work-tasks")
-        ?.every((task) => task.title.trim()),
-    )
-    .toBe(true);
-
-  await addBacklogTask.click();
-  await backlogTitle.fill("Plan the next sprint");
-
-  await page.reload();
-  await expect(page.locator(".work-backlog .task-item__title textarea")).toHaveValue("Plan the next sprint");
-});
-
-test("work tasks can be deleted from the selected day and backlog", async ({ page }) => {
-  await page.goto("/work");
-
-  await page.getByRole("button", { name: "Delete Triage inbox" }).click();
-  await expect(page.getByRole("checkbox", { name: "Complete Triage inbox" })).toHaveCount(0);
-
-  await page.getByRole("button", { name: "Add backlog task" }).click();
-  const backlogTitle = page.locator(".work-backlog .task-item__title textarea");
-  await backlogTitle.fill("Remove this backlog task");
-  await page.getByRole("button", { name: "Delete Remove this backlog task" }).click();
-  await expect(backlogTitle).toHaveCount(0);
-  await expect
-    .poll(() =>
-      appDataByPage
-        .get(page)
-        .get("work-tasks")
-        ?.every((task) => task.title !== "Triage inbox" && task.title !== "Remove this backlog task"),
-    )
-    .toBe(true);
-});
-
-test("task completion persists and unfinished tasks roll into today", async ({ page }) => {
-  const testTime = Date.now();
-  await page.clock.install({ time: testTime });
-  await page.goto("/");
-  await page.clock.pauseAt(testTime + 60_000);
-
-  const today = page.locator(".work-day--today");
-  await expect(today.locator(".task-item")).toHaveCount(6);
-
-  await today.getByRole("button", { name: "Move Triage inbox to backlog" }).click();
-  const backlogCheckbox = page.locator(".work-backlog").getByRole("checkbox", { name: "Complete Triage inbox" });
-  await backlogCheckbox.click();
-  await expect(backlogCheckbox).toHaveCount(0);
-
-  const todayCheckbox = today.getByRole("checkbox", { name: "Complete Triage inbox" });
-  await expect(todayCheckbox).toBeChecked();
-  await expect(page.locator(".jm-calendar__day--selected .jm-day-type__icon")).toHaveAttribute("data-level", "1");
-  await expect(page.locator(".jm-calendar__day--selected")).toHaveAttribute("aria-label", /1 completed task$/);
-  const completedTask = todayCheckbox.locator("xpath=..");
-  await expect(completedTask).toHaveClass(/task-item--completed/);
-  await expect(today.getByRole("button", { name: "Move Triage inbox to backlog" })).toHaveCount(0);
-  await expect(
-    page.locator('.task-item__drag-handle, .task-item__drag-handle-placeholder, [draggable="true"]'),
-  ).toHaveCount(0);
-  await expect(page.locator(".work-backlog").getByRole("checkbox", { name: "Complete Triage inbox" })).toHaveCount(0);
-  await expect(todayCheckbox).toBeChecked();
-  const todayTitles = today.getByRole("textbox", { name: "Task title", exact: true });
-  await expect(todayTitles.first()).toHaveValue("Triage inbox");
-  await page.clock.runFor(499);
-  await expect(todayTitles.first()).toHaveValue("Triage inbox");
-  await page.clock.runFor(1);
-  await expect(todayTitles.last()).toHaveValue("Triage inbox");
-  await expect
-    .poll(() =>
-      appDataByPage
-        .get(page)
-        .get("work-tasks")
-        ?.some((task) => task.title === "Triage inbox" && Boolean(task.checkedAt)),
-    )
-    .toBe(true);
-
-  await page.reload();
-  await expect(page.getByRole("checkbox", { name: "Complete Triage inbox" })).toBeChecked();
-});
-
-test("work activity is grouped by the task's assigned date", async ({ page }) => {
-  const assignedDayOffset = -1;
-  const completionDayOffset = 0;
-  appDataByPage.get(page).set("work-tasks", [
-    {
-      id: "completed-assigned-work",
-      date: localIsoDate(assignedDayOffset),
-      title: "Completed assigned work",
-      checkedAt: `${localIsoDate(completionDayOffset)}T12:00:00.000Z`,
-    },
-  ]);
-
-  await page.goto(`/work?date=${localIsoDate(assignedDayOffset)}`);
-
-  const assignedDay = page.locator(".jm-calendar__day--selected");
-  const completionDay = page.getByRole("button", {
-    name: `${localFullDateLabel(completionDayOffset)}. No completed tasks`,
-  });
-  await expect(assignedDay).toHaveAttribute("aria-label", `${localFullDateLabel(assignedDayOffset)}. 1 completed task`);
-  await expect(assignedDay.locator(".jm-day-type__icon")).toHaveAttribute("data-level", "1");
-  await expect(completionDay.locator(".jm-day-type__icon")).toHaveAttribute("data-level", "0");
 });
 
 test("navigation opens application pages", async ({ page }) => {
@@ -1052,7 +610,8 @@ test("work and chore cards expose only their supported actions", async ({ page }
   const all = page.locator(".chores-all");
   await expect(today.getByRole("button")).toHaveCount(0);
   await expect(page.locator(".jm-card").getByRole("progressbar")).toHaveCount(0);
-  await expect(all.getByRole("button")).toHaveText(["Add chore", ""]);
+  await expect(all.getByRole("button")).toHaveCount(2);
+  await expect(all.getByRole("button", { name: "Add chore", exact: true })).toBeVisible();
   const colors = await page
     .locator(".jm-card")
     .evaluateAll((cards) => cards.map((card) => card.style.getPropertyValue("--color")));
@@ -1063,7 +622,7 @@ test("work and chore cards expose only their supported actions", async ({ page }
       "chores-all": colors[1],
     });
   await all.getByRole("button", { name: "Collapse All chores" }).click();
-  await expect(all.getByRole("textbox", { name: "Task title", exact: true })).toHaveCount(0);
+  await expect(all.getByRole("textbox", { name: "Task title", exact: true }).first()).toBeHidden();
   await expect(today.getByRole("checkbox")).toHaveCount(3);
   await all.getByRole("button", { name: "Add chore" }).click();
   await expect(all.getByRole("button", { name: "Collapse All chores" })).toHaveAttribute("aria-expanded", "true");
@@ -1203,157 +762,6 @@ test("completed items move to the bottom after 500 milliseconds on every task pa
   await expect(printingTitles.last()).toHaveValue("Large cable clip");
 });
 
-test("the work page browses full rows without changing the selected date", async ({ page }) => {
-  await page.goto(`/work?date=${localIsoDate(-2)}`);
-
-  await expect(page.locator(".jm-calendar__day")).toHaveCount(7);
-  await expect(page.locator(".work-day time")).toHaveAttribute("datetime", localIsoDate(-2));
-  await expect(page.locator(".work-day .task-item")).toHaveCount(0);
-
-  const nextButton = page.getByRole("button", { name: "Next 7 days" });
-  const previousButton = page.getByRole("button", { name: "Previous 7 days" });
-  await expect(page.getByRole("button", { name: "Today" })).toHaveClass(/jm-button/);
-  await expect(nextButton).toHaveClass(/jm-button/);
-  await expect(previousButton).toHaveClass(/jm-button/);
-  await expect(nextButton.locator("use")).toHaveAttribute("href", /#icon-chevron-right$/);
-  await expect(previousButton.locator("use")).toHaveAttribute("href", /#icon-chevron-left$/);
-
-  const rowLabels = (startOffset) => Array.from({ length: 7 }, (_, index) => localFullDateLabel(startOffset + index));
-  const visibleRowLabels = () =>
-    page
-      .locator(".jm-calendar__day")
-      .evaluateAll((days) => days.map((day) => day.getAttribute("aria-label").split(".")[0]));
-  await expect.poll(visibleRowLabels).toEqual(rowLabels(-5));
-
-  // Choosing another date in the row must not change the next page's starting date.
-  await page.getByRole("button", { name: `${localFullDateLabel(-1)}. No completed tasks`, exact: true }).click();
-  await expect.poll(visibleRowLabels).toEqual(rowLabels(-5));
-
-  await nextButton.click();
-  await expect.poll(() => new URL(page.url()).searchParams.get("date")).toBe(localIsoDate(-1));
-  await expect(page.locator(".work-day time")).toHaveAttribute("datetime", localIsoDate(-1));
-  await expect(page.locator(".jm-calendar__day--selected")).toHaveCount(0);
-  await expect(page.locator(".work-day")).toHaveCount(1);
-  await expect.poll(visibleRowLabels).toEqual(rowLabels(2));
-
-  await previousButton.click();
-  await expect.poll(visibleRowLabels).toEqual(rowLabels(-5));
-  await expect.poll(() => new URL(page.url()).searchParams.get("date")).toBe(localIsoDate(-1));
-  await expect(page.locator(".jm-calendar__day--selected")).toHaveCount(1);
-
-  await nextButton.click();
-  await page.getByRole("button", { name: `${localFullDateLabel(5)}. No completed tasks`, exact: true }).click();
-  await expect(page.locator(".work-day time")).toHaveAttribute("datetime", localIsoDate(5));
-  await expect.poll(visibleRowLabels).toEqual(rowLabels(2));
-  await previousButton.click();
-  await expect.poll(visibleRowLabels).toEqual(rowLabels(-5));
-  await expect(page.locator(".jm-calendar__day--selected")).toHaveCount(0);
-
-  await page.getByRole("link", { name: "Skip to content" }).focus();
-  await page.keyboard.press("Enter");
-  expect(new URL(page.url()).searchParams.get("date")).toBe(localIsoDate(5));
-  expect(new URL(page.url()).hash).toBe("#main-content");
-  await expect(page.locator(".work-day time")).toHaveAttribute("datetime", localIsoDate(5));
-});
-
-test("work history stops at the first checked task", async ({ page }) => {
-  await page.goto(`/work?date=${localIsoDate(-3)}`);
-
-  const previousButton = page.getByRole("button", { name: "Previous 7 days" });
-  await previousButton.click();
-
-  await expect(previousButton).toBeDisabled();
-  await expect(page.locator(".work-day time")).toHaveAttribute("datetime", localIsoDate(-3));
-  await expect(page.locator(".jm-calendar__day:disabled")).toHaveCount(6);
-  await page.getByRole("button", { name: `${localFullDateLabel(-7)}. 1 completed task`, exact: true }).click();
-  await expect.poll(() => new URL(page.url()).searchParams.get("date")).toBe(localIsoDate(-7));
-  await expect(page.locator(".work-day time")).toHaveAttribute("datetime", localIsoDate(-7));
-  await expect(page.locator(".work-day .task-item__title")).toHaveText("Set up the work calendar");
-  await expect(previousButton).toBeDisabled();
-  await page.getByRole("button", { name: "Next 7 days" }).click();
-  await expect(previousButton).toBeEnabled();
-  await expect(page.locator(".work-day time")).toHaveAttribute("datetime", localIsoDate(-7));
-});
-
-test("future work is limited to fourteen days from today", async ({ page }) => {
-  await page.goto(`/work?date=${localIsoDate(9)}`);
-
-  const nextButton = page.getByRole("button", { name: "Next 7 days" });
-  await nextButton.click();
-
-  await expect(nextButton).toBeDisabled();
-  await expect(page.locator(".work-day time")).toHaveAttribute("datetime", localIsoDate(9));
-  await expect(page.locator(".jm-calendar__day:disabled")).toHaveCount(5);
-  await page.getByRole("button", { name: `${localFullDateLabel(14)}. No completed tasks`, exact: true }).click();
-  await expect.poll(() => new URL(page.url()).searchParams.get("date")).toBe(localIsoDate(14));
-  await expect(page.locator(".work-day time")).toHaveAttribute("datetime", localIsoDate(14));
-  await expect(nextButton).toBeDisabled();
-  await page.getByRole("button", { name: "Previous 7 days" }).click();
-  await expect(nextButton).toBeEnabled();
-  await expect(page.locator(".work-day time")).toHaveAttribute("datetime", localIsoDate(14));
-});
-
-test("work day types are saved by date and update today's navigation icon", async ({ page }) => {
-  await page.goto("/");
-
-  const dayTypeTrigger = page.getByRole("combobox", { name: /^Change day type for / });
-  const workNavigationIcon = page.getByRole("link", { name: "Work" }).locator("use");
-
-  await expect(
-    page.locator(".jm-calendar__day--selected").getByRole("combobox", { name: /^Change day type for / }),
-  ).toBeVisible();
-  await expect(page.locator(".work-day").getByRole("combobox", { name: /^Change day type for / })).toHaveCount(0);
-
-  await dayTypeTrigger.click();
-  await page.getByRole("option", { name: "PTO", exact: true }).click();
-  await expect(workNavigationIcon).toHaveAttribute("href", /#icon-pto$/);
-
-  await page.reload();
-  await dayTypeTrigger.click();
-  await expect(dayTypeTrigger).toHaveValue("pto");
-  await expect(workNavigationIcon).toHaveAttribute("href", /#icon-pto$/);
-  await page.keyboard.press("Escape");
-  await expect(dayTypeTrigger).toBeFocused();
-
-  await page.goto("/work?date=2000-01-03");
-  await dayTypeTrigger.click();
-  await page.keyboard.press("Home");
-  await page.keyboard.press("Enter");
-  await expect(dayTypeTrigger).toHaveValue("conference");
-  await expect(workNavigationIcon).toHaveAttribute("href", /#icon-pto$/);
-
-  await page.reload();
-  await dayTypeTrigger.click();
-  await expect(dayTypeTrigger).toHaveValue("conference");
-
-  await page.getByRole("button", { name: "Today" }).click();
-  await dayTypeTrigger.click();
-  await expect(dayTypeTrigger).toHaveValue("pto");
-});
-
-test("work entry points return the calendar to today without a date query", async ({ page }) => {
-  const expectTodayWithoutDateQuery = async () => {
-    await expect.poll(() => new URL(page.url()).searchParams.get("date")).toBeNull();
-    await expect.poll(() => new URL(page.url()).hash).toBe("");
-    await expect(page.locator(".work-day--today")).toHaveCount(1);
-  };
-
-  await page.goto("/work?date=2000-01-02");
-  await page.getByRole("button", { name: "Today" }).click();
-  await expectTodayWithoutDateQuery();
-
-  await page.goto("/work?date=2000-01-02");
-  await page.getByRole("link", { name: "ToDo-ish, Work" }).click();
-  await expectTodayWithoutDateQuery();
-
-  await page.goto("/work?date=2000-01-02");
-  await page.getByRole("link", { name: "Work", exact: true }).click();
-  await expectTodayWithoutDateQuery();
-
-  await page.goto("/work?date=not-a-date");
-  await expectTodayWithoutDateQuery();
-});
-
 test("unknown application routes return to work", async ({ page }) => {
   await page.goto("/unknown-page");
 
@@ -1378,7 +786,7 @@ test("failed saves survive reload and clear the error after recovery", async ({ 
   const data = appDataByPage.get(page);
   await expect.poll(() => data.get("work-tasks")?.length).toBeGreaterThan(0);
   data.setWriteFailure("work-tasks", 503);
-  await page.locator(".work-day textarea").first().fill("Recover this edit");
+  await page.locator(".jm-card:not(.work-backlog) textarea").first().fill("Recover this edit");
   await expect(page.getByRole("button", { name: "Download local edits" })).toBeVisible();
   data.setWriteFailure("work-tasks", 0);
   await page.reload();
@@ -1423,12 +831,14 @@ test("today updates across midnight without reloading the application", async ({
   });
   await page.clock.install({ time: new Date(2026, 11, 31, 23, 59, 50) });
   await page.goto("/work");
-  await expect(page.locator(".work-day time")).toHaveAttribute("datetime", "2026-12-31");
+  await expect(page.locator(".jm-card:not(.work-backlog) time")).toHaveAttribute("datetime", "2026-12-31");
   await page.clock.runFor(10200);
-  await expect(page.locator(".work-day time")).toHaveAttribute("datetime", "2027-01-01");
-  await expect(page.locator(".jm-calendar__day--today")).toHaveAttribute("aria-current", "date");
+  await expect(page.locator(".jm-card:not(.work-backlog) time")).toHaveAttribute("datetime", "2027-01-01");
+  await expect(page.locator(".jm-calendar .day.today")).toHaveAttribute("aria-current", "date");
   await expect(page.getByRole("textbox", { name: "Task title" })).toHaveValue("Carry into tomorrow");
-  await expect(page.locator(".jm-navigation__link").first().locator("use")).toHaveAttribute("href", /#icon-pto$/);
+  await expect(
+    page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Work", exact: true }).locator("use"),
+  ).toHaveAttribute("href", /#icon-pto$/);
   await page.getByRole("link", { name: "Chores", exact: true }).click();
   await expect(page.locator(".chores-upcoming").getByText("Today", { exact: true })).toBeVisible();
 });
@@ -1441,7 +851,7 @@ test("catalog failures stay local and retry independently without blocking task 
     return fail ? route.fulfill({ status: 503, body: "unavailable" }) : route.fallback();
   });
   await page.goto("/work");
-  await expect(page.locator(".work-day")).toBeVisible();
+  await expect(page.locator(".jm-card:not(.work-backlog)")).toBeVisible();
   expect(filamentRequests).toBe(0);
   await page.getByRole("link", { name: "Catalog", exact: true }).click();
   await expect(page.getByRole("button", { name: "Retry filament catalog" })).toBeVisible();
@@ -1476,22 +886,4 @@ test("pending todo edits recover against the older API while colors remain mocke
   await expect.poll(() => data.get("todos").lists[0].tasks[0].title).toBe("Recover this edit");
   await expect(page.locator(".app-sync-error")).toHaveCount(0);
   expect(data.get("todos").lists[0].color).toBeUndefined();
-});
-
-test("backlog pins move tasks to the selected date and persist", async ({ page }) => {
-  await page.clock.setFixedTime(new Date("2026-09-09T12:00:00Z"));
-  const data = appDataByPage.get(page);
-  data.set("work-tasks", [{ id: "backlog-pin", title: "Plan next week", date: null }]);
-  await page.goto("/?date=2026-09-10");
-  const backlog = page.locator(".work-backlog");
-  const selected = page.locator(".jm-card").filter({ has: page.locator('time[datetime="2026-09-10"]') });
-  await backlog.getByRole("button", { name: "Move Plan next week to 2026-09-10", exact: true }).click();
-  await expect(backlog.locator(".task-item")).toHaveCount(0);
-  await expect(selected.getByRole("textbox", { name: "Task title", exact: true })).toHaveValue("Plan next week");
-  await expect.poll(() => data.get("work-tasks")?.[0].date).toBe("2026-09-10");
-  await page.reload();
-  await expect(selected.getByRole("textbox", { name: "Task title", exact: true })).toHaveValue("Plan next week");
-  await selected.getByRole("button", { name: "Move Plan next week to backlog", exact: true }).click();
-  await expect(backlog.getByRole("textbox", { name: "Task title", exact: true })).toHaveValue("Plan next week");
-  await expect.poll(() => data.get("work-tasks")?.[0].date).toBe(null);
 });

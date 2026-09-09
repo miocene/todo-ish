@@ -5,7 +5,7 @@
   align-items: flex-start;
   border-radius: var(--radius-control);
 
-  &:not(disabled):hover {
+  &:not(:disabled):hover {
     background-color: var(--control-ghost-background-hover);
   }
 
@@ -39,7 +39,8 @@
     margin-left: 0;
   }
 
-  .checkbox, .actions {
+  .checkbox,
+  .actions {
     flex-shrink: 0;
   }
 
@@ -47,15 +48,10 @@
     color: var(--color-text-secondary);
     text-decoration: line-through;
   }
-
-  &.completed .actions {
-    display: none;
-  }
 }
 
 .checkbox {
   position: relative;
-  -webkit-appearance: none;
   appearance: none;
   margin: 0 var(--space-3) 0 0;
   display: grid;
@@ -64,29 +60,41 @@
   width: var(--size-checkbox);
   height: var(--size-checkbox);
   border-radius: var(--radius-checkbox);
-  box-shadow: 0px 24px 16px -20px rgba(0, 0, 0, 0.25);
-  
-  &:not(disabled) {
+  box-shadow: 0 24px 16px -20px rgb(0 0 0 / 25%);
+
+  &:not(:disabled) {
     border-color: var(--control-default-border);
     background-color: var(--control-default-background);
     color: var(--control-default-text);
     cursor: pointer;
   }
 
-  &:not(disabled):checked {
+  &:not(:disabled):checked {
     background-color: var(--control-primary-background);
     border-color: var(--control-primary-background);
     color: var(--control-primary-color);
   }
-  
+
   &:checked::before {
-    content: '';
+    content: "";
     position: absolute;
     inset: 50%;
     width: 11.92px;
     height: 7.92px;
-	  clip-path: shape(from 91.26% 2.01%,curve to 98.67% 2.64% with 93.42% -0.9%/96.74% -0.62%,curve to 98.25% 13.78% with 100.6% 5.89%/100.41% 10.87%,line to 35.59% 97.99%,curve to 28.31% 97.57% with 33.49% 100.82%/30.27% 100.64%,line to 1.46% 55.47%,curve to 1.61% 44.31% with -0.55% 52.33%/-0.47% 47.33%,curve to 9.03% 44.53% with 3.7% 41.29%/7.03% 41.38%,line to 32.38% 81.14%,line to 91.26% 2.01%,close);
-    background-color: contrast-color(currentColor);
+    clip-path: shape(
+      from 91.26% 2.01%,
+      curve to 98.67% 2.64% with 93.42% -0.9%/96.74% -0.62%,
+      curve to 98.25% 13.78% with 100.6% 5.89%/100.41% 10.87%,
+      line to 35.59% 97.99%,
+      curve to 28.31% 97.57% with 33.49% 100.82%/30.27% 100.64%,
+      line to 1.46% 55.47%,
+      curve to 1.61% 44.31% with -0.55% 52.33%/-0.47% 47.33%,
+      curve to 9.03% 44.53% with 3.7% 41.29%/7.03% 41.38%,
+      line to 32.38% 81.14%,
+      line to 91.26% 2.01%,
+      close
+    );
+    background-color: contrast-color(currentcolor);
     translate: -50% -50%;
   }
 
