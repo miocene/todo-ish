@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createTaskEditor } from "../src/app/task-editor.js";
+import { createTaskEditor, createTitleEditor } from "../src/app/task-editor.js";
 
 test("Enter respects composition and focuses the next task or creates one", () => {
   const editor = createTaskEditor({ save() {} });
@@ -121,4 +121,22 @@ test("completion ordering waits, reverses on uncheck, and cancels stale moves", 
   editor.scheduleMove(first, false, order, first.id);
   flush();
   assert.deepEqual(order, ["a", "b"]);
+});
+
+test("title editing retains valid text, omits blank drafts and enforces the shared limit", () => {
+  const task = { id: "existing", title: "Original" };
+  const draft = { id: "draft", title: "" };
+  const titles = createTitleEditor([task]);
+  const drafts = new Set([draft.id]);
+  assert.equal(titles.update(task, "  "), false);
+  assert.deepEqual(titles.serialize([task, draft], drafts), [{ id: task.id, title: "Original" }]);
+  titles.restore(task);
+  assert.equal(task.title, "Original");
+  assert.equal(titles.update(task, "x".repeat(501)), true);
+  assert.equal(titles.title(task).length, 500);
+  assert.equal(titles.update(draft, " New task "), true);
+  assert.equal(titles.serialize([draft], drafts)[0].title, "New task");
+  titles.forget(task.id);
+  task.title = "";
+  assert.equal(titles.title(task), "");
 });

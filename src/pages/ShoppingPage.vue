@@ -1,6 +1,6 @@
 <script>
 import { APP_DATA_LIMITS } from "../../backend/api/src/app-data-contract.mjs";
-import { createTaskEditor } from "../app/task-editor.js";
+import { createTaskEditor, createTitleEditor } from "../app/task-editor.js";
 import { subscribeAppData } from "../app/app-data.js";
 import { filamentCatalog } from "../app/filament-catalog.js";
 import { flossCatalog } from "../app/floss-catalog.js";
@@ -12,7 +12,7 @@ import {
   saveFlossInventory,
   savePageTasks,
 } from "../app/page-tasks.js";
-import { completedTasksLast, setTaskCompletion, serializableTasks } from "../app/task-list.js";
+import { completedTasksLast, setTaskCompletion } from "../app/task-list.js";
 import { syncSupplyShoppingLists } from "../app/shopping-supplies.js";
 import JMCard from "../components/JMCard/JMCard.vue";
 import JMTaskItem from "../components/JMTaskItem/JMTaskItem.vue";
@@ -31,7 +31,7 @@ export default {
         save: () => this.save(),
       }),
       shopping: { ...shopping, history: shopping.history ?? [] },
-      validTitles: new Map(shopping.tasks.filter((task) => !task.source).map((task) => [task.id, task.title])),
+      titles: createTitleEditor(shopping.tasks.filter((task) => !task.source)),
       notice: "",
     };
   },
@@ -59,7 +59,7 @@ export default {
       const current = new Map(this.shopping.tasks.map((task) => [task.id, task]));
       const tasks = shopping.tasks.map((item) => {
         const task = current.get(item.id);
-        if (!item.source) this.validTitles.set(item.id, item.title);
+        if (!item.source) this.titles.remember(item);
         if (!task) return item;
         const editingBlank = document.activeElement?.id === this.taskInputId(task) && !task.title.trim();
         Object.assign(
@@ -99,20 +99,11 @@ export default {
     save() {
       savePageTasks("shopping", {
         ...this.shopping,
-        tasks: serializableTasks(
-          this.shopping.tasks,
-          this.editor.drafts,
-          (task) => task.title.trim() || this.validTitles.get(task.id) || "",
-        ).map((task) => ({ ...task, title: task.title.trim() || this.validTitles.get(task.id) })),
+        tasks: this.titles.serialize(this.shopping.tasks, this.editor.drafts),
       });
     },
     updateTitle(task, title) {
-      if (task.source || task.title === title) return;
-      task.title = title.slice(0, APP_DATA_LIMITS.title);
-      if (task.title.trim()) {
-        this.validTitles.set(task.id, task.title.trim());
-        this.save();
-      }
+      if (!task.source && this.titles.update(task, title)) this.save();
     },
     updateCompleted(task, completed) {
       if (task.completed === completed || !task.title.trim()) return;
@@ -155,11 +146,10 @@ export default {
       this.editor.moves.cancel(task.id);
       this.editor.drafts.delete(task.id);
       const history = new Map(this.shopping.history.map((item) => [item.id, item]));
-      if (task.completedAt)
-        history.set(task.id, { ...task, title: task.title.trim() || this.validTitles.get(task.id) });
+      if (task.completedAt) history.set(task.id, { ...task, title: this.titles.title(task) });
       else history.delete(task.id);
       this.shopping.history = [...history.values()];
-      this.validTitles.delete(task.id);
+      this.titles.forget(task.id);
       this.shopping.tasks.splice(index, 1);
       this.save();
       const next = this.shopping.tasks[index] ?? this.shopping.tasks[index - 1];
@@ -183,7 +173,7 @@ export default {
       return task;
     },
     handleTitleBlur(task) {
-      if (!task.title.trim() && this.validTitles.has(task.id)) task.title = this.validTitles.get(task.id);
+      this.titles.restore(task);
       this.editor.finish(this.shopping.tasks, task);
     },
     handleEnter(task, event) {

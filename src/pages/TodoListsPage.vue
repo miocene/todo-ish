@@ -1,10 +1,10 @@
 <script>
 import { APP_DATA_LIMITS } from "../../backend/api/src/app-data-contract.mjs";
 import { subscribeAppData } from "../app/app-data.js";
-import { createTaskEditor } from "../app/task-editor.js";
+import { createTaskEditor, createTitleEditor } from "../app/task-editor.js";
 import { randomCardColor } from "../app/card-colors.js";
 import { loadPageTasks, savePageTasks } from "../app/page-tasks.js";
-import { completedTasksLast, setTaskCompletion, serializableTasks } from "../app/task-list.js";
+import { completedTasksLast, setTaskCompletion } from "../app/task-list.js";
 import JMButton from "../components/JMButton/JMButton.vue";
 import JMTaskItem from "../components/JMTaskItem/JMTaskItem.vue";
 import JMCard from "../components/JMCard/JMCard.vue";
@@ -23,7 +23,7 @@ export default {
         save: () => this.save(),
       }),
       todos: { ...todos, history: todos.history ?? [] },
-      validTitles: new Map(todos.lists.flatMap((list) => list.tasks.map((task) => [task.id, task.title]))),
+      titles: createTitleEditor(todos.lists.flatMap((list) => list.tasks)),
       limitMessage: "",
       listName: "",
     };
@@ -37,7 +37,7 @@ export default {
       this.editor.clear();
       const todos = loadPageTasks("todos");
       this.todos = { ...todos, history: todos.history ?? [] };
-      this.validTitles = new Map(todos.lists.flatMap((list) => list.tasks.map((task) => [task.id, task.title])));
+      this.titles = createTitleEditor(todos.lists.flatMap((list) => list.tasks));
     });
     if (this.ensureGeneral()) this.save();
   },
@@ -113,10 +113,10 @@ export default {
       for (const task of tasks) {
         this.editor.moves.cancel(task.id);
         this.editor.drafts.delete(task.id);
-        const title = task.title.trim() || this.validTitles.get(task.id);
+        const title = this.titles.title(task);
         if (task.completedAt && title) history.set(task.id, { ...task, title });
         else history.delete(task.id);
-        this.validTitles.delete(task.id);
+        this.titles.forget(task.id);
       }
       this.todos.history = [...history.values()];
     },
@@ -125,21 +125,12 @@ export default {
         ...this.todos,
         lists: this.todos.lists.map((list) => ({
           ...list,
-          tasks: serializableTasks(
-            list.tasks,
-            this.editor.drafts,
-            (task) => task.title.trim() || this.validTitles.get(task.id) || "",
-          ).map((task) => ({ ...task, title: task.title.trim() || this.validTitles.get(task.id) })),
+          tasks: this.titles.serialize(list.tasks, this.editor.drafts),
         })),
       });
     },
     updateTitle(task, title) {
-      if (task.title === title) return;
-      task.title = title.slice(0, APP_DATA_LIMITS.title);
-      if (task.title.trim()) {
-        this.validTitles.set(task.id, task.title.trim());
-        this.save();
-      }
+      if (this.titles.update(task, title)) this.save();
     },
     updateCompleted(list, task, completed) {
       if (!task.title.trim() || task.completed === completed) return;
@@ -165,7 +156,7 @@ export default {
       return task;
     },
     handleTitleBlur(list, task) {
-      if (!task.title.trim() && this.validTitles.has(task.id)) task.title = this.validTitles.get(task.id);
+      this.titles.restore(task);
       this.editor.finish(list.tasks, task);
     },
     handleEnter(list, task, event) {

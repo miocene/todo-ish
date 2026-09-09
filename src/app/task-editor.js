@@ -1,5 +1,11 @@
 import { nextTick } from "vue";
-import { createCompletionMoveScheduler, finishTaskDraft, moveItemForCompletion } from "./task-list.js";
+import { APP_DATA_LIMITS } from "../../backend/api/src/app-data-contract.mjs";
+import {
+  createCompletionMoveScheduler,
+  finishTaskDraft,
+  moveItemForCompletion,
+  serializableTasks,
+} from "./task-list.js";
 
 /** Shared draft, focus, keyboard, and delayed-order behavior; pages retain their domain-specific edits. */
 export function createTaskEditor({
@@ -57,6 +63,34 @@ export function createTaskEditor({
     clear() {
       moves.clear();
       drafts.clear();
+    },
+  };
+}
+
+/** Keep blank edits recoverable while only valid titles enter saved snapshots. */
+export function createTitleEditor(tasks) {
+  const validTitles = new Map(tasks.map((task) => [task.id, task.title]));
+  const title = (task) => task.title.trim() || validTitles.get(task.id) || "";
+  return {
+    title,
+    remember(task) {
+      validTitles.set(task.id, task.title);
+    },
+    forget(id) {
+      validTitles.delete(id);
+    },
+    update(task, value) {
+      if (task.title === value) return false;
+      task.title = value.slice(0, APP_DATA_LIMITS.title);
+      if (!task.title.trim()) return false;
+      validTitles.set(task.id, task.title.trim());
+      return true;
+    },
+    restore(task) {
+      if (!task.title.trim()) task.title = title(task);
+    },
+    serialize(tasks, drafts) {
+      return serializableTasks(tasks, drafts, title).map((task) => ({ ...task, title: title(task) }));
     },
   };
 }
