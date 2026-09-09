@@ -1,8 +1,6 @@
 import "webauthn-polyfills";
 import { apiFetch } from "./api.js";
 
-const RP_ID = "todo-ish.today";
-
 export class PasskeyRequestError extends Error {
   constructor(message, status = 0, code = "request_failed") {
     super(message);
@@ -60,8 +58,13 @@ export async function createPasskey(bootstrapToken = "") {
   try {
     return await jsonPost("/auth/registration/verify", encoded);
   } catch (error) {
-    if (PublicKeyCredential.signalUnknownCredential) {
-      await PublicKeyCredential.signalUnknownCredential({ rpId: RP_ID, credentialId: encoded.id }).catch(() => {});
+    // A failed response does not tell us whether registration committed.
+    if (!error.status || error.status >= 500) {
+      throw new PasskeyRequestError(
+        "Registration could not be confirmed. Try signing in with your new passkey before creating another.",
+        error.status,
+        "registration_uncertain",
+      );
     }
     throw error;
   }
@@ -77,8 +80,10 @@ export async function authenticateWithPasskey() {
   try {
     return await jsonPost("/auth/authentication/verify", encoded);
   } catch (error) {
-    if (error.status === 404 && PublicKeyCredential.signalUnknownCredential) {
-      await PublicKeyCredential.signalUnknownCredential({ rpId: RP_ID, credentialId: encoded.id }).catch(() => {});
+    if (error.code === "credential_not_found" && PublicKeyCredential.signalUnknownCredential) {
+      await PublicKeyCredential.signalUnknownCredential({ rpId: optionsJSON.rpId, credentialId: encoded.id }).catch(
+        () => {},
+      );
     }
     throw error;
   }

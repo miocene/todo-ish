@@ -39,6 +39,7 @@ export default {
           : await authenticateWithPasskey();
         this.$emit("authenticated", result.user);
       } catch (error) {
+        if (error?.code === "registration_uncertain") this.useSetupCode = false;
         if (error?.name !== "NotAllowedError" && error?.name !== "AbortError") {
           this.error = error?.message || "The passkey request failed.";
         }
