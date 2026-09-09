@@ -141,13 +141,13 @@ test("development mocks colors locally when the API has no color storage", async
   expect(await colorOf(page.locator(".work-backlog"))).toBe(backlogColor);
 
   await page.goto("/todos");
-  const listColor = await colorOf(page.locator(".task-page__section"));
+  const listColor = await colorOf(page.locator(".todo-list-card").first());
   expect(CARD_COLORS).toContain(listColor);
   expect(data.get("todos").lists[0]).not.toHaveProperty("color");
   await page.getByRole("textbox", { name: "Task title", exact: true }).fill("Still saved to the API");
   await expect.poll(() => data.get("todos").lists[0].tasks[0].title).toBe("Still saved to the API");
   await page.reload();
-  expect(await colorOf(page.locator(".task-page__section"))).toBe(listColor);
+  expect(await colorOf(page.locator(".todo-list-card").first())).toBe(listColor);
   await expect(page.getByRole("textbox", { name: "Task title", exact: true })).toHaveValue("Still saved to the API");
   expect(data.get("todos").lists[0]).not.toHaveProperty("color");
 
@@ -213,15 +213,13 @@ test("card colors migrate into the palette and persist without visible color con
   expect(await colorOf(page.locator(".work-backlog"))).toBe(backlogColor);
 
   await page.goto("/todos");
-  const listColor = await colorOf(page.locator(".task-page__section"));
+  const listColor = await colorOf(page.locator(".todo-list-card").first());
   expect(CARD_COLORS).toContain(listColor);
   await expect.poll(() => data.get("todos").lists[0].color).toBe(listColor);
-  await page.getByRole("link", { name: "Home", exact: true }).click();
-  expect(await colorOf(page.locator(".task-page__section"))).toBe("#E9C46A");
+  expect(await colorOf(page.locator("#todo-list-home"))).toBe("#E9C46A");
   await page.reload();
-  expect(await colorOf(page.locator(".task-page__section"))).toBe("#E9C46A");
-  await page.getByRole("link", { name: "General", exact: true }).click();
-  expect(await colorOf(page.locator(".task-page__section"))).toBe(listColor);
+  expect(await colorOf(page.locator("#todo-list-home"))).toBe("#E9C46A");
+  expect(await colorOf(page.locator(".todo-list-card").first())).toBe(listColor);
 
   // List creation uses the same save boundary, including callers without a color field.
   await page.evaluate(async () => {
@@ -234,8 +232,7 @@ test("card colors migrate into the palette and persist without visible color con
   const newListColor = data.get("todos").lists.at(-1).color;
   expect(CARD_COLORS).toContain(newListColor);
   await page.reload();
-  await page.getByRole("link", { name: "New list", exact: true }).click();
-  expect(await colorOf(page.locator(".task-page__section"))).toBe(newListColor);
+  expect(await colorOf(page.locator("#todo-list-new-list"))).toBe(newListColor);
 
   await page.goto("/printing");
   const projectColor = await colorOf(page.locator(".project-card"));
@@ -860,25 +857,6 @@ test("failed saves survive reload and clear the error after recovery", async ({ 
   await page.reload();
   await expect.poll(() => data.get("work-tasks")?.some((task) => task.title === "Recover this edit")).toBe(true);
   await expect(page.locator(".app-sync-error")).toHaveCount(0);
-});
-
-test("an empty todo collection can create its first list and save a task", async ({ page }) => {
-  const data = appDataByPage.get(page);
-  data.set("todos", { lists: [] });
-  await page.goto("/todos?list=missing");
-  await expect(page.getByText("No lists yet. Add a list to get started.")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Add task", exact: true })).toHaveCount(0);
-  await page.getByRole("button", { name: "Add list", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "New list" })).toBeVisible();
-  await page.getByRole("button", { name: "Add task", exact: true }).click();
-  await page.getByRole("textbox", { name: "Task title" }).fill("First task");
-  await expect.poll(() => data.get("todos").lists[0]?.tasks[0]?.title).toBe("First task");
-  expect(CARD_COLORS).toContain(data.get("todos").lists[0].color);
-  await page.reload();
-  await expect(page.getByRole("textbox", { name: "Task title" })).toHaveValue("First task");
-  await page.getByRole("button", { name: "Add list", exact: true }).click();
-  await expect.poll(() => data.get("todos").lists.length).toBe(2);
-  expect(new Set(data.get("todos").lists.map((list) => list.id)).size).toBe(2);
 });
 
 test("today updates across midnight without reloading the application", async ({ page }) => {

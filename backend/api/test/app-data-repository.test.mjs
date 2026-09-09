@@ -177,3 +177,37 @@ test("todo history reads independently of active lists", async () => {
   assert.deepEqual(data.pages.todos.lists, []);
   assert.equal(data.pages.todos.history[0].title, "Done");
 });
+
+test("explicit history replacement removes undone completions after detaching deleted tasks", async () => {
+  const f = fixture();
+  await f.repository.replace(
+    "todos",
+    {
+      lists: [],
+      history: [],
+      replaceHistory: true,
+    },
+    0,
+  );
+  const cleanup = f.queries.find(
+    ({ text }) => text === "DELETE FROM todo_items WHERE list_id IS NULL AND NOT (id = ANY($1::text[]))",
+  );
+  assert.deepEqual(cleanup.values, [[]]);
+  assert.ok(f.queries.indexOf(cleanup) > f.queries.findIndex(({ text }) => text.startsWith("DELETE FROM todo_lists")));
+});
+
+test("legacy history additions never trigger authoritative history deletion", async () => {
+  const f = fixture();
+  await f.repository.replace(
+    "todos",
+    {
+      lists: [],
+      history: [{ id: "kept", title: "Done", completedAt: "2026-02-02T12:00:00Z" }],
+    },
+    0,
+  );
+  assert.equal(
+    f.queries.some(({ text }) => text.startsWith("DELETE FROM todo_items WHERE list_id IS NULL")),
+    false,
+  );
+});

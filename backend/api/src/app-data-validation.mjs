@@ -225,7 +225,15 @@ function todos(value) {
           }),
           "todos.history",
         );
-  return { lists, ...(history.length && { history }) };
+  if (source.replaceHistory !== undefined && typeof source.replaceHistory !== "boolean")
+    fail("todos.replaceHistory", "must be a boolean");
+  if (source.replaceHistory === true && source.history === undefined)
+    fail("todos.history", "is required when replacing history");
+  return {
+    lists,
+    ...(source.history !== undefined && { history }),
+    ...(source.replaceHistory === true && { replaceHistory: true }),
+  };
 }
 
 function shopping(value) {

@@ -147,3 +147,14 @@ test("floss requirements aggregate skeins and compare them with inventory", () =
   assert.equal(supply.ownedSkeins, 1);
   assert.equal(supply.missingSkeins, 2);
 });
+
+test("todo history replacement requires an explicit complete snapshot", async () => {
+  const { validateAppDataResource } = await import("../backend/api/src/app-data-validation.mjs");
+  assert.throws(() => validateAppDataResource("todos", { lists: [], replaceHistory: true }), /history/);
+  assert.deepEqual(validateAppDataResource("todos", { lists: [], history: [], replaceHistory: true }), {
+    lists: [],
+    history: [],
+    replaceHistory: true,
+  });
+  assert.deepEqual(validateAppDataResource("todos", { lists: [] }), { lists: [] });
+});

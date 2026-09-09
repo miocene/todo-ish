@@ -436,6 +436,13 @@ async function replaceTodos(client, data) {
     (data.history ?? []).map((item) => [item.id, null, item.title, item.completedAt, 0]),
     "ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, completed_at = EXCLUDED.completed_at WHERE todo_items.list_id IS NULL",
   );
+  // Replace only when explicitly requested; older clients submit history additions.
+  if (data.replaceHistory === true) {
+    await client.query({
+      text: "DELETE FROM todo_items WHERE list_id IS NULL AND NOT (id = ANY($1::text[]))",
+      values: [data.history.map((item) => item.id)],
+    });
+  }
 }
 
 async function replaceShopping(client, data) {

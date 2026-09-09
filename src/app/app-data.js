@@ -116,8 +116,6 @@ const PENDING_PREFIX = "done-ish.pending-write.v1:";
 export const syncState = reactive({ state: "saved", message: "", pending: 0, durable: true });
 
 const savedChoreOccurrences = new Set();
-const savedTodoHistory = new Map();
-const todoHistoryValue = (task) => JSON.stringify([task.title, task.completedAt]);
 const occurrenceKey = (item) => `${item.id}:${item.nextDue}`;
 
 async function fetchRemoteState() {
@@ -129,13 +127,6 @@ async function fetchRemoteState() {
   savedChoreOccurrences.clear();
   for (const item of [...(state.pages?.chores?.history ?? []), ...(state.pages?.chores?.tasks ?? [])]) {
     if (item.completedAt) savedChoreOccurrences.add(occurrenceKey(item));
-  }
-  savedTodoHistory.clear();
-  for (const task of [
-    ...(state.pages?.todos?.history ?? []),
-    ...(state.pages?.todos?.lists ?? []).flatMap((list) => list.tasks),
-  ]) {
-    if (task.completedAt) savedTodoHistory.set(task.id, todoHistoryValue(task));
   }
   return state;
 }
@@ -169,7 +160,10 @@ const sync = createResourceSync({
         .map(({ id, nextDue, completedAt }) => ({ id, nextDue, completedAt }))
         .sort((a, b) => occurrenceKey(a).localeCompare(occurrenceKey(b)));
     }
-    if (resource === "todos" && normalized.history) normalized.history.sort((a, b) => a.id.localeCompare(b.id));
+    if (resource === "todos" && normalized.history) {
+      if (normalized.history.length) normalized.history.sort((a, b) => a.id.localeCompare(b.id));
+      else delete normalized.history; // Reads omit empty history; compare equivalent snapshots.
+    }
     return normalized;
   },
   remoteValue,
@@ -178,11 +172,8 @@ const sync = createResourceSync({
     const submitted =
       resource === "chores" && value.history
         ? { ...value, history: value.history.filter((item) => !savedChoreOccurrences.has(occurrenceKey(item))) }
-        : resource === "todos" && value.history
-          ? {
-              ...value,
-              history: value.history.filter((task) => savedTodoHistory.get(task.id) !== todoHistoryValue(task)),
-            }
+        : resource === "todos" && value.history !== undefined
+          ? { ...value, replaceHistory: true }
           : value;
     const response = await apiFetch(`/data/${resource}`, {
       method: "PUT",
@@ -199,13 +190,6 @@ const sync = createResourceSync({
         else savedChoreOccurrences.delete(occurrenceKey(item));
       }
       for (const item of value.history ?? []) savedChoreOccurrences.add(occurrenceKey(item));
-    }
-    if (resource === "todos") {
-      for (const task of value.lists.flatMap((list) => list.tasks)) {
-        if (task.completedAt) savedTodoHistory.set(task.id, todoHistoryValue(task));
-        else savedTodoHistory.delete(task.id);
-      }
-      for (const task of value.history ?? []) savedTodoHistory.set(task.id, todoHistoryValue(task));
     }
     return result;
   },

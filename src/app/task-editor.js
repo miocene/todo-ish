@@ -13,8 +13,8 @@ export function createTaskEditor({
   return {
     drafts,
     moves,
-    add(tasks, task, { draft = true } = {}) {
-      tasks.push(task);
+    add(tasks, task, { draft = true, index = tasks.length } = {}) {
+      tasks.splice(index, 0, task);
       if (draft) drafts.add(task.id);
       save();
       return task;
@@ -45,7 +45,13 @@ export function createTaskEditor({
     },
     scheduleMove(task, completed, items, item = task) {
       moves.schedule(task.id, () => {
-        if (moveItemForCompletion(items, item, completed)) save();
+        const focused = globalThis.document?.activeElement;
+        if (!moveItemForCompletion(items, item, completed)) return;
+        save();
+        afterRender(() => {
+          if (focused?.isConnected && globalThis.document.activeElement === globalThis.document.body)
+            focused.focus({ preventScroll: true });
+        });
       });
     },
     clear() {

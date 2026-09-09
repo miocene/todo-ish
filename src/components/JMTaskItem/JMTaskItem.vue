@@ -9,6 +9,8 @@ export default {
   emits: ["enter", "pin", "remove", "title-blur", "update:completed", "update:title"],
   props: {
     completable: { type: Boolean, default: true },
+    completionDisabled: { type: Boolean, default: false },
+    titleMaxlength: { type: Number, default: undefined },
     completed: { type: Boolean, default: false },
     completionInputId: { type: String, default: "" },
     editable: { type: Boolean, default: true },
@@ -50,18 +52,13 @@ export default {
       class="checkbox"
       type="checkbox"
       :checked="completed"
+      :disabled="completionDisabled"
       :aria-label="`Complete ${title || 'untitled task'}`"
       @change="$emit('update:completed', $event.target.checked)"
     />
 
     <div class="content">
-      <a
-        v-if="titleHref"
-        class="title title-link"
-        :href="titleHref"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
+      <a v-if="titleHref" class="title title-link" :href="titleHref" target="_blank" rel="noopener noreferrer">
         {{ title }}
         <span class="sr-only"> (opens in a new tab)</span>
       </a>
@@ -76,6 +73,7 @@ export default {
         enterkeyhint="next"
         :aria-label="titleLabel"
         :model-value="title"
+        :maxlength="titleMaxlength"
         @blur="$emit('title-blur', $event)"
         @update:model-value="$emit('update:title', $event)"
         @keydown.enter="$emit('enter', $event)"

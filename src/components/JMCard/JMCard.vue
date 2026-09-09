@@ -14,7 +14,6 @@ export default {
     emptyText: { type: String, required: true },
     color: { type: String, default: "#FF00FF" },
     actions: { type: Array, default: () => [] },
-    inlineActions: { type: Boolean, default: false },
     progress: { type: Object, default: null },
     collapsible: { type: Boolean, default: false },
     tag: { type: String, default: "section" },
@@ -65,10 +64,11 @@ export default {
         <JMProgress v-if="progress" :value="progress.value" :max="progress.max" :label="`Progress for ${title}`" />
       </h2>
       <template v-if="actions.length || collapsible">
-        <template v-if="inlineActions || actions.length === 1">
+        <template v-if="actions.length === 1">
           <JMButton
             v-for="action in actions"
             :key="action.id"
+            :id="action.buttonId"
             :icon-name="action.icon"
             :aria-label="action.ariaLabel || action.label"
             :disabled="action.disabled"
@@ -86,7 +86,7 @@ export default {
         >
           <summary
             ref="menuButton"
-            class="jm-button jm-button--ghost jm-button--m"
+            class="jm-button ghost m"
             :aria-label="`Actions for ${title}`"
           >
             <JMIcon name="kebab" />

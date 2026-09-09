@@ -19,7 +19,9 @@ export default {
       editor: createTaskEditor({
         save: () => this.save(),
       }),
-      todos,
+      todos: { ...todos, history: todos.history ?? [] },
+      validTitles: new Map(todos.lists.flatMap((list) => list.tasks.map((task) => [task.id, task.title]))),
+      limitMessage: "",
       listName: "",
     };
   },
@@ -27,27 +29,39 @@ export default {
     this.editor.clear();
   },
   mounted() {
-    if (!this.todos.lists.some((list) => list.id === "general")) {
-      this.todos.lists.unshift({ id: "general", title: "General", color: randomCardColor(), tasks: [] });
-      this.save();
-    }
+    if (this.ensureGeneral()) this.save();
   },
   methods: {
+    ensureGeneral() {
+      if (this.todos.lists.some((list) => list.id === "general")) return false;
+      if (this.todos.lists.length >= 100) {
+        this.limitMessage = "Delete a list to make room for General. You can have up to 100 lists.";
+        return false;
+      }
+      this.todos.lists.unshift({ id: "general", title: "General", color: randomCardColor(), tasks: [] });
+      return true;
+    },
     openNewList() {
+      if (this.todos.lists.length >= 100) {
+        this.limitMessage = "You can have up to 100 lists. Delete a list before adding another.";
+        return;
+      }
+      this.limitMessage = "";
       this.listName = "";
       this.$refs.newListModal.open();
     },
     addList() {
       const title = this.listName.trim();
-      if (!title || title.length > 500) return;
+      if (!title || title.length > 500 || this.todos.lists.length >= 100) return;
       const list = { id: `list-${crypto.randomUUID()}`, title, color: randomCardColor(), tasks: [] };
       this.todos.lists.push(list);
       this.save();
       this.$refs.newListModal.close();
+      this.focusListActions(list);
     },
     listActions(list) {
       return [
-        { id: "add", label: `Add task to ${list.title}`, icon: "plus" },
+        { id: "add", buttonId: `todo-add-${list.id}`, label: `Add task to ${list.title}`, icon: "plus" },
         ...(list.id === "general" ? [] : [{ id: "remove", label: `Delete ${list.title} list`, icon: "remove" }]),
       ];
     },
@@ -57,14 +71,10 @@ export default {
     },
     removeList(list) {
       if (list.id === "general") return;
-      const history = new Map((this.todos.history ?? []).map((task) => [task.id, task]));
-      for (const task of list.tasks) {
-        this.editor.moves.cancel(task.id);
-        this.editor.drafts.delete(task.id);
-        if (task.completedAt) history.set(task.id, { ...task });
-      }
-      if (history.size) this.todos.history = [...history.values()];
+      this.retainRemovedTasks(list.tasks);
       this.todos.lists = this.todos.lists.filter((item) => item.id !== list.id);
+      this.limitMessage = "";
+      this.ensureGeneral();
       this.save();
       this.$nextTick(() => this.$refs.newListButton.$el.focus());
     },
@@ -74,56 +84,88 @@ export default {
     removeTask(list, task) {
       const index = list.tasks.indexOf(task);
       if (index === -1) return;
-      this.editor.moves.cancel(task.id);
-      this.editor.drafts.delete(task.id);
-      if (task.completedAt) {
-        const history = new Map((this.todos.history ?? []).map((item) => [item.id, item]));
-        history.set(task.id, { ...task });
-        this.todos.history = [...history.values()];
-      }
+      this.retainRemovedTasks([task]);
       list.tasks.splice(index, 1);
       this.save();
       const next = list.tasks[index] ?? list.tasks[index - 1];
       if (next) this.focusTask(next);
-      else
-        this.$nextTick(() => document.getElementById(`todo-list-${list.id}`)?.querySelector("header button")?.focus());
+      else this.focusListActions(list);
+    },
+    focusListActions(list) {
+      this.$nextTick(() => {
+        const card = document.getElementById(`todo-list-${list.id}`);
+        const action =
+          card?.querySelector(".jm-card__menu > summary") || document.getElementById(`todo-add-${list.id}`);
+        action?.focus();
+      });
+    },
+    retainRemovedTasks(tasks) {
+      const history = new Map(this.todos.history.map((item) => [item.id, item]));
+      for (const task of tasks) {
+        this.editor.moves.cancel(task.id);
+        this.editor.drafts.delete(task.id);
+        const title = task.title.trim() || this.validTitles.get(task.id);
+        if (task.completedAt && title) history.set(task.id, { ...task, title });
+        else history.delete(task.id);
+        this.validTitles.delete(task.id);
+      }
+      this.todos.history = [...history.values()];
     },
     save() {
       savePageTasks("todos", {
         ...this.todos,
         lists: this.todos.lists.map((list) => ({
           ...list,
-          tasks: serializableTasks(list.tasks, this.editor.drafts),
+          tasks: serializableTasks(
+            list.tasks,
+            this.editor.drafts,
+            (task) => task.title.trim() || this.validTitles.get(task.id) || "",
+          ).map((task) => ({ ...task, title: task.title.trim() || this.validTitles.get(task.id) })),
         })),
       });
     },
     updateTitle(task, title) {
-      task.title = title;
-      this.save();
+      if (task.title === title) return;
+      task.title = title.slice(0, 500);
+      if (task.title.trim()) {
+        this.validTitles.set(task.id, task.title.trim());
+        this.save();
+      }
     },
     updateCompleted(list, task, completed) {
+      if (!task.title.trim() || task.completed === completed) return;
       setTaskCompletion(task, completed);
+      if (!completed) this.todos.history = this.todos.history.filter((item) => item.id !== task.id);
       this.save();
-      this.scheduleCompletedTaskMove(list, task, completed);
-    },
-    scheduleCompletedTaskMove(list, task, completed) {
       this.editor.scheduleMove(task, completed, list.tasks);
     },
     addTask(list) {
+      if (list.tasks.length >= 2000) {
+        this.limitMessage = "A list can contain up to 2,000 tasks. Delete a task before adding another.";
+        return;
+      }
+      this.limitMessage = "";
       const task = {
         id: `todo-${crypto.randomUUID()}`,
         title: "",
         completed: false,
       };
-      this.editor.add(list.tasks, task);
+      const completedIndex = list.tasks.findIndex((item) => item.completed);
+      this.editor.add(list.tasks, task, { index: completedIndex < 0 ? list.tasks.length : completedIndex });
       this.focusTask(task);
       return task;
     },
     handleTitleBlur(list, task) {
+      if (!task.title.trim() && this.validTitles.has(task.id)) task.title = this.validTitles.get(task.id);
       this.editor.finish(list.tasks, task);
     },
     handleEnter(list, task, event) {
-      this.editor.enter(list.tasks, task, event, { create: () => this.addTask(list), focus: this.focusTask });
+      this.editor.enter(
+        list.tasks.filter((item) => !item.completed || item.id === task.id),
+        task,
+        event,
+        { create: () => this.addTask(list), focus: this.focusTask },
+      );
     },
     focusTask(task) {
       if (task) this.editor.focus(this.taskInputId(task));
@@ -138,6 +180,8 @@ export default {
     <JMButton ref="newListButton" text="New list" view="secondary" @click="openNewList" />
   </header>
 
+  <p v-if="limitMessage" role="status">{{ limitMessage }}</p>
+
   <JMCard
     v-for="list in todos.lists"
     :id="`todo-list-${list.id}`"
@@ -147,7 +191,6 @@ export default {
     :color="list.color"
     empty-text="No tasks yet"
     :actions="listActions(list)"
-    inline-actions
     collapsible
     @action="listAction(list, $event)"
   >
@@ -159,6 +202,8 @@ export default {
         :title="task.title"
         :title-input-id="taskInputId(task)"
         :completed="task.completed"
+        :completion-disabled="!task.title.trim()"
+        :title-maxlength="500"
         removable
         :remove-label="`Delete ${task.title || 'untitled task'}`"
         @remove="removeTask(list, task)"

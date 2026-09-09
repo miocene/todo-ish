@@ -310,4 +310,38 @@ test("PostgreSQL application-data contract", async (t) => {
     await repository.replace("todos", { lists: [] }, state.revisions.todos);
     assert.equal((await repository.read()).pages.todos.history.length, 2);
   });
+  await t.test("explicit snapshots preserve checked deletions and remove undone completions atomically", async () => {
+    const write = async (value) => {
+      const state = await repository.read();
+      await repository.replace("todos", validateAppDataResource("todos", value), state.revisions.todos);
+    };
+    for (const removeList of [false, true]) {
+      await write({
+        lists: [
+          {
+            id: "history-test",
+            title: "History",
+            tasks: [
+              { id: "undone", title: "Undo me", completedAt },
+              { id: "retained", title: "Old title", completedAt },
+            ],
+          },
+        ],
+        history: [],
+        replaceHistory: true,
+      });
+      // The intermediate uncheck is intentionally never written.
+      await write({
+        lists: removeList ? [] : [{ id: "history-test", title: "History", tasks: [] }],
+        history: [{ id: "retained", title: "Latest title", completedAt }],
+        replaceHistory: true,
+      });
+      const state = await repository.read();
+      assert.deepEqual(
+        state.pages.todos.history.map(({ id, title }) => ({ id, title })),
+        [{ id: "retained", title: "Latest title" }],
+      );
+      assert.ok(state.pages.todos.lists.some((list) => list.id === "general"));
+    }
+  });
 });

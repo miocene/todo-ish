@@ -25,7 +25,7 @@
  * @property {Record<string, string>} work-statuses
  * @property {Record<string, string>} colors
  * @property {{ tasks: Chore[], occurrenceOrder: string[], history?: Chore[] }} chores
- * @property {{ lists: TodoList[], history?: Task[] }} todos
+ * @property {{ lists: TodoList[], history?: Task[], replaceHistory?: boolean }} todos
  * @property {{ tasks: ShoppingTask[] }} shopping
  * @property {{ projects: Project<PrintingTask>[] }} printing
  * @property {{ projects: (Project<StitchTask> & { totalCrosses?: number })[] }} cross-stitch

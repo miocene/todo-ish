@@ -123,17 +123,22 @@ const test = base.extend({
             if (general && !submittedValue.lists.some((list) => list.id === "general"))
               submittedValue.lists.unshift(general);
             const remainingTasks = new Set(submittedValue.lists.flatMap((list) => list.tasks.map((task) => task.id)));
-            const history = new Map(
-              [
-                ...(previous.history ?? []),
-                ...previous.lists.flatMap((list) =>
-                  list.tasks.filter((task) => task.completedAt && !remainingTasks.has(task.id)),
-                ),
-                ...(submittedValue.history ?? []),
-              ].map((task) => [task.id, task]),
-            );
+            const history =
+              submittedValue.replaceHistory === true
+                ? new Map(submittedValue.history.map((task) => [task.id, task]))
+                : new Map(
+                    [
+                      ...(previous.history ?? []),
+                      ...previous.lists.flatMap((list) =>
+                        list.tasks.filter((task) => task.completedAt && !remainingTasks.has(task.id)),
+                      ),
+                      ...(submittedValue.history ?? []),
+                    ].map((task) => [task.id, task]),
+                  );
+            for (const id of remainingTasks) history.delete(id);
             if (history.size) submittedValue.history = [...history.values()];
             else delete submittedValue.history;
+            delete submittedValue.replaceHistory;
           }
           values[resource] =
             resource === "shopping" ? { tasks: submittedValue.tasks.filter((task) => !task.source) } : submittedValue;

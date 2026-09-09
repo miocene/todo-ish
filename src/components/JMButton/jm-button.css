@@ -13,6 +13,10 @@
     }
   }
 
+  span {
+    white-space: nowrap;
+  }
+
   &.ghost:not(:disabled) {
     color: var(--control-ghost-text);
     background: var(--control-ghost-background);

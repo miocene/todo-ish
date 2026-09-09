@@ -12,13 +12,17 @@
 
   .header {
     --radius-control: calc(var(--radius-card) - var(--space-3));
-    --control-ghost-text: contrast-color(var(--color));
-    --control-ghost-text-hover: contrast-color(var(--color));
     
     display: flex;
     align-items: center;
-    padding: 0 var(--space-3) var(--space-2) var(--space-6);
+    padding: 0 var(--space-3) 0 var(--space-6);
     color: contrast-color(var(--color));
+    
+    & > *:not(.jm-card__menu),
+    summary {
+      --control-ghost-text: contrast-color(var(--color));
+      --control-ghost-text-hover: contrast-color(var(--color));
+    }
   }
 
   .title {
@@ -34,7 +38,7 @@
   }
 
   .task-list {
-    margin-block-start: var(--space-1);
+    margin-block-start: var(--space-2);
     padding: var(--space-3);
     background: var(--color-bg-surface);
     box-shadow: 0px 24px 16px -20px rgba(0, 0, 0, 0.25);
@@ -61,13 +65,6 @@
   }
 }
 
-.jm-card__actions {
-  display: flex;
-  flex: none;
-  gap: var(--space-1);
-  align-items: center;
-}
-
 .jm-card__menu {
   position: relative;
 }
@@ -84,23 +81,24 @@
 .jm-card__menu-actions {
   position: absolute;
   z-index: 1;
-  inset-block-start: calc(100% + var(--space-1));
-  inset-inline-end: 0;
-  display: flex;
-  flex-direction: column;
-  min-inline-size: 8rem;
-  padding: var(--space-1);
+  min-inline-size: min(200px, calc(100vw - var(--space-3)));
+  max-inline-size: calc(100vw - var(--space-3));
+  max-block-size: min(24rem, 70vh);
+  padding: var(--space-2);
+  margin-block-start: var(--space-2);
   background: var(--color-bg-surface);
-  border: 1px solid #f0f;
-  border-radius: var(--radius-control);
+  border: 0;
+  border-radius: var(--radius-popover);
+  box-shadow: var(--shadow-m);
+  backdrop-filter: blur(var(--blur-s));
+
+  .jm-button {
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    border-radius: calc(var(--radius-popover) - var(--space-2));
+  }
 }
 
 .jm-card__menu-actions .jm-button {
   justify-content: flex-start;
-}
-
-.jm-card__tasks {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
 }
