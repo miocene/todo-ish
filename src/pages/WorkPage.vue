@@ -16,19 +16,19 @@ export default {
   name: "WorkPage",
   components: { JMButton, JMCalendar, JMCard, JMTaskItem },
   data() {
-    const workTasks = getAllWorkTasks().map((task) => ({ ...task }));
-    const nextTaskId =
-      workTasks.reduce((largestId, task) => {
-        const taskId = /^new-(\d+)$/.exec(task.id);
-        return taskId ? Math.max(largestId, Number(taskId[1])) : largestId;
-      }, -1) + 1;
+    const workTasks = getAllWorkTasks()
+      .filter((task) => !task.archived)
+      .map((task) => ({ ...task }));
+    const archivedWork = getAllWorkTasks()
+      .filter((task) => task.archived)
+      .map((task) => ({ ...task }));
     return {
       calendarRangeDate: "",
       cardColors: {},
       editor: createTaskEditor({
         save: () => this.saveTasks(),
       }),
-      nextTaskId,
+      archivedWork,
       taskMoveStatus: "",
       workTasks,
     };
@@ -56,7 +56,7 @@ export default {
     },
     activityByDate() {
       const counts = new Map();
-      for (const task of this.workTasks) {
+      for (const task of [...this.workTasks, ...this.archivedWork]) {
         if (!task.completedAt || !task.date) continue;
         counts.set(task.date, (counts.get(task.date) ?? 0) + 1);
       }
@@ -70,7 +70,7 @@ export default {
       return this.canEditTask(this.selectedDay.iso);
     },
     dateBounds() {
-      return getWorkDateBounds(this.today, this.workTasks);
+      return getWorkDateBounds(this.today, [...this.workTasks, ...this.archivedWork]);
     },
     firstAvailableDate() {
       return this.dateBounds.firstDate ? isoDate(this.dateBounds.firstDate) : "";
@@ -115,7 +115,7 @@ export default {
     },
     createTask(date) {
       if (!this.canEditTask(date)) return;
-      const task = { id: `new-${this.nextTaskId++}`, date, title: "", completed: false };
+      const task = { id: `work-${crypto.randomUUID()}`, date, title: "", completed: false };
       if (date !== null && date < this.todayIso) completeTask(task, true);
       return this.editor.add(this.workTasks, task);
     },
@@ -193,13 +193,14 @@ export default {
       const listIndex = list.indexOf(task);
       this.editor.moves.cancel(task.id);
       this.editor.drafts.delete(task.id);
+      if (task.completedAt) this.archivedWork.push({ ...task, archived: true });
       this.workTasks.splice(taskIndex, 1);
       this.saveTasks();
       this.taskMoveStatus = `${task.title || "Untitled task"} deleted.`;
       this.focusAfterRemoval(list, listIndex, task.date);
     },
     saveTasks() {
-      saveWorkTasks(serializableTasks(this.workTasks, this.editor.drafts));
+      saveWorkTasks([...serializableTasks(this.workTasks, this.editor.drafts), ...this.archivedWork]);
     },
     scheduleCompletedTaskMove(task, completed) {
       this.editor.scheduleMove(task, completed, this.workTasks);

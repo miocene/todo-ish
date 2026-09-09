@@ -3,8 +3,14 @@ import { createTaskEditor } from "../app/task-editor.js";
 import { filamentCatalog } from "../app/filament-catalog.js";
 import { flossCatalog } from "../app/floss-catalog.js";
 import JMCatalogLoader from "../components/JMCatalogLoader/JMCatalogLoader.vue";
-import { savePageTasks } from "../app/page-tasks.js";
-import { completedTasksLast, nextEntityId, setTaskCompletion, serializableTasks } from "../app/task-list.js";
+import {
+  loadFilamentInventory,
+  loadFlossInventory,
+  saveFilamentInventory,
+  saveFlossInventory,
+  savePageTasks,
+} from "../app/page-tasks.js";
+import { completedTasksLast, setTaskCompletion, serializableTasks } from "../app/task-list.js";
 import { syncSupplyShoppingLists } from "../app/shopping-supplies.js";
 import JMCard from "../components/JMCard/JMCard.vue";
 import JMTaskItem from "../components/JMTaskItem/JMTaskItem.vue";
@@ -21,7 +27,9 @@ export default {
       editor: createTaskEditor({
         save: () => this.save(),
       }),
-      shopping,
+      shopping: { ...shopping, history: shopping.history ?? [] },
+      validTitles: new Map(shopping.tasks.filter((task) => !task.source).map((task) => [task.id, task.title])),
+      notice: "",
     };
   },
   watch: {
@@ -32,20 +40,23 @@ export default {
     this.editor.clear();
   },
   methods: {
-    refreshSupplies(status) {
+    refreshSupplies(status = "ready") {
       if (status !== "ready") return;
       const managed = new Map(
         syncSupplyShoppingLists()
           .tasks.filter((task) => task.source)
           .map((task) => [task.id, task]),
       );
-      this.shopping.tasks = this.shopping.tasks.flatMap((task) => {
+      const tasks = this.shopping.tasks.flatMap((task) => {
         if (!task.source) return [task];
         const refreshed = managed.get(task.id);
         managed.delete(task.id);
-        return refreshed ? [refreshed] : [];
+        if (!refreshed) return [];
+        Object.assign(task, refreshed);
+        return [task];
       });
-      this.shopping.tasks.push(...managed.values());
+      tasks.push(...managed.values());
+      this.shopping.tasks.splice(0, this.shopping.tasks.length, ...tasks);
     },
     taskInputId(task) {
       return `shopping-title-${task.id}`;
@@ -53,52 +64,105 @@ export default {
     save() {
       savePageTasks("shopping", {
         ...this.shopping,
-        tasks: serializableTasks(this.shopping.tasks, this.editor.drafts),
+        tasks: serializableTasks(
+          this.shopping.tasks,
+          this.editor.drafts,
+          (task) => task.title.trim() || this.validTitles.get(task.id) || "",
+        ).map((task) => ({ ...task, title: task.title.trim() || this.validTitles.get(task.id) })),
       });
     },
     updateTitle(task, title) {
-      task.title = title;
-      this.save();
+      if (task.source || task.title === title) return;
+      task.title = title.slice(0, 500);
+      if (task.title.trim()) {
+        this.validTitles.set(task.id, task.title.trim());
+        this.save();
+      }
     },
     updateCompleted(task, completed) {
-      this.editor.moves.cancel(task.id);
+      if (task.completed === completed || !task.title.trim()) return;
+      let inventory;
+      let saveInventory;
+      if (task.source) {
+        const filament = task.source === "filament-shortage";
+        inventory = filament ? loadFilamentInventory() : loadFlossInventory();
+        saveInventory = filament ? saveFilamentInventory : saveFlossInventory;
+        const id = task.filamentId ?? task.flossId;
+        const owned = inventory[id] ?? 0;
+        const quantity = task.quantity;
+        const next = completed ? owned + quantity : Math.max(0, owned - quantity);
+        if (next > 10_000_000) {
+          const checkbox = document.getElementById(`task-item-complete-${task.id}`);
+          if (checkbox) checkbox.checked = task.completed;
+          this.notice = "This purchase exceeds the inventory limit. Update the quantity in Catalog first.";
+          return;
+        }
+        inventory[id] = next;
+        this.notice =
+          !completed && owned < quantity
+            ? "Inventory is now zero. Some of this purchase had already been removed from inventory."
+            : "";
+      }
       setTaskCompletion(task, completed);
+      this.shopping.history = this.shopping.history.filter((item) => item.id !== task.id);
+      // Both writes are durable absolute snapshots; retrying never increments stock again.
       this.save();
-      if (completed && task.filamentId) {
-        void this.$router.push({ name: "catalog", query: { q: task.filamentId } });
-        return;
+      if (inventory) {
+        saveInventory(inventory);
+        this.refreshSupplies();
       }
-      if (completed && task.flossId) {
-        void this.$router.push({ name: "catalog", query: { catalog: "floss", q: task.flossId } });
-        return;
-      }
-
       this.editor.scheduleMove(task, completed, this.shopping.tasks);
     },
     removeTask(task) {
+      if (task.source && !task.completed) return;
+      const index = this.shopping.tasks.indexOf(task);
+      if (index < 0) return;
       this.editor.moves.cancel(task.id);
       this.editor.drafts.delete(task.id);
-      this.shopping.tasks = this.shopping.tasks.filter((item) => item.id !== task.id);
+      const history = new Map(this.shopping.history.map((item) => [item.id, item]));
+      if (task.completedAt)
+        history.set(task.id, { ...task, title: task.title.trim() || this.validTitles.get(task.id) });
+      else history.delete(task.id);
+      this.shopping.history = [...history.values()];
+      this.validTitles.delete(task.id);
+      this.shopping.tasks.splice(index, 1);
       this.save();
+      const next = this.shopping.tasks[index] ?? this.shopping.tasks[index - 1];
+      if (next) this.focusTask(next);
+      else this.$nextTick(() => document.getElementById("shopping-add")?.focus());
     },
     addTask() {
+      if (this.shopping.tasks.filter((task) => !task.source).length >= 2000) {
+        this.notice = "The shopping list can contain up to 2,000 manual items. Remove an item before adding another.";
+        return;
+      }
+      this.notice = "";
       const task = {
-        id: nextEntityId(this.shopping.tasks, "shopping"),
+        id: `shopping-${crypto.randomUUID()}`,
         title: "",
         completed: false,
       };
-      this.editor.add(this.shopping.tasks, task);
+      const index = this.shopping.tasks.findIndex((item) => item.completed);
+      this.editor.add(this.shopping.tasks, task, { index: index < 0 ? this.shopping.tasks.length : index });
       this.focusTask(task);
       return task;
     },
     handleTitleBlur(task) {
+      if (!task.title.trim() && this.validTitles.has(task.id)) task.title = this.validTitles.get(task.id);
       this.editor.finish(this.shopping.tasks, task);
     },
     handleEnter(task, event) {
-      this.editor.enter(this.shopping.tasks, task, event, { create: this.addTask, focus: this.focusTask });
+      this.editor.enter(
+        this.shopping.tasks.filter((item) => !item.source && (!item.completed || item.id === task.id)),
+        task,
+        event,
+        { create: this.addTask, focus: this.focusTask },
+      );
     },
     focusTask(task) {
-      if (task) this.editor.focus(this.taskInputId(task));
+      if (!task) return;
+      if (task.source || task.productLink) this.editor.focus(`task-item-complete-${task.id}`);
+      else this.editor.focus(this.taskInputId(task));
     },
   },
 };
@@ -108,11 +172,12 @@ export default {
   <JMCatalogLoader :catalog="filamentCatalog" />
   <JMCatalogLoader :catalog="flossCatalog" />
 
+  <p v-if="notice" role="status">{{ notice }}</p>
   <JMCard
     class="shopping-card"
     title="Shopping cart"
     empty-text="The shopping list is empty."
-    :actions="[{ id: 'add', label: 'Add item', icon: 'plus' }]"
+    :actions="[{ id: 'add', buttonId: 'shopping-add', label: 'Add item', icon: 'plus' }]"
     @action="addTask"
   >
     <template v-if="shopping.tasks.length" #list>
@@ -124,7 +189,10 @@ export default {
         :title-href="task.productLink || ''"
         :title-input-id="taskInputId(task)"
         :completed="task.completed"
-        removable
+        :removable="!task.source || task.completed"
+        :editable="!task.source"
+        :completion-disabled="!task.title.trim()"
+        :title-maxlength="500"
         :remove-label="`Remove ${task.title || 'untitled item'} from shopping list`"
         @enter="handleEnter(task, $event)"
         @remove="removeTask(task)"

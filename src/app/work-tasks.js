@@ -33,7 +33,7 @@ export function getAllWorkTasks() {
 /** @param {import("../../backend/api/src/app-data-contract.mjs").WorkTask[]} tasks */
 export function saveWorkTasks(tasks) {
   const savedTasks = tasks.map(workTaskToApi);
-  allTasks = Object.freeze(savedTasks.map((task) => Object.freeze(task)));
+  allTasks = Object.freeze(savedTasks.map((task) => Object.freeze(workTaskFromApi(task))));
 
   writeAppData("work-tasks", savedTasks);
 }

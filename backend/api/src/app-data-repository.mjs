@@ -51,7 +51,7 @@ async function readAppData(pool) {
     );
     const workTaskRows = await queryRows(
       client,
-      `SELECT id, title, scheduled_for::text AS date, completed_at AS "checkedAt"
+      `SELECT id, title, archived, scheduled_for::text AS date, completed_at AS "checkedAt"
        FROM work_tasks
        ORDER BY position, created_at, id`,
     );
@@ -117,10 +117,29 @@ async function readAppData(pool) {
     );
     const shoppingRows = await queryRows(
       client,
-      `SELECT id, title, product_url AS "productLink", completed_at AS "completedAt"
+      `SELECT id, title, source, catalog_id AS "catalogId", quantity, archived, product_url AS "productLink", completed_at AS "completedAt"
        FROM manual_shopping_items
        ORDER BY position, created_at, id`,
     );
+    const projectHistory = await queryRows(
+      client,
+      'SELECT resource, id, title, context, completed_at AS "completedAt" FROM completed_project_tasks ORDER BY resource, id',
+    );
+    const historyFor = (resource) =>
+      projectHistory
+        .filter((row) => row.resource === resource)
+        .map(({ resource: _resource, ...row }) => ({ ...row, ...completion(row.completedAt) }));
+    const shoppingTask = (item) => ({
+      id: item.id,
+      title: item.title,
+      ...(item.productLink && { productLink: item.productLink }),
+      ...(item.source && {
+        source: item.source,
+        quantity: item.quantity,
+        [item.source === "filament-shortage" ? "filamentId" : "flossId"]: item.catalogId,
+      }),
+      ...completion(item.completedAt),
+    });
     const printingProjectRows = await queryRows(
       client,
       `SELECT id, title, color, description
@@ -227,6 +246,7 @@ async function readAppData(pool) {
       workTasks: workTaskRows.map((item) => ({
         id: item.id,
         title: item.title,
+        ...(item.archived && { archived: true }),
         date: item.date,
         ...(item.checkedAt && { checkedAt: timestamp(item.checkedAt) }),
       })),
@@ -264,20 +284,20 @@ async function readAppData(pool) {
           })),
         },
         shopping: {
-          tasks: shoppingRows.map((item) => ({
-            id: item.id,
-            title: item.title,
-            ...(item.productLink && { productLink: item.productLink }),
-            ...completion(item.completedAt),
-          })),
+          tasks: shoppingRows.filter((item) => !item.archived).map(shoppingTask),
+          ...(shoppingRows.some((item) => item.archived) && {
+            history: shoppingRows.filter((item) => item.archived).map(shoppingTask),
+          }),
         },
         printing: {
+          ...(historyFor("printing").length && { history: historyFor("printing") }),
           projects: printingProjectRows.map((project) => ({
             ...project,
             tasks: printingItemsByProject.get(project.id) ?? [],
           })),
         },
         crossStitch: {
+          ...(historyFor("cross-stitch").length && { history: historyFor("cross-stitch") }),
           projects: stitchProjectRows.map((project) => {
             const tasks = stitchThreadsByProject.get(project.id) ?? [];
             return {
@@ -332,8 +352,8 @@ async function replaceWorkTasks(client, tasks) {
   await upsertRows(
     client,
     "work_tasks",
-    ["id", "title", "scheduled_for", "completed_at", "position"],
-    tasks.map((task, position) => [task.id, task.title, task.date, task.checkedAt, position]),
+    ["id", "title", "scheduled_for", "completed_at", "position", "archived"],
+    tasks.map((task, position) => [task.id, task.title, task.date, task.checkedAt, position, task.archived ?? false]),
   );
   await deleteMissing(
     client,
@@ -399,6 +419,15 @@ async function replaceChores(client, data) {
     history.map((item) => [item.id, item.nextDue, item.completedAt, 0]),
     "ON CONFLICT (chore_id, due_on) DO NOTHING",
   );
+  if (data.replaceHistory === true) {
+    const retained = [...history, ...data.tasks]
+      .filter((item) => item.completedAt)
+      .map((item) => `${item.id}:${item.nextDue}`);
+    await client.query({
+      text: "DELETE FROM chore_occurrences WHERE completed_at IS NOT NULL AND NOT ((chore_id || ':' || due_on::text) = ANY($1::text[]))",
+      values: [retained],
+    });
+  }
 }
 
 async function replaceTodos(client, data) {
@@ -446,21 +475,46 @@ async function replaceTodos(client, data) {
 }
 
 async function replaceShopping(client, data) {
+  const tasks = [
+    ...data.tasks.map((item) => ({ ...item, archived: false })),
+    ...(data.history ?? []).map((item) => ({ ...item, archived: true })),
+  ];
   await upsertRows(
     client,
     "manual_shopping_items",
-    ["id", "title", "product_url", "completed_at", "position"],
-    data.tasks.map((item, position) => [item.id, item.title, item.productLink, item.completedAt, position]),
+    ["id", "title", "product_url", "completed_at", "position", "source", "catalog_id", "quantity", "archived"],
+    tasks.map((item, position) => [
+      item.id,
+      item.title,
+      item.productLink,
+      item.completedAt,
+      position,
+      item.source,
+      item.filamentId ?? item.flossId,
+      item.quantity,
+      item.archived,
+    ]),
   );
-  await deleteMissing(
+  // Legacy callers do not know retained history.
+  await client.query({
+    text: "DELETE FROM manual_shopping_items WHERE NOT (id = ANY($1::text[])) AND (NOT archived OR $2)",
+    values: [tasks.map((item) => item.id), data.history !== undefined],
+  });
+}
+
+async function replaceProjectHistory(client, resource, data) {
+  if (data.history === undefined) return;
+  await client.query({ text: "DELETE FROM completed_project_tasks WHERE resource = $1", values: [resource] });
+  await insertRows(
     client,
-    "manual_shopping_items",
-    "id",
-    data.tasks.map((item) => item.id),
+    "completed_project_tasks",
+    ["resource", "id", "title", "context", "completed_at"],
+    data.history.map((item) => [resource, item.id, item.title, item.context ?? "", item.completedAt]),
   );
 }
 
 async function replacePrinting(client, data) {
+  await replaceProjectHistory(client, "printing", data);
   const items = [];
   const usages = [];
   for (const project of data.projects) {
@@ -506,6 +560,7 @@ async function replacePrinting(client, data) {
 }
 
 async function replaceCrossStitch(client, data) {
+  await replaceProjectHistory(client, "cross-stitch", data);
   const threads = data.projects.flatMap((project) =>
     project.tasks.map((thread, position) => [
       thread.id,

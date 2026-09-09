@@ -196,10 +196,7 @@ test("failed chore saves recover after reload and deletion cancels a pending reo
   expect(appData.validationErrors).toEqual([]);
 });
 
-test("multiple completions survive reload and archived history is not resent on each save", async ({
-  page,
-  appData,
-}) => {
+test("multiple completions survive reload and complete history snapshots", async ({ page, appData }) => {
   const dialog = await add(page, "Sweep twice");
   await dialog.getByRole("combobox", { name: "Frequency" }).selectOption("day");
   await dialog.getByRole("button", { name: "Add chore", exact: true }).click();
@@ -218,7 +215,8 @@ test("multiple completions survive reload and archived history is not resent on 
   await add(page, "New chore");
   await dialog.getByRole("button", { name: "Add chore", exact: true }).click();
   const request = await requestPromise;
-  expect(request.postDataJSON().history ?? []).toEqual([]);
+  expect(request.postDataJSON().history).toHaveLength(2);
+  expect(request.postDataJSON().replaceHistory).toBe(true);
   await expect.poll(() => appData.get("chores").tasks.length).toBe(1);
   await page.reload();
   await page.goto("/profile");
@@ -242,4 +240,18 @@ test("long chore titles keep mobile actions reachable", async ({ page, appData }
     await expect(button).toBeVisible();
   }
   await page.screenshot({ path: "test-results/chores-long-title.png", fullPage: true });
+});
+
+test("unchecking and immediately deleting a chore undoes its completion", async ({ page, appData }) => {
+  const dialog = await add(page, "Sweep");
+  await dialog.getByRole("button", { name: "Add chore", exact: true }).click();
+  const checkbox = page.getByRole("checkbox", { name: "Complete Sweep", exact: true });
+  await checkbox.check();
+  await expect.poll(() => appData.get("chores").tasks[0]?.completed).toBe(true);
+  await checkbox.uncheck();
+  await page.getByRole("button", { name: "Delete Sweep", exact: true }).click();
+  await expect.poll(() => appData.get("chores").tasks).toEqual([]);
+  expect(appData.get("chores").history ?? []).toEqual([]);
+  await page.goto("/profile");
+  await expect(page.getByText("Sweep", { exact: true })).toHaveCount(0);
 });

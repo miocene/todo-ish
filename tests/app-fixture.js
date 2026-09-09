@@ -108,12 +108,15 @@ const test = base.extend({
             const current = new Set(submittedValue.tasks.map((item) => `${item.id}:${item.nextDue}`));
             const history = new Map(
               [
-                ...(values.chores?.history ?? []),
-                ...(values.chores?.tasks ?? []).filter((item) => item.completedAt),
+                ...(submittedValue.replaceHistory ? [] : (values.chores?.history ?? [])),
+                ...(submittedValue.replaceHistory
+                  ? []
+                  : (values.chores?.tasks ?? []).filter((item) => item.completedAt)),
                 ...(submittedValue.history ?? []),
               ].map((item) => [`${item.id}:${item.nextDue}`, item]),
             );
             for (const key of current) history.delete(key);
+            delete submittedValue.replaceHistory;
             if (history.size) submittedValue.history = [...history.values()];
             else delete submittedValue.history;
           }
@@ -140,8 +143,7 @@ const test = base.extend({
             else delete submittedValue.history;
             delete submittedValue.replaceHistory;
           }
-          values[resource] =
-            resource === "shopping" ? { tasks: submittedValue.tasks.filter((task) => !task.source) } : submittedValue;
+          values[resource] = submittedValue;
           revisions[resource] += 1;
           await json({ resource, revision: revisions[resource] }, 200, { etag: `"${revisions[resource]}"` });
           return;

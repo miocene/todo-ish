@@ -41,7 +41,7 @@ export function syncFlossShoppingList(projects, inventory = loadFlossInventory()
     resourceIdKey: "flossId",
     shortages,
     createTask: (supply, existingTask) => ({
-      id: existingTask?.id ?? `shopping-floss-${supply.catalogId}`,
+      id: existingTask?.id ?? `shopping-${crypto.randomUUID()}`,
       title: `${supply.label} floss · ${supply.missingSkeins} ${supply.missingSkeins === 1 ? "skein" : "skeins"}`,
       completed: existingTask?.completed ?? false,
       ...(existingTask?.completedAt && { completedAt: existingTask.completedAt }),

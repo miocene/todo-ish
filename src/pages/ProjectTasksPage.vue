@@ -17,7 +17,7 @@ import JMTaskItem from "../components/JMTaskItem/JMTaskItem.vue";
 function loadProjectTasks(pageKey) {
   const pageData = loadPageTasks(pageKey);
   for (const project of pageData.projects) project.tasks = completedTasksLast(project.tasks);
-  return pageData;
+  return { ...pageData, history: pageData.history ?? [] };
 }
 
 export default {
@@ -122,6 +122,7 @@ export default {
     handleProjectAction(project, action) {
       if (action === "add") this.addTask(project);
       if (action === "remove") {
+        this.retainHistory(project, project.tasks);
         for (const task of project.tasks) {
           this.editor.moves.cancel(task.id);
           this.editor.drafts.delete(task.id);
@@ -197,7 +198,21 @@ export default {
       if (completed !== wasCompleted) this.updateCompleted(project, task, completed);
       else this.save();
     },
+    retainHistory(project, tasks) {
+      const history = new Map(this.pageData.history.map((item) => [item.id, item]));
+      for (const task of tasks)
+        if (task.completedAt && task.title.trim())
+          history.set(task.id, {
+            id: task.id,
+            title: task.title,
+            completedAt: task.completedAt,
+            completed: true,
+            context: project.title,
+          });
+      this.pageData.history = [...history.values()];
+    },
     removeStitchColor(project, task) {
+      this.retainHistory(project, [task]);
       this.editor.moves.cancel(task.id);
       project.tasks = project.tasks.filter((item) => item.id !== task.id);
       this.save();
@@ -208,7 +223,7 @@ export default {
       this.editor.scheduleMove(task, completed, project.tasks);
     },
     addTask(project) {
-      const task = { id: nextEntityId(project.tasks, `${project.id}-task`), title: "", completed: false };
+      const task = { id: `project-task-${crypto.randomUUID()}`, title: "", completed: false };
       if (this.isPrinting) {
         task.filaments = [{ id: `${task.id}-filament-1`, catalogId: "", label: "", weightGrams: "" }];
       } else if (this.isCrossStitch) {
@@ -230,7 +245,7 @@ export default {
     },
     addProject() {
       const project = {
-        id: nextEntityId(this.pageData.projects, this.isPrinting ? "printing-project" : "stitch-project"),
+        id: `project-${crypto.randomUUID()}`,
         title: this.isPrinting ? "New 3D project" : "New cross stitch project",
         color: randomCardColor(),
         description: "",

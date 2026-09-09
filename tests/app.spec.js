@@ -403,12 +403,12 @@ test("other task pages render their variants and save changes immediately", asyn
   const homeTasks = page.locator("#todo-list-home textarea");
   await homeTasks.last().press("Enter");
   await expect(homeTasks).toHaveCount(3);
-  await expect(homeTasks.last()).toBeFocused();
+  await expect(homeTasks.nth(1)).toBeFocused();
   await page.getByRole("button", { name: "New list", exact: true }).focus();
   await expect(homeTasks).toHaveCount(2);
 
   await page.goto("/shopping");
-  await expect(page.locator(".task-item__remove")).toHaveCount(7);
+  await expect(page.getByRole("button", { name: /^Remove .* from shopping list$/ })).toHaveCount(3);
   expect(await page.getByLabel("Task title").evaluateAll((inputs) => inputs.map((input) => input.value))).toEqual([
     "Oat milk",
     "Apples",
@@ -420,21 +420,11 @@ test("other task pages render their variants and save changes immediately", asyn
   await expect(blueShoppingLink).toHaveAttribute("href", "https://eu.store.bambulab.com/products/pla-basic-filament");
   await expect(blueShoppingLink).toHaveAttribute("target", "_blank");
   await expect(blueShoppingLink).toHaveAttribute("rel", "noopener noreferrer");
-  await page.getByRole("checkbox", { name: "Complete PLA Basic · Blue filament · 1 spool" }).check();
-  await expect.poll(() => new URL(page.url()).pathname).toBe("/catalog");
-  await expect.poll(() => new URL(page.url()).searchParams.get("q")).toBe("bambu-pla-basic-filament-10601");
-  await expect(page.getByLabel("Search filaments")).toHaveValue("bambu-pla-basic-filament-10601");
-  await expect(page.getByLabel("Filament type")).toHaveValue("");
-
-  await page.goto("/shopping");
-  await page.getByRole("checkbox", { name: "Complete DMC 3853 · Autumn Gold Dk floss · 1 skein" }).check();
-  await expect.poll(() => new URL(page.url()).pathname).toBe("/catalog");
-  await expect.poll(() => new URL(page.url()).searchParams.get("catalog")).toBe("floss");
-  await expect.poll(() => new URL(page.url()).searchParams.get("q")).toBe("dmc3853");
-  await expect(page.getByLabel("Search floss")).toHaveValue("dmc3853");
-
-  await page.goto("/shopping");
-  await expect(page.locator(".task-item__remove").first().locator("use")).toHaveAttribute("href", /#icon-remove$/);
+  // Purchase/inventory effects are covered independently in shopping.spec.js.
+  await expect(page.getByRole("button", { name: "Remove Oat milk from shopping list" }).locator("use")).toHaveAttribute(
+    "href",
+    /#icon-remove$/,
+  );
   await page.getByRole("button", { name: "Remove Oat milk from shopping list" }).click();
   await expect(page.locator(".shopping-card .task-item")).toHaveCount(6);
   await page.getByRole("button", { name: "Add item" }).click();

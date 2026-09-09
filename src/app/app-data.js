@@ -115,7 +115,6 @@ function clearLegacyValue(resource) {
 const PENDING_PREFIX = "done-ish.pending-write.v1:";
 export const syncState = reactive({ state: "saved", message: "", pending: 0, durable: true });
 
-const savedChoreOccurrences = new Set();
 const occurrenceKey = (item) => `${item.id}:${item.nextDue}`;
 
 async function fetchRemoteState() {
@@ -124,10 +123,6 @@ async function fetchRemoteState() {
     throw Object.assign(new Error(`Could not load saved data (${response.status}).`), { status: response.status });
   }
   const state = await response.json();
-  savedChoreOccurrences.clear();
-  for (const item of [...(state.pages?.chores?.history ?? []), ...(state.pages?.chores?.tasks ?? [])]) {
-    if (item.completedAt) savedChoreOccurrences.add(occurrenceKey(item));
-  }
   return state;
 }
 
@@ -160,7 +155,7 @@ const sync = createResourceSync({
         .map(({ id, nextDue, completedAt }) => ({ id, nextDue, completedAt }))
         .sort((a, b) => occurrenceKey(a).localeCompare(occurrenceKey(b)));
     }
-    if (resource === "todos" && normalized.history) {
+    if (["chores", "todos", "shopping", "printing", "cross-stitch"].includes(resource) && normalized.history) {
       if (normalized.history.length) normalized.history.sort((a, b) => a.id.localeCompare(b.id));
       else delete normalized.history; // Reads omit empty history; compare equivalent snapshots.
     }
@@ -170,11 +165,13 @@ const sync = createResourceSync({
   readRemote: fetchRemoteState,
   async send(resource, value, revision) {
     const submitted =
-      resource === "chores" && value.history
-        ? { ...value, history: value.history.filter((item) => !savedChoreOccurrences.has(occurrenceKey(item))) }
-        : resource === "todos" && value.history !== undefined
-          ? { ...value, replaceHistory: true }
-          : value;
+      resource === "chores" && value.history !== undefined
+        ? { ...value, replaceHistory: true }
+        : resource === "shopping"
+          ? { ...value, tasks: value.tasks.filter((task) => !task.source || task.completedAt) }
+          : resource === "todos" && value.history !== undefined
+            ? { ...value, replaceHistory: true }
+            : value;
     const response = await apiFetch(`/data/${resource}`, {
       method: "PUT",
       headers: { "content-type": "application/json", "if-match": `"${revision}"` },
@@ -184,13 +181,6 @@ const sync = createResourceSync({
     if (!response.ok)
       throw Object.assign(new Error(result.error || "Changes could not be saved."), { status: response.status });
     if (!Number.isInteger(result.revision)) throw new Error("The save response did not include a revision.");
-    if (resource === "chores") {
-      for (const item of value.tasks) {
-        if (item.completedAt) savedChoreOccurrences.add(occurrenceKey(item));
-        else savedChoreOccurrences.delete(occurrenceKey(item));
-      }
-      for (const item of value.history ?? []) savedChoreOccurrences.add(occurrenceKey(item));
-    }
     return result;
   },
   onChange: (state) => Object.assign(syncState, state),

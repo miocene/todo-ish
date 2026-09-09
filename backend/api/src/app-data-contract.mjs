@@ -4,8 +4,8 @@
  * Runtime validation remains in app-data-validation.mjs.
  *
  * @typedef {{ id: string, title: string, completed: boolean, completedAt?: string }} Task
- * @typedef {Task & { date: string | null }} WorkTask
- * @typedef {{ id: string, title: string, date: string | null, checkedAt?: string }} WorkTaskPayload
+ * @typedef {Task & { date: string | null, archived?: boolean }} WorkTask
+ * @typedef {{ id: string, title: string, date: string | null, checkedAt?: string, archived?: boolean }} WorkTaskPayload
  * @typedef {{ frequency: "day" | "week" | "month", interval: number, startDate: string, weekdays: number[], monthDays: number[] }} ChoreSchedule
  * @typedef {Task & { details: string, nextDue: string, schedule?: ChoreSchedule | null }} Chore
  * @typedef {{ id: string, title: string, color?: string, tasks: Task[] }} TodoList
@@ -26,9 +26,9 @@
  * @property {Record<string, string>} colors
  * @property {{ tasks: Chore[], occurrenceOrder: string[], history?: Chore[] }} chores
  * @property {{ lists: TodoList[], history?: Task[], replaceHistory?: boolean }} todos
- * @property {{ tasks: ShoppingTask[] }} shopping
- * @property {{ projects: Project<PrintingTask>[] }} printing
- * @property {{ projects: (Project<StitchTask> & { totalCrosses?: number })[] }} cross-stitch
+ * @property {{ tasks: ShoppingTask[], history?: ShoppingTask[] }} shopping
+ * @property {{ projects: Project<PrintingTask>[], history?: (Task & { context?: string })[] }} printing
+ * @property {{ projects: (Project<StitchTask> & { totalCrosses?: number })[], history?: (Task & { context?: string })[] }} cross-stitch
  * @property {Record<string, number>} filament-inventory
  * @property {Record<string, number>} floss-inventory
  */
@@ -60,7 +60,13 @@ export function setTaskCompletion(task, completed, completedAt = new Date().toIS
 
 /** @param {WorkTaskPayload} task @returns {WorkTask} */
 export function workTaskFromApi(task) {
-  return { id: task.id, title: task.title, date: task.date, ...completionState(task.checkedAt) };
+  return {
+    id: task.id,
+    title: task.title,
+    date: task.date,
+    ...(task.archived && { archived: true }),
+    ...completionState(task.checkedAt),
+  };
 }
 
 /** @param {WorkTask} task @returns {WorkTaskPayload} */
@@ -69,6 +75,7 @@ export function workTaskToApi(task) {
     id: task.id,
     title: task.title,
     date: task.date,
+    ...(task.archived && { archived: true }),
     ...(task.completed && task.completedAt && { checkedAt: task.completedAt }),
   };
 }

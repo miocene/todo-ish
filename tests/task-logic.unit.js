@@ -158,3 +158,24 @@ test("todo history replacement requires an explicit complete snapshot", async ()
   });
   assert.deepEqual(validateAppDataResource("todos", { lists: [] }), { lists: [] });
 });
+
+test("shopping validation saves purchases and history but excludes unfinished shortages", async () => {
+  const { validateAppDataResource } = await import("../backend/api/src/app-data-validation.mjs");
+  const purchase = {
+    id: "purchase",
+    title: "Two spools",
+    completedAt: "2026-09-09T10:00:00Z",
+    source: "filament-shortage",
+    filamentId: "pla",
+    quantity: 2,
+  };
+  const value = validateAppDataResource("shopping", {
+    tasks: [purchase, ...Array.from({ length: 2001 }, (_, i) => ({ id: `derived-${i}`, source: "filament-shortage" }))],
+    history: [{ id: "milk", title: "Milk", completedAt: purchase.completedAt }],
+  });
+  assert.equal(value.tasks.length, 1);
+  assert.equal(value.tasks[0].quantity, 2);
+  assert.equal(value.history[0].title, "Milk");
+  assert.throws(() => validateAppDataResource("shopping", { tasks: [{ ...purchase, quantity: 0 }] }), /quantity/);
+  assert.throws(() => validateAppDataResource("shopping", { tasks: [purchase], history: [purchase] }), /distinct/);
+});

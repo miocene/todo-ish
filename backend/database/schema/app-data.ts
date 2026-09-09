@@ -136,6 +136,7 @@ export const workTasks = pgTable(
     id: text("id").primaryKey(),
     title: text("title").notNull(),
     scheduledFor: date("scheduled_for"),
+    archived: boolean("archived").default(false).notNull(),
     ...completionColumns(),
     ...orderedEntityColumns(),
   },
@@ -241,6 +242,10 @@ export const manualShoppingItems = pgTable(
     id: text("id").primaryKey(),
     title: text("title").notNull(),
     productUrl: text("product_url"),
+    source: text("source"),
+    catalogId: text("catalog_id"),
+    quantity: integer("quantity"),
+    archived: boolean("archived").default(false).notNull(),
     ...completionColumns(),
     ...orderedEntityColumns(),
   },
@@ -389,5 +394,20 @@ export const flossInventory = pgTable(
   (table) => [
     check("floss_inventory_catalog_id_not_blank", sql`length(trim(${table.catalogId})) > 0`),
     check("floss_inventory_skein_count_non_negative", sql`${table.skeinCount} >= 0`),
+  ],
+);
+
+export const completedProjectTasks = pgTable(
+  "completed_project_tasks",
+  {
+    resource: text("resource").notNull(),
+    id: text("id").notNull(),
+    title: text("title").notNull(),
+    context: text("context").default("").notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.resource, table.id] }),
+    check("completed_project_tasks_resource_valid", sql`${table.resource} IN ('printing', 'cross-stitch')`),
   ],
 );

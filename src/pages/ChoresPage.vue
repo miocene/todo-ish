@@ -30,9 +30,10 @@ export default {
   name: "ChoresPage",
   components: { JMModal, JMInput, JMButton, JMCard, JMChoreSchedule, JMTaskItem },
   data() {
+    const chores = loadPageTasks("chores");
     return {
       cardColors: loadCardColors(["chores-today", "chores-all"]),
-      chores: loadPageTasks("chores"),
+      chores: { ...chores, history: chores.history ?? [] },
       draft: null,
       moves: createCompletionMoveScheduler(),
     };

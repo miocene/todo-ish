@@ -103,14 +103,19 @@ function task(value, path) {
 }
 
 function workTasks(value) {
+  array(
+    array(value, "work-tasks", 100_000).filter((item) => !item?.archived),
+    "work-tasks",
+  );
   return uniqueIds(
-    array(value, "work-tasks").map((entry, index) => {
+    value.map((entry, index) => {
       const source = object(entry, `work-tasks[${index}]`);
       return {
         id: id(source.id, `work-tasks[${index}].id`),
         title: text(source.title, `work-tasks[${index}].title`),
         date: date(source.date, `work-tasks[${index}].date`, { nullable: true }),
         checkedAt: timestamp(source.checkedAt, `work-tasks[${index}].checkedAt`),
+        ...(source.archived === true && source.checkedAt && { archived: true }),
       };
     }),
     "work-tasks",
@@ -190,7 +195,13 @@ function chores(value) {
         });
   const keys = history.map((item) => `${item.id}:${item.nextDue}`);
   if (new Set(keys).size !== keys.length) fail("chores.history", "must contain unique occurrences");
-  return { occurrenceOrder, tasks, ...(history.length && { history }) };
+  if (source.replaceHistory === true && source.history === undefined) fail("chores.history", "is required");
+  return {
+    occurrenceOrder,
+    tasks,
+    ...(source.history !== undefined && { history }),
+    ...(source.replaceHistory === true && { replaceHistory: true }),
+  };
 }
 
 function todos(value) {
@@ -236,21 +247,61 @@ function todos(value) {
   };
 }
 
+function retainedHistory(value, path) {
+  return uniqueIds(
+    array(value ?? [], path, 100_000).map((entry, index) => {
+      const item = task(entry, `${path}[${index}]`);
+      if (!item.completedAt) fail(path, "must contain completed tasks");
+      return { ...item, ...(entry.context && { context: text(entry.context, path) }) };
+    }),
+    path,
+  );
+}
+
+function shoppingTask(entry, path) {
+  const item = task(entry, path);
+  if (!entry.source)
+    return {
+      ...item,
+      productLink: optionalText(entry.productLink, `${path}.productLink`, { maximum: URL_LIMIT }),
+    };
+  if (!["filament-shortage", "floss-shortage"].includes(entry.source)) fail(path, "unknown shopping source");
+  if (!item.completedAt) fail(path, "purchases must be completed");
+  const key = entry.source === "filament-shortage" ? "filamentId" : "flossId";
+  const quantity = integer(entry.quantity, `${path}.quantity`);
+  if (!quantity) fail(path, "purchase quantity must be positive");
+  return {
+    ...item,
+    source: entry.source,
+    [key]: id(entry[key], path),
+    quantity,
+    productLink: optionalText(entry.productLink, path, { maximum: URL_LIMIT }),
+  };
+}
+
 function shopping(value) {
   const source = object(value, "shopping");
-  const manualTasks = array(source.tasks, "shopping.tasks").filter((entry) => !entry?.source);
-  return {
-    tasks: uniqueIds(
-      manualTasks.map((entry, index) => {
-        const item = task(entry, `shopping.tasks[${index}]`);
-        return {
-          ...item,
-          productLink: optionalText(entry.productLink, `shopping.tasks[${index}].productLink`, { maximum: URL_LIMIT }),
-        };
-      }),
-      "shopping.tasks",
-    ),
-  };
+  const entries = array(source.tasks, "shopping.tasks", 100_000);
+  const saved = entries.filter((entry) => !entry?.source || entry.completedAt);
+  array(
+    saved.filter((entry) => !entry?.source),
+    "shopping.tasks",
+  );
+  const tasks = uniqueIds(
+    saved.map((entry, index) => shoppingTask(entry, `shopping.tasks[${index}]`)),
+    "shopping.tasks",
+  );
+  const history = uniqueIds(
+    array(source.history ?? [], "shopping.history", 100_000).map((entry, index) => {
+      const item = shoppingTask(entry, `shopping.history[${index}]`);
+      if (!item.completedAt) fail("shopping.history", "must be completed");
+      return item;
+    }),
+    "shopping.history",
+  );
+  const ids = [...tasks, ...history].map((item) => item.id);
+  if (new Set(ids).size !== ids.length) fail("shopping", "task and history IDs must be distinct");
+  return { tasks, ...(source.history !== undefined && { history }) };
 }
 
 function project(value, path) {
@@ -307,7 +358,10 @@ function printing(value) {
   if (new Set(taskIds).size !== taskIds.length) fail("printing", "item IDs must be unique across projects");
   const usageIds = projects.flatMap((entry) => entry.tasks.flatMap((item) => item.filaments.map((usage) => usage.id)));
   if (new Set(usageIds).size !== usageIds.length) fail("printing", "filament usage IDs must be unique across projects");
-  return { projects };
+  return {
+    projects,
+    ...(source.history !== undefined && { history: retainedHistory(source.history, "projects.history") }),
+  };
 }
 
 function crossStitch(value) {
@@ -346,7 +400,10 @@ function crossStitch(value) {
   );
   const taskIds = projects.flatMap((entry) => entry.tasks.map((item) => item.id));
   if (new Set(taskIds).size !== taskIds.length) fail("cross-stitch", "thread IDs must be unique across projects");
-  return { projects };
+  return {
+    projects,
+    ...(source.history !== undefined && { history: retainedHistory(source.history, "projects.history") }),
+  };
 }
 
 function inventory(value, resource) {

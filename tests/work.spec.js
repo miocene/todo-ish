@@ -64,8 +64,8 @@ test("Work: history is viewable but assignments and title edits stop after three
   await expect(selectedCard(page).getByRole("button", { name: "Add task", exact: true })).toHaveCount(0);
   await expect(backlogCard(page).getByRole("button", { name: /^Move Backlog/ })).toHaveCount(0);
   await selectedCard(page).getByRole("button", { name: "Delete Old work" }).click();
-  await expect.poll(() => data.get("work-tasks").some((item) => item.id === "Old work")).toBe(false);
-  await expect(page.getByRole("button", { name: "Add task", exact: true })).toBeFocused();
+  await expect.poll(() => data.get("work-tasks").find((item) => item.id === "Old work")?.archived).toBe(true);
+  await expect(page.getByRole("combobox", { name: /Change day type/ })).toBeFocused();
 });
 
 for (const date of [FRIDAY, "2026-09-15"]) {
@@ -121,7 +121,14 @@ test("Work: drafts, Enter, completed deletion, and focus work in both lists", as
   await backlog.getByRole("button", { name: "Add backlog task" }).click();
   await expect(title(backlog)).toBeFocused();
   await title(backlog).fill("Saved backlog");
-  await expect.poll(() => data.get("work-tasks").map((item) => item.title)).toEqual(["Saved backlog"]);
+  await expect
+    .poll(() =>
+      data
+        .get("work-tasks")
+        .filter((item) => !item.archived)
+        .map((item) => item.title),
+    )
+    .toEqual(["Saved backlog"]);
   await page.reload();
   await expect(title(backlog)).toHaveValue("Saved backlog");
   await backlog.getByRole("button", { name: "Delete Saved backlog" }).click();

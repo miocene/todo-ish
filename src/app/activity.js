@@ -69,11 +69,13 @@ export function collectCompletedActivity() {
   for (const task of todoActivity.values()) add(activityItem(task, "Todo lists", "", { name: "todos" }));
 
   const shopping = loadPageTasks("shopping");
-  for (const task of shopping.tasks) {
+  for (const task of [...shopping.tasks, ...(shopping.history ?? [])]) {
     add(activityItem(task, "Shopping cart", "Shopping cart", { name: "shopping" }));
   }
 
   const printing = loadPageTasks("printing");
+  for (const task of printing.history ?? [])
+    add(activityItem(task, "3D printing", task.context || "", { name: "printing" }));
   for (const project of printing.projects) {
     for (const task of project.tasks) {
       add(activityItem(task, "3D printing", project.title, { name: "printing" }));
@@ -81,6 +83,8 @@ export function collectCompletedActivity() {
   }
 
   const crossStitch = loadPageTasks("crossStitch");
+  for (const task of crossStitch.history ?? [])
+    add(activityItem(task, "Cross stitch", task.context || "", { name: "cross-stitch" }));
   for (const project of crossStitch.projects) {
     for (const task of project.tasks) {
       add(activityItem(task, "Cross stitch", project.title, { name: "cross-stitch" }));

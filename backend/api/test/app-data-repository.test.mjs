@@ -34,10 +34,10 @@ test("100 work tasks use seven queries and bind all task values", async () => {
   assert.equal(await f.repository.replace("work-tasks", tasks(100), 0), 1);
   assert.equal(f.queries.length, 7);
   const insert = f.queries.find(({ text }) => text.startsWith("INSERT INTO work_tasks"));
-  assert.equal(insert.values.length, 500);
+  assert.equal(insert.values.length, 600);
   assert.equal(insert.values[1], "Bound 'value'");
   assert.equal(insert.text.includes("Bound"), false);
-  assert.match(insert.text, /\(\$496, \$497, \$498, \$499, \$500\)/);
+  assert.match(insert.text, /\(\$595, \$596, \$597, \$598, \$599, \$600\)/);
   assert.equal(f.released(), true);
 });
 
@@ -46,7 +46,7 @@ test("large resources use bounded batches and empty replacements still delete re
   await f.repository.replace("work-tasks", tasks(1001), 0);
   assert.deepEqual(
     f.queries.filter(({ text }) => text.startsWith("INSERT INTO work_tasks")).map(({ values }) => values.length),
-    [2500, 2500, 5],
+    [3000, 3000, 6],
   );
   const empty = fixture();
   await empty.repository.replace("work-tasks", [], 0);
@@ -210,4 +210,79 @@ test("legacy history additions never trigger authoritative history deletion", as
     f.queries.some(({ text }) => text.startsWith("DELETE FROM todo_items WHERE list_id IS NULL")),
     false,
   );
+});
+
+test("shopping saves immutable purchase quantities and archived completed rows", async () => {
+  const f = fixture();
+  await f.repository.replace(
+    "shopping",
+    {
+      tasks: [
+        {
+          id: "purchase",
+          title: "Two spools",
+          source: "filament-shortage",
+          filamentId: "pla",
+          quantity: 2,
+          completedAt: "2026-09-09T10:00:00Z",
+        },
+      ],
+      history: [{ id: "past", title: "Milk", completedAt: "2026-09-08T10:00:00Z" }],
+    },
+    0,
+  );
+  const insert = f.queries.find(({ text }) => text.startsWith("INSERT INTO manual_shopping_items"));
+  assert.equal(insert.values[5], "filament-shortage");
+  assert.equal(insert.values[6], "pla");
+  assert.equal(insert.values[7], 2);
+  assert.equal(insert.values[8], false);
+  assert.equal(insert.values[17], true);
+});
+
+test("shopping reads purchases and retained history separately", async () => {
+  const f = fixture({
+    rows: ({ text }) =>
+      text.includes("FROM manual_shopping_items")
+        ? [
+            {
+              id: "bought",
+              title: "Thread",
+              source: "floss-shortage",
+              catalogId: "dmc310",
+              quantity: 2,
+              completedAt: "2026-09-09T10:00:00Z",
+              archived: false,
+            },
+            { id: "past", title: "Milk", completedAt: "2026-09-08T10:00:00Z", archived: true },
+          ]
+        : undefined,
+  });
+  const shopping = (await f.repository.read()).pages.shopping;
+  assert.equal(shopping.tasks[0].flossId, "dmc310");
+  assert.equal(shopping.tasks[0].quantity, 2);
+  assert.equal(shopping.tasks[0].completed, true);
+  assert.equal(shopping.history[0].id, "past");
+});
+
+test("project removal retains the completed snapshot within the transaction", async () => {
+  const f = fixture();
+  await f.repository.replace(
+    "printing",
+    {
+      projects: [],
+      history: [{ id: "past", title: "Part", context: "Deleted project", completedAt: "2026-09-09T10:00:00Z" }],
+    },
+    0,
+  );
+  const history = f.queries.find(({ text }) => text.startsWith("INSERT INTO completed_project_tasks"));
+  assert.deepEqual(history.values, ["printing", "past", "Part", "Deleted project", "2026-09-09T10:00:00Z"]);
+  assert.equal(f.queries.at(-1).text, "COMMIT");
+});
+
+test("explicit chore history removes a completion undone before deleting the chore", async () => {
+  const f = fixture();
+  await f.repository.replace("chores", { tasks: [], occurrenceOrder: [], history: [], replaceHistory: true }, 0);
+  const cleanup = f.queries.find(({ text }) => text.includes("chore_id || ':' || due_on::text"));
+  assert.deepEqual(cleanup.values, [[]]);
+  assert.equal(f.queries.at(-1).text, "COMMIT");
 });

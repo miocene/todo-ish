@@ -344,4 +344,41 @@ test("PostgreSQL application-data contract", async (t) => {
       assert.ok(state.pages.todos.lists.some((list) => list.id === "general"));
     }
   });
+  await t.test("shopping purchase quantity, archived Work and project activity survive reads", async () => {
+    const write = async (resource, value) => {
+      const state = await repository.read();
+      await repository.replace(resource, validateAppDataResource(resource, value), state.revisions[resource]);
+    };
+    await write("shopping", {
+      tasks: [
+        {
+          id: "purchase",
+          title: "Two spools",
+          source: "filament-shortage",
+          filamentId: "pla",
+          quantity: 2,
+          completedAt,
+        },
+      ],
+      history: [{ id: "milk", title: "Milk", completedAt }],
+    });
+    let state = await repository.read();
+    assert.equal(state.pages.shopping.tasks[0].quantity, 2);
+    assert.equal(state.pages.shopping.history[0].title, "Milk");
+    await write("shopping", { tasks: [], history: [state.pages.shopping.tasks[0], ...state.pages.shopping.history] });
+    state = await repository.read();
+    assert.equal(state.pages.shopping.tasks.length, 0);
+    assert.equal(state.pages.shopping.history.length, 2);
+    await write("shopping", { tasks: [], history: [] });
+    assert.equal((await repository.read()).pages.shopping.history, undefined);
+    await write("work-tasks", [
+      { id: "archived", title: "Completed work", date: "2026-09-05", checkedAt: completedAt, archived: true },
+    ]);
+    assert.equal((await repository.read()).workTasks[0].archived, true);
+    await write("printing", {
+      projects: [],
+      history: [{ id: "part", title: "Finished part", context: "Old project", completedAt }],
+    });
+    assert.equal((await repository.read()).pages.printing.history[0].context, "Old project");
+  });
 });
