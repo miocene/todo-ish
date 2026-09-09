@@ -175,7 +175,22 @@ function chores(value) {
     return taskId;
   });
   if (new Set(occurrenceOrder).size !== occurrenceOrder.length) fail("chores.occurrenceOrder", "must be unique");
-  return { occurrenceOrder, tasks };
+  const history =
+    source.history === undefined
+      ? []
+      : array(source.history, "chores.history", 100_000).map((entry, index) => {
+          const path = `chores.history[${index}]`;
+          const item = task(entry, path);
+          if (!item.completedAt) fail(path, "must be a completed occurrence");
+          return {
+            ...item,
+            details: text(entry.details, `${path}.details`),
+            nextDue: date(entry.nextDue, `${path}.nextDue`),
+          };
+        });
+  const keys = history.map((item) => `${item.id}:${item.nextDue}`);
+  if (new Set(keys).size !== keys.length) fail("chores.history", "must contain unique occurrences");
+  return { occurrenceOrder, tasks, ...(history.length && { history }) };
 }
 
 function todos(value) {

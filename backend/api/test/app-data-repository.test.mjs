@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createAppDataRepository, AppDataRevisionConflictError } from "../src/app-data-repository.mjs";
 
-function fixture({ revision = 0, reject } = {}) {
+function fixture({ revision = 0, reject, rows } = {}) {
   const queries = [];
   let released = false;
   const client = {
@@ -11,11 +11,13 @@ function fixture({ revision = 0, reject } = {}) {
       queries.push(command);
       if (reject?.(command)) throw new Error("database rejected write");
       return {
-        rows: /SELECT revision/.test(command.text)
-          ? [{ revision }]
-          : /RETURNING revision/.test(command.text)
-            ? [{ revision: revision + 1 }]
-            : [],
+        rows:
+          rows?.(command) ??
+          (/SELECT revision/.test(command.text)
+            ? [{ revision }]
+            : /RETURNING revision/.test(command.text)
+              ? [{ revision: revision + 1 }]
+              : []),
       };
     },
     release() {
@@ -87,5 +89,59 @@ test("chore writes bind structured schedules and current dates without deleting 
   assert.equal(
     f.queries.some(({ text }) => text.startsWith("DELETE FROM chore_occurrences")),
     false,
+  );
+});
+
+test("chore deletion archives definitions and offline completions insert without overwriting history", async () => {
+  const f = fixture();
+  await f.repository.replace(
+    "chores",
+    {
+      tasks: [],
+      occurrenceOrder: [],
+      history: [
+        { id: "offline", title: "Sweep", details: "Daily", nextDue: "2026-02-01", completedAt: "2026-02-02T12:00:00Z" },
+      ],
+    },
+    0,
+  );
+  assert.ok(
+    f.queries.some(
+      ({ text, values }) => text.startsWith("UPDATE chores SET enabled = false") && values[0].length === 0,
+    ),
+  );
+  assert.equal(
+    f.queries.some(({ text }) => text.startsWith("DELETE FROM chores")),
+    false,
+  );
+  const history = f.queries.find(({ text }) => text.startsWith("INSERT INTO chore_occurrences"));
+  assert.match(history.text, /ON CONFLICT \(chore_id, due_on\) DO NOTHING/);
+  assert.equal(history.values[0], "offline");
+});
+
+test("reading chores includes archived and previous occurrences without duplicating current completions", async () => {
+  const completedAt = "2026-02-02T12:00:00Z";
+  const current = {
+    id: "one",
+    title: "Sweep",
+    details: "Daily",
+    nextDue: "2026-02-02",
+    completedAt,
+    occurrencePosition: 0,
+  };
+  const f = fixture({
+    rows: ({ text }) =>
+      text.includes("WHERE chores.enabled")
+        ? [current]
+        : text.includes("JOIN chores ON chores.id")
+          ? [current, { ...current, nextDue: "2026-02-01" }, { ...current, id: "archived" }]
+          : undefined,
+  });
+  const state = await f.repository.read();
+  assert.equal(state.pages.chores.tasks.length, 1);
+  assert.equal(state.pages.chores.history.length, 2);
+  assert.deepEqual(
+    state.pages.chores.history.map((item) => item.id),
+    ["one", "archived"],
   );
 });

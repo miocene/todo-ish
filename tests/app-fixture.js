@@ -104,6 +104,19 @@ const test = base.extend({
           if (!supportsColors && resource === "todos") {
             for (const list of submittedValue.lists) delete list.color;
           }
+          if (resource === "chores") {
+            const current = new Set(submittedValue.tasks.map((item) => `${item.id}:${item.nextDue}`));
+            const history = new Map(
+              [
+                ...(values.chores?.history ?? []),
+                ...(values.chores?.tasks ?? []).filter((item) => item.completedAt),
+                ...(submittedValue.history ?? []),
+              ].map((item) => [`${item.id}:${item.nextDue}`, item]),
+            );
+            for (const key of current) history.delete(key);
+            if (history.size) submittedValue.history = [...history.values()];
+            else delete submittedValue.history;
+          }
           values[resource] =
             resource === "shopping" ? { tasks: submittedValue.tasks.filter((task) => !task.source) } : submittedValue;
           revisions[resource] += 1;

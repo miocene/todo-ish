@@ -1,9 +1,8 @@
 import { scheduleFromChore } from "./chore-schedule.js";
-import { todayIso } from "./date.js";
+import { todayIso, isIsoDate } from "./date.js";
 import { initialAppData, initializeAppDataResource, readAppData, writeAppData } from "./app-data.js";
 import { normalizeCardColor } from "./card-colors.js";
 
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const clone = structuredClone;
 
 function normalizeInventory(value, fallback) {
@@ -107,7 +106,7 @@ function normalizeChores(data) {
   if (!data.tasks.every((task) => typeof task.details === "string")) return undefined;
   const tasks = data.tasks.map((task) => ({
     ...task,
-    nextDue: ISO_DATE.test(task.nextDue) ? task.nextDue : todayIso(),
+    nextDue: isIsoDate(task.nextDue) ? task.nextDue : todayIso(),
     schedule: scheduleFromChore(task, todayIso()),
   }));
   const taskIds = new Set(tasks.map((task) => task.id));

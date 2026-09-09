@@ -1,4 +1,5 @@
 import { toIsoDate as isoDate } from "./date.js";
+import { completedChoreOccurrences } from "./chore-schedule.js";
 import { loadPageTasks } from "./page-tasks.js";
 import { getAllWorkTasks } from "./work-tasks.js";
 
@@ -54,7 +55,8 @@ export function collectCompletedActivity() {
   }
 
   const chores = loadPageTasks("chores");
-  for (const task of chores.tasks) add(activityItem(task, "Chores", task.details, { name: "chores" }));
+  for (const task of completedChoreOccurrences(chores))
+    add(activityItem(task, "Chores", task.details, { name: "chores" }));
 
   const todos = loadPageTasks("todos");
   for (const list of todos.lists) {

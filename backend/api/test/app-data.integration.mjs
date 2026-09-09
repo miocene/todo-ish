@@ -215,6 +215,34 @@ test("PostgreSQL application-data contract", async (t) => {
     assert.equal(history.rows[0].completed_at.toISOString(), completedAt);
   });
 
+  await t.test("deleting chores archives definitions and preserves completed history", async () => {
+    const before = await repository.read();
+    assert.equal(before.pages.chores.history.length, 1);
+    await repository.replace("chores", { tasks: [], occurrenceOrder: [] }, before.revisions.chores);
+    const after = await repository.read();
+    assert.equal(after.pages.chores.tasks.length, 0);
+    assert.equal(after.pages.chores.history.length, 2);
+    const archived = await pool.query("SELECT enabled FROM chores ORDER BY id");
+    assert.ok(archived.rows.every((row) => row.enabled === false));
+    const offline = {
+      id: "offline",
+      title: "Offline chore",
+      details: "Daily",
+      nextDue: "2026-09-05",
+      completed: true,
+      completedAt,
+    };
+    await repository.replace(
+      "chores",
+      validateAppDataResource("chores", { tasks: [], occurrenceOrder: [], history: [offline] }),
+      after.revisions.chores,
+    );
+    const restored = await repository.read();
+    assert.equal(restored.pages.chores.history.length, 3);
+    await repository.replace("chores", { tasks: [], occurrenceOrder: [] }, restored.revisions.chores);
+    assert.equal((await repository.read()).pages.chores.history.length, 3);
+  });
+
   await t.test("only one simultaneous write can win a revision", async () => {
     const results = await Promise.allSettled(
       ["First", "Second"].map((title) =>

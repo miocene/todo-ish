@@ -369,7 +369,7 @@ test("chores render schedules and save modal changes", async ({ page }) => {
   await page.goto("/chores");
 
   await expect(page.getByRole("heading", { level: 2 })).toHaveText(["Today and overdue", "All chores"]);
-  const upcomingChores = page.locator(".chores-upcoming .task-item");
+  const upcomingChores = page.locator(".chores-due .task-item");
   const allChores = page.locator(".chores-all .task-item");
   await expect(upcomingChores).toHaveCount(3);
   await expect(allChores).toHaveCount(3);
@@ -625,7 +625,7 @@ test("work and chore cards expose only their supported actions", async ({ page }
   await expect(page.locator(".work-backlog textarea").last()).toBeFocused();
 
   await page.goto("/chores");
-  const today = page.locator(".chores-upcoming");
+  const today = page.locator(".chores-due");
   const all = page.locator(".chores-all");
   await expect(today.getByRole("button")).toHaveCount(0);
   await expect(page.locator(".jm-card").getByRole("progressbar")).toHaveCount(0);
@@ -755,7 +755,7 @@ test("completed items move to the bottom after 500 milliseconds on every task pa
   await expect(page.getByRole("checkbox", { name: "Complete Renew passport" })).toBeChecked();
 
   await page.goto("/chores");
-  const choreTitles = page.locator(".chores-upcoming .task-item__title");
+  const choreTitles = page.locator(".chores-due .task-item__title");
   await expect(choreTitles.first()).toHaveText("Water the plants");
   await page.getByRole("checkbox", { name: "Complete Water the plants" }).check();
   await page.clock.runFor(499);
@@ -861,7 +861,7 @@ test("today updates across midnight without reloading the application", async ({
     page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Work", exact: true }).locator("use"),
   ).toHaveAttribute("href", /#icon-pto$/);
   await page.getByRole("link", { name: "Chores", exact: true }).click();
-  await expect(page.locator(".chores-upcoming").getByText("Today", { exact: true })).toBeVisible();
+  await expect(page.locator(".chores-due").getByText("Today", { exact: true })).toBeVisible();
 });
 
 test("catalog failures stay local and retry independently without blocking task pages", async ({ page }) => {

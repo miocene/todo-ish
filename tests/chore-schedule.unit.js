@@ -87,3 +87,48 @@ test("API validates schedules and preserves legacy chores without one", () => {
     assert.throws(() => validateAppDataResource("chores", chores(invalid === false ? false : schedule(invalid))));
   }
 });
+
+test("legacy conversion handles fortnightly weekdays and leaves unknown rules unconfirmed", () => {
+  const chore = { nextDue: "2026-02-01", details: "Every other Saturday" };
+  assert.deepEqual(scheduleFromChore(chore, "2026-02-02"), {
+    frequency: "week",
+    interval: 2,
+    startDate: "2026-02-01",
+    weekdays: [5],
+    monthDays: [1],
+  });
+  for (const details of ["When needed", "Yearly", "Every month on 1 and 15", "Every 0 days"]) {
+    assert.equal(scheduleFromChore({ ...chore, details }, "2026-02-02"), null);
+  }
+});
+
+test("schedule equality ignores inactive selections but detects active recurrence changes", async () => {
+  const { sameChoreSchedule } = await import("../src/app/chore-schedule.js");
+  const daily = schedule({ frequency: "day" });
+  assert.equal(sameChoreSchedule(daily, { ...daily, monthDays: [31], weekdays: [6] }), true);
+  assert.equal(sameChoreSchedule(daily, { ...daily, interval: 2 }), false);
+  assert.equal(sameChoreSchedule(schedule({ weekdays: [0, 2] }), schedule({ weekdays: [2, 0] })), true);
+  assert.equal(sameChoreSchedule(schedule({ weekdays: [0] }), schedule({ weekdays: [2] })), false);
+});
+
+test("retained occurrences are unique, survive deletion, and current unchecking takes precedence", async () => {
+  const { retainChoreCompletion, completedChoreOccurrences } = await import("../src/app/chore-schedule.js");
+  const task = {
+    id: "one",
+    title: "Sweep",
+    details: "Daily",
+    nextDue: "2026-02-01",
+    completed: true,
+    completedAt: "2026-02-02T12:00:00Z",
+  };
+  const chores = { tasks: [task] };
+  retainChoreCompletion(chores, task);
+  retainChoreCompletion(chores, task);
+  assert.equal(chores.history.length, 1);
+  assert.equal(completedChoreOccurrences(chores).length, 1);
+  delete task.completedAt;
+  assert.equal(completedChoreOccurrences(chores).length, 0);
+  chores.tasks = [];
+  assert.equal(completedChoreOccurrences(chores).length, 1);
+  assert.equal(completedChoreOccurrences(chores)[0].id, "one:2026-02-01");
+});

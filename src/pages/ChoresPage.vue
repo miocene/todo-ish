@@ -2,8 +2,8 @@
 import { loadCardColors } from "../app/card-colors.js";
 import { appClock } from "../app/clock.js";
 import { loadPageTasks, savePageTasks } from "../app/page-tasks.js";
-import { nextEntityId, setTaskCompletion, createCompletionMoveScheduler, moveItemToEnd } from "../app/task-list.js";
-import { calendarDate } from "../app/work-calendar.js";
+import { setTaskCompletion, createCompletionMoveScheduler, moveItemToEnd } from "../app/task-list.js";
+import { calendarDate } from "../app/date.js";
 import JMModal from "../components/JMModal/JMModal.vue";
 import JMInput from "../components/JMInput/JMInput.vue";
 import JMButton from "../components/JMButton/JMButton.vue";
@@ -13,6 +13,9 @@ import {
   defaultChoreSchedule,
   nextChoreDate,
   choreScheduleLabel,
+  choreDescription,
+  sameChoreSchedule,
+  retainChoreCompletion,
   advanceCompletedChore,
 } from "../app/chore-schedule.js";
 import JMTaskItem from "../components/JMTaskItem/JMTaskItem.vue";
@@ -57,10 +60,16 @@ export default {
     },
   },
   methods: {
-    scheduleLabel: choreScheduleLabel,
+    description: choreDescription,
     advanceChores() {
       let changed = false;
-      for (const task of this.chores.tasks) changed = advanceCompletedChore(task, this.todayIso) || changed;
+      for (const task of this.chores.tasks) {
+        const previous = { ...task };
+        if (advanceCompletedChore(task, this.todayIso)) {
+          retainChoreCompletion(this.chores, previous);
+          changed = true;
+        }
+      }
       if (changed) this.save();
     },
     dueLabel(task) {
@@ -84,7 +93,8 @@ export default {
       this.draft = {
         id: task?.id ?? null,
         title: task?.title ?? "",
-        schedule: task
+        legacyRule: task && !task.schedule ? task.details : "",
+        schedule: task?.schedule
           ? { ...task.schedule, weekdays: [...task.schedule.weekdays], monthDays: [...task.schedule.monthDays] }
           : defaultChoreSchedule(this.todayIso),
       };
@@ -93,11 +103,16 @@ export default {
     saveDraft() {
       const { id, schedule } = this.draft;
       const title = this.draft.title.trim();
-      if (!title) return;
+      if (!title || title.length > 500) return;
       let task = this.chores.tasks.find((item) => item.id === id);
       if (id && !task) return;
       if (task) {
-        if (JSON.stringify(task.schedule) !== JSON.stringify(schedule)) {
+        const scheduleChanged = !sameChoreSchedule(task.schedule, schedule);
+        if (task.title === title && !scheduleChanged) {
+          this.$refs.choreModal.close();
+          return;
+        }
+        if (scheduleChanged && !task.completed && task.nextDue > this.todayIso) {
           this.moves.cancel(task.id);
           const nextDue = nextChoreDate(schedule, this.todayIso);
           if (nextDue !== task.nextDue) setTaskCompletion(task, false);
@@ -105,7 +120,7 @@ export default {
         }
       } else {
         task = {
-          id: nextEntityId(this.chores.tasks, "chore"),
+          id: `chore-${crypto.randomUUID()}`,
           nextDue: nextChoreDate(schedule, this.todayIso),
           completed: false,
         };
@@ -120,6 +135,7 @@ export default {
       const index = this.chores.tasks.indexOf(task);
       if (index === -1) return;
       this.moves.cancel(task.id);
+      retainChoreCompletion(this.chores, task);
       this.chores.tasks.splice(index, 1);
       this.chores.occurrenceOrder = this.chores.occurrenceOrder.filter((id) => id !== task.id);
       this.save();
@@ -140,12 +156,7 @@ export default {
     <h1>Chores</h1>
   </header>
 
-  <JMCard
-    class="chores-upcoming"
-    title="Today and overdue"
-    empty-text="No chores due"
-    :color="cardColors['chores-today']"
-  >
+  <JMCard class="chores-due" title="Today and overdue" empty-text="No chores due" :color="cardColors['chores-today']">
     <template v-if="dueChores.length" #list>
       <JMTaskItem
         v-for="task in dueChores"
@@ -159,7 +170,7 @@ export default {
         <template #details>
           <time :datetime="task.nextDue">{{ dueLabel(task) }}</time>
           <span aria-hidden="true"> · </span>
-          <span>{{ scheduleLabel(task.schedule) }}</span>
+          <span>{{ description(task) }}</span>
         </template>
       </JMTaskItem>
     </template>
@@ -188,7 +199,7 @@ export default {
         @remove="removeTask(task)"
       >
         <template #details>
-          <span>{{ scheduleLabel(task.schedule) }}</span>
+          <span>{{ description(task) }}</span>
         </template>
         <template #actions>
           <JMButton
@@ -211,7 +222,10 @@ export default {
   >
     <form v-if="draft" class="chore-form" @submit.prevent="saveDraft">
       <h2>{{ draft.id ? "Edit chore" : "Add chore" }}</h2>
-      <JMInput v-model="draft.title" label="Title" placeholder="Chore title" required autofocus />
+      <JMInput v-model="draft.title" label="Title" placeholder="Chore title" required maxlength="500" autofocus />
+      <p v-if="draft.legacyRule">
+        Previous rule: {{ draft.legacyRule }}. Choose a schedule to confirm how this chore repeats.
+      </p>
       <JMChoreSchedule v-model="draft.schedule" :title="draft.title" />
       <div class="chore-form__actions">
         <JMButton text="Cancel" view="ghost" @click="$refs.choreModal.close()" />
@@ -220,27 +234,3 @@ export default {
     </form>
   </JMModal>
 </template>
-
-<style scoped>
-.chore-modal {
-  inline-size: min(28rem, calc(100% - var(--space-9)));
-  max-block-size: calc(100dvh - var(--space-9));
-  padding: var(--space-5);
-  border: 0;
-  border-radius: var(--radius-card);
-  color: var(--color-text-default);
-  background: var(--color-bg-surface);
-}
-
-.chore-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.chore-form__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-3);
-}
-</style>

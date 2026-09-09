@@ -115,12 +115,20 @@ function clearLegacyValue(resource) {
 const PENDING_PREFIX = "done-ish.pending-write.v1:";
 export const syncState = reactive({ state: "saved", message: "", pending: 0, durable: true });
 
+const savedChoreOccurrences = new Set();
+const occurrenceKey = (item) => `${item.id}:${item.nextDue}`;
+
 async function fetchRemoteState() {
   const response = await apiFetch("/data", { headers: { accept: "application/json" } });
   if (!response.ok) {
     throw Object.assign(new Error(`Could not load saved data (${response.status}).`), { status: response.status });
   }
-  return response.json();
+  const state = await response.json();
+  savedChoreOccurrences.clear();
+  for (const item of [...(state.pages?.chores?.history ?? []), ...(state.pages?.chores?.tasks ?? [])]) {
+    if (item.completedAt) savedChoreOccurrences.add(occurrenceKey(item));
+  }
+  return state;
 }
 
 const sync = createResourceSync({
@@ -146,20 +154,37 @@ const sync = createResourceSync({
     if (mockColors && COLOR_COLLECTIONS[resource]) {
       for (const item of normalized[COLOR_COLLECTIONS[resource]]) delete item.color;
     }
+    if (resource === "chores" && normalized.history) {
+      // Labels are derived from archived definitions; compare occurrence identity and completion only.
+      normalized.history = normalized.history
+        .map(({ id, nextDue, completedAt }) => ({ id, nextDue, completedAt }))
+        .sort((a, b) => occurrenceKey(a).localeCompare(occurrenceKey(b)));
+    }
     return normalized;
   },
   remoteValue,
   readRemote: fetchRemoteState,
   async send(resource, value, revision) {
+    const submitted =
+      resource === "chores" && value.history
+        ? { ...value, history: value.history.filter((item) => !savedChoreOccurrences.has(occurrenceKey(item))) }
+        : value;
     const response = await apiFetch(`/data/${resource}`, {
       method: "PUT",
       headers: { "content-type": "application/json", "if-match": `"${revision}"` },
-      body: JSON.stringify(value),
+      body: JSON.stringify(submitted),
     });
     const result = await response.json().catch(() => ({}));
     if (!response.ok)
       throw Object.assign(new Error(result.error || "Changes could not be saved."), { status: response.status });
     if (!Number.isInteger(result.revision)) throw new Error("The save response did not include a revision.");
+    if (resource === "chores") {
+      for (const item of value.tasks) {
+        if (item.completedAt) savedChoreOccurrences.add(occurrenceKey(item));
+        else savedChoreOccurrences.delete(occurrenceKey(item));
+      }
+      for (const item of value.history ?? []) savedChoreOccurrences.add(occurrenceKey(item));
+    }
     return result;
   },
   onChange: (state) => Object.assign(syncState, state),

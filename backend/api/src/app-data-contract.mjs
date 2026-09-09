@@ -7,7 +7,7 @@
  * @typedef {Task & { date: string | null }} WorkTask
  * @typedef {{ id: string, title: string, date: string | null, checkedAt?: string }} WorkTaskPayload
  * @typedef {{ frequency: "day" | "week" | "month", interval: number, startDate: string, weekdays: number[], monthDays: number[] }} ChoreSchedule
- * @typedef {Task & { details: string, nextDue: string, schedule?: ChoreSchedule }} Chore
+ * @typedef {Task & { details: string, nextDue: string, schedule?: ChoreSchedule | null }} Chore
  * @typedef {{ id: string, title: string, color?: string, tasks: Task[] }} TodoList
  * @typedef {{ id: string, catalogId: string, label: string, weightGrams: number | "" }} FilamentUsage
  * @typedef {Task & { filaments: FilamentUsage[] }} PrintingTask
@@ -24,7 +24,7 @@
  * @property {WorkTaskPayload[]} work-tasks
  * @property {Record<string, string>} work-statuses
  * @property {Record<string, string>} colors
- * @property {{ tasks: Chore[], occurrenceOrder: string[] }} chores
+ * @property {{ tasks: Chore[], occurrenceOrder: string[], history?: Chore[] }} chores
  * @property {{ lists: TodoList[] }} todos
  * @property {{ tasks: ShoppingTask[] }} shopping
  * @property {{ projects: Project<PrintingTask>[] }} printing

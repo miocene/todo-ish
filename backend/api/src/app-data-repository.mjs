@@ -84,6 +84,25 @@ async function readAppData(pool) {
        WHERE chores.enabled
        ORDER BY chores.position, chores.created_at, chores.id`,
     );
+    const choreHistoryRows = await queryRows(
+      client,
+      `SELECT chores.id, chores.title,
+      chores.schedule_description AS details, occurrence.due_on::text AS "nextDue",
+      occurrence.completed_at AS "completedAt"
+      FROM chore_occurrences AS occurrence JOIN chores ON chores.id = occurrence.chore_id
+      WHERE occurrence.completed_at IS NOT NULL
+      ORDER BY occurrence.due_on, chores.id`,
+    );
+    const currentChores = new Set(choreRows.map((row) => `${row.id}:${row.nextDue}`));
+    const choreHistory = choreHistoryRows
+      .filter((row) => !currentChores.has(`${row.id}:${row.nextDue}`))
+      .map((row) => ({
+        id: row.id,
+        title: row.title,
+        details: row.details,
+        nextDue: row.nextDue,
+        ...completion(row.completedAt),
+      }));
     const todoListRows = await queryRows(
       client,
       `SELECT id, title, color
@@ -215,6 +234,7 @@ async function readAppData(pool) {
       colors: Object.fromEntries(colorRows.map((row) => [row.id, row.color])),
       pages: {
         chores: {
+          ...(choreHistory.length && { history: choreHistory }),
           occurrenceOrder: choreRows
             .filter((row) => row.nextDue)
             .sort((first, second) => first.occurrencePosition - second.occurrencePosition)
@@ -352,11 +372,27 @@ async function replaceChores(client, data) {
     ]),
     { keys: ["chore_id", "due_on"], updatedAt: false },
   );
-  await deleteMissing(
+  // Deleted chores remain as archived definitions so their occurrences survive.
+  await client.query({
+    text: "UPDATE chores SET enabled = false, updated_at = now() WHERE enabled AND NOT (id = ANY($1::text[]))",
+    values: [data.tasks.map((task) => task.id)],
+  });
+  // A completed chore may have been created and removed while offline.
+  const history = data.history ?? [];
+  const definitions = [...new Map(history.map((item) => [item.id, item])).values()];
+  await insertRows(
     client,
     "chores",
-    "id",
-    data.tasks.map((chore) => chore.id),
+    ["id", "title", "schedule_description", "enabled", "position"],
+    definitions.map((item) => [item.id, item.title, item.details, false, 0]),
+    "ON CONFLICT (id) DO NOTHING",
+  );
+  await insertRows(
+    client,
+    "chore_occurrences",
+    ["chore_id", "due_on", "completed_at", "position"],
+    history.map((item) => [item.id, item.nextDue, item.completedAt, 0]),
+    "ON CONFLICT (chore_id, due_on) DO NOTHING",
   );
 }
 
