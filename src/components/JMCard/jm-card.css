@@ -3,7 +3,7 @@
   isolation: isolate;
   padding: var(--space-3);
   margin-block-start: var(--space-6);
-  background: var(--color);
+  background: var(--color, var(--color-bg-secondary));
   border-radius: var(--radius-card);
 
   .header {
@@ -12,11 +12,11 @@
     display: flex;
     align-items: center;
     padding: 0 var(--space-3) 0 var(--space-6);
-    color: contrast-color(var(--color));
+    color: contrast-color(var(--color, var(--color-bg-secondary)));
 
     & > .jm-button {
-      --control-ghost-text: contrast-color(var(--color));
-      --control-ghost-text-hover: contrast-color(var(--color));
+      --control-ghost-text: contrast-color(var(--color, var(--color-bg-secondary)));
+      --control-ghost-text-hover: contrast-color(var(--color, var(--color-bg-secondary)));
 
       flex-shrink: 0;
     }

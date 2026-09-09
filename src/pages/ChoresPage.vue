@@ -165,7 +165,7 @@ export default {
     <h1>Chores</h1>
   </header>
 
-  <JMCard class="chores-due" title="Today and overdue" empty-text="No chores due" :color="cardColors['chores-today']">
+  <JMCard class="chores-due" title="Today and overdue" empty-text="No chores due">
     <template v-if="dueChores.length" #list>
       <JMTaskItem
         v-for="task in dueChores"
@@ -190,7 +190,6 @@ export default {
     class="chores-all"
     title="All chores"
     empty-text="Add your first chore"
-    :color="cardColors['chores-all']"
     :actions="[{ id: 'add', label: 'Add chore', icon: 'plus' }]"
     collapsible
     @action="addTask"

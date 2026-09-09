@@ -1,21 +1,21 @@
 import { initializeAppDataResource, readAppData } from "./app-data.js";
 
 export const CARD_COLORS = Object.freeze([
-  "#633533",
-  "#E9B6B4",
-  "#8FB7B0",
-  "#597380",
-  "#3E5168",
-  "#287271",
-  "#8AB17D",
-  "#E9C46A",
-  "#F4A261",
-  "#E76F51",
-  "#36949D",
-  "#1982C4",
-  "#4267AC",
-  "#565AA0",
-  "#6A4C93",
+  "#2765EC",
+  "#FF8A34",
+  "#B9E532",
+  "#F65CC0",
+  "#18A76B",
+  "#FFD43B",
+  "#7C3AED",
+  "#FF5C70",
+  "#20C4E8",
+  "#008F95",
+  "#FFB184",
+  "#CD1D99",
+  "#E73535",
+  "#9592FF",
+  "#20CFB0",
 ]);
 
 export function randomCardColor() {

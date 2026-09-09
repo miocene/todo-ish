@@ -2,6 +2,7 @@
   color-scheme: light;
 
   --color-bg-default: light-dark(#f6f6f6, #f6f6f6);
+  --color-bg-secondary: light-dark(#e4e4e4, #e4e4e4);
   --color-bg-surface: light-dark(rgb(250 250 250 / 95%), rgb(250 250 250 / 95%));
   --color-bg-selection: light-dark(#fff, #fff);
 

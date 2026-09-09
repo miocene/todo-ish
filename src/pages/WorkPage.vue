@@ -312,7 +312,6 @@ export default {
     class="work-backlog"
     title="Backlog"
     empty-text="No backlog tasks"
-    :color="cardColors.backlog"
     :actions="[{ id: 'add', label: 'Add task', icon: 'plus', ariaLabel: 'Add backlog task' }]"
     @action="addBacklogTask"
   >

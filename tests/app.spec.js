@@ -171,16 +171,18 @@ test("development mocks colors locally when the API has no color storage", async
 
 test("card colors migrate into the palette and persist without visible color controls", async ({ page }) => {
   const data = appDataByPage.get(page);
+  const savedWorkColor = CARD_COLORS[0];
+  const savedListColor = CARD_COLORS[7];
   data.set("todos", {
     lists: [
       { id: "general", title: "General", tasks: [] },
-      { id: "home", title: "Home", color: "#e9c46a", tasks: [] },
+      { id: "home", title: "Home", color: savedListColor.toLowerCase(), tasks: [] },
     ],
   });
   data.set("printing", {
-    projects: [{ id: "legacy-project", title: "Existing project", color: "#123456", description: "", tasks: [] }],
+    projects: [{ id: "legacy-project", title: "Existing project", color: "#633533", description: "", tasks: [] }],
   });
-  data.set("colors", { [`work-day:${localIsoDate(-1)}`]: "#633533" });
+  data.set("colors", { [`work-day:${localIsoDate(-1)}`]: savedWorkColor });
 
   const colorOf = (locator) => locator.evaluate((element) => element.style.getPropertyValue("--color"));
   await page.goto("/work");
@@ -192,13 +194,13 @@ test("card colors migrate into the palette and persist without visible color con
     .poll(() => data.get("colors"))
     .toMatchObject({
       [`work-day:${localIsoDate()}`]: todayColor,
-      [`work-day:${localIsoDate(-1)}`]: "#633533",
+      [`work-day:${localIsoDate(-1)}`]: savedWorkColor,
       backlog: backlogColor,
     });
   expect(data.get("colors")).not.toHaveProperty("today");
   await page.getByRole("button", { name: `${localFullDateLabel(-1)}. No completed tasks`, exact: true }).click();
   await expect(page.locator(".jm-card:not(.work-backlog) time")).toHaveAttribute("datetime", localIsoDate(-1));
-  expect(await colorOf(page.locator(".jm-card:not(.work-backlog)"))).toBe("#633533");
+  expect(await colorOf(page.locator(".jm-card:not(.work-backlog)"))).toBe(savedWorkColor);
   await page.getByRole("button", { name: `${localFullDateLabel(-2)}. No completed tasks`, exact: true }).click();
   await expect(page.locator(".jm-card:not(.work-backlog) time")).toHaveAttribute("datetime", localIsoDate(-2));
   const pastDayColor = await colorOf(page.locator(".jm-card:not(.work-backlog)"));
@@ -216,9 +218,9 @@ test("card colors migrate into the palette and persist without visible color con
   const listColor = await colorOf(page.locator(".todo-list-card").first());
   expect(CARD_COLORS).toContain(listColor);
   await expect.poll(() => data.get("todos").lists[0].color).toBe(listColor);
-  expect(await colorOf(page.locator("#todo-list-home"))).toBe("#E9C46A");
+  expect(await colorOf(page.locator("#todo-list-home"))).toBe(savedListColor);
   await page.reload();
-  expect(await colorOf(page.locator("#todo-list-home"))).toBe("#E9C46A");
+  expect(await colorOf(page.locator("#todo-list-home"))).toBe(savedListColor);
   expect(await colorOf(page.locator(".todo-list-card").first())).toBe(listColor);
 
   // List creation uses the same save boundary, including callers without a color field.

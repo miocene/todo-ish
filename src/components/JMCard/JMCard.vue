@@ -10,7 +10,7 @@ export default {
   props: {
     title: { type: String, required: true },
     emptyText: { type: String, required: true },
-    color: { type: String, default: "#FF00FF" },
+    color: { type: String, default: null },
     actions: { type: Array, default: () => [] },
     progress: { type: Object, default: null },
     collapsible: { type: Boolean, default: false },
