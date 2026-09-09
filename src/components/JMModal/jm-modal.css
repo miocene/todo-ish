@@ -1,6 +1,7 @@
 .jm-modal {
   inline-size: min(28rem, calc(100% - var(--space-9)));
   min-block-size: 12rem;
+  max-block-size: calc(100dvh - var(--space-9));
   padding: var(--space-5);
   color: var(--color-text-default);
   background: var(--color-bg-surface);

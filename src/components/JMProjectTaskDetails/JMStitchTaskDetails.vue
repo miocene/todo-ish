@@ -53,7 +53,7 @@ export default {
     <JMProgress :value="task.crossesDone" :max="task.crosses" :label="`Crosses completed for ${task.title}`" />
   </template>
   <fieldset v-else class="stitch-color__fields" :class="{ 'stitch-color__fields--missing': isMissing }">
-    <legend class="task-page__visually-hidden">Thread and progress for {{ task.title }}</legend>
+    <legend class="sr-only">Thread and progress for {{ task.title }}</legend>
     <div class="stitch-color__field stitch-color__field--thread">
       <label :for="inputId('floss')">Thread color</label>
       <JMSelect

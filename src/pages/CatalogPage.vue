@@ -1,4 +1,5 @@
 <script>
+import "./catalog-page.css";
 import { subscribeAppData } from "../app/app-data.js";
 import { filamentCatalog, filamentLabel, filamentProductLink, filaments } from "../app/filament-catalog.js";
 import { flossCatalog, floss, flossLabel, flossProductLink } from "../app/floss-catalog.js";

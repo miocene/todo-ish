@@ -1,4 +1,5 @@
 <script>
+import "./profile-page.css";
 import { appClock } from "../app/clock.js";
 import { RouterLink } from "vue-router";
 import { activityYears, collectCompletedActivity, groupActivityByDay } from "../app/activity.js";

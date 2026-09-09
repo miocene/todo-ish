@@ -29,7 +29,7 @@ export default {
       <li v-for="item in visibleNavigationItems" :key="item.to.name" class="item">
         <RouterLink class="link" exact-active-class="link--active" :to="item.to">
           <JMIcon :name="item.to.name === 'work' ? workIcon : item.icon" />
-          <span class="label">{{ item.label }}</span>
+          <span class="sr-only">{{ item.label }}</span>
         </RouterLink>
       </li>
     </ul>

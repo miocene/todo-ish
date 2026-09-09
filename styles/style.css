@@ -44,18 +44,6 @@ main {
   border: 0;
 }
 
-/* temp */
-.chore-modal,
-.todo-list-modal {
-  inline-size: min(28rem, calc(100% - var(--space-9)));
-  max-block-size: calc(100dvh - var(--space-9));
-  padding: var(--space-5);
-  border: 0;
-  border-radius: var(--radius-card);
-  color: var(--color-text-default);
-  background: var(--color-bg-surface);
-}
-
 .chore-form,
 .todo-list-form {
   display: flex;

@@ -58,7 +58,7 @@ export default {
     <h2>
       <a :href="item.href" target="_blank" rel="noopener noreferrer">
         {{ item.title }}
-        <span class="jm-catalog-item__visually-hidden"> (opens in a new tab)</span>
+        <span class="sr-only"> (opens in a new tab)</span>
       </a>
     </h2>
     <div class="jm-catalog-item__inventory">
@@ -79,7 +79,7 @@ export default {
       <p v-if="quantityError" role="alert">{{ quantityError }}</p>
       <template v-if="item.required > 0">
         <span class="jm-catalog-item__required" aria-hidden="true">/ {{ item.required }}</span>
-        <span :id="`catalog-required-${item.id}`" class="jm-catalog-item__visually-hidden">
+        <span :id="`catalog-required-${item.id}`" class="sr-only">
           Required {{ unit }}: {{ item.required }}
         </span>
       </template>
