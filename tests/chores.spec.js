@@ -66,7 +66,11 @@ test("monthly picker fits mobile and clamps dates to month-end", async ({ page, 
   await expect(dialog.getByRole("checkbox", { name: "Day 31", exact: true })).toBeDisabled();
   await dialog.getByRole("spinbutton", { name: "Every" }).fill("0");
   await dialog.getByRole("textbox", { name: "Title", exact: true }).focus();
-  await expect(dialog.getByRole("spinbutton", { name: "Every" })).toHaveValue("1");
+  await expect(dialog.getByRole("spinbutton", { name: "Every" })).toHaveValue("0");
+  await expect(dialog.getByRole("alert")).toHaveText("Enter a whole interval between 1 and 999.");
+  await expect(dialog.getByRole("button", { name: "Add chore", exact: true })).toBeDisabled();
+  await dialog.getByRole("spinbutton", { name: "Every" }).fill("1");
+  await expect(dialog.getByRole("alert")).toHaveCount(0);
   await advisory(async (expect) =>
     expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true),
   );

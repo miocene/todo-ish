@@ -37,6 +37,7 @@ export default {
       chores: { ...chores, history: chores.history ?? [] },
       draft: null,
       draftOriginal: null,
+      scheduleValid: true,
       editMessage: "",
       moves: createCompletionMoveScheduler(),
     };
@@ -105,6 +106,7 @@ export default {
       this.openEditor();
     },
     openEditor(task) {
+      this.scheduleValid = true;
       this.draftOriginal = task ? JSON.stringify(task) : null;
       this.editMessage = "";
       this.draft = {
@@ -118,6 +120,7 @@ export default {
       this.$nextTick(() => this.$refs.choreModal.open());
     },
     saveDraft() {
+      if (!this.scheduleValid) return;
       const { id, schedule } = this.draft;
       const title = this.draft.title.trim();
       if (!title || title.length > APP_DATA_LIMITS.title) return;
@@ -256,10 +259,14 @@ export default {
       <p v-if="draft.legacyRule">
         Previous rule: {{ draft.legacyRule }}. Choose a schedule to confirm how this chore repeats.
       </p>
-      <JMChoreSchedule v-model="draft.schedule" :title="draft.title" />
+      <JMChoreSchedule v-model="draft.schedule" v-model:valid="scheduleValid" :title="draft.title" />
       <div class="chore-form__actions">
         <JMButton text="Cancel" view="ghost" @click="$refs.choreModal.close()" />
-        <JMButton type="submit" :text="draft.id ? 'Save' : 'Add chore'" :disabled="!draft.title.trim()" />
+        <JMButton
+          type="submit"
+          :text="draft.id ? 'Save' : 'Add chore'"
+          :disabled="!draft.title.trim() || !scheduleValid"
+        />
       </div>
     </form>
   </JMModal>

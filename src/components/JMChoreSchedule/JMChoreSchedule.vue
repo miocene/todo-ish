@@ -10,14 +10,26 @@ export default {
   name: "JMChoreSchedule",
   components: { JMInput, JMSelect },
   props: { modelValue: { type: Object, required: true }, title: { type: String, default: "" } },
-  emits: ["update:modelValue"],
+  emits: ["update:modelValue", "update:valid"],
   setup() {
     return { id: useId() };
   },
   data() {
     return { frequencies: FREQUENCIES, weekdays: WEEKDAYS, intervalInput: this.modelValue.interval };
   },
+  computed: {
+    intervalValid() {
+      const interval = Number(this.intervalInput);
+      return Number.isInteger(interval) && interval >= 1 && interval <= 999;
+    },
+  },
   watch: {
+    intervalValid: {
+      immediate: true,
+      handler(valid) {
+        this.$emit("update:valid", valid);
+      },
+    },
     "modelValue.interval"(value) {
       this.intervalInput = value;
     },
@@ -57,7 +69,6 @@ export default {
         step="1"
         :model-value="intervalInput"
         @update:model-value="updateInterval"
-        @blur="intervalInput = modelValue.interval"
       />
       <label :for="`chore-frequency-${id}`">
         <span>Frequency</span>
@@ -70,6 +81,7 @@ export default {
         />
       </label>
     </div>
+    <p v-if="!intervalValid" role="alert">Enter a whole interval between 1 and 999.</p>
     <fieldset v-if="modelValue.frequency === 'week'" class="jm-chore-schedule__days">
       <legend>On weekdays</legend>
       <label v-for="(day, index) in weekdays" :key="day" class="jm-chore-schedule__day">
