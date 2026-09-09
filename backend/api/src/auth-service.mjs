@@ -141,12 +141,12 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
     },
 
     async registrationOptions({ bootstrapToken, cookieHeader }) {
+      if (bootstrapToken !== undefined && (typeof bootstrapToken !== "string" || bootstrapToken.length > 256))
+        throw new AuthError("The setup code must be a string of at most 256 characters", 400, "invalid_setup_code");
       const ownerExists = await repository.hasOwner();
       let user;
       let setupCodeHash;
       if (ownerExists && bootstrapToken) {
-        if (typeof bootstrapToken !== "string" || bootstrapToken.length > 256)
-          throw new AuthError("The setup code is invalid", 401, "invalid_setup_code");
         setupCodeHash = tokenHash(bootstrapToken);
         user = await repository.userForSetupCode(setupCodeHash);
         if (!user)

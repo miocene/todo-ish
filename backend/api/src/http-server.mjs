@@ -174,6 +174,8 @@ export function createHttpServer(
       } else if (url.pathname === "/api/auth/registration/options") {
         requireMethod(method, ["POST"]);
         const input = await readJson(request);
+        if (!input || typeof input !== "object" || Array.isArray(input))
+          throw new RequestError("Registration options must be an object");
         const result = await authService.registrationOptions({
           bootstrapToken: input.token,
           cookieHeader: request.headers.cookie,

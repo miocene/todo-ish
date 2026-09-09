@@ -40,6 +40,18 @@ function optionalText(value, path, options) {
   return value === undefined || value === null || value === "" ? null : text(value, path, options);
 }
 
+function productLink(value, path) {
+  const link = optionalText(value, path, { maximum: URL_LIMIT });
+  if (!link) return link;
+  try {
+    const url = new URL(link);
+    if (url.protocol === "https:" || url.protocol === "http:") return link;
+  } catch {
+    // Malformed URLs receive the same field error as unsupported schemes.
+  }
+  fail(path, "must be an absolute HTTP or HTTPS URL");
+}
+
 function id(value, path) {
   return text(value, path, { maximum: 200 });
 }
@@ -263,7 +275,7 @@ function shoppingTask(entry, path) {
   if (!entry.source)
     return {
       ...item,
-      productLink: optionalText(entry.productLink, `${path}.productLink`, { maximum: URL_LIMIT }),
+      productLink: productLink(entry.productLink, `${path}.productLink`),
     };
   if (!["filament-shortage", "floss-shortage"].includes(entry.source)) fail(path, "unknown shopping source");
   if (!item.completedAt) fail(path, "purchases must be completed");
@@ -275,7 +287,7 @@ function shoppingTask(entry, path) {
     source: entry.source,
     [key]: id(entry[key], path),
     quantity,
-    productLink: optionalText(entry.productLink, path, { maximum: URL_LIMIT }),
+    productLink: productLink(entry.productLink, `${path}.productLink`),
   };
 }
 

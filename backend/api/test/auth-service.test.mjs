@@ -177,3 +177,15 @@ test("private development endpoint can explicitly bypass passkey sessions", asyn
     displayName: "Julia",
   });
 });
+
+test("bootstrap and existing accounts reject malformed setup tokens before hashing", async () => {
+  for (const ownerExists of [false, true]) {
+    const service = createAuthService(fakeRepository({ hasOwner: async () => ownerExists }), config, {});
+    for (const bootstrapToken of [null, [], {}, 12, true, "x".repeat(257)]) {
+      await assert.rejects(
+        service.registrationOptions({ bootstrapToken }),
+        (error) => error instanceof AuthError && error.statusCode === 400 && error.code === "invalid_setup_code",
+      );
+    }
+  }
+});

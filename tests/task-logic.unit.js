@@ -210,3 +210,28 @@ test("Activity reads completed records without changing its snapshot", () => {
   assert.deepEqual(data, before);
   assert.deepEqual(reads, Object.keys(data));
 });
+
+test("shopping links accept only absolute HTTP and HTTPS URLs, including imported purchases", async () => {
+  const { validateAppDataResource } = await import("../backend/api/src/app-data-validation.mjs");
+  for (const item of [
+    { id: "manual", title: "Milk" },
+    {
+      id: "purchase",
+      title: "Floss",
+      completedAt: "2026-09-09T12:00:00Z",
+      source: "floss-shortage",
+      flossId: "dmc310",
+      quantity: 1,
+    },
+  ]) {
+    for (const productLink of ["https://example.com/item?q=1", "http://example.com", null, ""]) {
+      assert.doesNotThrow(() => validateAppDataResource("shopping", { tasks: [{ ...item, productLink }] }));
+    }
+    for (const productLink of ["javascript:alert(1)", "data:text/html,test", "//example.com", "/item", "not a URL"]) {
+      assert.throws(
+        () => validateAppDataResource("shopping", { tasks: [{ ...item, productLink }] }),
+        /productLink.*HTTP/,
+      );
+    }
+  }
+});

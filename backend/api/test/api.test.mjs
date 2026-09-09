@@ -373,3 +373,26 @@ test("data requests use the authenticated account and reject stale tabs after an
     assert.deepEqual(calls[0], ["preferences", { hiddenNavigation: ["printing"] }, 0, "owner"]);
   });
 });
+
+test("registration options reject malformed JSON shapes before authentication work", async () => {
+  await withServer(
+    fakeRepository(),
+    async (origin, messages) => {
+      for (const body of [null, [], "token", 42, true]) {
+        const response = await fetch(`${origin}/api/auth/registration/options`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        assert.equal(response.status, 400);
+        assert.deepEqual(await response.json(), { error: "Registration options must be an object" });
+      }
+      assert.deepEqual(messages, []);
+    },
+    fakeAuthService({
+      registrationOptions: () => {
+        throw new Error("Malformed input reached auth");
+      },
+    }),
+  );
+});
