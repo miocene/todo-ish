@@ -120,3 +120,65 @@ for (const resource of ["work-tasks", "todos", "printing", "cross-stitch"]) {
     await expect(item).toHaveCount(0);
   });
 }
+
+const suppliesProject = (weight) => ({
+  projects: [
+    {
+      id: "print",
+      title: "Print",
+      color: "#2765EC",
+      description: "",
+      tasks: [
+        {
+          id: "piece",
+          title: "Piece",
+          completed: false,
+          filaments: [
+            {
+              id: "usage",
+              catalogId: "bambu-pla-basic-filament-10101",
+              label: "PLA Basic · Black",
+              weightGrams: weight,
+            },
+          ],
+        },
+      ],
+    },
+  ],
+});
+
+test("Catalog and Shopping recalculate remote project shortages without navigation", async ({ page, appData }) => {
+  appData.set("printing", suppliesProject(1000));
+  appData.set("cross-stitch", { projects: [] });
+  appData.set("filament-inventory", {});
+  appData.set("floss-inventory", {});
+  appData.set("shopping", { tasks: [] });
+  await page.goto("/catalog?q=10101");
+  await expect(page.locator(".jm-catalog-item__required")).toHaveText("/ 1");
+  appData.update("printing", suppliesProject(2000));
+  await page.evaluate(() => globalThis.dispatchEvent(new Event("focus")));
+  await expect(page.locator(".jm-catalog-item__required")).toHaveText("/ 2");
+  await page.goto("/shopping");
+  await expect(page.locator(".shopping-card .task-item")).toHaveCount(1);
+  appData.update("printing", { projects: [] });
+  await page.evaluate(() => globalThis.dispatchEvent(new Event("focus")));
+  await expect(page.locator(".shopping-card .task-item")).toHaveCount(0);
+});
+
+test("Project shortages respond to shared stock while Activity responds to remote completions", async ({
+  page,
+  appData,
+}) => {
+  appData.set("printing", suppliesProject(1000));
+  appData.set("filament-inventory", {});
+  await page.goto("/printing");
+  await expect(page.locator(".missing")).toContainText("Missing 1 spool");
+  appData.update("filament-inventory", { "bambu-pla-basic-filament-10101": 1 });
+  await page.evaluate(() => globalThis.dispatchEvent(new Event("focus")));
+  await expect(page.locator(".missing")).toHaveCount(0);
+  await page.goto("/profile");
+  await expect(page.getByRole("heading", { name: "Activity", exact: true })).toBeVisible();
+  appData.update("todos", { lists: [], history: [manual("done", "Completed elsewhere", new Date().toISOString())] });
+  await page.evaluate(() => globalThis.dispatchEvent(new Event("focus")));
+  await expect(page.locator(".activity-day p", { hasText: "Completed elsewhere" })).toBeVisible();
+});

@@ -1,5 +1,6 @@
 <script>
 import "./profile-page.css";
+import { subscribeAppData } from "../app/app-data.js";
 import { appClock } from "../app/clock.js";
 import { RouterLink } from "vue-router";
 import { activityYears, collectCompletedActivity, groupActivityByDay } from "../app/activity.js";
@@ -14,6 +15,16 @@ export default {
     return {
       activity: collectCompletedActivity(),
     };
+  },
+  mounted() {
+    this.subscriptions = ["work-tasks", "chores", "todos", "shopping", "printing", "cross-stitch"].map((resource) =>
+      subscribeAppData(resource, () => {
+        this.activity = collectCompletedActivity();
+      }),
+    );
+  },
+  beforeUnmount() {
+    for (const unsubscribe of this.subscriptions) unsubscribe();
   },
   computed: {
     currentYear() {

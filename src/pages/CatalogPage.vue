@@ -118,6 +118,12 @@ export default {
   },
   mounted() {
     this.subscriptions = [
+      subscribeAppData("printing", (value) => {
+        this.printingProjects = value.projects;
+      }),
+      subscribeAppData("cross-stitch", (value) => {
+        this.stitchingProjects = value.projects;
+      }),
       subscribeAppData("filament-inventory", (value) => {
         this.filamentInventory = value;
       }),

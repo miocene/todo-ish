@@ -41,6 +41,8 @@ export default {
   },
   mounted() {
     this.subscriptions = [
+      subscribeAppData("printing", () => this.refreshSupplies()),
+      subscribeAppData("cross-stitch", () => this.refreshSupplies()),
       subscribeAppData("shopping", this.receiveShopping),
       subscribeAppData("filament-inventory", () => this.refreshSupplies()),
       subscribeAppData("floss-inventory", () => this.refreshSupplies()),

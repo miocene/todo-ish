@@ -165,6 +165,16 @@ export default {
         if (resource === (this.isPrinting ? "printing" : "cross-stitch")) receive();
       }),
     );
+    this.subscriptions.push(
+      subscribeAppData("filament-inventory", (value) => {
+        this.filamentInventory = value;
+        this.syncShoppingList();
+      }),
+      subscribeAppData("floss-inventory", (value) => {
+        this.flossInventory = value;
+        this.syncShoppingList();
+      }),
+    );
     this.syncShoppingList();
   },
   beforeUnmount() {
