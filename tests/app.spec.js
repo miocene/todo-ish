@@ -269,7 +269,7 @@ test("navigation opens application pages", async ({ page }) => {
     await link.click();
     await expect.poll(() => new URL(page.url()).pathname).toBe(path);
     await expect(page).toHaveTitle(`${label} — Done-ish`);
-    await expect(page.getByRole("heading", { level: 1, name: label })).toBeVisible();
+    await expect(page.getByRole("heading", { level: path === "/shopping" ? 2 : 1, name: label })).toBeVisible();
     await expect(link).toHaveAttribute("aria-current", "page");
   }
 
@@ -436,11 +436,11 @@ test("other task pages render their variants and save changes immediately", asyn
   await page.goto("/shopping");
   await expect(page.locator(".task-item__remove").first().locator("use")).toHaveAttribute("href", /#icon-remove$/);
   await page.getByRole("button", { name: "Remove Oat milk from shopping list" }).click();
-  await expect(page.locator(".task-page__tasks .task-item")).toHaveCount(6);
+  await expect(page.locator(".shopping-card .task-item")).toHaveCount(6);
   await page.getByRole("button", { name: "Add item" }).click();
-  await expect(page.locator(".task-page__tasks .task-item")).toHaveCount(7);
+  await expect(page.locator(".shopping-card .task-item")).toHaveCount(7);
   await page.getByRole("button", { name: "Add item" }).focus();
-  await expect(page.locator(".task-page__tasks .task-item")).toHaveCount(6);
+  await expect(page.locator(".shopping-card .task-item")).toHaveCount(6);
   await page.reload();
   await expect(page.getByRole("textbox", { name: "Task title" })).toHaveCount(2);
   await expect(page.locator(".task-item__drag-handle, .task-item__pin")).toHaveCount(0);
@@ -780,7 +780,7 @@ test("items move down when checked and back up when unchecked after 500 millisec
   await expect(choreTitles.first()).toHaveText("Water the plants");
 
   await page.goto("/shopping");
-  const shoppingTitles = page.locator(".task-page__tasks textarea");
+  const shoppingTitles = page.locator(".shopping-card textarea");
   await expect(shoppingTitles.first()).toHaveValue("Oat milk");
   await page.getByRole("checkbox", { name: "Complete Oat milk" }).check();
   await page.clock.runFor(499);

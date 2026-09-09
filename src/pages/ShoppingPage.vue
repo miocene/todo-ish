@@ -6,12 +6,12 @@ import JMCatalogLoader from "../components/JMCatalogLoader/JMCatalogLoader.vue";
 import { savePageTasks } from "../app/page-tasks.js";
 import { completedTasksLast, nextEntityId, setTaskCompletion, serializableTasks } from "../app/task-list.js";
 import { syncSupplyShoppingLists } from "../app/shopping-supplies.js";
-import JMButton from "../components/JMButton/JMButton.vue";
+import JMCard from "../components/JMCard/JMCard.vue";
 import JMTaskItem from "../components/JMTaskItem/JMTaskItem.vue";
 
 export default {
   name: "ShoppingPage",
-  components: { JMCatalogLoader, JMButton, JMTaskItem },
+  components: { JMCatalogLoader, JMCard, JMTaskItem },
   data() {
     const shopping = syncSupplyShoppingLists();
     shopping.tasks = completedTasksLast(shopping.tasks);
@@ -105,18 +105,20 @@ export default {
 </script>
 
 <template>
-  <header class="page-header">
-    <h1>Shopping cart</h1>
-    <JMButton text="Add item" view="secondary" @click="addTask" />
-  </header>
-
   <JMCatalogLoader :catalog="filamentCatalog" />
   <JMCatalogLoader :catalog="flossCatalog" />
 
-  <p v-if="shopping.tasks.length === 0" class="task-page__empty">The shopping list is empty.</p>
-  <ul v-else class="task-page__tasks" role="list">
-    <li v-for="task in shopping.tasks" :key="task.id">
+  <JMCard
+    class="shopping-card"
+    title="Shopping cart"
+    empty-text="The shopping list is empty."
+    :actions="[{ id: 'add', label: 'Add item', icon: 'plus' }]"
+    @action="addTask"
+  >
+    <template v-if="shopping.tasks.length" #list>
       <JMTaskItem
+        v-for="task in shopping.tasks"
+        :key="task.id"
         :task-id="task.id"
         :title="task.title"
         :title-href="task.productLink || ''"
@@ -130,6 +132,6 @@ export default {
         @update:completed="updateCompleted(task, $event)"
         @update:title="updateTitle(task, $event)"
       />
-    </li>
-  </ul>
+    </template>
+  </JMCard>
 </template>
