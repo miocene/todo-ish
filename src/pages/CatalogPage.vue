@@ -28,7 +28,7 @@ export default {
         { value: "floss", text: "DMC embroidery floss", to: { name: "catalog", query: { catalog: "floss" } } },
       ],
       catalogKind: this.$route.query.catalog === "floss" ? "floss" : "filament",
-      family: "",
+      family: typeof this.$route.query.family === "string" ? this.$route.query.family : "",
       filamentInventory: loadFilamentInventory(),
       filaments,
       floss,
@@ -111,10 +111,10 @@ export default {
     },
   },
   watch: {
-    "$route.query.catalog"(value) {
-      this.catalogKind = value === "floss" ? "floss" : "filament";
-      this.family = "";
-      this.query = typeof this.$route.query.q === "string" ? this.$route.query.q : "";
+    "$route.query"(value) {
+      this.catalogKind = value.catalog === "floss" ? "floss" : "filament";
+      this.family = typeof value.family === "string" ? value.family : "";
+      this.query = typeof value.q === "string" ? value.q : "";
     },
   },
   mounted() {
@@ -137,6 +137,17 @@ export default {
     for (const unsubscribe of this.subscriptions) unsubscribe();
   },
   methods: {
+    search() {
+      const query = this.query.trim();
+      this.$router.push({
+        name: "catalog",
+        query: {
+          ...(this.isFlossCatalog && { catalog: "floss" }),
+          ...(query && { q: query }),
+          ...(!this.isFlossCatalog && this.family && { family: this.family }),
+        },
+      });
+    },
     catalogGroup(filament) {
       return ["owned", "needed", "other"][this.catalogPriority(filament)];
     },
@@ -180,7 +191,7 @@ export default {
 
     <JMCatalogLoader :catalog="catalog" />
 
-    <form class="catalog-search" action="/catalog" method="get" @submit.prevent>
+    <form class="catalog-search" action="/catalog" method="get" @submit.prevent="search">
       <JMInput
         id="catalog-query"
         v-model="query"

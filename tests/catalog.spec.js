@@ -44,3 +44,18 @@ test("Filament selects and previews distinguish solid swatches from images", asy
   await select.selectOption("bambu-pla-basic-filament-10101");
   await expect(select.locator(".selection .jm-swatch")).toHaveAttribute("src", /^https:/);
 });
+
+test("Catalog submit records filters and browser history restores the query", async ({ page }) => {
+  await page.goto("/catalog?q=10101");
+  const search = page.getByRole("searchbox", { name: "Search filaments" });
+  await expect(search).toHaveValue("10101");
+  await expect(page.locator("header.jm-header").getByRole("button", { name: "Search" })).toHaveCount(0);
+  await search.fill("10601");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await expect(page).toHaveURL(/q=10601/);
+  await page.goBack();
+  await expect(search).toHaveValue("10101");
+  await expect(page.locator(".jm-catalog-item h2")).toContainText("Black");
+  await page.goForward();
+  await expect(search).toHaveValue("10601");
+});

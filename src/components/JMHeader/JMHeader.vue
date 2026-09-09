@@ -10,7 +10,6 @@ import "./jm-header.css";
 export default {
   name: "JMHeader",
   components: { JMButton, JMSwitch, RouterLink },
-  emits: ["search"],
   setup() {
     return { profileMenuId: `profile-menu-${useId()}`, navigationItems, toggleNavigationItem };
   },
@@ -55,8 +54,6 @@ export default {
     <RouterLink class="logo" :to="{ name: 'work' }" aria-label="toto-ish, work">
       <span class="logo-main">todo</span><span class="logo-suffix">-ish</span>
     </RouterLink>
-
-    <JMButton aria-label="Search" icon-name="search" view="ghost" @click="$emit('search')" />
 
     <JMButton aria-label="Profile" icon-name="user" view="ghost" :popovertarget="profileMenuId" />
     <div :id="profileMenuId" ref="profileMenu" class="jm-popover jm-header__profile-menu" popover>
