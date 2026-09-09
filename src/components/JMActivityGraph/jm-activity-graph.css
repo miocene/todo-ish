@@ -125,8 +125,7 @@ a.jm-activity-graph__cell:active {
   font-size: 0.875rem;
 }
 
-.profile-page__header,
-.profile-page__auth-actions {
+.profile-page__header {
   display: flex;
   gap: var(--space-3);
   align-items: center;
@@ -134,16 +133,6 @@ a.jm-activity-graph__cell:active {
 
 .profile-page__header {
   justify-content: space-between;
-}
-
-.profile-page__auth-actions {
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.profile-page__auth-message {
-  color: #f0f;
-  font-size: 0.875rem;
 }
 
 .activity-summary,

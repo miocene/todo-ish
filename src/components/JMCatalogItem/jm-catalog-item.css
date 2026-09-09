@@ -78,8 +78,7 @@ span.jm-catalog-item__swatch {
   padding-block-end: var(--space-7);
 }
 
-.catalog-page__header p,
-.catalog-page__count {
+.catalog-page__header p {
   margin-block-start: var(--space-2);
   color: #f0f;
   font-size: 0.875rem;

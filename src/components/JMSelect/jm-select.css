@@ -13,8 +13,7 @@
   }
 
   &::picker-icon,
-  & option::checkmark,
-  .check {
+  & option::checkmark {
     display: none;
   }
 
@@ -25,11 +24,6 @@
     height: var(--size-control-xs);
     padding: 0;
     border: 0;
-
-    .icon {
-      width: 12px;
-      height: 12px;
-    }
 
     .chevron,
     .button .text {
