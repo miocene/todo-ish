@@ -1,4 +1,5 @@
 <script>
+import JMSwatch from "../JMSwatch/JMSwatch.vue";
 import { filamentCatalog, filamentLabel, filaments, filamentsById } from "../../app/filament-catalog.js";
 import JMButton from "../JMButton/JMButton.vue";
 import JMInput from "../JMInput/JMInput.vue";
@@ -6,7 +7,7 @@ import JMSelect from "../JMSelect/JMSelect.vue";
 
 export default {
   name: "JMPrintingTaskDetails",
-  components: { JMButton, JMInput, JMSelect },
+  components: { JMSwatch, JMButton, JMInput, JMSelect },
   emits: ["remove", "update:filament", "update:weight"],
   props: {
     readonly: { type: Boolean, default: false },
@@ -67,14 +68,7 @@ export default {
   <div v-for="(usage, usageIndex) in task.filaments" :key="usage.id" class="filament">
     <div class="printing-item__field printing-item__field--filament">
       <span v-if="readonly">
-        <img
-          v-if="filamentPreview(usage)?.swatch"
-          :src="filamentPreview(usage).swatch"
-          alt=""
-          width="16"
-          height="16"
-          loading="lazy"
-        />
+        <JMSwatch v-if="filamentPreview(usage)?.swatch" :value="filamentPreview(usage).swatch" />
         {{ usage.label || usage.catalogId || "No filament selected" }}
       </span>
       <JMSelect

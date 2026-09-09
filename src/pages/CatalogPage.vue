@@ -95,6 +95,7 @@ export default {
           id: thread.id,
           title: flossLabel(thread),
           href: flossProductLink(thread),
+          swatch: thread.color,
           group: this.flossCatalogGroup(thread),
           required: this.flossSupplyById.get(thread.id)?.requiredSkeins ?? 0,
         }));

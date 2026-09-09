@@ -1,0 +1,7 @@
+.jm-swatch {
+  display: inline-block;
+  inline-size: 1rem;
+  block-size: 1rem;
+  flex-shrink: 0;
+  object-fit: cover;
+}

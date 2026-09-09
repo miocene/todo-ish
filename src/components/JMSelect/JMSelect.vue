@@ -1,10 +1,11 @@
 <script>
+import JMSwatch from "../JMSwatch/JMSwatch.vue";
 import JMIcon from "../JMIcon/JMIcon.vue";
 import "./jm-select.css";
 
 export default {
   name: "JMSelect",
-  components: { JMIcon },
+  components: { JMSwatch, JMIcon },
   props: {
     disabled: { type: Boolean, default: false },
     modelValue: { type: [String, Number], default: "" },
@@ -41,14 +42,14 @@ export default {
   <select v-model="value" :class="['jm-select', view, size]" :disabled="disabled">
     <component :is="'button'" class="button" type="button">
       <span v-if="selectedOption?.swatch" class="selection">
-        <img class="swatch" :src="selectedOption.swatch" alt="" width="16" height="16" />
+        <JMSwatch class="swatch" :value="selectedOption.swatch" />
         <span class="text">{{ selectedOption.text }}</span>
       </span>
       <component v-else :is="'selectedcontent'" class="selection" />
       <JMIcon class="chevron" name="chevron-down" />
     </component>
     <option v-for="option in options" :key="option.value" :value="option.value" :disabled="option.disabled">
-      <img v-if="option.swatch" class="swatch" :src="option.swatch" alt="" width="16" height="16" loading="lazy" />
+      <JMSwatch v-if="option.swatch" class="swatch" :value="option.swatch" />
       <JMIcon v-if="option.iconName" :name="option.iconName" />
       <component :is="'span'" class="text">{{ option.text }}</component>
     </option>
