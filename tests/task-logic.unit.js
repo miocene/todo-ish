@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { activityLevel, activityYears, buildActivityCalendar, groupActivityByDay } from "../src/app/activity.js";
+import {
+  activityLevel,
+  activityYears,
+  buildActivityCalendar,
+  collectCompletedActivity,
+  groupActivityByDay,
+} from "../src/app/activity.js";
 import { filamentSupplyStatus } from "../src/app/printing-supplies.js";
 import { flossSupplyStatus } from "../src/app/stitching-supplies.js";
 import { shiftIsoDate } from "../src/app/date.js";
@@ -177,4 +183,30 @@ test("shopping validation saves purchases and history but excludes unfinished sh
   assert.equal(value.history[0].title, "Milk");
   assert.throws(() => validateAppDataResource("shopping", { tasks: [{ ...purchase, quantity: 0 }] }), /quantity/);
   assert.throws(() => validateAppDataResource("shopping", { tasks: [purchase], history: [purchase] }), /distinct/);
+});
+
+test("Activity accepts large histories without spreading function arguments", () => {
+  const items = Array.from({ length: 200_000 }, () => ({ date: "2020-02-01" }));
+  assert.deepEqual(activityYears(items, 2026), [2026, 2025, 2024, 2023, 2022, 2021, 2020]);
+});
+
+test("Activity reads completed records without changing its snapshot", () => {
+  const data = {
+    "work-tasks": [{ id: "work", title: "Done", date: "2026-09-01", checkedAt: "2026-09-03T12:00:00Z" }],
+    chores: { tasks: [], history: [] },
+    todos: { lists: [], history: [{ id: "retained", title: "Deleted", completedAt: "2026-09-02T12:00:00Z" }] },
+    shopping: { tasks: [] },
+    printing: { projects: [] },
+    "cross-stitch": { projects: [] },
+  };
+  const before = structuredClone(data);
+  const reads = [];
+  const items = collectCompletedActivity((resource) => {
+    reads.push(resource);
+    return data[resource];
+  });
+  assert.equal(items.length, 2);
+  assert.equal(items.find((item) => item.source === "Work").date, "2026-09-01");
+  assert.deepEqual(data, before);
+  assert.deepEqual(reads, Object.keys(data));
 });

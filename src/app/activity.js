@@ -1,7 +1,7 @@
 import { toIsoDate as isoDate } from "./date.js";
 import { completedChoreOccurrences } from "./chore-schedule.js";
-import { loadPageTasks } from "./page-tasks.js";
-import { getAllWorkTasks } from "./work-tasks.js";
+import { initialAppData, readAppData } from "./app-data.js";
+import { workTaskFromApi } from "../../backend/api/src/app-data-contract.mjs";
 
 const DAY_FORMATTER = new Intl.DateTimeFormat("en", {
   weekday: "long",
@@ -39,13 +39,13 @@ function activityItem(task, source, context, route) {
   };
 }
 
-export function collectCompletedActivity() {
+export function collectCompletedActivity(read = (resource) => readAppData(resource) ?? initialAppData(resource)) {
   const items = [];
   const add = (item) => {
     if (item) items.push(item);
   };
 
-  for (const task of getAllWorkTasks()) {
+  for (const task of read("work-tasks").map(workTaskFromApi)) {
     add(
       activityItem(task, "Work", task.date ? "Scheduled work" : "Backlog", {
         name: "work",
@@ -54,11 +54,11 @@ export function collectCompletedActivity() {
     );
   }
 
-  const chores = loadPageTasks("chores");
+  const chores = read("chores");
   for (const task of completedChoreOccurrences(chores))
     add(activityItem(task, "Chores", task.details, { name: "chores" }));
 
-  const todos = loadPageTasks("todos");
+  const todos = read("todos");
   const todoActivity = new Map((todos.history ?? []).map((task) => [task.id, task]));
   for (const list of todos.lists) {
     for (const task of list.tasks) {
@@ -68,12 +68,12 @@ export function collectCompletedActivity() {
   }
   for (const task of todoActivity.values()) add(activityItem(task, "Todo lists", "", { name: "todos" }));
 
-  const shopping = loadPageTasks("shopping");
+  const shopping = read("shopping");
   for (const task of [...shopping.tasks, ...(shopping.history ?? [])]) {
     add(activityItem(task, "Shopping cart", "Shopping cart", { name: "shopping" }));
   }
 
-  const printing = loadPageTasks("printing");
+  const printing = read("printing");
   for (const task of printing.history ?? [])
     add(activityItem(task, "3D printing", task.context || "", { name: "printing" }));
   for (const project of printing.projects) {
@@ -82,7 +82,7 @@ export function collectCompletedActivity() {
     }
   }
 
-  const crossStitch = loadPageTasks("crossStitch");
+  const crossStitch = read("cross-stitch");
   for (const task of crossStitch.history ?? [])
     add(activityItem(task, "Cross stitch", task.context || "", { name: "cross-stitch" }));
   for (const project of crossStitch.projects) {
@@ -112,8 +112,11 @@ export function groupActivityByDay(items, year) {
 }
 
 export function activityYears(items, currentYear = new Date().getFullYear(), minimumYears = 5) {
-  const itemYears = items.map((item) => Number(item.date.slice(0, 4))).filter(Number.isInteger);
-  const earliestYear = Math.min(currentYear, ...itemYears);
+  let earliestYear = currentYear;
+  for (const item of items) {
+    const year = Number(item.date.slice(0, 4));
+    if (Number.isInteger(year)) earliestYear = Math.min(earliestYear, year);
+  }
   const yearCount = Math.max(minimumYears, currentYear - earliestYear + 1);
   return Array.from({ length: yearCount }, (_, index) => currentYear - index);
 }
