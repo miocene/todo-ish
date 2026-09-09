@@ -57,7 +57,7 @@ export default {
     <div class="content">
       <a
         v-if="titleHref"
-        class="task-item__title task-item__title-link"
+        class="title title-link"
         :href="titleHref"
         target="_blank"
         rel="noopener noreferrer"
@@ -80,8 +80,8 @@ export default {
         @update:model-value="$emit('update:title', $event)"
         @keydown.enter="$emit('enter', $event)"
       />
-      <span v-else class="task-item__title">{{ title }}</span>
-      <div v-if="$slots.details" class="task-item__details">
+      <span v-else class="title">{{ title }}</span>
+      <div v-if="$slots.details" class="details">
         <slot name="details" />
       </div>
     </div>

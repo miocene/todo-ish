@@ -36,6 +36,13 @@
       "when": 1788621663880,
       "tag": "0004_card_colors",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788959700518,
+      "tag": "0005_chore_schedules",
+      "breakpoints": true
     }
   ]
 }

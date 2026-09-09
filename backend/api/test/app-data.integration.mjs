@@ -23,7 +23,14 @@ const values = {
   chores: {
     occurrenceOrder: ["chore-2", "chore-1"],
     tasks: [
-      { id: "chore-1", title: "Plants", details: "Weekly", nextDue: "2026-09-05", completed: false },
+      {
+        id: "chore-1",
+        title: "Plants",
+        details: "Weekly",
+        nextDue: "2026-09-05",
+        completed: false,
+        schedule: { frequency: "week", interval: 2, startDate: "2026-09-05", weekdays: [0, 5], monthDays: [5] },
+      },
       { id: "chore-2", title: "Kitchen", details: "Daily", nextDue: "2026-09-04", completed: true, completedAt },
     ],
   },
@@ -185,6 +192,27 @@ test("PostgreSQL application-data contract", async (t) => {
       false,
     );
     assert.equal(state.pages.crossStitch.projects[0].totalCrosses, 20);
+  });
+
+  await t.test("chore schedules can move earlier and retain completed occurrences", async () => {
+    const updated = structuredClone(values.chores);
+    updated.tasks[0].nextDue = "2026-10-05";
+    updated.tasks[0].completed = true;
+    updated.tasks[0].completedAt = completedAt;
+    await repository.replace("chores", validateAppDataResource("chores", updated), 1);
+    updated.tasks[0].nextDue = "2026-09-07";
+    updated.tasks[0].completed = false;
+    delete updated.tasks[0].completedAt;
+    updated.tasks[0].schedule.weekdays = [0];
+    await repository.replace("chores", validateAppDataResource("chores", updated), 2);
+    const state = await repository.read();
+    assert.equal(state.pages.chores.tasks[0].nextDue, "2026-09-07");
+    assert.deepEqual(state.pages.chores.tasks[0].schedule, updated.tasks[0].schedule);
+    const history = await pool.query("SELECT completed_at FROM chore_occurrences WHERE chore_id = $1 AND due_on = $2", [
+      "chore-1",
+      "2026-10-05",
+    ]);
+    assert.equal(history.rows[0].completed_at.toISOString(), completedAt);
   });
 
   await t.test("only one simultaneous write can win a revision", async () => {

@@ -68,3 +68,24 @@ test("revision conflicts and failed batches roll back and release their connecti
   assert.equal(failed.queries.at(-1).text, "ROLLBACK");
   assert.equal(failed.released(), true);
 });
+
+test("chore writes bind structured schedules and current dates without deleting occurrence history", async () => {
+  const f = fixture();
+  const schedule = { frequency: "month", interval: 2, startDate: "2026-01-31", weekdays: [5], monthDays: [15, 31] };
+  await f.repository.replace(
+    "chores",
+    {
+      occurrenceOrder: ["chore-1"],
+      tasks: [{ id: "chore-1", title: "Filter", details: "Monthly", nextDue: "2026-03-15", schedule }],
+    },
+    0,
+  );
+  const insert = f.queries.find(({ text }) => text.startsWith("INSERT INTO chores"));
+  assert.equal(insert.values[3], JSON.stringify(schedule));
+  assert.equal(insert.values[4], "2026-03-15");
+  assert.match(insert.text, /schedule = coalesce\(EXCLUDED.schedule, chores.schedule\)/);
+  assert.equal(
+    f.queries.some(({ text }) => text.startsWith("DELETE FROM chore_occurrences")),
+    false,
+  );
+});

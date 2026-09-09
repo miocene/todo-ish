@@ -48,6 +48,12 @@
     color: var(--color-text-secondary);
     text-decoration: line-through;
   }
+
+  .details {
+    margin-block-start: var(--space-1);
+    color: var(--color-text-secondary);
+    font-size: 0.75rem;
+  }
 }
 
 .checkbox {

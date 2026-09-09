@@ -1,3 +1,4 @@
+import { scheduleFromChore } from "./chore-schedule.js";
 import { todayIso } from "./date.js";
 import { initialAppData, initializeAppDataResource, readAppData, writeAppData } from "./app-data.js";
 import { normalizeCardColor } from "./card-colors.js";
@@ -107,6 +108,7 @@ function normalizeChores(data) {
   const tasks = data.tasks.map((task) => ({
     ...task,
     nextDue: ISO_DATE.test(task.nextDue) ? task.nextDue : todayIso(),
+    schedule: scheduleFromChore(task, todayIso()),
   }));
   const taskIds = new Set(tasks.map((task) => task.id));
   const defaultOrder = [...tasks.filter((task) => !task.completed), ...tasks.filter((task) => task.completed)].map(
@@ -163,7 +165,9 @@ export function loadPageTasks(page) {
         [collection]: saved[collection].map((item, index) => ({ ...item, color: data[collection][index].color })),
       }
     : data;
-  return initializeAppDataResource(resource, value, { migrate });
+  initializeAppDataResource(resource, value, { migrate });
+  // Existing resources keep their cached value; the page still needs normalized fields.
+  return data;
 }
 
 export function savePageTasks(page, data) {

@@ -130,6 +130,30 @@ function workStatuses(value) {
   );
 }
 
+function choreSchedule(value, path) {
+  const source = object(value, path);
+  if (!["day", "week", "month"].includes(source.frequency)) fail(`${path}.frequency`, "must be day, week, or month");
+  const interval = integer(source.interval, `${path}.interval`, { maximum: 999 });
+  if (!interval) fail(`${path}.interval`, "must be at least 1");
+  const days = (values, field, min, max) => {
+    const selected = array(values, `${path}.${field}`, max - min + 1).map((day, index) => {
+      const result = integer(day, `${path}.${field}[${index}]`, { maximum: max });
+      if (result < min) fail(`${path}.${field}[${index}]`, `must be at least ${min}`);
+      return result;
+    });
+    if (!selected.length || new Set(selected).size !== selected.length)
+      fail(`${path}.${field}`, "must contain unique selected days");
+    return selected.sort((a, b) => a - b);
+  };
+  return {
+    frequency: source.frequency,
+    interval,
+    startDate: date(source.startDate, `${path}.startDate`),
+    weekdays: days(source.weekdays, "weekdays", 0, 6),
+    monthDays: days(source.monthDays, "monthDays", 1, 31),
+  };
+}
+
 function chores(value) {
   const source = object(value, "chores");
   const tasks = uniqueIds(
@@ -139,6 +163,7 @@ function chores(value) {
         ...item,
         details: text(entry.details, `chores.tasks[${index}].details`),
         nextDue: date(entry.nextDue, `chores.tasks[${index}].nextDue`),
+        ...(entry.schedule != null && { schedule: choreSchedule(entry.schedule, `chores.tasks[${index}].schedule`) }),
       };
     }),
     "chores.tasks",

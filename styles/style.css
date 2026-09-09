@@ -330,49 +330,6 @@ n {
     }
   }
 
-  /* Task cards */
-
-  .task-item {
-    display: flex;
-    gap: var(--space-1);
-    align-items: flex-start;
-    min-inline-size: 0;
-    margin-inline: var(--space-2);
-    padding: var(--space-2);
-    background: var(--color-bg-surface);
-    border: 1px solid #f0f;
-    border-radius: var(--radius-control);
-  }
-
-  .task-item__title {
-    min-inline-size: 0;
-    overflow-wrap: anywhere;
-    color: inherit;
-    font-size: 0.8125rem;
-  }
-
-  .task-item__title-link {
-    text-decoration: underline;
-    text-decoration-color: color-mix(in srgb, currentcolor 45%, transparent);
-    text-underline-offset: 0.16em;
-  }
-
-  .task-item__title-link:is(:hover, :focus-visible) {
-    text-decoration-color: currentcolor;
-  }
-
-  .task-item__details {
-    margin-block-start: var(--space-1);
-    color: #f0f;
-    font-size: 0.75rem;
-  }
-
-  .task-item__actions {
-    display: inline-flex;
-    flex: none;
-    gap: var(--space-1);
-  }
-
   /* Progress */
 
   .jm-progress {

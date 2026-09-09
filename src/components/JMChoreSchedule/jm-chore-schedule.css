@@ -1,0 +1,80 @@
+.jm-chore-schedule {
+  min-inline-size: 0;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.jm-chore-schedule__interval {
+  display: flex;
+  align-items: end;
+  gap: var(--space-3);
+
+  > * {
+    flex: 1;
+    min-inline-size: 0;
+  }
+
+  label > span {
+    display: block;
+    margin-block-end: var(--space-2);
+  }
+
+  input,
+  select {
+    inline-size: 100%;
+  }
+}
+
+.jm-chore-schedule__days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-1);
+  min-inline-size: 0;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  border: 0;
+
+  legend {
+    margin-block-end: var(--space-2);
+  }
+}
+
+.jm-chore-schedule__day {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 32px;
+  border-radius: var(--radius-control);
+  background: var(--control-secondary-background);
+  cursor: pointer;
+
+  input {
+    position: absolute;
+    inline-size: 100%;
+    block-size: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: inherit;
+  }
+
+  &:has(:checked) {
+    background: var(--control-primary-background);
+    color: var(--control-primary-text);
+  }
+
+  &:has(:focus-visible) {
+    outline: 2px solid var(--color-text-accent);
+    outline-offset: 2px;
+  }
+
+  &:hover:not(:has(:checked)) {
+    background: var(--control-ghost-background-hover);
+  }
+}
+
+.jm-chore-schedule__hint {
+  grid-column: 1 / -1;
+  color: var(--color-text-secondary);
+}

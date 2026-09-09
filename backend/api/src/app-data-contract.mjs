@@ -6,7 +6,8 @@
  * @typedef {{ id: string, title: string, completed: boolean, completedAt?: string }} Task
  * @typedef {Task & { date: string | null }} WorkTask
  * @typedef {{ id: string, title: string, date: string | null, checkedAt?: string }} WorkTaskPayload
- * @typedef {Task & { details: string, nextDue: string }} Chore
+ * @typedef {{ frequency: "day" | "week" | "month", interval: number, startDate: string, weekdays: number[], monthDays: number[] }} ChoreSchedule
+ * @typedef {Task & { details: string, nextDue: string, schedule?: ChoreSchedule }} Chore
  * @typedef {{ id: string, title: string, color?: string, tasks: Task[] }} TodoList
  * @typedef {{ id: string, catalogId: string, label: string, weightGrams: number | "" }} FilamentUsage
  * @typedef {Task & { filaments: FilamentUsage[] }} PrintingTask

@@ -7,6 +7,9 @@ export default {
     open() {
       this.$refs.dialog.showModal();
     },
+    close() {
+      this.$refs.dialog.close();
+    },
     handleBackdropClick(event) {
       const dialog = this.$refs.dialog;
       if ("closedBy" in dialog || event.target !== dialog) return;
@@ -20,5 +23,5 @@ export default {
 </script>
 
 <template>
-  <dialog ref="dialog" class="jm-modal" closedby="any" @click="handleBackdropClick" />
+  <dialog ref="dialog" class="jm-modal" closedby="any" @click="handleBackdropClick"><slot /></dialog>
 </template>

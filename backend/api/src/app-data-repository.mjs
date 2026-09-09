@@ -68,6 +68,7 @@ async function readAppData(pool) {
          chores.id,
          chores.title,
          chores.schedule_description AS details,
+         chores.schedule,
          occurrence.due_on::text AS "nextDue",
          occurrence.completed_at AS "completedAt",
          occurrence.position AS "occurrencePosition"
@@ -76,6 +77,7 @@ async function readAppData(pool) {
          SELECT due_on, completed_at, position
          FROM chore_occurrences
          WHERE chore_id = chores.id
+           AND (chores.next_due_on IS NULL OR due_on = chores.next_due_on)
          ORDER BY due_on DESC
          LIMIT 1
        ) AS occurrence ON true
@@ -223,6 +225,7 @@ async function readAppData(pool) {
               id: row.id,
               title: row.title,
               details: row.details,
+              ...(row.schedule && { schedule: row.schedule }),
               nextDue: row.nextDue,
               ...completion(row.completedAt),
             })),
@@ -283,18 +286,12 @@ async function insertRows(client, table, columns, rows, conflict = "") {
   }
 }
 
-async function upsertRows(
-  client,
-  table,
-  columns,
-  rows,
-  { keys = ["id"], updatedAt = true, preserveColor = false } = {},
-) {
+async function upsertRows(client, table, columns, rows, { keys = ["id"], updatedAt = true, preserve = [] } = {}) {
   const updates = columns
     .filter((column) => !keys.includes(column))
     .map(
       (column) =>
-        `${column} = ${preserveColor && column === "color" ? `coalesce(EXCLUDED.color, ${table}.color)` : `EXCLUDED.${column}`}`,
+        `${column} = ${preserve.includes(column) ? `coalesce(EXCLUDED.${column}, ${table}.${column})` : `EXCLUDED.${column}`}`,
     );
   if (updatedAt) updates.push("updated_at = now()");
   await insertRows(
@@ -331,8 +328,17 @@ async function replaceChores(client, data) {
   await upsertRows(
     client,
     "chores",
-    ["id", "title", "schedule_description", "enabled", "position"],
-    data.tasks.map((chore, position) => [chore.id, chore.title, chore.details, true, position]),
+    ["id", "title", "schedule_description", "schedule", "next_due_on", "enabled", "position"],
+    data.tasks.map((chore, position) => [
+      chore.id,
+      chore.title,
+      chore.details,
+      chore.schedule ? JSON.stringify(chore.schedule) : null,
+      chore.nextDue,
+      true,
+      position,
+    ]),
+    { preserve: ["schedule"] },
   );
   await upsertRows(
     client,
@@ -363,7 +369,7 @@ async function replaceTodos(client, data) {
     "todo_lists",
     ["id", "title", "color", "position"],
     data.lists.map((list, position) => [list.id, list.title, list.color, position]),
-    { preserveColor: true },
+    { preserve: ["color"] },
   );
   await upsertRows(client, "todo_items", ["id", "list_id", "title", "completed_at", "position"], items);
   await deleteMissing(

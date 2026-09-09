@@ -322,4 +322,13 @@
       fill="currentColor"
     />
   </symbol>
+  <symbol id="icon-edit" viewBox="0 0 16 16" fill="none">
+    <path
+      d="M11.6287 6.50621L12.7334 5.40151L13.5992 4.53573C14.1888 3.94619 14.1888 2.99036 13.5992 2.40082C13.0097 1.81129 12.0539 1.81129 11.4643 2.40082L9.49383 4.37131L3.41813 10.447L2 14L5.55304 12.5819L11.6287 6.50621ZM11.6287 6.50621L9.49383 4.37131M12.7334 5.40151L14.1628 6.8309L11.6904 9.30334"
+      stroke="currentColor"
+      stroke-width="1.25"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </symbol>
 </svg>
