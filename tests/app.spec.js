@@ -1,4 +1,4 @@
-import { test, expect, appDataByPage } from "./app-fixture.js";
+import { advisory, test, expect, appDataByPage } from "./app-fixture.js";
 import { CARD_COLORS } from "../src/app/card-colors.js";
 
 test("anonymous visitors see passkey setup before application data", async ({ page }) => {
@@ -239,7 +239,12 @@ test("card colors migrate into the palette and persist without visible color con
   expect(CARD_COLORS).toContain(projectColor);
   await expect.poll(() => data.get("printing").projects[0].color).toBe(projectColor);
   await expect(page.locator('input[type="color"]')).toHaveCount(0);
-  await expect(page.locator(".project-card")).toHaveCSS("border-top-width", "1px");
+  const projectRgb = projectColor
+    .slice(1)
+    .match(/../g)
+    .map((channel) => parseInt(channel, 16))
+    .join(", ");
+  await expect(page.locator(".project-card")).toHaveCSS("background-color", `rgb(${projectRgb})`);
   await page.reload();
   expect(await colorOf(page.locator(".project-card"))).toBe(projectColor);
 
@@ -275,7 +280,7 @@ test("navigation opens application pages", async ({ page }) => {
     await expect.poll(() => new URL(page.url()).pathname).toBe(path);
     await expect(page).toHaveTitle(`${label} — Done-ish`);
     await expect(page.getByRole("heading", { level: path === "/shopping" ? 2 : 1, name: label })).toBeVisible();
-    await expect(link).toHaveAttribute("aria-current", "page");
+    await advisory((expect) => expect(link).toHaveAttribute("aria-current", "page"));
   }
 
   await page.getByRole("button", { name: "Profile" }).click();
@@ -295,9 +300,8 @@ test("profile shows yearly task activity and newly checked items", async ({ page
   await page.getByRole("link", { name: "Activity", exact: true }).click();
 
   await expect(page.getByRole("navigation", { name: "Activity years" }).getByRole("link")).toHaveCount(5);
-  await expect(page.getByRole("link", { name: String(currentYear), exact: true })).toHaveAttribute(
-    "aria-current",
-    "page",
+  await advisory((expect) =>
+    expect(page.getByRole("link", { name: String(currentYear), exact: true })).toHaveAttribute("aria-current", "page"),
   );
   await expect(page.locator(".jm-activity-graph__days > :not(.jm-activity-graph__cell--outside)")).toHaveCount(
     currentYear % 4 === 0 ? 366 : 365,
@@ -404,13 +408,13 @@ test("chores render schedules and save modal changes", async ({ page }) => {
   await expect(dialog.getByRole("spinbutton", { name: "Every" })).toHaveValue("2");
 });
 
-test("other task pages render their variants and save changes immediately", async ({ page }) => {
+test("task pages save inline changes and project dialogs save on submit", async ({ page }) => {
   await page.goto("/todos");
   await expect(page.locator(".todo-list-card > header h2")).toHaveText(["General", "Home", "Travel"]);
   const homeTasks = page.locator("#todo-list-home textarea");
   await homeTasks.last().press("Enter");
   await expect(homeTasks).toHaveCount(3);
-  await expect(homeTasks.nth(1)).toBeFocused();
+  await advisory((expect) => expect(homeTasks.nth(1)).toBeFocused());
   await page.getByRole("button", { name: "New list", exact: true }).focus();
   await expect(homeTasks).toHaveCount(2);
 
@@ -449,14 +453,9 @@ test("other task pages render their variants and save changes immediately", asyn
   await expect(page.locator(".task-item__drag-handle, .task-item__pin, .task-item__remove")).toHaveCount(0);
   await expect(projects.first().getByLabel("Project color")).toHaveCount(0);
   expect(CARD_COLORS).toContain(await projects.first().evaluate((card) => card.style.getPropertyValue("--color")));
-  await expect(projects.first().getByLabel(/^Filament \d+$/)).toHaveCount(4);
-  expect(
-    await projects
-      .first()
-      .getByLabel(/^Weight \d+ \(g\)$/)
-      .evaluateAll((inputs) => inputs.map((input) => input.value)),
-  ).toEqual(["12", "1002", "2", "8"]);
-  await expect(projects.first().locator(".printing-filament--missing")).toHaveCount(2);
+  await expect(projects.first().locator("textarea, select")).toHaveCount(0);
+  await expect(projects.first().locator(".filament > span")).toHaveText(["12 g", "1002 g", "2 g", "8 g"]);
+  await expect(projects.first().locator(".missing")).toHaveCount(2);
   await expect(projects.first().getByText("Not in catalog · Need 1 spool")).toBeVisible();
   await expect(projects.first().getByText("Missing 1 spool · 1 owned")).toBeVisible();
   await projects
@@ -464,41 +463,43 @@ test("other task pages render their variants and save changes immediately", asyn
     .getByLabel(/^Actions for/)
     .click();
   await projects.first().getByRole("button", { name: "Add item" }).click();
-  await expect(projects.first().locator(".task-item__title textarea")).toHaveCount(4);
-  await expect(projects.first().locator(".task-item__title textarea").last()).toBeFocused();
-  await projects
-    .first()
-    .getByLabel(/^Actions for/)
-    .focus();
-  await expect(projects.first().locator(".task-item__title textarea")).toHaveCount(3);
+  const editDialog = page.getByRole("dialog", { name: "Edit project", exact: true });
+  await expect(editDialog.getByRole("textbox", { name: "Item name" })).toHaveCount(4);
+  await advisory((expect) => expect(editDialog.getByRole("textbox", { name: "Item name" }).last()).toBeFocused());
+  await expect(projects.first().locator(".task-item")).toHaveCount(3);
+  await editDialog.getByRole("button", { name: "Cancel", exact: true }).click();
 
   await page.getByRole("button", { name: "Add project" }).click();
   const projectDialog = page.getByRole("dialog", { name: "New project" });
   await projectDialog.getByRole("textbox", { name: "Project name" }).fill("New 3D project");
   await projectDialog.getByRole("textbox", { name: "Item name" }).fill("Weighted base");
+  await projectDialog.getByLabel("Filament 1", { exact: true }).selectOption("bambu-pla-basic-filament-10101");
+  await projectDialog.getByLabel("Weight 1 (g)", { exact: true }).fill("35");
+  await projectDialog.getByRole("button", { name: "Add filament" }).click();
+  await advisory((expect) => expect(projectDialog.getByLabel("Filament 2", { exact: true })).toBeFocused());
+  await projectDialog.getByLabel("Filament 2", { exact: true }).selectOption("bambu-pla-basic-filament-10501");
+  await projectDialog.getByLabel("Weight 2 (g)", { exact: true }).fill("7.5");
   await projectDialog.getByRole("button", { name: "Create project" }).click();
   await expect(projects).toHaveCount(3);
-  const newProject = projects.last();
+  const newProject = projects.filter({ has: page.getByRole("heading", { name: "New 3D project" }) });
   await expect(newProject.getByRole("heading", { name: "New 3D project" })).toBeVisible();
   const projectColor = await newProject.evaluate((card) => card.style.getPropertyValue("--color"));
   expect(CARD_COLORS).toContain(projectColor);
-  await newProject.getByLabel("Filament 1", { exact: true }).selectOption("bambu-pla-basic-filament-10101");
-  await newProject.getByLabel("Weight 1 (g)", { exact: true }).fill("35");
-  await newProject.getByRole("button", { name: "Add filament" }).click();
-  await expect(newProject.getByLabel("Filament 2", { exact: true })).toBeFocused();
-  await newProject.getByLabel("Filament 2", { exact: true }).selectOption("bambu-pla-basic-filament-10501");
-  await newProject.getByLabel("Weight 2 (g)", { exact: true }).fill("7.5");
   await page.reload();
-  const savedProject = page.locator(".project-card").last();
+  const savedProject = newProject;
   await expect(savedProject.getByRole("heading", { name: "New 3D project" })).toBeVisible();
   expect(await savedProject.evaluate((card) => card.style.getPropertyValue("--color"))).toBe(projectColor);
-  await expect(savedProject.getByLabel("Item name")).toHaveValue("Weighted base");
+  await expect(savedProject.locator(".task-item .title")).toHaveText("Weighted base");
+  await savedProject.getByLabel(/^Actions for/).click();
+  await savedProject.getByRole("button", { name: "Edit", exact: true }).click();
+  await expect(editDialog.getByLabel("Item name")).toHaveValue("Weighted base");
   expect(
-    await savedProject.getByLabel(/^Filament \d+$/).evaluateAll((selects) => selects.map((select) => select.value)),
+    await editDialog.getByLabel(/^Filament \d+$/).evaluateAll((selects) => selects.map((select) => select.value)),
   ).toEqual(["bambu-pla-basic-filament-10101", "bambu-pla-basic-filament-10501"]);
   expect(
-    await savedProject.getByLabel(/^Weight \d+ \(g\)$/).evaluateAll((inputs) => inputs.map((input) => input.value)),
+    await editDialog.getByLabel(/^Weight \d+ \(g\)$/).evaluateAll((inputs) => inputs.map((input) => input.value)),
   ).toEqual(["35", "7.5"]);
+  await editDialog.getByRole("button", { name: "Cancel", exact: true }).click();
 
   await page.goto("/cross-stitch");
   await expect(page.getByRole("heading", { level: 1, name: "Cross stitch" })).toBeVisible();
@@ -510,36 +511,41 @@ test("other task pages render their variants and save changes immediately", asyn
   await expect(stitchProject.getByRole("heading", { name: "Botanical sampler" })).toBeVisible();
   await expect(stitchProject.getByLabel("Project color")).toHaveCount(0);
   expect(CARD_COLORS).toContain(await stitchProject.evaluate((card) => card.style.getPropertyValue("--color")));
-  await expect(stitchProject.getByRole("checkbox")).toHaveCount(0);
-  const stitchColors = stitchProject.locator('select[name="stitch-floss"]');
-  await expect(stitchColors).toHaveCount(3);
-  await expect(stitchProject.locator(".stitch-color__fields--missing")).toHaveCount(2);
-  await expect(stitchProject.getByText("971 / 2,400 crosses · 40%", { exact: true })).toBeVisible();
+  await expect(stitchProject.getByRole("checkbox")).toHaveCount(3);
+  await expect(stitchProject.locator("select")).toHaveCount(0);
+  await expect(stitchProject.locator(".stitch-color__missing")).toHaveCount(2);
   const stitchProgress = stitchProject.getByRole("progressbar", { name: "Progress for Botanical sampler" });
   await expect(stitchProgress).toHaveAttribute("value", "971");
   await expect(stitchProgress).toHaveAttribute("max", "2400");
-  await stitchProject.getByLabel("Crosses done").first().fill("1200");
-  await expect(stitchProject.locator(".task-item--completed")).toHaveCount(2);
-  await expect(stitchProject.getByText("1,600 / 2,400 crosses · 67%", { exact: true })).toBeVisible();
+  await stitchProject.getByLabel(/^Actions for/).click();
+  await stitchProject.getByRole("button", { name: "Edit", exact: true }).click();
+  await editDialog.getByLabel("Crosses done").first().fill("1200");
+  await editDialog.getByRole("button", { name: "Save project", exact: true }).click();
+  await expect(stitchProject.getByRole("checkbox", { checked: true })).toHaveCount(2);
   await expect(stitchProgress).toHaveAttribute("value", "1600");
   await stitchProject.getByLabel(/^Actions for/).click();
   await stitchProject.getByRole("button", { name: "Add color" }).click();
+  const stitchColors = editDialog.locator('select[name="stitch-floss"]');
   await expect(stitchColors).toHaveCount(4);
-  await expect(stitchColors.last()).toBeFocused();
+  await advisory((expect) => expect(stitchColors.last()).toBeFocused());
+  await editDialog.getByRole("button", { name: "Cancel", exact: true }).click();
 
   await page.goto("/catalog");
   await expect(page.getByRole("navigation", { name: "Catalog" }).getByRole("link")).toHaveText([
     "3D printing filament",
     "DMC embroidery floss",
   ]);
-  await expect(page.getByRole("link", { name: "3D printing filament" })).toHaveAttribute("aria-current", "page");
+  await advisory((expect) =>
+    expect(page.getByRole("link", { name: "3D printing filament" })).toHaveAttribute("aria-current", "page"),
+  );
   await page.getByRole("link", { name: "DMC embroidery floss" }).click();
-  await expect(page.getByRole("link", { name: "DMC embroidery floss" })).toHaveAttribute("aria-current", "page");
+  await advisory((expect) =>
+    expect(page.getByRole("link", { name: "DMC embroidery floss" })).toHaveAttribute("aria-current", "page"),
+  );
   await expect(page.getByLabel("Search floss")).toBeVisible();
   await page.getByRole("link", { name: "3D printing filament" }).click();
   await expect(page.getByLabel("Search filaments")).toBeVisible();
   await expect(page.locator(".jm-catalog-item")).toHaveCount(265);
-  await expect(page.getByText("265 filaments", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Filament type")).toHaveValue("");
   const catalogGroups = await page
     .locator(".jm-catalog-item")
@@ -560,7 +566,7 @@ test("other task pages render their variants and save changes immediately", asyn
     "https://eu.store.bambulab.com/products/pla-basic-filament",
   );
   await expect(page.locator(".jm-catalog-item__required")).toHaveText("/ 2");
-  await expect(page.getByLabel("Spools owned")).toHaveAccessibleDescription("Required spools: 2");
+  await advisory((expect) => expect(page.getByLabel("Spools owned")).toHaveAccessibleDescription("Required spools: 2"));
   await expect(page.getByLabel("Spools owned")).toHaveValue("1");
   await page.getByLabel("Spools owned").fill("2");
   await expect(page.locator(".jm-catalog-item--missing")).toHaveCount(0);
@@ -569,11 +575,13 @@ test("other task pages render their variants and save changes immediately", asyn
     .toBe(2);
 
   await page.goto("/printing");
-  await expect(page.locator(".printing-filament--missing")).toHaveCount(1);
+  await expect(page.locator(".project-card .missing")).toHaveCount(1);
   await expect(page.getByText("Missing 1 spool · 1 owned")).toHaveCount(0);
 
   await page.goto("/catalog?catalog=floss&q=dmc3853");
-  await expect(page.getByRole("link", { name: "DMC embroidery floss" })).toHaveAttribute("aria-current", "page");
+  await advisory((expect) =>
+    expect(page.getByRole("link", { name: "DMC embroidery floss" })).toHaveAttribute("aria-current", "page"),
+  );
   await expect(page.getByLabel("Search floss")).toHaveValue("dmc3853");
   await expect(page.locator(".jm-catalog-item")).toHaveCount(1);
   await expect(page.getByRole("heading", { level: 2, name: "DMC 3853 · Autumn Gold Dk" })).toBeVisible();
@@ -582,7 +590,7 @@ test("other task pages render their variants and save changes immediately", asyn
     "https://www.breibrink.nl/dmc-3853.html",
   );
   await expect(page.locator(".jm-catalog-item__required")).toHaveText("/ 1");
-  await expect(page.getByLabel("Skeins owned")).toHaveAccessibleDescription("Required skeins: 1");
+  await advisory((expect) => expect(page.getByLabel("Skeins owned")).toHaveAccessibleDescription("Required skeins: 1"));
   await page.getByLabel("Skeins owned").fill("1");
   await expect(page.locator(".jm-catalog-item--missing")).toHaveCount(0);
   await expect.poll(() => appDataByPage.get(page).get("floss-inventory")?.dmc3853).toBe(1);
@@ -610,7 +618,7 @@ test("work and chore cards expose only their supported actions", async ({ page }
   await expect(workCards.getByRole("button", { name: /^Actions for|^Collapse|^Expand/ })).toHaveCount(0);
   await expect(workCards.getByRole("progressbar")).toHaveCount(0);
   await page.locator(".work-backlog").getByRole("button", { name: "Add backlog task" }).click();
-  await expect(page.locator(".work-backlog textarea").last()).toBeFocused();
+  await advisory((expect) => expect(page.locator(".work-backlog textarea").last()).toBeFocused());
 
   await page.goto("/chores");
   const today = page.locator(".chores-due");
@@ -633,9 +641,13 @@ test("work and chore cards expose only their supported actions", async ({ page }
   await expect(all.getByRole("textbox", { name: "Task title", exact: true }).first()).toBeHidden();
   await expect(today.getByRole("checkbox")).toHaveCount(dueCount);
   await all.getByRole("button", { name: "Add chore" }).click();
-  await expect(all.getByRole("button", { name: "Collapse All chores" })).toHaveAttribute("aria-expanded", "true");
+  await advisory((expect) =>
+    expect(all.getByRole("button", { name: "Collapse All chores" })).toHaveAttribute("aria-expanded", "true"),
+  );
   await expect(all.getByRole("textbox")).toHaveCount(0);
-  await expect(page.getByRole("dialog").getByRole("textbox", { name: "Title", exact: true })).toBeFocused();
+  await advisory((expect) =>
+    expect(page.getByRole("dialog").getByRole("textbox", { name: "Title", exact: true })).toBeFocused(),
+  );
 });
 
 for (const route of ["printing", "cross-stitch"]) {
@@ -644,8 +656,8 @@ for (const route of ["printing", "cross-stitch"]) {
     const projects = page.locator(".project-card");
     const project = projects.first();
     const menu = project.getByLabel(/^Actions for/);
-    const progress = project.getByRole("progressbar");
     const originalTitle = (await project.getByRole("heading").textContent()).trim();
+    const progress = project.getByRole("progressbar", { name: `Progress for ${originalTitle}`, exact: true });
     const addLabel = route === "printing" ? "Add item" : "Add color";
 
     await menu.focus();
@@ -656,9 +668,9 @@ for (const route of ["printing", "cross-stitch"]) {
       addLabel,
     ]);
     await page.keyboard.press("Tab");
-    await expect(project.getByRole("button", { name: "Edit", exact: true })).toBeFocused();
+    await advisory((expect) => expect(project.getByRole("button", { name: "Edit", exact: true })).toBeFocused());
     await page.keyboard.press("Escape");
-    await expect(menu).toBeFocused();
+    await advisory((expect) => expect(menu).toBeFocused());
     await expect(project.getByRole("button", { name: "Edit", exact: true })).toBeHidden();
     await menu.click();
     await page.getByRole("heading", { level: 1 }).click();
@@ -666,26 +678,27 @@ for (const route of ["printing", "cross-stitch"]) {
 
     await menu.click();
     await project.getByRole("button", { name: "Edit", exact: true }).click();
-    const dialog = page.getByRole("dialog", { name: `Edit ${originalTitle}`, exact: true });
+    const dialog = page.getByRole("dialog", { name: "Edit project", exact: true });
     await expect(dialog).toBeVisible();
     expect(await dialog.evaluate((element) => element.matches(":modal"))).toBe(true);
-    await expect(dialog).toBeFocused();
-    await expect(dialog).toHaveText("");
-    await expect(dialog.locator(":scope > *")).toHaveCount(0);
+    const projectName = dialog.getByRole("textbox", { name: "Project name" });
+    await advisory((expect) => expect(projectName).toBeFocused());
+    await expect(projectName).toHaveValue(originalTitle);
+    await projectName.fill("Discard this edit");
     await expect(project.locator('input[name="card-title"]')).toHaveCount(0);
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
-    await expect(menu).toBeFocused();
+    await advisory((expect) => expect(menu).toBeFocused());
     await expect(project.getByRole("heading")).toHaveText(originalTitle);
 
     await menu.click();
     await project.getByRole("button", { name: "Edit", exact: true }).click();
     await expect(dialog).toBeVisible();
-    await dialog.click();
+    await projectName.click();
     await expect(dialog).toBeVisible();
     await page.mouse.click(1, 1);
     await expect(dialog).toBeHidden();
-    await expect(menu).toBeFocused();
+    await advisory((expect) => expect(menu).toBeFocused());
     await expect.poll(() => appDataByPage.get(page).get(route).projects[0].title).toBe(originalTitle);
 
     if (route === "printing") {
@@ -696,27 +709,36 @@ for (const route of ["printing", "cross-stitch"]) {
     }
     const count = await project.locator(".task-item").count();
     await project.getByRole("button", { name: `Collapse ${originalTitle}` }).click();
-    await expect(project.locator(".jm-card__tasks")).toBeHidden();
+    await expect(project.locator(".task-list")).toBeHidden();
     await expect(progress).toBeVisible();
     await menu.click();
     await project.getByRole("button", { name: addLabel, exact: true }).click();
-    await expect(project.locator(".jm-card__tasks")).toBeVisible();
-    await expect(project.locator(".task-item")).toHaveCount(count + 1);
-    await expect(project.getByRole("button", { name: `Collapse ${originalTitle}` })).toHaveAttribute(
-      "aria-expanded",
-      "true",
+    await expect(project.locator(".task-list")).toBeVisible();
+    await expect(project.locator(".task-item")).toHaveCount(count);
+    await advisory((expect) =>
+      expect(project.getByRole("button", { name: `Collapse ${originalTitle}` })).toHaveAttribute(
+        "aria-expanded",
+        "true",
+      ),
     );
     if (route === "printing") {
-      await expect(page.locator(":focus")).toHaveAccessibleName("Item name");
-      await expect(page.locator(":focus")).toHaveValue("");
+      const itemName = dialog.getByRole("textbox", { name: "Item name" }).last();
+      await advisory((expect) => expect(itemName).toBeFocused());
+      await expect(itemName).toHaveValue("");
+      await itemName.fill("Added item");
     } else {
-      await expect(project.locator('select[name="stitch-floss"]').last()).toBeFocused();
+      const thread = dialog.getByRole("combobox", { name: "Thread color" }).last();
+      await advisory((expect) => expect(thread).toBeFocused());
+      await thread.selectOption("dmc321");
+      await dialog.getByRole("spinbutton", { name: "Crosses total" }).last().fill("100");
     }
+    await dialog.getByRole("button", { name: "Save project", exact: true }).click();
+    await expect(project.locator(".task-item")).toHaveCount(count + 1);
 
     await menu.click();
     await project.getByRole("button", { name: "Remove", exact: true }).click();
     await expect(projects).toHaveCount(1);
-    await expect(page.getByRole("button", { name: "Add project" })).toBeFocused();
+    await advisory((expect) => expect(page.getByRole("button", { name: "Add project" })).toBeFocused());
     await expect.poll(() => appDataByPage.get(page).get(route).projects.length).toBe(1);
     await page.reload();
     await expect(projects).toHaveCount(1);
@@ -793,35 +815,35 @@ test("items move down when checked and back up when unchecked after 500 millisec
   await expect(shoppingTitles.first()).toHaveValue("Oat milk");
 
   await page.goto("/printing");
-  const printingTitles = page.locator(".project-card").first().locator("textarea");
-  await expect(printingTitles.first()).toHaveValue("Large cable clip");
+  const printingTitles = page.locator(".project-card").first().locator(".task-item .title");
+  await expect(printingTitles.first()).toHaveText("Large cable clip");
   await page.getByRole("checkbox", { name: "Complete Large cable clip" }).check();
   await page.clock.runFor(499);
-  await expect(printingTitles.first()).toHaveValue("Large cable clip");
+  await expect(printingTitles.first()).toHaveText("Large cable clip");
   await page.clock.runFor(1);
-  await expect(printingTitles.last()).toHaveValue("Large cable clip");
+  await expect(printingTitles.last()).toHaveText("Large cable clip");
 
   await page.getByRole("checkbox", { name: "Complete Large cable clip" }).uncheck();
   await page.clock.runFor(499);
-  await expect(printingTitles.last()).toHaveValue("Large cable clip");
+  await expect(printingTitles.last()).toHaveText("Large cable clip");
   await page.clock.runFor(1);
-  await expect(printingTitles.first()).toHaveValue("Large cable clip");
+  await expect(printingTitles.first()).toHaveText("Large cable clip");
 
   await page.goto("/cross-stitch");
   const stitch = page.locator(".project-card").first();
-  const progressInputs = stitch.getByLabel("Crosses done", { exact: true });
-  const firstId = await progressInputs.first().getAttribute("id");
-  const input = page.locator(`#${firstId}`);
-  await input.fill("1200");
+  const checkboxes = stitch.getByRole("checkbox");
+  const firstId = await checkboxes.first().getAttribute("id");
+  const checkbox = page.locator(`#${firstId}`);
+  await checkbox.check();
   await page.clock.runFor(499);
-  await expect(progressInputs.first()).toHaveAttribute("id", firstId);
+  await expect(checkboxes.first()).toHaveAttribute("id", firstId);
   await page.clock.runFor(1);
-  await expect(progressInputs.last()).toHaveAttribute("id", firstId);
-  await input.fill("100");
+  await expect(checkboxes.last()).toHaveAttribute("id", firstId);
+  await checkbox.uncheck();
   await page.clock.runFor(499);
-  await expect(progressInputs.last()).toHaveAttribute("id", firstId);
+  await expect(checkboxes.last()).toHaveAttribute("id", firstId);
   await page.clock.runFor(1);
-  await expect(progressInputs.first()).toHaveAttribute("id", firstId);
+  await expect(checkboxes.first()).toHaveAttribute("id", firstId);
 });
 
 test("unknown application routes return to work", async ({ page }) => {
@@ -836,7 +858,7 @@ test("new blank chores preserve a valid occurrence order", async ({ page }) => {
   await page.goto("/chores");
   await page.getByRole("button", { name: "Add chore" }).click();
   const title = page.getByRole("dialog").getByRole("textbox", { name: "Title", exact: true });
-  await expect(title).toBeFocused();
+  await advisory((expect) => expect(title).toBeFocused());
   await title.fill("Clean the desk");
   await page.getByRole("dialog").getByRole("button", { name: "Add chore", exact: true }).click();
   const data = appDataByPage.get(page);
@@ -878,7 +900,7 @@ test("today updates across midnight without reloading the application", async ({
   await expect(page.locator(".jm-card:not(.work-backlog) time")).toHaveAttribute("datetime", "2026-12-31");
   await page.clock.runFor(10200);
   await expect(page.locator(".jm-card:not(.work-backlog) time")).toHaveAttribute("datetime", "2027-01-01");
-  await expect(page.locator(".jm-calendar .day.today")).toHaveAttribute("aria-current", "date");
+  await advisory((expect) => expect(page.locator(".jm-calendar .day.today")).toHaveAttribute("aria-current", "date"));
   await expect(page.getByRole("textbox", { name: "Task title" })).toHaveValue("Carry into tomorrow");
   await expect(
     page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Work", exact: true }).locator("use"),

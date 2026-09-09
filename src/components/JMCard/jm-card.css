@@ -8,20 +8,24 @@
 
   .header {
     --radius-control: calc(var(--radius-card) - var(--space-3));
-    
+
     display: flex;
     align-items: center;
     padding: 0 var(--space-3) 0 var(--space-6);
     color: contrast-color(var(--color));
-    
+
     & > .jm-button {
       --control-ghost-text: contrast-color(var(--color));
       --control-ghost-text-hover: contrast-color(var(--color));
+
+      flex-shrink: 0;
     }
   }
 
   .title {
     flex-grow: 1;
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
     font-size: var(--font-size-default);
   }
 
@@ -29,14 +33,14 @@
     display: block;
     font-size: 0.6875rem;
     text-transform: uppercase;
-    opacity: .6;
+    opacity: 0.6;
   }
 
   .task-list {
     margin-block-start: var(--space-2);
     padding: var(--space-3);
     background: var(--color-bg-surface);
-    box-shadow: 0px 24px 16px -20px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 24px 16px -20px rgb(0 0 0 / 25%);
     backdrop-filter: blur(var(--blur-s));
     border-radius: calc(var(--radius-card) - var(--space-3));
 
@@ -53,7 +57,7 @@
     margin-block-start: var(--space-1);
     padding: var(--space-3);
     background: var(--color-bg-surface);
-    box-shadow: 0px 24px 16px -20px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 24px 16px -20px rgb(0 0 0 / 25%);
     backdrop-filter: blur(var(--blur-s));
     border-radius: calc(var(--radius-card) - var(--space-3));
     text-align: center;

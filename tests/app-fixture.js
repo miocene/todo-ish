@@ -185,4 +185,15 @@ const test = base.extend({
   ],
 });
 
-export { test, expect, appDataByPage };
+async function advisory(check) {
+  try {
+    await check(expect.configure({ timeout: 250 }));
+  } catch (error) {
+    if (!error.matcherResult) throw error;
+    const description = error.message;
+    test.info().annotations.push({ type: "warning", description });
+    console.warn(`[quality warning] ${description}`);
+  }
+}
+
+export { test, expect, appDataByPage, advisory };

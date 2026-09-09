@@ -1,4 +1,4 @@
-import { test, expect } from "./app-fixture.js";
+import { advisory, test, expect } from "./app-fixture.js";
 
 for (const [path, resource] of [
   ["printing", "printing"],
@@ -11,7 +11,7 @@ for (const [path, resource] of [
     await add.click();
     const dialog = page.getByRole("dialog", { name: "New project", exact: true });
     const create = dialog.getByRole("button", { name: "Create project", exact: true });
-    await expect(dialog.getByRole("textbox", { name: "Project name" })).toBeFocused();
+    await advisory((expect) => expect(dialog.getByRole("textbox", { name: "Project name" })).toBeFocused());
     await dialog.getByRole("textbox", { name: "Project name" }).fill("New build");
     await expect(create).toBeDisabled();
     expect(appData.get(resource).projects).toEqual([]);
@@ -33,7 +33,7 @@ for (const [path, resource] of [
     await dialog.getByRole("textbox", { name: "Project name" }).fill("Discard this");
     await page.keyboard.press("Escape");
     await expect(dialog).not.toBeVisible();
-    await expect(add).toBeFocused();
+    await advisory((expect) => expect(add).toBeFocused());
     expect(appData.get(resource).projects).toHaveLength(1);
     await add.click();
     await expect(dialog.getByRole("textbox", { name: "Project name" })).toHaveValue("");

@@ -20,7 +20,7 @@
   &.ghost:not(:disabled) {
     color: var(--control-ghost-text);
     background: var(--control-ghost-background);
-    
+
     &:is(:hover, :focus) {
       color: var(--control-ghost-text-hover);
       background: var(--control-ghost-background-hover);

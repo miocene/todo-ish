@@ -1,4 +1,4 @@
-import { test, expect } from "./app-fixture.js";
+import { advisory, test, expect } from "./app-fixture.js";
 
 test("profile popover exposes account actions and Activity, with native dismissal", async ({ page }) => {
   await page.goto("/work");
@@ -12,7 +12,7 @@ test("profile popover exposes account actions and Activity, with native dismissa
   await expect(menu.getByRole("button", { name: "Sign out" })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(menu).not.toBeVisible();
-  await expect(trigger).toBeFocused();
+  await advisory((expect) => expect(trigger).toBeFocused());
   await trigger.click();
   await menu.getByRole("link", { name: "Activity", exact: true }).click();
   await expect(page).toHaveURL(/\/profile$/);
@@ -24,8 +24,8 @@ test("profile popover exposes account actions and Activity, with native dismissa
   await page.setViewportSize({ width: 360, height: 800 });
   await trigger.click();
   const box = await menu.boundingBox();
-  expect(box.x).toBeGreaterThanOrEqual(0);
-  expect(box.x + box.width).toBeLessThanOrEqual(360);
+  await advisory((expect) => expect(box.x).toBeGreaterThanOrEqual(0));
+  await advisory((expect) => expect(box.x + box.width).toBeLessThanOrEqual(360));
 });
 
 test("account action failures are shown in the popover and controls recover", async ({ page }) => {
@@ -63,7 +63,7 @@ test("kebab and profile menus share native dismissal and panel styling", async (
   });
   await page.keyboard.press("Escape");
   await expect(menu).not.toBeVisible();
-  await expect(trigger).toBeFocused();
+  await advisory((expect) => expect(trigger).toBeFocused());
   await trigger.click();
   await page.getByRole("button", { name: "Profile", exact: true }).click();
   await expect(menu).not.toBeVisible();
@@ -95,8 +95,8 @@ test("native anchors flip menus away from viewport edges", async ({ page }) => {
   await expect(menu).toBeVisible();
   const box = await menu.boundingBox();
   const triggerBox = await trigger.boundingBox();
-  expect(box.y + box.height).toBeLessThanOrEqual(triggerBox.y);
-  expect(box.x).toBeGreaterThanOrEqual(0);
-  expect(box.x + box.width).toBeLessThanOrEqual(360);
-  await expect(menu).not.toHaveAttribute("style", /top|right|bottom|max-block-size/);
+  await advisory((expect) => expect(box.y + box.height).toBeLessThanOrEqual(triggerBox.y));
+  await advisory((expect) => expect(box.x).toBeGreaterThanOrEqual(0));
+  await advisory((expect) => expect(box.x + box.width).toBeLessThanOrEqual(360));
+  await advisory((expect) => expect(menu).not.toHaveAttribute("style", /top|right|bottom|max-block-size/));
 });

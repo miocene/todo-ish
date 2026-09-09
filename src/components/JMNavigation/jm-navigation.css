@@ -8,7 +8,7 @@
   box-shadow: var(--shadow-s);
   backdrop-filter: blur(var(--blur-s));
   translate: -50%;
-  
+
   .list {
     display: flex;
     align-items: center;
@@ -17,7 +17,7 @@
     padding: 0;
     list-style: none;
   }
-  
+
   .link {
     display: flex;
     align-items: center;
@@ -27,17 +27,17 @@
     color: var(--color-text-secondary);
     border-radius: var(--radius-control);
   }
-  
+
   .link:is(:hover, :focus-visible) {
     color: var(--color-text-default);
     background: var(--color-bg-selection);
   }
-  
+
   .link--active {
     color: var(--color-text-default);
     background: var(--color-bg-selection);
   }
-  
+
   .label {
     position: absolute;
     inline-size: 1px;

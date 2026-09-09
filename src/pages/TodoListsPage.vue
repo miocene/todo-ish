@@ -94,8 +94,7 @@ export default {
     focusListActions(list) {
       this.$nextTick(() => {
         const card = document.getElementById(`todo-list-${list.id}`);
-        const action =
-          card?.querySelector(".jm-card__menu > summary") || document.getElementById(`todo-add-${list.id}`);
+        const action = card?.querySelector("button[popovertarget]") || document.getElementById(`todo-add-${list.id}`);
         action?.focus();
       });
     },

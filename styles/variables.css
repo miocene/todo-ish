@@ -1,10 +1,10 @@
 :root {
   color-scheme: light;
 
-  --color-bg-default: light-dark(#F6F6F6, #F6F6F6);
-  --color-bg-surface: light-dark(rgba(250, 250, 250, 0.95), rgba(250, 250, 250, 0.95));
+  --color-bg-default: light-dark(#f6f6f6, #f6f6f6);
+  --color-bg-surface: light-dark(rgb(250 250 250 / 95%), rgb(250 250 250 / 95%));
   --color-bg-selection: light-dark(#fff, #fff);
-  
+
   --color-activity-0: #eef0f2;
   --color-activity-1: #d1e7dd;
   --color-activity-2: #93c9ad;
@@ -35,22 +35,22 @@
   --control-default-background: light-dark(#fff, #fff);
   --control-default-border: light-dark(#e5e5e5, #e5e5e5);
   --control-default-text: light-dark(#333, #333);
-  
+
   --control-primary-background: light-dark(#333, #333);
   --control-primary-background-hover: light-dark(#454545, #454545);
   --control-primary-text: light-dark(#fafafa, #fafafa);
   --control-primary-text-hover: light-dark(#fafafa, #fafafa);
 
-  --control-secondary-background: light-dark(rgba(51, 51, 51, 0.05), rgba(51, 51, 51, 0.05));
+  --control-secondary-background: light-dark(rgb(51 51 51 / 5%), rgb(51 51 51 / 5%));
   --control-secondary-background-hover: light-dark(#e6e6e6, #e6e6e6);
   --control-secondary-text: light-dark(var(--color-text-default), var(--color-text-default));
   --control-secondary-text-hover: light-dark(var(--color-text-default), var(--color-text-default));
 
   --control-ghost-background: light-dark(transparent, transparent);
-  --control-ghost-background-hover: light-dark(rgba(51, 51, 51, 0.05), rgba(51, 51, 51, 0.05));
+  --control-ghost-background-hover: light-dark(rgb(51 51 51 / 5%), rgb(51 51 51 / 5%));
   --control-ghost-text: light-dark(var(--color-text-default), var(--color-text-default));
   --control-ghost-text-hover: light-dark(var(--color-text-default), var(--color-text-default));
-  
+
   --control-disabled-background: light-dark(#e8e8e8, #e8e8e8);
   --control-disabled-text: light-dark(#ccc, #ccc);
   --control-disabled-border: light-dark(#ddd, #ddd);

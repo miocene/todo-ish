@@ -2,11 +2,11 @@ input[type="number"] {
   position: relative;
   overflow: visible;
 }
+
 input[type="number"]::-webkit-inner-spin-button {
   cursor: pointer;
   background-color: red;
   border: 1px solid green;
-
   display: block;
   position: absolute;
   top: 0;

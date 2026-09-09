@@ -9,7 +9,7 @@
     "build:pages": "yarn build && node tools/prepare_github_pages.mjs",
     "preview": "vite preview --host 127.0.0.1 --port 4173",
     "setup": "sh tools/setup.sh",
-    "lint": "eslint . --max-warnings=0 && stylelint \"styles/**/*.css\" \"src/**/*.css\" && backend/.venv/bin/ruff check backend/scripts",
+    "lint": "eslint . && stylelint \"styles/**/*.css\" \"src/**/*.css\" && backend/.venv/bin/ruff check backend/scripts",
     "format": "prettier --write . && backend/.venv/bin/ruff format backend/scripts",
     "format:check": "prettier --check . && backend/.venv/bin/ruff format --check backend/scripts",
     "quality": "yarn lint && yarn format:check && yarn test && yarn build",

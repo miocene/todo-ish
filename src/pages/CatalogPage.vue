@@ -180,12 +180,19 @@ export default {
         name="q"
         type="search"
         autocomplete="off"
+        :aria-label="isFlossCatalog ? 'Search floss' : 'Search filaments'"
         :placeholder="
           isFlossCatalog ? 'DMC number, color, or catalog ID' : 'Family, color, product code, or catalog ID'
         "
       />
       <div v-if="!isFlossCatalog" class="catalog-search__field">
-        <JMSelect id="catalog-family" v-model="family" name="family" :options="familyOptions" />
+        <JMSelect
+          id="catalog-family"
+          v-model="family"
+          name="family"
+          aria-label="Filament type"
+          :options="familyOptions"
+        />
       </div>
       <button type="submit">Search</button>
     </form>

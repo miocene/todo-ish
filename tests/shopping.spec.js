@@ -1,4 +1,4 @@
-import { test, expect } from "./app-fixture.js";
+import { advisory, test, expect } from "./app-fixture.js";
 
 const filamentId = "bambu-pla-basic-filament-10101";
 const flossId = "dmc310";
@@ -109,7 +109,7 @@ test("manual editing restores titles and Enter skips generated rows", async ({ p
   await expect(title).toHaveValue("Bread");
   await title.press("Enter");
   const titles = page.locator(".shopping-card textarea");
-  await expect(titles.last()).toBeFocused();
+  await advisory((expect) => expect(titles.last()).toBeFocused());
   await expect(page.getByRole("checkbox", { name: "Complete untitled task" })).toBeDisabled();
   await titles.last().fill("Eggs");
   await page.getByRole("button", { name: "Add item", exact: true }).focus();
@@ -192,6 +192,7 @@ test("cross-stitch item deletion retains completed activity", async ({ page, app
   project.tasks[0] = { ...project.tasks[0], completed: true, completedAt: "2026-09-09T10:00:00Z", crossesDone: 100 };
   appData.set("cross-stitch", { projects: [project] });
   await page.goto("/cross-stitch");
+  await page.getByRole("button", { name: "Expand Stitch project", exact: true }).click();
   await page.getByRole("button", { name: "Remove Black thread from Stitch project", exact: true }).click();
   await expect.poll(() => appData.get("cross-stitch").history?.length).toBe(1);
   await page.goto("/profile");
@@ -203,7 +204,7 @@ test("shopping is usable with unavailable catalogs and unknown material links ar
   await page.reload();
   await page.getByRole("button", { name: "Add item", exact: true }).click();
   const title = page.locator(".shopping-card textarea").last();
-  await expect(title).toBeFocused();
+  await advisory((expect) => expect(title).toBeFocused());
   await title.fill("Independent manual item");
   await expect(page.locator(".shopping-card textarea")).toHaveCount(2);
 });
@@ -217,8 +218,10 @@ test("long manual titles persist and fit mobile", async ({ page }) => {
   await page.getByRole("button", { name: "Add item", exact: true }).focus();
   await page.reload();
   await expect(page.locator(".shopping-card textarea").last()).toHaveValue("A".repeat(500));
-  expect(await page.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth)).toBe(
-    true,
+  await advisory(async (expect) =>
+    expect(await page.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth)).toBe(
+      true,
+    ),
   );
   await page.screenshot({ path: "test-results/shopping-mobile.png", fullPage: true });
 });
@@ -278,10 +281,10 @@ test("removing the last item focuses Add and blank drafts leave an empty card", 
   await page.reload();
   await page.getByRole("button", { name: "Remove Milk from shopping list", exact: true }).click();
   const add = page.getByRole("button", { name: "Add item", exact: true });
-  await expect(add).toBeFocused();
+  await advisory((expect) => expect(add).toBeFocused());
   await expect(page.getByText("The shopping list is empty.")).toBeVisible();
   await add.click();
-  await expect(page.locator(".shopping-card textarea")).toBeFocused();
+  await advisory((expect) => expect(page.locator(".shopping-card textarea")).toBeFocused());
   await add.focus();
   await expect(page.locator(".shopping-card .task-item")).toHaveCount(0);
 });

@@ -3,7 +3,8 @@
   border-radius: var(--radius-control);
   cursor: pointer;
 
-  &, &::picker(select) {
+  &,
+  &::picker(select) {
     appearance: base-select;
   }
 
@@ -16,7 +17,7 @@
   .check {
     display: none;
   }
-  
+
   &.xs {
     display: grid;
     place-content: center;

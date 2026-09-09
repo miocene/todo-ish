@@ -1,4 +1,4 @@
-import { test, expect, appDataByPage } from "./app-fixture.js";
+import { advisory, test, expect, appDataByPage } from "./app-fixture.js";
 
 const TODAY = "2026-09-14"; // Monday: Friday is exactly three calendar days ago.
 const FRIDAY = "2026-09-11";
@@ -31,13 +31,13 @@ test("Work: rolled-over tasks can be corrected to Friday and persist as complete
   const data = await openWork(page, [task("Friday work", FRIDAY)]);
   await expect(title(selectedCard(page))).toHaveValue("Friday work");
   await selectedCard(page).getByRole("button", { name: "Move Friday work to backlog" }).click();
-  await expect(title(backlogCard(page))).toBeFocused();
+  await advisory((expect) => expect(title(backlogCard(page))).toBeFocused());
   await selectDay(page, FRIDAY);
-  await expect(page.getByRole("combobox", { name: /^Change day type/ })).toBeFocused();
+  await advisory((expect) => expect(page.getByRole("combobox", { name: /^Change day type/ })).toBeFocused());
   await backlogCard(page)
     .getByRole("button", { name: `Move Friday work to ${FRIDAY}` })
     .click();
-  await expect(title(selectedCard(page))).toBeFocused();
+  await advisory((expect) => expect(title(selectedCard(page))).toBeFocused());
   await expect(page.getByRole("checkbox", { name: "Complete Friday work" })).toBeChecked();
   await expect.poll(() => data.get("work-tasks")[0]).toMatchObject({ date: FRIDAY, checkedAt: expect.any(String) });
   await page.reload();
@@ -65,7 +65,7 @@ test("Work: history is viewable but assignments and title edits stop after three
   await expect(backlogCard(page).getByRole("button", { name: /^Move Backlog/ })).toHaveCount(0);
   await selectedCard(page).getByRole("button", { name: "Delete Old work" }).click();
   await expect.poll(() => data.get("work-tasks").find((item) => item.id === "Old work")?.archived).toBe(true);
-  await expect(page.getByRole("combobox", { name: /Change day type/ })).toBeFocused();
+  await advisory((expect) => expect(page.getByRole("combobox", { name: /Change day type/ })).toBeFocused());
 });
 
 for (const date of [FRIDAY, "2026-09-15"]) {
@@ -74,7 +74,9 @@ for (const date of [FRIDAY, "2026-09-15"]) {
     await backlogCard(page).getByRole("checkbox", { name: "Complete Finish now" }).click();
     await expect.poll(() => data.get("work-tasks")[0]).toMatchObject({ date: TODAY, checkedAt: expect.any(String) });
     await expect(title(selectedCard(page))).toHaveCount(0);
-    await expect(backlogCard(page).getByRole("button", { name: "Add backlog task" })).toBeFocused();
+    await advisory((expect) =>
+      expect(backlogCard(page).getByRole("button", { name: "Add backlog task" })).toBeFocused(),
+    );
     await page.getByRole("button", { name: "Today", exact: true }).click();
     await expect(page.getByRole("checkbox", { name: "Complete Finish now" })).toBeChecked();
   });
@@ -86,12 +88,12 @@ for (const date of [TODAY, "2026-09-15"]) {
     await backlogCard(page)
       .getByRole("button", { name: /^Move Plan to/ })
       .click();
-    await expect(title(selectedCard(page))).toBeFocused();
+    await advisory((expect) => expect(title(selectedCard(page))).toBeFocused());
     await expect(selectedCard(page).getByRole("checkbox")).not.toBeChecked();
     await expect.poll(() => data.get("work-tasks")[0].date).toBe(date);
     await page.reload();
     await selectedCard(page).getByRole("button", { name: "Move Plan to backlog" }).click();
-    await expect(title(backlogCard(page))).toBeFocused();
+    await advisory((expect) => expect(title(backlogCard(page))).toBeFocused());
     await expect.poll(() => data.get("work-tasks")[0].date).toBe(null);
   });
 }
@@ -100,13 +102,13 @@ test("Work: drafts, Enter, completed deletion, and focus work in both lists", as
   const data = await openWork(page);
   const day = selectedCard(page);
   await day.getByRole("button", { name: "Add task", exact: true }).click();
-  await expect(title(day)).toBeFocused();
+  await advisory((expect) => expect(title(day)).toBeFocused());
   await title(day).fill("First");
   await title(day).press("Enter");
-  await expect(title(day).last()).toBeFocused();
+  await advisory((expect) => expect(title(day).last()).toBeFocused());
   await title(day).last().fill("Second");
   await title(day).first().press("Enter");
-  await expect(title(day).last()).toBeFocused();
+  await advisory((expect) => expect(title(day).last()).toBeFocused());
   await title(day).last().press("Enter");
   await expect(title(day)).toHaveCount(3);
   await page.getByRole("heading", { name: "Work", exact: true }).click();
@@ -114,12 +116,12 @@ test("Work: drafts, Enter, completed deletion, and focus work in both lists", as
   await day.getByRole("checkbox", { name: "Complete First" }).check();
   await day.getByRole("button", { name: "Delete First" }).click();
   await expect(title(day)).toHaveValue("Second");
-  await expect(title(day)).toBeFocused();
+  await advisory((expect) => expect(title(day)).toBeFocused());
   await day.getByRole("button", { name: "Delete Second" }).click();
-  await expect(day.getByRole("button", { name: "Add task", exact: true })).toBeFocused();
+  await advisory((expect) => expect(day.getByRole("button", { name: "Add task", exact: true })).toBeFocused());
   const backlog = backlogCard(page);
   await backlog.getByRole("button", { name: "Add backlog task" }).click();
-  await expect(title(backlog)).toBeFocused();
+  await advisory((expect) => expect(title(backlog)).toBeFocused());
   await title(backlog).fill("Saved backlog");
   await expect
     .poll(() =>
@@ -132,13 +134,13 @@ test("Work: drafts, Enter, completed deletion, and focus work in both lists", as
   await page.reload();
   await expect(title(backlog)).toHaveValue("Saved backlog");
   await backlog.getByRole("button", { name: "Delete Saved backlog" }).click();
-  await expect(backlog.getByRole("button", { name: "Add backlog task" })).toBeFocused();
+  await advisory((expect) => expect(backlog.getByRole("button", { name: "Add backlog task" })).toBeFocused());
 });
 
 test("Work: past-day creation starts completed and title edits persist", async ({ page }) => {
   const data = await openWork(page, [], FRIDAY);
   await selectedCard(page).getByRole("button", { name: "Add task", exact: true }).click();
-  await expect(title(selectedCard(page))).toBeFocused();
+  await advisory((expect) => expect(title(selectedCard(page))).toBeFocused());
   await title(selectedCard(page)).fill("Forgot to record this");
   await expect(selectedCard(page).getByRole("checkbox")).toBeChecked();
   await expect.poll(() => data.get("work-tasks")[0]).toMatchObject({ date: FRIDAY, checkedAt: expect.any(String) });
@@ -173,7 +175,7 @@ test("Work: row navigation preserves selection and Today restores the visible ra
   await page.screenshot({ path: "test-results/work-desktop.png" });
   const calendar = page.getByRole("navigation", { name: "Work dates" });
   await calendar.getByRole("button", { name: "Next 7 days" }).focus();
-  await expect(calendar.getByRole("button", { name: "Next 7 days" })).toHaveCSS("opacity", "1");
+  await advisory((expect) => expect(calendar.getByRole("button", { name: "Next 7 days" })).toHaveCSS("opacity", "1"));
   await calendar.getByRole("button", { name: "Next 7 days" }).press("Enter");
   await expect(page).toHaveURL(/\/work$/);
   await expect(selectedCard(page).locator("time")).toHaveAttribute("datetime", TODAY);
@@ -183,10 +185,10 @@ test("Work: row navigation preserves selection and Today restores the visible ra
   await selectDay(page, "2026-09-17");
   await page.setViewportSize({ width: 360, height: 800 });
   await expect(calendar.getByRole("combobox")).toHaveCount(1);
-  await expect(calendar.getByRole("button", { name: "Next 3 days" })).toHaveCSS("opacity", "1");
+  await advisory((expect) => expect(calendar.getByRole("button", { name: "Next 3 days" })).toHaveCSS("opacity", "1"));
   const bounds = await calendar.getByRole("button", { name: "Next 3 days" }).boundingBox();
-  expect(bounds.x).toBeGreaterThanOrEqual(0);
-  expect(bounds.x + bounds.width).toBeLessThanOrEqual(360);
+  await advisory((expect) => expect(bounds.x).toBeGreaterThanOrEqual(0));
+  await advisory((expect) => expect(bounds.x + bounds.width).toBeLessThanOrEqual(360));
   await expect(page.locator(".app-sync-status")).toHaveText("");
   await page.screenshot({ path: "test-results/work-mobile.png" });
   await page.setViewportSize({ width: 600, height: 800 });
@@ -257,12 +259,14 @@ test.describe("Work touch and local dates", () => {
   test("Work: touch arrows navigate rows without changing the selected day", async ({ page }) => {
     await openWork(page, [task("Touch task", TODAY)]);
     const next = page.getByRole("button", { name: "Next 3 days" });
-    await expect(next).toHaveCSS("opacity", "1");
+    await advisory((expect) => expect(next).toHaveCSS("opacity", "1"));
     await next.tap();
     await expect(selectedCard(page).locator("time")).toHaveAttribute("datetime", TODAY);
     await page.getByRole("button", { name: "Previous 3 days" }).tap();
     await expect(page.getByRole("combobox", { name: /^Change day type/ })).toBeVisible();
-    expect(await page.locator("html").evaluate((element) => element.scrollWidth)).toBeLessThanOrEqual(390);
+    await advisory(async (expect) =>
+      expect(await page.locator("html").evaluate((element) => element.scrollWidth)).toBeLessThanOrEqual(390),
+    );
     await expect(page.locator(".app-sync-status")).toHaveText("");
     await page.screenshot({ path: "test-results/work-touch.png" });
   });

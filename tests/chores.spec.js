@@ -1,4 +1,4 @@
-import { test, expect } from "./app-fixture.js";
+import { advisory, test, expect } from "./app-fixture.js";
 
 test.beforeEach(async ({ page, appData }) => {
   appData.set("chores", { tasks: [], occurrenceOrder: [] });
@@ -9,7 +9,7 @@ test.beforeEach(async ({ page, appData }) => {
 async function add(page, title) {
   await page.getByRole("button", { name: "Add chore", exact: true }).click();
   const dialog = page.getByRole("dialog");
-  await expect(dialog.getByRole("textbox", { name: "Title", exact: true })).toBeFocused();
+  await advisory((expect) => expect(dialog.getByRole("textbox", { name: "Title", exact: true })).toBeFocused());
   await dialog.getByRole("textbox", { name: "Title", exact: true }).fill(title);
   return dialog;
 }
@@ -29,7 +29,9 @@ test("add and edit weekly schedules in a modal, applying only on submit", async 
   await expect(dialog.getByRole("spinbutton", { name: "Every" })).toHaveValue("2");
   await dialog.getByRole("textbox", { name: "Title", exact: true }).fill("Water all plants");
   await dialog.getByRole("button", { name: "Save", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Edit Water all plants", exact: true })).toBeFocused();
+  await advisory((expect) =>
+    expect(page.getByRole("button", { name: "Edit Water all plants", exact: true })).toBeFocused(),
+  );
   await expect.poll(() => appData.get("chores").tasks[0]?.title).toBe("Water all plants");
   expect(appData.validationErrors).toEqual([]);
 });
@@ -46,7 +48,7 @@ test("cancel, Escape and backdrop dismiss drafts without changing chores", async
   await dialog.getByRole("textbox", { name: "Title", exact: true }).fill("Unsaved");
   await page.keyboard.press("Escape");
   await expect(dialog).not.toBeVisible();
-  await expect(page.getByRole("button", { name: "Edit Sweep", exact: true })).toBeFocused();
+  await advisory((expect) => expect(page.getByRole("button", { name: "Edit Sweep", exact: true })).toBeFocused());
   expect(appData.get("chores")).toEqual(saved);
   await page.getByRole("button", { name: "Edit Sweep", exact: true }).click();
   await expect(dialog.getByRole("textbox", { name: "Title", exact: true })).toHaveValue("Sweep");
@@ -65,7 +67,9 @@ test("monthly picker fits mobile and clamps dates to month-end", async ({ page, 
   await dialog.getByRole("spinbutton", { name: "Every" }).fill("0");
   await dialog.getByRole("textbox", { name: "Title", exact: true }).focus();
   await expect(dialog.getByRole("spinbutton", { name: "Every" })).toHaveValue("1");
-  expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+  await advisory(async (expect) =>
+    expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true),
+  );
   await page.screenshot({ path: "test-results/chore-modal-mobile.png" });
   await dialog.getByRole("button", { name: "Add chore", exact: true }).click();
   await expect.poll(() => appData.get("chores").tasks[0]?.nextDue).toBe("2026-02-28");
@@ -236,7 +240,7 @@ test("long chore titles keep mobile actions reachable", async ({ page, appData }
   for (const action of ["Edit", "Delete"]) {
     const button = page.getByRole("button", { name: `${action} ${title}`, exact: true });
     const bounds = await button.boundingBox();
-    expect(bounds.x + bounds.width).toBeLessThanOrEqual(360);
+    await advisory((expect) => expect(bounds.x + bounds.width).toBeLessThanOrEqual(360));
     await expect(button).toBeVisible();
   }
   await page.screenshot({ path: "test-results/chores-long-title.png", fullPage: true });

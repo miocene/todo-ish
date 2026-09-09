@@ -199,12 +199,8 @@
           "name": "auth_sessions_user_id_auth_users_id_fk",
           "tableFrom": "auth_sessions",
           "tableTo": "auth_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -366,12 +362,8 @@
           "name": "chore_occurrences_chore_id_chores_id_fk",
           "tableFrom": "chore_occurrences",
           "tableTo": "chores",
-          "columnsFrom": [
-            "chore_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["chore_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -379,10 +371,7 @@
       "compositePrimaryKeys": {
         "chore_occurrences_chore_id_due_on_pk": {
           "name": "chore_occurrences_chore_id_due_on_pk",
-          "columns": [
-            "chore_id",
-            "due_on"
-          ]
+          "columns": ["chore_id", "due_on"]
         }
       },
       "uniqueConstraints": {},
@@ -774,12 +763,8 @@
           "name": "passkey_credentials_user_id_auth_users_id_fk",
           "tableFrom": "passkey_credentials",
           "tableTo": "auth_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -891,12 +876,8 @@
           "name": "printing_item_filaments_printing_item_id_printing_items_id_fk",
           "tableFrom": "printing_item_filaments",
           "tableTo": "printing_items",
-          "columnsFrom": [
-            "printing_item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["printing_item_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1016,12 +997,8 @@
           "name": "printing_items_project_id_printing_projects_id_fk",
           "tableFrom": "printing_items",
           "tableTo": "printing_projects",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["project_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1254,12 +1231,8 @@
           "name": "stitch_project_threads_project_id_stitch_projects_id_fk",
           "tableFrom": "stitch_project_threads",
           "tableTo": "stitch_projects",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["project_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1466,12 +1439,8 @@
           "name": "todo_items_list_id_todo_lists_id_fk",
           "tableFrom": "todo_items",
           "tableTo": "todo_lists",
-          "columnsFrom": [
-            "list_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["list_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1785,12 +1754,8 @@
           "name": "filament_catalog_entries_snapshot_id_filament_catalog_snapshots_id_fk",
           "tableFrom": "filament_catalog_entries",
           "tableTo": "filament_catalog_snapshots",
-          "columnsFrom": [
-            "snapshot_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["snapshot_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1798,10 +1763,7 @@
       "compositePrimaryKeys": {
         "filament_catalog_entries_snapshot_id_catalog_id_pk": {
           "name": "filament_catalog_entries_snapshot_id_catalog_id_pk",
-          "columns": [
-            "snapshot_id",
-            "catalog_id"
-          ]
+          "columns": ["snapshot_id", "catalog_id"]
         }
       },
       "uniqueConstraints": {},
@@ -1886,9 +1848,7 @@
         "filament_catalog_snapshots_content_sha256_unique": {
           "name": "filament_catalog_snapshots_content_sha256_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "content_sha256"
-          ]
+          "columns": ["content_sha256"]
         }
       },
       "policies": {},
@@ -1986,12 +1946,8 @@
           "name": "floss_catalog_entries_snapshot_id_floss_catalog_snapshots_id_fk",
           "tableFrom": "floss_catalog_entries",
           "tableTo": "floss_catalog_snapshots",
-          "columnsFrom": [
-            "snapshot_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["snapshot_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1999,10 +1955,7 @@
       "compositePrimaryKeys": {
         "floss_catalog_entries_snapshot_id_catalog_id_pk": {
           "name": "floss_catalog_entries_snapshot_id_catalog_id_pk",
-          "columns": [
-            "snapshot_id",
-            "catalog_id"
-          ]
+          "columns": ["snapshot_id", "catalog_id"]
         }
       },
       "uniqueConstraints": {},
@@ -2087,9 +2040,7 @@
         "floss_catalog_snapshots_content_sha256_unique": {
           "name": "floss_catalog_snapshots_content_sha256_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "content_sha256"
-          ]
+          "columns": ["content_sha256"]
         }
       },
       "policies": {},
