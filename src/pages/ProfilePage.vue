@@ -46,7 +46,7 @@ export default {
 <template>
   <section class="profile-page" aria-labelledby="profile-title">
     <header class="profile-page__header">
-      <h1 id="profile-title">Profile</h1>
+      <h1 id="profile-title">Activity</h1>
     </header>
 
     <JMTabs :tabs="yearTabs" :active="selectedYear" aria-label="Activity years" />

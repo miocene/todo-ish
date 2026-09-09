@@ -1,0 +1,14 @@
+.jm-modal {
+  inline-size: min(28rem, calc(100% - var(--space-9)));
+  min-block-size: 12rem;
+  padding: var(--space-5);
+  color: var(--color-text-default);
+  background: var(--color-bg-surface);
+  border: 0;
+  border-radius: var(--radius-card);
+}
+
+.jm-modal::backdrop {
+  background: #f0f;
+  opacity: 0.3;
+}

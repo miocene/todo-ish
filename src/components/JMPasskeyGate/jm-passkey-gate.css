@@ -1,0 +1,25 @@
+.jm-passkey-gate {
+  display: flex;
+  min-block-size: 100dvb;
+  padding: var(--space-5);
+  align-items: center;
+  justify-content: center;
+}
+
+.jm-passkey-gate__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  inline-size: min(100%, 420px);
+  padding: var(--space-7);
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-control);
+}
+
+.jm-passkey-gate__brand {
+  font-weight: var(--font-weight-bold);
+}
+
+.jm-passkey-gate__error {
+  color: #f0f;
+}
