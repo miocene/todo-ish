@@ -45,7 +45,6 @@ export default {
     JMTaskItem,
   },
   props: {
-    description: { type: String, required: true },
     pageKey: {
       type: String,
       required: true,
@@ -208,12 +207,11 @@ export default {
       if (this.isCrossStitch) {
         const value = this.projectCrossesDone(project);
         const max = this.projectTotalCrosses(project);
-        const percent = max > 0 ? Math.round((value / max) * 100) : 0;
-        return { value, max, text: `${value.toLocaleString()} / ${max.toLocaleString()} crosses · ${percent}%` };
+        return { value, max };
       }
       const tasks = project.tasks.filter((task) => task.title.trim());
       const value = tasks.filter((task) => task.completed).length;
-      return { value, max: tasks.length, text: `${value} / ${tasks.length} items` };
+      return { value, max: tasks.length };
     },
     handleProjectAction(project, action) {
       if (action === "edit" || action === "add") this.openProject(project, action === "add");

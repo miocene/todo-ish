@@ -9,7 +9,7 @@ export default {
   components: { JMButton, JMProgress },
   props: {
     title: { type: String, required: true },
-    emptyText: { type: String, required: true },
+    emptyText: { type: String, default: "No items yet." },
     color: { type: String, default: null },
     actions: { type: Array, default: () => [] },
     progress: { type: Object, default: null },

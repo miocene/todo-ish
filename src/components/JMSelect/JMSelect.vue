@@ -7,7 +7,6 @@ export default {
   components: { JMIcon },
   props: {
     disabled: { type: Boolean, default: false },
-    iconOnly: { type: Boolean, default: false },
     modelValue: { type: [String, Number], default: "" },
     options: { type: Array, required: true },
     size: {
