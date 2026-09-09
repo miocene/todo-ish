@@ -45,7 +45,7 @@ export default {
     focusDateIso: {
       immediate: true,
       handler(date) {
-        this.cardColors = loadCardColors(["backlog", `work-day:${date}`]);
+        this.cardColors = loadCardColors([`work-day:${date}`]);
         this.normalizeDateQuery();
       },
     },

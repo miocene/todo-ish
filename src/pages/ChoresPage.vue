@@ -1,6 +1,5 @@
 <script>
 import { APP_DATA_LIMITS } from "../../backend/api/src/app-data-contract.mjs";
-import { loadCardColors } from "../app/card-colors.js";
 import { appClock } from "../app/clock.js";
 import { subscribeAppData } from "../app/app-data.js";
 import { loadPageTasks, savePageTasks } from "../app/page-tasks.js";
@@ -35,7 +34,6 @@ export default {
     const chores = loadPageTasks("chores");
     return {
       limits: APP_DATA_LIMITS,
-      cardColors: loadCardColors(["chores-today", "chores-all"]),
       chores: { ...chores, history: chores.history ?? [] },
       draft: null,
       draftOriginal: null,

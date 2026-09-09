@@ -135,7 +135,7 @@ test("development mocks colors locally when the API has no color storage", async
   const todayColor = await colorOf(page.locator(".jm-card:not(.work-backlog)"));
   const backlogColor = await colorOf(page.locator(".work-backlog"));
   expect(CARD_COLORS).toContain(todayColor);
-  expect(CARD_COLORS).toContain(backlogColor);
+  expect(backlogColor).toBe("");
   await page.reload();
   expect(await colorOf(page.locator(".jm-card:not(.work-backlog)"))).toBe(todayColor);
   expect(await colorOf(page.locator(".work-backlog"))).toBe(backlogColor);
@@ -158,11 +158,13 @@ test("development mocks colors locally when the API has no color storage", async
   await page.reload();
   expect(await colorOf(page.locator(".project-card"))).toBe(projectColor);
   await page.goto("/chores");
+  await expect(page.locator(".jm-card")).toHaveCount(2);
   const choreColors = await page
     .locator(".jm-card")
     .evaluateAll((cards) => cards.map((card) => card.style.getPropertyValue("--color")));
-  for (const color of choreColors) expect(CARD_COLORS).toContain(color);
+  expect(choreColors).toEqual(["", ""]);
   await page.reload();
+  await expect(page.locator(".jm-card")).toHaveCount(2);
   expect(
     await page.locator(".jm-card").evaluateAll((cards) => cards.map((card) => card.style.getPropertyValue("--color"))),
   ).toEqual(choreColors);
@@ -189,13 +191,12 @@ test("card colors migrate into the palette and persist without visible color con
   const todayColor = await colorOf(page.locator(".jm-card:not(.work-backlog)"));
   const backlogColor = await colorOf(page.locator(".work-backlog"));
   expect(CARD_COLORS).toContain(todayColor);
-  expect(CARD_COLORS).toContain(backlogColor);
+  expect(backlogColor).toBe("");
   await expect
     .poll(() => data.get("colors"))
     .toMatchObject({
       [`work-day:${localIsoDate()}`]: todayColor,
       [`work-day:${localIsoDate(-1)}`]: savedWorkColor,
-      backlog: backlogColor,
     });
   expect(data.get("colors")).not.toHaveProperty("today");
   await page.getByRole("button", { name: `${localFullDateLabel(-1)}. No completed tasks`, exact: true }).click();
@@ -632,12 +633,9 @@ test("work and chore cards expose only their supported actions", async ({ page }
   const colors = await page
     .locator(".jm-card")
     .evaluateAll((cards) => cards.map((card) => card.style.getPropertyValue("--color")));
-  await expect
-    .poll(() => appDataByPage.get(page).get("colors"))
-    .toMatchObject({
-      "chores-today": colors[0],
-      "chores-all": colors[1],
-    });
+  expect(colors).toEqual(["", ""]);
+  expect(appDataByPage.get(page).get("colors") ?? {}).not.toHaveProperty("chores-today");
+  expect(appDataByPage.get(page).get("colors") ?? {}).not.toHaveProperty("chores-all");
   const dueCount = await today.getByRole("checkbox").count();
   await all.getByRole("button", { name: "Collapse All chores" }).click();
   await expect(all.getByRole("textbox", { name: "Task title", exact: true }).first()).toBeHidden();
