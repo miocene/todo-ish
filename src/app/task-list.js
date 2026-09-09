@@ -11,12 +11,6 @@ export function serializableTasks(tasks, draftTaskIds, getTaskTitle = taskTitle)
   return tasks.filter((task) => !draftTaskIds.has(task.id) || getTaskTitle(task).trim());
 }
 
-export function serializableChores(chores, draftTaskIds) {
-  const tasks = serializableTasks(chores.tasks, draftTaskIds);
-  const ids = new Set(tasks.map((task) => task.id));
-  return { ...chores, tasks, occurrenceOrder: chores.occurrenceOrder.filter((id) => ids.has(id)) };
-}
-
 export function finishTaskDraft(tasks, task, draftTaskIds, getTaskTitle = taskTitle) {
   if (!draftTaskIds.delete(task.id) || getTaskTitle(task).trim()) return false;
   const taskIndex = tasks.findIndex((item) => item.id === task.id);

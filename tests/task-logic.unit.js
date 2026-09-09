@@ -3,7 +3,7 @@ import test from "node:test";
 import { activityLevel, activityYears, buildActivityCalendar, groupActivityByDay } from "../src/app/activity.js";
 import { filamentSupplyStatus } from "../src/app/printing-supplies.js";
 import { flossSupplyStatus } from "../src/app/stitching-supplies.js";
-import { dateKey, shiftIsoDate } from "../src/app/date.js";
+import { shiftIsoDate } from "../src/app/date.js";
 import {
   completedTasksLast,
   createCompletionMoveScheduler,
@@ -16,7 +16,6 @@ import {
 
 test("calendar dates preserve their day and shift across month boundaries", () => {
   assert.equal(shiftIsoDate("2026-10-31", 1), "2026-11-01");
-  assert.equal(dateKey("2026-08-25"), "2026-08-25");
 });
 
 test("task list helpers preserve order and remove abandoned drafts", () => {

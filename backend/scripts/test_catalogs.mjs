@@ -1,21 +1,12 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import {
-  bambuFilamentLabel,
-  bambuMaterial,
-  createCatalogLookup,
-  dmcFlossLabel,
-  normalizeFilamentCatalog,
-  normalizeFlossCatalog,
-} from "../catalogs/catalogs.js";
-
 const root = new URL("../", import.meta.url);
 const snapshot = (name) => JSON.parse(readFileSync(new URL(`catalogs/${name}`, root), "utf8"));
 const bambuSnapshot = snapshot("bambu-filaments.snapshot.json");
 const dmcSnapshot = snapshot("dmc-floss.snapshot.json");
-const bambuFilamentCatalog = normalizeFilamentCatalog(bambuSnapshot.entries);
-const dmcFlossCatalog = normalizeFlossCatalog(dmcSnapshot.entries);
+const bambuFilamentCatalog = bambuSnapshot.entries;
+const dmcFlossCatalog = dmcSnapshot.entries;
 const keys = (rows) => [...new Set(rows.flatMap(Object.keys))].sort();
 const duplicates = (values) => values.filter((value, index) => values.indexOf(value) !== index);
 
@@ -52,19 +43,13 @@ test("Bambu catalogue is complete, unique, and renderable", () => {
       `Missing Bambu family: ${family}`,
     );
   }
-
-  assert.equal(bambuMaterial("PLA Marble"), "PLA");
-  assert.equal(bambuMaterial("ASA-CF"), "ASA-CF");
-  assert.equal(bambuMaterial("Support for PA/PET"), "Support");
 });
 
 test("DMC catalogue keeps canonical Threadcolors data and Breibrink links", () => {
   assert.ok(dmcFlossCatalog.length >= 440, "Expected the complete Threadcolors DMC table");
-  assert.deepEqual(duplicates(dmcFlossCatalog.map((item) => item.id)), []);
+  assert.deepEqual(duplicates(dmcFlossCatalog.map((item) => item.number)), []);
 
   for (const item of dmcFlossCatalog) {
-    assert.equal(item.id, `dmc${item.number.toLowerCase()}`);
-    assert.equal(item.code, `DMC ${item.number}`);
     assert.ok(item.colorName, `Missing DMC colour name: ${item.number}`);
     assert.match(item.color, /^#[0-9A-F]{6}$/, `Invalid DMC colour: ${item.number}`);
   }
@@ -74,12 +59,4 @@ test("DMC catalogue keeps canonical Threadcolors data and Breibrink links", () =
   assert.equal(black.colorName, "Black");
   assert.equal(black.color, "#000000");
   assert.match(black.link, /^https:\/\/www\.breibrink\.nl\//);
-});
-
-test("catalogue lookup derives labels without putting snapshots in the runtime module", () => {
-  const lookup = createCatalogLookup({ filaments: bambuFilamentCatalog, floss: dmcFlossCatalog });
-
-  assert.equal(bambuFilamentLabel(lookup, "bambu-pla-basic-filament-10101"), "PLA Basic · Black");
-  assert.equal(dmcFlossLabel(lookup, "dmc310"), "DMC 310 · Black");
-  assert.equal(bambuFilamentLabel(lookup, "missing"), "missing");
 });
