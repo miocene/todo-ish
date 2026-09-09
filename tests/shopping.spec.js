@@ -2,7 +2,7 @@ import { advisory, test, expect } from "./app-fixture.js";
 
 const filamentId = "bambu-pla-basic-filament-10101";
 const flossId = "dmc310";
-const color = "#287271";
+const color = "#18A76B";
 test.beforeEach(async ({ page, appData }) => {
   appData.set("shopping", { tasks: [{ id: "manual", title: "Milk", completed: false }], history: [] });
   appData.set("printing", {

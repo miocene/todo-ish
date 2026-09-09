@@ -227,7 +227,7 @@ test("Work: completion reorders after a delay and unchecking cancels the move", 
 
 test("Work: colors are created only for displayed cards and persist", async ({ page }) => {
   const data = await openWork(page, [task("History", "2026-08-01", "2026-08-01T12:00:00Z")]);
-  await expect.poll(() => Object.keys(data.get("colors") ?? {}).sort()).toEqual(["backlog", `work-day:${TODAY}`]);
+  await expect.poll(() => Object.keys(data.get("colors") ?? {}).sort()).toEqual([`work-day:${TODAY}`]);
   const color = await selectedCard(page).evaluate((element) => element.style.getPropertyValue("--color"));
   await selectDay(page, FRIDAY);
   await expect.poll(() => data.get("colors")?.[`work-day:${FRIDAY}`]).toMatch(/^#[0-9A-F]{6}$/);

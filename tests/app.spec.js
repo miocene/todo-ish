@@ -290,7 +290,7 @@ test("navigation opens application pages", async ({ page }) => {
   await page.getByRole("link", { name: "Activity", exact: true }).click();
   await expect.poll(() => new URL(page.url()).pathname).toBe("/profile");
   await expect(page).toHaveTitle("Profile — Done-ish");
-  await expect(page.getByRole("heading", { level: 1, name: "Profile" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Activity" })).toBeVisible();
 });
 
 test("profile shows yearly task activity and newly checked items", async ({ page }) => {

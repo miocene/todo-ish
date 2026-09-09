@@ -19,7 +19,7 @@ test("profile popover exposes account actions and Activity, with native dismissa
   await expect(menu).not.toBeVisible();
   await expect(page.locator("main").getByRole("button", { name: /Add passkey|Sign out/ })).toHaveCount(0);
   await trigger.click();
-  await page.getByRole("heading", { name: "Profile", exact: true }).click();
+  await page.getByRole("heading", { name: "Activity", exact: true }).click();
   await expect(menu).not.toBeVisible();
   await page.setViewportSize({ width: 360, height: 800 });
   await trigger.click();

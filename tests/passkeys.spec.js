@@ -8,8 +8,9 @@ for (const status of [0, 400, 503]) {
       Object.defineProperty(navigator.credentials, "create", {
         value: async () => ({ toJSON: () => ({ id: "new-passkey" }) }),
       });
-      PublicKeyCredential.parseCreationOptionsFromJSON = (value) => value;
-      PublicKeyCredential.signalUnknownCredential = async (value) => globalThis.unknownCredentials.push(value);
+      globalThis.PublicKeyCredential.parseCreationOptionsFromJSON = (value) => value;
+      globalThis.PublicKeyCredential.signalUnknownCredential = async (value) =>
+        globalThis.unknownCredentials.push(value);
     });
     await page.route("**/api/auth/registration/options", (route) =>
       route.fulfill({ json: { rp: { id: "example.test" } } }),
@@ -30,8 +31,8 @@ test("unknown sign-in credentials use the ceremony RP ID", async ({ page, appDat
   await page.addInitScript(() => {
     globalThis.unknownCredentials = [];
     Object.defineProperty(navigator.credentials, "get", { value: async () => ({ toJSON: () => ({ id: "missing" }) }) });
-    PublicKeyCredential.parseRequestOptionsFromJSON = (value) => value;
-    PublicKeyCredential.signalUnknownCredential = async (value) => globalThis.unknownCredentials.push(value);
+    globalThis.PublicKeyCredential.parseRequestOptionsFromJSON = (value) => value;
+    globalThis.PublicKeyCredential.signalUnknownCredential = async (value) => globalThis.unknownCredentials.push(value);
   });
   await page.route("**/api/auth/authentication/options", (route) => route.fulfill({ json: { rpId: "example.test" } }));
   await page.route("**/api/auth/authentication/verify", (route) =>

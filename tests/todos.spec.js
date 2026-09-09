@@ -10,11 +10,11 @@ const done = { id: "done", title: "Finished task", completed: true, completedAt:
 test.beforeEach(async ({ page, appData }) => {
   appData.set("todos", {
     lists: [
-      { id: "general", title: "General", color: "#633533", tasks: [] },
+      { id: "general", title: "General", color: "#2765EC", tasks: [] },
       {
         id: "home",
         title: "Home",
-        color: "#287271",
+        color: "#18A76B",
         tasks: [done, { id: "unfinished", title: "Unfinished task", completed: false }],
       },
     ],
@@ -247,7 +247,7 @@ test("list and task limits prevent unsavable additions", async ({ page, appData 
     lists: Array.from({ length: 100 }, (_, i) => ({
       id: i ? `list-${i}` : "general",
       title: i ? `List ${i}` : "General",
-      color: "#287271",
+      color: "#18A76B",
       tasks: [],
     })),
     history: [],
@@ -261,7 +261,7 @@ test("list and task limits prevent unsavable additions", async ({ page, appData 
       {
         id: "general",
         title: "General",
-        color: "#287271",
+        color: "#18A76B",
         tasks: Array.from({ length: 2000 }, (_, i) => ({ id: `task-${i}`, title: `Task ${i}`, completed: false })),
       },
     ],
@@ -283,7 +283,7 @@ test("populated mobile cards wrap long names and retain checkbox focus after reo
       {
         id: "general",
         title: longTitle,
-        color: "#287271",
+        color: "#18A76B",
         tasks: [
           { id: "long", title: longTitle, completed: false },
           { id: "short", title: "Short task", completed: false },
