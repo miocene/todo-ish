@@ -17,14 +17,14 @@ export default {
     view: {
       type: String,
       default: "primary",
-      validator: (value) => ["primary", "secondary", "ghost"].includes(value),
+      validator: (value) => ["primary", "secondary", "ghost", "clear"].includes(value),
     },
   },
 };
 </script>
 
 <template>
-  <button class="jm-button" :class="[view, size]" type="button" :disabled="disabled">
+  <button class="jm-button" :class="[view, view !== 'clear' && size]" type="button" :disabled="disabled">
     <JMIcon v-if="iconName" :name="iconName" />
     <span v-if="text">{{ text }}</span>
   </button>

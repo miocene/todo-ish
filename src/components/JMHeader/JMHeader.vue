@@ -4,11 +4,12 @@ import { navigationItems, toggleNavigationItem } from "../../app/navigation.js";
 import { createPasskey, signOut } from "../../app/passkeys.js";
 import { RouterLink } from "vue-router";
 import JMButton from "../JMButton/JMButton.vue";
+import JMSwitch from "../JMSwitch/JMSwitch.vue";
 import "./jm-header.css";
 
 export default {
   name: "JMHeader",
-  components: { JMButton, RouterLink },
+  components: { JMButton, JMSwitch, RouterLink },
   emits: ["search"],
   setup() {
     return { profileMenuId: `profile-menu-${useId()}`, navigationItems, toggleNavigationItem };
@@ -59,23 +60,18 @@ export default {
 
     <JMButton aria-label="Profile" icon-name="user" view="ghost" :popovertarget="profileMenuId" />
     <div :id="profileMenuId" ref="profileMenu" class="jm-popover jm-header__profile-menu" popover>
-      <RouterLink class="jm-button ghost m" :to="{ name: 'profile' }" @click="closeProfile">Activity</RouterLink>
-      <JMButton text="Add passkey" view="ghost" :disabled="authBusy" @click="addPasskey" />
+      <RouterLink class="jm-button clear" :to="{ name: 'profile' }" @click="closeProfile">Activity</RouterLink>
+      <JMButton text="Add passkey" view="clear" :disabled="authBusy" @click="addPasskey" />
       <hr />
-      <button
+      <JMSwitch
         v-for="item in navigationItems"
         :key="item.to.name"
-        class="jm-button ghost m jm-header__navigation-toggle"
-        type="button"
-        role="switch"
-        :aria-checked="item.visible"
-        @click="toggleNavigationItem(item)"
-      >
-        <span>{{ item.label }}</span>
-        <span class="jm-header__navigation-switch" aria-hidden="true"></span>
-      </button>
+        :label="item.label"
+        :model-value="item.visible"
+        @update:model-value="toggleNavigationItem(item)"
+      />
       <hr />
-      <JMButton text="Sign out" view="ghost" :disabled="authBusy" @click="logout" />
+      <JMButton text="Sign out" view="clear" :disabled="authBusy" @click="logout" />
       <p v-if="authMessage" role="status">{{ authMessage }}</p>
     </div>
   </header>

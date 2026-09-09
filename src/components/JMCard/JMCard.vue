@@ -80,7 +80,7 @@ export default {
               :icon-name="action.icon"
               :aria-label="action.ariaLabel"
               :disabled="action.disabled"
-              view="ghost"
+              view="clear"
               @click="runAction(action)"
             />
           </div>

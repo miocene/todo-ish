@@ -3,7 +3,7 @@
 .jm-select::picker(select) {
   min-inline-size: min(200px, calc(100vw - 16px));
   max-inline-size: calc(100vw - 16px);
-  max-block-size: min(24rem, 70vh);
+  max-block-size: 80vh;
   overflow: auto;
   padding: var(--space-2);
   color: var(--color-text-default);
@@ -18,7 +18,7 @@
   position-area: block-end center;
 }
 
-.jm-popover > .jm-button,
+.jm-popover > :is(.jm-button, .jm-switch),
 .jm-select option {
   display: flex;
   gap: var(--space-4);
@@ -29,21 +29,29 @@
   color: var(--color-text-default);
 }
 
-.jm-popover > .jm-button {
+.jm-popover > :is(.jm-button, .jm-switch) {
   inline-size: 100%;
+  min-block-size: var(--size-control-m);
+  border: 0;
+  background: transparent;
+  text-align: start;
+
+  > span {
+    white-space: nowrap;
+  }
 }
 
-.jm-popover > .jm-button:not(:disabled),
+.jm-popover > :is(.jm-button, .jm-switch):not(:disabled),
 .jm-select option:not(:disabled) {
   cursor: pointer;
 }
 
-.jm-popover > .jm-button:not(:disabled):is(:hover, :focus-visible, :active),
+.jm-popover > :is(.jm-button, .jm-switch):not(:disabled):is(:hover, :focus-visible, :active),
 .jm-select option:not(:disabled):is(:hover, :focus, :active) {
   background: var(--control-ghost-background-hover);
 }
 
-.jm-popover > .jm-button:disabled,
+.jm-popover > :is(.jm-button, .jm-switch):disabled,
 .jm-select option:disabled {
   color: var(--control-disabled-text);
   cursor: not-allowed;
