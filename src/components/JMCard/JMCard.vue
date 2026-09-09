@@ -2,13 +2,12 @@
 import { useId } from "vue";
 import JMButton from "../JMButton/JMButton.vue";
 import JMIcon from "../JMIcon/JMIcon.vue";
-import JMModal from "../JMModal/JMModal.vue";
 import JMProgress from "../JMProgress/JMProgress.vue";
 import "./jm-card.css";
 
 export default {
   name: "JMCard",
-  components: { JMButton, JMIcon, JMModal, JMProgress },
+  components: { JMButton, JMIcon, JMProgress },
   props: {
     title: { type: String, required: true },
     emptyText: { type: String, required: true },
@@ -16,6 +15,7 @@ export default {
     actions: { type: Array, default: () => [] },
     progress: { type: Object, default: null },
     collapsible: { type: Boolean, default: false },
+    collapsed: { type: Boolean, default: false },
     tag: { type: String, default: "section" },
   },
   emits: ["action"],
@@ -23,7 +23,12 @@ export default {
     return { id: useId() };
   },
   data() {
-    return { expanded: true };
+    return { expanded: !this.collapsed };
+  },
+  watch: {
+    collapsed(value) {
+      this.expanded = !value;
+    },
   },
   beforeUnmount() {
     document.removeEventListener("pointerdown", this.handleOutsidePointer);
@@ -46,11 +51,8 @@ export default {
     runAction(action) {
       if (action.disabled) return;
       this.closeMenu(true);
-      if (action.id === "edit") this.$refs.editModal.open();
-      else {
-        if (action.id === "add") this.expanded = true;
-        this.$emit("action", action.id);
-      }
+      if (action.id === "add") this.expanded = true;
+      this.$emit("action", action.id);
     },
   },
 };
@@ -84,11 +86,7 @@ export default {
           @focusout="handleMenuBlur"
           @keydown.esc.prevent.stop="closeMenu(true)"
         >
-          <summary
-            ref="menuButton"
-            class="jm-button ghost m"
-            :aria-label="`Actions for ${title}`"
-          >
+          <summary ref="menuButton" class="jm-button ghost m" :aria-label="`Actions for ${title}`">
             <JMIcon name="kebab" />
           </summary>
           <div class="jm-card__menu-actions">
@@ -127,6 +125,5 @@ export default {
     <div v-else v-show="!collapsible || expanded" :id="`${id}-tasks`" class="empty">
       {{ emptyText }}
     </div>
-    <JMModal v-if="actions.some((action) => action.id === 'edit')" ref="editModal" :aria-label="`Edit ${title}`" />
   </component>
 </template>

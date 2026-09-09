@@ -1,13 +1,15 @@
 <script>
 import { flossCatalog, flossById, floss, flossLabel } from "../../app/floss-catalog.js";
+import JMProgress from "../JMProgress/JMProgress.vue";
 import JMInput from "../JMInput/JMInput.vue";
 import JMSelect from "../JMSelect/JMSelect.vue";
 
 export default {
   name: "JMStitchTaskDetails",
-  components: { JMInput, JMSelect },
+  components: { JMInput, JMSelect, JMProgress },
   emits: ["update:crosses", "update:crosses-done", "update:floss", "update:skeins"],
   props: {
+    readonly: { type: Boolean, default: false },
     supplyById: { type: Map, required: true },
     task: { type: Object, required: true },
   },
@@ -42,7 +44,15 @@ export default {
 </script>
 
 <template>
-  <fieldset class="stitch-color__fields" :class="{ 'stitch-color__fields--missing': isMissing }">
+  <template v-if="readonly">
+    <p>
+      {{ task.requiredSkeins }} {{ task.requiredSkeins === 1 ? "skein" : "skeins" }} · {{ task.crossesDone }} /
+      {{ task.crosses }} crosses
+    </p>
+    <span v-if="isMissing && !task.completed" class="stitch-color__missing">{{ missingStatus }}</span>
+    <JMProgress :value="task.crossesDone" :max="task.crosses" :label="`Crosses completed for ${task.title}`" />
+  </template>
+  <fieldset v-else class="stitch-color__fields" :class="{ 'stitch-color__fields--missing': isMissing }">
     <legend class="task-page__visually-hidden">Thread and progress for {{ task.title }}</legend>
     <div class="stitch-color__field stitch-color__field--thread">
       <label :for="inputId('floss')">Thread color</label>
@@ -95,10 +105,11 @@ export default {
       :model-value="task.crosses"
       @update:model-value="$emit('update:crosses', $event)"
     />
-    <p class="stitch-color__progress">
-      {{ task.crossesDone.toLocaleString() }} / {{ task.crosses.toLocaleString() }} crosses<span v-if="task.completed">
-        · Done</span
-      >
-    </p>
+    <JMProgress
+      class="stitch-color__progress"
+      :value="task.crossesDone"
+      :max="task.crosses"
+      :label="`${task.crossesDone.toLocaleString()} / ${task.crosses.toLocaleString()} crosses for ${task.title}`"
+    />
   </fieldset>
 </template>

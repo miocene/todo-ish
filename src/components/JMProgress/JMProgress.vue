@@ -13,12 +13,6 @@ export default {
 
 <template>
   <div class="jm-progress">
-    <progress
-      class="jm-progress__bar"
-      :value="max > 0 ? value : 0"
-      :max="max > 0 ? max : 1"
-      :aria-label="label"
-      :aria-valuetext="text || undefined"
-    />
+    <progress class="jm-progress__bar" :value="max > 0 ? value : 0" :max="max > 0 ? max : 1" :aria-label="label" />
   </div>
 </template>

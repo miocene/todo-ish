@@ -310,55 +310,6 @@ n {
     cursor: not-allowed;
   }
 
-  /* Tabs */
-
-  .jm-tabs {
-    min-inline-size: 0;
-    overflow-x: auto;
-    border-block-end: 1px solid #f0f;
-  }
-
-  .jm-tabs__list {
-    display: flex;
-    min-inline-size: max-content;
-  }
-
-  .jm-tabs__link {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-inline-size: 64px;
-    min-block-size: 44px;
-    padding-inline: var(--space-5);
-    color: #f0f;
-    border-block-end: 2px solid transparent;
-  }
-
-  .jm-tabs__link:is(:hover, :focus-visible) {
-    color: var(--color-text-default);
-    background: var(--color-bg-selection);
-  }
-
-  .jm-tabs__link--active {
-    color: var(--color-text-default);
-    font-weight: var(--font-weight-bold);
-    border-block-end-color: currentcolor;
-  }
-
-  .jm-tabs__link:active {
-    background: #f0f;
-  }
-
-  .jm-tabs__link:focus-visible {
-    outline-offset: -3px;
-  }
-
-  @media (pointer: coarse) {
-    .jm-tabs__link {
-      min-block-size: 48px;
-    }
-  }
-
   /* Progress */
 
   .jm-progress {
@@ -591,7 +542,7 @@ n {
 
   .printing-filament {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 5rem 28px;
+    grid-template-columns: minmax(0, 1fr) minmax(8rem, 10rem) auto;
     gap: var(--space-2);
     align-items: end;
     min-inline-size: 0;
@@ -612,59 +563,6 @@ n {
     border-color: #f0f;
   }
 
-  .printing-item__missing {
-    color: #f0f;
-    font-size: 0.6875rem;
-    font-weight: var(--font-weight-bold);
-  }
-
-  .printing-item__weight-control {
-    position: relative;
-    display: block;
-  }
-
-  .printing-item__weight-control input {
-    padding-inline-end: var(--space-7);
-  }
-
-  .printing-item__weight-control > span {
-    position: absolute;
-    inset-block-start: 50%;
-    inset-inline-end: var(--space-3);
-    color: #f0f;
-    transform: translateY(-50%);
-    pointer-events: none;
-  }
-
-  .printing-filament__remove {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    inline-size: 28px;
-    block-size: 32px;
-    padding: 0;
-    color: #f0f;
-    background: transparent;
-    border: 0;
-    border-radius: var(--radius-control);
-    cursor: pointer;
-  }
-
-  .printing-filament__remove:not(:disabled):is(:hover, :focus-visible) {
-    color: var(--color-text-default);
-    background: var(--color-bg-selection);
-  }
-
-  .printing-filament__remove:not(:disabled):active {
-    background: #f0f;
-  }
-
-  .printing-filament__remove:disabled {
-    background: #f0f;
-    opacity: 0.55;
-    cursor: not-allowed;
-  }
-
   .task-page__visually-hidden {
     position: absolute;
     inline-size: 1px;
@@ -681,9 +579,9 @@ n {
     grid-column: 1 / -1;
   }
 
-  @media (width <= 380px) {
+  @media (width <= 600px) {
     .printing-filament {
-      grid-template-columns: minmax(0, 1fr) 28px;
+      grid-template-columns: minmax(0, 1fr) auto;
     }
 
     .printing-item__field--weight {

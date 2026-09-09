@@ -245,6 +245,11 @@ test("card colors migrate into the palette and persist without visible color con
 
   await page.goto("/cross-stitch");
   await page.getByRole("button", { name: "Add project" }).click();
+  const projectDialog = page.getByRole("dialog", { name: "New project" });
+  await projectDialog.getByRole("textbox", { name: "Project name" }).fill("New cross stitch project");
+  await projectDialog.getByRole("combobox", { name: "Thread color" }).selectOption("dmc310");
+  await projectDialog.getByRole("spinbutton", { name: "Crosses total" }).fill("100");
+  await projectDialog.getByRole("button", { name: "Create project" }).click();
   const newProjectColor = await colorOf(page.locator(".project-card").last());
   expect(CARD_COLORS).toContain(newProjectColor);
   await expect.poll(() => data.get("cross-stitch")?.projects.at(-1).color).toBe(newProjectColor);
@@ -446,7 +451,7 @@ test("other task pages render their variants and save changes immediately", asyn
   expect(
     await projects
       .first()
-      .getByLabel(/^Weight \d+$/)
+      .getByLabel(/^Weight \d+ \(g\)$/)
       .evaluateAll((inputs) => inputs.map((input) => input.value)),
   ).toEqual(["12", "1002", "2", "8"]);
   await expect(projects.first().locator(".printing-filament--missing")).toHaveCount(2);
@@ -466,20 +471,21 @@ test("other task pages render their variants and save changes immediately", asyn
   await expect(projects.first().locator(".task-item__title textarea")).toHaveCount(3);
 
   await page.getByRole("button", { name: "Add project" }).click();
+  const projectDialog = page.getByRole("dialog", { name: "New project" });
+  await projectDialog.getByRole("textbox", { name: "Project name" }).fill("New 3D project");
+  await projectDialog.getByRole("textbox", { name: "Item name" }).fill("Weighted base");
+  await projectDialog.getByRole("button", { name: "Create project" }).click();
   await expect(projects).toHaveCount(3);
   const newProject = projects.last();
   await expect(newProject.getByRole("heading", { name: "New 3D project" })).toBeVisible();
   const projectColor = await newProject.evaluate((card) => card.style.getPropertyValue("--color"));
   expect(CARD_COLORS).toContain(projectColor);
-  await newProject.getByLabel(/^Actions for/).click();
-  await newProject.getByRole("button", { name: "Add item" }).click();
-  await newProject.getByLabel("Item name").fill("Weighted base");
   await newProject.getByLabel("Filament 1", { exact: true }).selectOption("bambu-pla-basic-filament-10101");
-  await newProject.getByLabel("Weight 1", { exact: true }).fill("35");
+  await newProject.getByLabel("Weight 1 (g)", { exact: true }).fill("35");
   await newProject.getByRole("button", { name: "Add filament" }).click();
   await expect(newProject.getByLabel("Filament 2", { exact: true })).toBeFocused();
   await newProject.getByLabel("Filament 2", { exact: true }).selectOption("bambu-pla-basic-filament-10501");
-  await newProject.getByLabel("Weight 2", { exact: true }).fill("7.5");
+  await newProject.getByLabel("Weight 2 (g)", { exact: true }).fill("7.5");
   await page.reload();
   const savedProject = page.locator(".project-card").last();
   await expect(savedProject.getByRole("heading", { name: "New 3D project" })).toBeVisible();
@@ -489,7 +495,7 @@ test("other task pages render their variants and save changes immediately", asyn
     await savedProject.getByLabel(/^Filament \d+$/).evaluateAll((selects) => selects.map((select) => select.value)),
   ).toEqual(["bambu-pla-basic-filament-10101", "bambu-pla-basic-filament-10501"]);
   expect(
-    await savedProject.getByLabel(/^Weight \d+$/).evaluateAll((inputs) => inputs.map((input) => input.value)),
+    await savedProject.getByLabel(/^Weight \d+ \(g\)$/).evaluateAll((inputs) => inputs.map((input) => input.value)),
   ).toEqual(["35", "7.5"]);
 
   await page.goto("/cross-stitch");
