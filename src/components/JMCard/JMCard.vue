@@ -14,6 +14,7 @@ export default {
     emptyText: { type: String, required: true },
     color: { type: String, default: "#FF00FF" },
     actions: { type: Array, default: () => [] },
+    inlineActions: { type: Boolean, default: false },
     progress: { type: Object, default: null },
     collapsible: { type: Boolean, default: false },
     tag: { type: String, default: "section" },
@@ -64,14 +65,17 @@ export default {
         <JMProgress v-if="progress" :value="progress.value" :max="progress.max" :label="`Progress for ${title}`" />
       </h2>
       <template v-if="actions.length || collapsible">
-        <JMButton
-          v-if="actions.length === 1"
-          :icon-name="actions[0].icon"
-          :aria-label="actions[0].ariaLabel || actions[0].label"
-          :disabled="actions[0].disabled"
-          view="ghost"
-          @click="runAction(actions[0])"
-        />
+        <template v-if="inlineActions || actions.length === 1">
+          <JMButton
+            v-for="action in actions"
+            :key="action.id"
+            :icon-name="action.icon"
+            :aria-label="action.ariaLabel || action.label"
+            :disabled="action.disabled"
+            view="ghost"
+            @click="runAction(action)"
+          />
+        </template>
         <details
           v-else-if="actions.length > 1"
           ref="menu"
@@ -120,7 +124,7 @@ export default {
     >
       <slot name="list"><slot /></slot>
     </ul>
-    <div v-else class="empty">
+    <div v-else v-show="!collapsible || expanded" :id="`${id}-tasks`" class="empty">
       {{ emptyText }}
     </div>
     <JMModal v-if="actions.some((action) => action.id === 'edit')" ref="editModal" :aria-label="`Edit ${title}`" />

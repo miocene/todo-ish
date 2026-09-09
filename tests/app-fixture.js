@@ -117,6 +117,24 @@ const test = base.extend({
             if (history.size) submittedValue.history = [...history.values()];
             else delete submittedValue.history;
           }
+          if (resource === "todos") {
+            const previous = values.todos ?? { lists: [] };
+            const general = previous.lists.find((list) => list.id === "general");
+            if (general && !submittedValue.lists.some((list) => list.id === "general"))
+              submittedValue.lists.unshift(general);
+            const remainingTasks = new Set(submittedValue.lists.flatMap((list) => list.tasks.map((task) => task.id)));
+            const history = new Map(
+              [
+                ...(previous.history ?? []),
+                ...previous.lists.flatMap((list) =>
+                  list.tasks.filter((task) => task.completedAt && !remainingTasks.has(task.id)),
+                ),
+                ...(submittedValue.history ?? []),
+              ].map((task) => [task.id, task]),
+            );
+            if (history.size) submittedValue.history = [...history.values()];
+            else delete submittedValue.history;
+          }
           values[resource] =
             resource === "shopping" ? { tasks: submittedValue.tasks.filter((task) => !task.source) } : submittedValue;
           revisions[resource] += 1;

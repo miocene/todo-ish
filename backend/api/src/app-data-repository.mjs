@@ -251,6 +251,11 @@ async function readAppData(pool) {
             })),
         },
         todos: {
+          ...(todoItemRows.some((item) => !item.listId && item.completedAt) && {
+            history: todoItemRows
+              .filter((item) => !item.listId && item.completedAt)
+              .map((item) => ({ id: item.id, title: item.title, ...completion(item.completedAt) })),
+          }),
           lists: todoListRows.map((list) => ({
             id: list.id,
             title: list.title,
@@ -408,17 +413,28 @@ async function replaceTodos(client, data) {
     { preserve: ["color"] },
   );
   await upsertRows(client, "todo_items", ["id", "list_id", "title", "completed_at", "position"], items);
-  await deleteMissing(
+  const listIds = data.lists.map((list) => list.id);
+  await client.query({
+    text: `UPDATE todo_items SET list_id = NULL WHERE completed_at IS NOT NULL
+      AND list_id = ANY($1::text[]) AND NOT (id = ANY($2::text[]))`,
+    values: [listIds, items.map((item) => item[0])],
+  });
+  await client.query({
+    text: `DELETE FROM todo_items WHERE list_id IS NOT NULL AND NOT (id = ANY($1::text[]))
+      AND (list_id = ANY($2::text[]) OR (list_id <> 'general' AND completed_at IS NULL))`,
+    values: [items.map((item) => item[0]), listIds],
+  });
+  // The FK detaches completed items when their list is removed. General is never removed.
+  await client.query({
+    text: "DELETE FROM todo_lists WHERE id <> 'general' AND NOT (id = ANY($1::text[]))",
+    values: [listIds],
+  });
+  await insertRows(
     client,
     "todo_items",
-    "id",
-    items.map((item) => item[0]),
-  );
-  await deleteMissing(
-    client,
-    "todo_lists",
-    "id",
-    data.lists.map((list) => list.id),
+    ["id", "list_id", "title", "completed_at", "position"],
+    (data.history ?? []).map((item) => [item.id, null, item.title, item.completedAt, 0]),
+    "ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, completed_at = EXCLUDED.completed_at WHERE todo_items.list_id IS NULL",
   );
 }
 

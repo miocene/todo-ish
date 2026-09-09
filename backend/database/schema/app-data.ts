@@ -183,9 +183,7 @@ export const todoItems = pgTable(
   "todo_items",
   {
     id: text("id").primaryKey(),
-    listId: text("list_id")
-      .notNull()
-      .references(() => todoLists.id, { onDelete: "cascade" }),
+    listId: text("list_id").references(() => todoLists.id, { onDelete: "set null" }),
     title: text("title").notNull(),
     ...completionColumns(),
     ...orderedEntityColumns(),

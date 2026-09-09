@@ -310,7 +310,6 @@ test("navigation tabs follow query changes, browser history, and reloads", async
   await page.setViewportSize({ width: 360, height: 1000 });
   const currentYear = new Date().getFullYear();
   const cases = [
-    { path: "/todos", name: "Todo lists", first: "General", next: "Home", query: "list", value: "home" },
     {
       path: "/catalog",
       name: "Catalog",
@@ -403,19 +402,13 @@ test("chores render schedules and save modal changes", async ({ page }) => {
 
 test("other task pages render their variants and save changes immediately", async ({ page }) => {
   await page.goto("/todos");
-  const listTabs = page.getByRole("navigation", { name: "Todo lists" }).getByRole("link");
-  await expect(listTabs).toHaveText(["General", "Home", "Travel"]);
-  await expect(listTabs.first()).toHaveAttribute("aria-current", "page");
-  await listTabs.getByText("Home", { exact: true }).click();
-  await expect.poll(() => new URL(page.url()).searchParams.get("list")).toBe("home");
-  await expect(page.getByRole("heading", { level: 2, name: "Home" })).toBeVisible();
-  const homeTasks = page.locator(".task-page__section .task-item__title textarea");
+  await expect(page.locator(".todo-list-card > header h2")).toHaveText(["General", "Home", "Travel"]);
+  const homeTasks = page.locator("#todo-list-home textarea");
   await homeTasks.last().press("Enter");
   await expect(homeTasks).toHaveCount(3);
   await expect(homeTasks.last()).toBeFocused();
-  await page.getByRole("navigation", { name: "Todo lists" }).locator('[aria-current="page"]').focus();
+  await page.getByRole("button", { name: "New list", exact: true }).focus();
   await expect(homeTasks).toHaveCount(2);
-  await expect(page.locator(".task-item__drag-handle, .task-item__pin")).toHaveCount(0);
 
   await page.goto("/shopping");
   await expect(page.locator(".task-item__remove")).toHaveCount(7);
@@ -742,7 +735,7 @@ test("completed items move to the bottom after 500 milliseconds on every task pa
   await page.goto("/todos");
   await page.clock.pauseAt(testTime + 60_000);
 
-  const todoTitles = page.locator(".task-page__section .task-item__title textarea");
+  const todoTitles = page.locator("#todo-list-general textarea");
   await expect(todoTitles.first()).toHaveValue("Renew passport");
   await page.getByRole("checkbox", { name: "Complete Renew passport" }).check();
   await page.clock.runFor(499);

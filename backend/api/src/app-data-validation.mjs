@@ -214,7 +214,18 @@ function todos(value) {
   );
   const itemIds = lists.flatMap((list) => list.tasks.map((item) => item.id));
   if (new Set(itemIds).size !== itemIds.length) fail("todos", "task IDs must be unique across lists");
-  return { lists };
+  const history =
+    source.history === undefined
+      ? []
+      : uniqueIds(
+          array(source.history, "todos.history", 100_000).map((entry, index) => {
+            const item = task(entry, `todos.history[${index}]`);
+            if (!item.completedAt) fail(`todos.history[${index}]`, "must be completed");
+            return item;
+          }),
+          "todos.history",
+        );
+  return { lists, ...(history.length && { history }) };
 }
 
 function shopping(value) {

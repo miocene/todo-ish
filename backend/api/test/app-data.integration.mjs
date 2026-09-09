@@ -280,7 +280,34 @@ test("PostgreSQL application-data contract", async (t) => {
     await repository.replace("todos", { lists: [] }, 2);
     await repository.replace("printing", { projects: [] }, 1);
     const state = await repository.read();
-    assert.deepEqual(state.pages.todos, { lists: [] });
+    assert.deepEqual(state.pages.todos.lists, []);
+    assert.equal(state.pages.todos.history.length, 1);
+    assert.equal(state.pages.todos.history[0].title, "Done");
     assert.deepEqual(state.pages.printing, { projects: [] });
+  });
+  await t.test("General survives omission and offline deleted-list completions survive later writes", async () => {
+    let state = await repository.read();
+    await repository.replace(
+      "todos",
+      validateAppDataResource("todos", {
+        lists: [{ id: "general", title: "General", tasks: [{ id: "keep", title: "Keep", completed: false }] }],
+      }),
+      state.revisions.todos,
+    );
+    state = await repository.read();
+    await repository.replace(
+      "todos",
+      validateAppDataResource("todos", {
+        lists: [],
+        history: [{ id: "offline-todo", title: "Offline completion", completed: true, completedAt }],
+      }),
+      state.revisions.todos,
+    );
+    state = await repository.read();
+    assert.equal(state.pages.todos.lists[0].id, "general");
+    assert.equal(state.pages.todos.lists[0].tasks[0].title, "Keep");
+    assert.equal(state.pages.todos.history.length, 2);
+    await repository.replace("todos", { lists: [] }, state.revisions.todos);
+    assert.equal((await repository.read()).pages.todos.history.length, 2);
   });
 });

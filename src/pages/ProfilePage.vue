@@ -110,7 +110,7 @@ export default {
               <p>{{ item.title }}</p>
               <RouterLink :to="item.route">{{ item.source }}</RouterLink>
               <span aria-hidden="true"> · </span>
-              <span>{{ item.context }}</span>
+              <span v-if="item.context">{{ item.context }}</span>
             </div>
           </li>
         </ul>

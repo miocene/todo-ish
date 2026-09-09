@@ -59,11 +59,14 @@ export function collectCompletedActivity() {
     add(activityItem(task, "Chores", task.details, { name: "chores" }));
 
   const todos = loadPageTasks("todos");
+  const todoActivity = new Map((todos.history ?? []).map((task) => [task.id, task]));
   for (const list of todos.lists) {
     for (const task of list.tasks) {
-      add(activityItem(task, "Todo lists", list.title, { name: "todos", query: { list: list.id } }));
+      if (task.completedAt) todoActivity.set(task.id, task);
+      else todoActivity.delete(task.id);
     }
   }
+  for (const task of todoActivity.values()) add(activityItem(task, "Todo lists", "", { name: "todos" }));
 
   const shopping = loadPageTasks("shopping");
   for (const task of shopping.tasks) {

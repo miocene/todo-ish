@@ -145,3 +145,35 @@ test("reading chores includes archived and previous occurrences without duplicat
     ["one", "archived"],
   );
 });
+
+test("todo list deletion protects General and preserves detached completed tasks", async () => {
+  const f = fixture();
+  await f.repository.replace(
+    "todos",
+    { lists: [], history: [{ id: "offline", title: "Done", completedAt: "2026-02-02T12:00:00Z" }] },
+    0,
+  );
+  const detach = f.queries.find(({ text }) => text.startsWith("UPDATE todo_items SET list_id = NULL"));
+  assert.match(detach.text, /completed_at IS NOT NULL/);
+  assert.ok(f.queries.indexOf(detach) < f.queries.findIndex(({ text }) => text.startsWith("DELETE FROM todo_items")));
+  const tasks = f.queries.find(({ text }) => text.startsWith("DELETE FROM todo_items"));
+  assert.match(tasks.text, /list_id IS NOT NULL/);
+  assert.match(tasks.text, /list_id <> 'general' AND completed_at IS NULL/);
+  const lists = f.queries.find(({ text }) => text.startsWith("DELETE FROM todo_lists"));
+  assert.match(lists.text, /id <> 'general'/);
+  const history = f.queries.find(({ text }) => text.startsWith("INSERT INTO todo_items"));
+  assert.equal(history.values[1], null);
+  assert.match(history.text, /WHERE todo_items.list_id IS NULL/);
+});
+
+test("todo history reads independently of active lists", async () => {
+  const f = fixture({
+    rows: ({ text }) =>
+      text.includes("FROM todo_items")
+        ? [{ id: "past", listId: null, title: "Done", completedAt: "2026-02-02T12:00:00Z" }]
+        : undefined,
+  });
+  const data = await f.repository.read();
+  assert.deepEqual(data.pages.todos.lists, []);
+  assert.equal(data.pages.todos.history[0].title, "Done");
+});
