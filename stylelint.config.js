@@ -3,7 +3,7 @@ export default {
   ignoreFiles: ["dist/**", "node_modules/**"],
   overrides: [
     {
-      // Keep the original files empty while their styles live in styles/style.css.
+      // Allow empty stylesheets while component styles are being organized.
       files: ["src/**/*.css", "styles/normalisation.css"],
       rules: { "no-empty-source": null },
     },

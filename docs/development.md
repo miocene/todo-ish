@@ -1,12 +1,14 @@
 # Development data and checks
 
-New accounts start with empty task collections and inventories. Existing saved data and pending local edits are preserved.
+New accounts start with empty personal Work, Todo, and project collections. Chores, manual shopping items, and Catalog inventories are shared with existing accounts. Project-generated shopping purchases, colors, and navigation preferences are personal. Existing saved data and account-scoped pending edits are preserved.
 
 To populate **uninitialized resources** with sample tasks/projects/inventory, explicitly set `VITE_DEMO_DATA=true` in `.env.local` and start the development server. Use this only with a disposable development database: samples use the same save API as edits. This flag is ignored by production builds, and the fixture module is excluded from their bundle. Browser tests enable it against their isolated API mock.
 
-Development mock colors still work with the older API. This change does not apply any database migration.
+The palette migration is recorded in SQL migration history. A compatibility path still supplies colors when development mocks use the older API shape.
 
 Run `yarn setup` once to install frontend and API dependencies, Python tools, and the Chromium browser used by tests. Node.js 22+, Yarn, and Python 3.12+ must already be installed. On Linux, `yarn setup --with-deps` also installs Chromium's system dependencies; CI uses this command.
+
+`yarn dev` currently opens the Pi development API tunnel, which bypasses authentication and uses the configured database as the first account. It does not create an isolated database. Use this connection deliberately; browser tests use mocks and PostgreSQL tests require a disposable instance.
 
 Use `yarn dev` to start development, `yarn lint` to check JavaScript/Vue, CSS, and Python, and `yarn format` to format the repository. Run `yarn quality` for linting, formatting checks, tests, and the production build. The unit, API, browser, and database integration suites remain available individually.
 
@@ -35,4 +37,4 @@ These checks cover all resource round trips, date/timezone preservation, revisio
 
 ## CI and deployment
 
-Pull requests run the reusable quality workflow: linting, formatting, unit/API/browser tests, production build, PostgreSQL integration tests, and the web container build. The Pages deployment calls the same workflow and waits for it to pass before building or publishing an artifact. Workflow files are committed locally; they run only after a future push or manual dispatch.
+Pull requests run the reusable quality workflow: linting, formatting, unit/API/browser tests, production build, PostgreSQL integration tests, and the web container build. The Pages deployment calls the same workflow and waits for it to pass before building or publishing an artifact. See `.github/workflows/quality.yml` and the Pages workflow for triggers; inspect the corresponding GitHub run for the status of a particular revision. A local passing suite does not establish deployment or CI success.

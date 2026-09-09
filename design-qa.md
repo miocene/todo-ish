@@ -1,8 +1,10 @@
-# Calendar date / day-type design QA
+# Calendar date / day-type design QA (historical)
 
-- Source visual truth: `/Users/miocene/Library/Application Support/CleanShot/media/media_sSFoQAEMXV/CleanShot 2026-08-31 at 22.49.10@2x.png`, clarified by the user: every calendar date uses this horizontal icon/date/weekday layout, green represents activity intensity, and each date has one activity block.
-- Browser-rendered implementation: `/private/tmp/todo-ish-calendar-all-days.jpg`
-- Source-and-implementation comparison: `/private/tmp/todo-ish-calendar-all-days-comparison.png`
+This records the August 2026 design review, not the current calendar layout or a current passing check. The original screenshots were local temporary artifacts and are not bundled with this repository. Names below identify them without machine-specific paths. Current functional coverage lives in [the Work browser tests](./tests/work.spec.js).
+
+- Source visual truth: `CleanShot 2026-08-31 at 22.49.10@2x.png`, clarified by the user: every calendar date uses this horizontal icon/date/weekday layout, green represents activity intensity, and each date has one activity block.
+- Browser-rendered implementation: `todo-ish-calendar-all-days.jpg`
+- Source-and-implementation comparison: `todo-ish-calendar-all-days-comparison.png`
 - Browser viewport: 672 × 863 CSS pixels at density 1
 - Source dimensions: 542 × 786 pixels at `@2x` (nominal 271 × 393 CSS pixels)
 - Implementation dimensions: 672 × 863 pixels
@@ -43,7 +45,7 @@ No actionable P0, P1, or P2 differences remain.
 - Earlier P2 fix: made the selected date's icon square activity-colored and removed its duplicate small activity square.
 - Latest user review: surrounding dates still used the older vertical number/weekday/small-square design.
 - Fix applied: every date is now rendered through `JMCalendarDay`; unselected dates use its non-editable navigation mode, while the selected date uses its picker mode.
-- Post-fix evidence: `/private/tmp/todo-ish-calendar-all-days-comparison.png` shows the reference composition repeated across every visible date.
+- Post-fix evidence: `todo-ish-calendar-all-days-comparison.png` shows the reference composition repeated across every visible date.
 
 ## Follow-up polish
 
