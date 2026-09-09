@@ -1,5 +1,5 @@
 import { reactive } from "vue";
-import { initializeAppDataResource, readAppData, writeAppData } from "./app-data.js";
+import { initializeAppDataResource, readAppData, writeAppData, subscribeAppData } from "./app-data.js";
 
 export const WORK_STATUSES = Object.freeze([
   { value: "work", label: "Workday", icon: "work" },
@@ -30,6 +30,10 @@ function saveStatuses(statuses) {
 }
 
 const statusesByDate = reactive(loadStatuses());
+subscribeAppData("work-statuses", (value) => {
+  for (const key of Object.keys(statusesByDate)) delete statusesByDate[key];
+  Object.assign(statusesByDate, value);
+});
 
 export function getWorkStatus(date) {
   const value = statusesByDate[date];

@@ -11,6 +11,7 @@ function fixture({
   delay = 0,
   merge,
   onUpdate,
+  canRefresh,
 } = {}) {
   const timers = new Map();
   const states = [];
@@ -35,6 +36,7 @@ function fixture({
     onChange: (state) => states.push(state),
     merge,
     onUpdate,
+    canRefresh,
     clock: {
       setTimeout: (fn, ms) => {
         const id = ++nextId;
@@ -342,4 +344,22 @@ test("background refresh updates saved lists and rebases pending edits", async (
     ["milk", "bread", "eggs"],
   );
   assert.equal(updates.length, 1);
+});
+
+test("an active editor keeps its original revision until it can receive refreshed data", async () => {
+  let editing = true;
+  const updates = [];
+  const f = fixture({
+    remote: { revisions: { tasks: 1 }, tasks: task("original") },
+    canRefresh: () => !editing,
+    onUpdate: (_resource, value) => updates.push(value),
+  });
+  f.sync.refresh({ revisions: { tasks: 2 }, tasks: task("remote") }, ["tasks"]);
+  f.sync.write("tasks", task("local"));
+  await f.advance();
+  assert.equal(f.writes[0][2], 1);
+  assert.deepEqual(updates, []);
+  editing = false;
+  f.sync.refresh({ revisions: { tasks: 3 }, tasks: task("latest") }, ["tasks"]);
+  assert.deepEqual(updates, [task("latest")]);
 });

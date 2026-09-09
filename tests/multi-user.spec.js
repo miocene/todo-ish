@@ -80,3 +80,43 @@ test("a pre-created second account can enter its one-time setup code", async ({ 
   await expect(page.getByRole("alert")).toHaveText("The setup code is invalid, expired, or already used");
   expect(received).toEqual({ token: "second-user-code" });
 });
+
+for (const resource of ["work-tasks", "todos", "printing", "cross-stitch"]) {
+  test(`${resource} receives remote replacements before a later edit`, async ({ page, appData }) => {
+    const snapshot = (title) =>
+      resource === "work-tasks"
+        ? [{ id: "remote", title, date: null }]
+        : resource === "todos"
+          ? { lists: [{ id: "general", title: "General", color: "#2765EC", tasks: [manual("remote", title)] }] }
+          : { projects: [{ id: "remote", title, description: "", color: "#2765EC", tasks: [] }] };
+    appData.set(resource, snapshot("Original"));
+    await page.goto(resource === "work-tasks" ? "/work" : `/${resource}`);
+    const item =
+      resource === "work-tasks"
+        ? page.locator("#work-task-remote")
+        : resource === "todos"
+          ? page.locator("#todo-title-remote")
+          : page.locator(".project-card h2");
+    await expect(item).toBeVisible();
+    appData.update(resource, snapshot("Changed remotely"));
+    await page.evaluate(() => globalThis.dispatchEvent(new Event("focus")));
+    if (resource === "work-tasks" || resource === "todos") {
+      await expect(item).toHaveValue("Changed remotely");
+      await item.fill("Edited locally");
+      await expect.poll(() => JSON.stringify(appData.get(resource))).toContain("Edited locally");
+    } else {
+      await expect(item).toContainText("Changed remotely");
+    }
+    appData.update(
+      resource,
+      resource === "work-tasks"
+        ? []
+        : resource === "todos"
+          ? { lists: [{ id: "general", title: "General", color: "#2765EC", tasks: [] }] }
+          : { projects: [] },
+    );
+    await page.locator("h1").click();
+    await page.evaluate(() => globalThis.dispatchEvent(new Event("focus")));
+    await expect(item).toHaveCount(0);
+  });
+}

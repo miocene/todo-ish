@@ -212,6 +212,9 @@ const sync = createResourceSync({
   },
   onChange: (state) => Object.assign(syncState, state),
   onUpdate: receiveAppData,
+  // Keep the editor and its revision together until the user finishes a field/modal.
+  canRefresh: () =>
+    !document.querySelector('dialog[open], main textarea:focus, main input:not([type="checkbox"]):focus'),
   merge: mergeSharedData,
   onSaved(resource) {
     initializedResources.add(resource);

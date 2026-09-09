@@ -21,6 +21,7 @@ export function createResourceSync({
   onChange = () => {},
   onSaved = () => {},
   onUpdate = () => {},
+  canRefresh = () => true,
   merge = () => undefined,
   clock = globalThis,
   makeId = () => globalThis.crypto.randomUUID(),
@@ -266,7 +267,7 @@ export function createResourceSync({
     },
     refresh(state, resources) {
       for (const resource of resources) {
-        if (running.has(resource) || multipleDrafts.has(resource)) continue;
+        if (running.has(resource) || multipleDrafts.has(resource) || !canRefresh(resource)) continue;
         const value = remoteValue(state, resource);
         if (value === undefined) continue;
         const revision = state.revisions?.[resource] ?? 0;

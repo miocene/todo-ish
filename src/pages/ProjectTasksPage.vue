@@ -1,4 +1,5 @@
 <script>
+import { subscribeAppData } from "../app/app-data.js";
 import { createTaskEditor } from "../app/task-editor.js";
 import { randomCardColor } from "../app/card-colors.js";
 import { filamentCatalog, filamentLabel, filamentsById } from "../app/filament-catalog.js";
@@ -58,6 +59,8 @@ export default {
         save: () => this.save(),
       }),
       projectDraft: null,
+      projectOriginal: null,
+      editMessage: "",
       removedDraftTasks: [],
       filamentInventory: loadFilamentInventory(),
       flossInventory: loadFlossInventory(),
@@ -130,9 +133,21 @@ export default {
     },
   },
   mounted() {
+    const receive = () => {
+      this.editor.clear();
+      this.pageData = loadProjectTasks(this.pageKey);
+      this.completedProjects = new Set(this.pageData.projects.filter(projectCompleted).map((project) => project.id));
+      this.syncShoppingList();
+    };
+    this.subscriptions = ["printing", "cross-stitch"].map((resource) =>
+      subscribeAppData(resource, () => {
+        if (resource === (this.isPrinting ? "printing" : "cross-stitch")) receive();
+      }),
+    );
     this.syncShoppingList();
   },
   beforeUnmount() {
+    for (const unsubscribe of this.subscriptions) unsubscribe();
     this.clearCompletionMoveTimers();
   },
   methods: {
@@ -282,6 +297,8 @@ export default {
       return task;
     },
     openProject(project, addItem = false) {
+      this.projectOriginal = JSON.stringify(project);
+      this.editMessage = "";
       this.projectDraft = JSON.parse(JSON.stringify(project));
       this.removedDraftTasks = [];
       if (addItem) this.projectDraft.tasks.push(this.makeTask());
@@ -298,6 +315,8 @@ export default {
       this.projectDraft.tasks = this.projectDraft.tasks.filter((item) => item.id !== task.id);
     },
     addProject() {
+      this.projectOriginal = null;
+      this.editMessage = "";
       this.removedDraftTasks = [];
       this.projectDraft = {
         id: `project-${crypto.randomUUID()}`,
@@ -316,6 +335,12 @@ export default {
     createProject() {
       if (!this.canCreateProject) return;
       const project = this.projectDraft;
+      const current = this.pageData.projects.find((item) => item.id === project.id);
+      if (this.projectOriginal !== null && JSON.stringify(current) !== this.projectOriginal) {
+        this.editMessage =
+          "This project changed while you were editing. Cancel and reopen it to review the saved version.";
+        return;
+      }
       project.title = project.title.trim();
       for (const task of project.tasks) {
         if (this.isPrinting) task.title = task.title.trim();
@@ -359,6 +384,7 @@ export default {
   >
     <form v-if="projectDraft" novalidate @submit.prevent="createProject">
       <h2>{{ editingProject ? "Edit project" : "New project" }}</h2>
+      <p v-if="editMessage" role="alert">{{ editMessage }}</p>
       <JMInput v-model="projectDraft.title" label="Project name" required maxlength="500" autofocus />
       <fieldset v-for="(task, index) in projectDraft.tasks" :key="task.id">
         <legend>{{ isPrinting ? "Item" : "Color" }} {{ index + 1 }}</legend>

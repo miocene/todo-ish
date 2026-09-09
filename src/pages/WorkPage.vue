@@ -1,4 +1,5 @@
 <script>
+import { subscribeAppData } from "../app/app-data.js";
 import { createTaskEditor } from "../app/task-editor.js";
 import { appClock } from "../app/clock.js";
 import { activityLevel } from "../app/activity.js";
@@ -98,9 +99,17 @@ export default {
     },
   },
   mounted() {
+    this.unsubscribeWork = subscribeAppData("work-tasks", () => {
+      this.editor.clear();
+      const tasks = getAllWorkTasks();
+      this.workTasks = tasks.filter((task) => !task.archived).map((task) => ({ ...task }));
+      this.archivedWork = tasks.filter((task) => task.archived).map((task) => ({ ...task }));
+      this.rollOverIncompleteTasks();
+    });
     this.rollOverIncompleteTasks();
   },
   beforeUnmount() {
+    this.unsubscribeWork();
     this.editor.clear();
   },
   methods: {

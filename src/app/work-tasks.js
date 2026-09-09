@@ -1,6 +1,6 @@
 import { workTaskFromApi, workTaskToApi } from "../../backend/api/src/app-data-contract.mjs";
 
-import { initialAppData, initializeAppDataResource, readAppData, writeAppData } from "./app-data.js";
+import { initialAppData, initializeAppDataResource, readAppData, writeAppData, subscribeAppData } from "./app-data.js";
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 function isStoredTask(task) {
@@ -24,6 +24,9 @@ function loadTasks() {
 }
 
 let allTasks = loadTasks();
+subscribeAppData("work-tasks", () => {
+  allTasks = loadTasks();
+});
 
 /** @returns {ReadonlyArray<import("../../backend/api/src/app-data-contract.mjs").WorkTask>} */
 export function getAllWorkTasks() {

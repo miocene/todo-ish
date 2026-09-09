@@ -1,4 +1,5 @@
 <script>
+import { subscribeAppData } from "../app/app-data.js";
 import { createTaskEditor } from "../app/task-editor.js";
 import { randomCardColor } from "../app/card-colors.js";
 import { loadPageTasks, savePageTasks } from "../app/page-tasks.js";
@@ -26,9 +27,16 @@ export default {
     };
   },
   beforeUnmount() {
+    this.unsubscribeTodos();
     this.editor.clear();
   },
   mounted() {
+    this.unsubscribeTodos = subscribeAppData("todos", () => {
+      this.editor.clear();
+      const todos = loadPageTasks("todos");
+      this.todos = { ...todos, history: todos.history ?? [] };
+      this.validTitles = new Map(todos.lists.flatMap((list) => list.tasks.map((task) => [task.id, task.title])));
+    });
     if (this.ensureGeneral()) this.save();
   },
   methods: {

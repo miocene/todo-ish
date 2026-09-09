@@ -36,6 +36,8 @@ export default {
       cardColors: loadCardColors(["chores-today", "chores-all"]),
       chores: { ...chores, history: chores.history ?? [] },
       draft: null,
+      draftOriginal: null,
+      editMessage: "",
       moves: createCompletionMoveScheduler(),
     };
   },
@@ -99,6 +101,8 @@ export default {
       this.openEditor();
     },
     openEditor(task) {
+      this.draftOriginal = task ? JSON.stringify(task) : null;
+      this.editMessage = "";
       this.draft = {
         id: task?.id ?? null,
         title: task?.title ?? "",
@@ -114,7 +118,11 @@ export default {
       const title = this.draft.title.trim();
       if (!title || title.length > 500) return;
       let task = this.chores.tasks.find((item) => item.id === id);
-      if (id && !task) return;
+      if (id && JSON.stringify(task) !== this.draftOriginal) {
+        this.editMessage =
+          "This chore changed while you were editing. Cancel and reopen it to review the saved version.";
+        return;
+      }
       if (task) {
         const scheduleChanged = !sameChoreSchedule(task.schedule, schedule);
         if (task.title === title && !scheduleChanged) {
@@ -230,6 +238,7 @@ export default {
   >
     <form v-if="draft" class="chore-form" @submit.prevent="saveDraft">
       <h2>{{ draft.id ? "Edit chore" : "Add chore" }}</h2>
+      <p v-if="editMessage" role="alert">{{ editMessage }}</p>
       <JMInput v-model="draft.title" label="Title" placeholder="Chore title" required maxlength="500" autofocus />
       <p v-if="draft.legacyRule">
         Previous rule: {{ draft.legacyRule }}. Choose a schedule to confirm how this chore repeats.
