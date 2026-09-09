@@ -1,5 +1,5 @@
 import { nextTick } from "vue";
-import { createCompletionMoveScheduler, finishTaskDraft, moveItemToEnd } from "./task-list.js";
+import { createCompletionMoveScheduler, finishTaskDraft, moveItemForCompletion } from "./task-list.js";
 
 /** Shared draft, focus, keyboard, and delayed-order behavior; pages retain their domain-specific edits. */
 export function createTaskEditor({
@@ -44,8 +44,8 @@ export function createTaskEditor({
       });
     },
     scheduleMove(task, completed, items, item = task) {
-      moves.schedule(task.id, completed, () => {
-        if (moveItemToEnd(items, item)) save();
+      moves.schedule(task.id, () => {
+        if (moveItemForCompletion(items, item, completed)) save();
       });
     },
     clear() {

@@ -8,7 +8,7 @@ import {
   completedTasksLast,
   createCompletionMoveScheduler,
   finishTaskDraft,
-  moveItemToEnd,
+  moveItemForCompletion,
   nextEntityId,
   setTaskCompletion,
   serializableTasks,
@@ -41,7 +41,7 @@ test("task list helpers preserve order and remove abandoned drafts", () => {
     ["task-1", "task-2"],
   );
   assert.equal(nextEntityId(tasks, "task"), "task-3");
-  assert.equal(moveItemToEnd(tasks, tasks[0]), true);
+  assert.equal(moveItemForCompletion(tasks, tasks[0], true), true);
   assert.deepEqual(
     tasks.map((task) => task.id),
     ["task-2", "task-1"],
@@ -95,10 +95,10 @@ test("completion moves are cancellable and use one timer per task", () => {
   const scheduler = createCompletionMoveScheduler(500, clock);
   let moves = 0;
 
-  scheduler.schedule("task-1", true, () => moves++);
-  scheduler.schedule("task-1", false, () => moves++);
+  scheduler.schedule("task-1", () => moves++);
+  scheduler.cancel("task-1");
   assert.equal(callbacks.size, 0);
-  scheduler.schedule("task-1", true, () => moves++);
+  scheduler.schedule("task-1", () => moves++);
   callbacks.values().next().value();
   assert.equal(moves, 1);
   scheduler.clear();

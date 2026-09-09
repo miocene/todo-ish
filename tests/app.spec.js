@@ -729,7 +729,7 @@ for (const route of ["printing", "cross-stitch"]) {
   });
 }
 
-test("completed items move to the bottom after 500 milliseconds on every task page", async ({ page }) => {
+test("items move down when checked and back up when unchecked after 500 milliseconds", async ({ page }) => {
   const testTime = Date.now();
   await page.clock.install({ time: testTime });
   await page.goto("/todos");
@@ -744,11 +744,31 @@ test("completed items move to the bottom after 500 milliseconds on every task pa
   await expect(todoTitles.last()).toHaveValue("Renew passport");
 
   await page.reload();
-  await expect(page.locator(".task-page__section .task-item__title textarea").last()).toHaveValue("Renew passport");
+  await expect(todoTitles.last()).toHaveValue("Renew passport");
   await expect(page.getByRole("checkbox", { name: "Complete Renew passport" })).toBeChecked();
 
+  await page.getByRole("checkbox", { name: "Complete Renew passport" }).uncheck();
+  await page.clock.runFor(499);
+  await expect(todoTitles.last()).toHaveValue("Renew passport");
+  await page.clock.runFor(1);
+  await expect(todoTitles.first()).toHaveValue("Renew passport");
+
+  const data = appDataByPage.get(page);
+  data.set("chores", {
+    tasks: ["Water the plants", "Clean the kitchen"].map((title, index) => ({
+      id: `chore-${index}`,
+      title,
+      details: "Every day",
+      nextDue: "2026-01-01",
+      completed: false,
+      schedule: { frequency: "day", interval: 1, weekdays: [0], monthDays: [1], startDate: "2026-01-01" },
+    })),
+    occurrenceOrder: ["chore-0", "chore-1"],
+  });
+
   await page.goto("/chores");
-  const choreTitles = page.locator(".chores-due .task-item__title");
+  await page.reload();
+  const choreTitles = page.locator(".chores-due .task-item .title");
   await expect(choreTitles.first()).toHaveText("Water the plants");
   await page.getByRole("checkbox", { name: "Complete Water the plants" }).check();
   await page.clock.runFor(499);
@@ -756,8 +776,14 @@ test("completed items move to the bottom after 500 milliseconds on every task pa
   await page.clock.runFor(1);
   await expect(choreTitles.last()).toHaveText("Water the plants");
 
+  await page.getByRole("checkbox", { name: "Complete Water the plants" }).uncheck();
+  await page.clock.runFor(499);
+  await expect(choreTitles.last()).toHaveText("Water the plants");
+  await page.clock.runFor(1);
+  await expect(choreTitles.first()).toHaveText("Water the plants");
+
   await page.goto("/shopping");
-  const shoppingTitles = page.locator(".task-page__tasks .task-item__title textarea");
+  const shoppingTitles = page.locator(".task-page__tasks textarea");
   await expect(shoppingTitles.first()).toHaveValue("Oat milk");
   await page.getByRole("checkbox", { name: "Complete Oat milk" }).check();
   await page.clock.runFor(499);
@@ -765,14 +791,42 @@ test("completed items move to the bottom after 500 milliseconds on every task pa
   await page.clock.runFor(1);
   await expect(shoppingTitles.last()).toHaveValue("Oat milk");
 
+  await page.getByRole("checkbox", { name: "Complete Oat milk" }).uncheck();
+  await page.clock.runFor(499);
+  await expect(shoppingTitles.last()).toHaveValue("Oat milk");
+  await page.clock.runFor(1);
+  await expect(shoppingTitles.first()).toHaveValue("Oat milk");
+
   await page.goto("/printing");
-  const printingTitles = page.locator(".project-card").first().locator(".task-item__title textarea");
+  const printingTitles = page.locator(".project-card").first().locator("textarea");
   await expect(printingTitles.first()).toHaveValue("Large cable clip");
   await page.getByRole("checkbox", { name: "Complete Large cable clip" }).check();
   await page.clock.runFor(499);
   await expect(printingTitles.first()).toHaveValue("Large cable clip");
   await page.clock.runFor(1);
   await expect(printingTitles.last()).toHaveValue("Large cable clip");
+
+  await page.getByRole("checkbox", { name: "Complete Large cable clip" }).uncheck();
+  await page.clock.runFor(499);
+  await expect(printingTitles.last()).toHaveValue("Large cable clip");
+  await page.clock.runFor(1);
+  await expect(printingTitles.first()).toHaveValue("Large cable clip");
+
+  await page.goto("/cross-stitch");
+  const stitch = page.locator(".project-card").first();
+  const progressInputs = stitch.getByLabel("Crosses done", { exact: true });
+  const firstId = await progressInputs.first().getAttribute("id");
+  const input = page.locator(`#${firstId}`);
+  await input.fill("1200");
+  await page.clock.runFor(499);
+  await expect(progressInputs.first()).toHaveAttribute("id", firstId);
+  await page.clock.runFor(1);
+  await expect(progressInputs.last()).toHaveAttribute("id", firstId);
+  await input.fill("100");
+  await page.clock.runFor(499);
+  await expect(progressInputs.last()).toHaveAttribute("id", firstId);
+  await page.clock.runFor(1);
+  await expect(progressInputs.first()).toHaveAttribute("id", firstId);
 });
 
 test("unknown application routes return to work", async ({ page }) => {

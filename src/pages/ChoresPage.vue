@@ -2,7 +2,7 @@
 import { loadCardColors } from "../app/card-colors.js";
 import { appClock } from "../app/clock.js";
 import { loadPageTasks, savePageTasks } from "../app/page-tasks.js";
-import { setTaskCompletion, createCompletionMoveScheduler, moveItemToEnd } from "../app/task-list.js";
+import { setTaskCompletion, createCompletionMoveScheduler, moveItemForCompletion } from "../app/task-list.js";
 import { calendarDate } from "../app/date.js";
 import JMModal from "../components/JMModal/JMModal.vue";
 import JMInput from "../components/JMInput/JMInput.vue";
@@ -82,8 +82,8 @@ export default {
     updateCompleted(task, completed) {
       setTaskCompletion(task, completed);
       this.save();
-      this.moves.schedule(task.id, completed, () => {
-        if (moveItemToEnd(this.chores.occurrenceOrder, task.id)) this.save();
+      this.moves.schedule(task.id, () => {
+        if (moveItemForCompletion(this.chores.occurrenceOrder, task.id, completed)) this.save();
       });
     },
     addTask() {

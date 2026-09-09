@@ -182,22 +182,23 @@ export default {
       task.requiredSkeins = Math.max(0, Math.floor(Number(value) || 0));
       this.save();
     },
-    updateCrosses(task, value) {
+    updateCrosses(project, task, value) {
       const wasCompleted = task.completed;
       task.crosses = Math.max(0, Math.floor(Number(value) || 0));
       task.crossesDone = Math.min(task.crossesDone, task.crosses);
       const completed = task.crosses > 0 && task.crossesDone >= task.crosses;
-      if (completed !== wasCompleted) setTaskCompletion(task, completed);
-      this.save();
+      if (completed !== wasCompleted) this.updateCompleted(project, task, completed);
+      else this.save();
     },
-    updateCrossesDone(task, value) {
+    updateCrossesDone(project, task, value) {
       const wasCompleted = task.completed;
       task.crossesDone = Math.min(task.crosses, Math.max(0, Math.floor(Number(value) || 0)));
       const completed = task.crosses > 0 && task.crossesDone >= task.crosses;
-      if (completed !== wasCompleted) setTaskCompletion(task, completed);
-      this.save();
+      if (completed !== wasCompleted) this.updateCompleted(project, task, completed);
+      else this.save();
     },
     removeStitchColor(project, task) {
+      this.editor.moves.cancel(task.id);
       project.tasks = project.tasks.filter((item) => item.id !== task.id);
       this.save();
     },
@@ -309,8 +310,8 @@ export default {
               v-else-if="isCrossStitch"
               :supply-by-id="flossSupplyById"
               :task="task"
-              @update:crosses="updateCrosses(task, $event)"
-              @update:crosses-done="updateCrossesDone(task, $event)"
+              @update:crosses="updateCrosses(project, task, $event)"
+              @update:crosses-done="updateCrossesDone(project, task, $event)"
               @update:floss="updateFloss(task, $event)"
               @update:skeins="updateSkeins(task, $event)"
             />

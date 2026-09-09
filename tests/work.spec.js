@@ -209,6 +209,11 @@ test("Work: completion reorders after a delay and unchecking cancels the move", 
   await day.getByRole("checkbox", { name: "Complete First" }).check();
   await page.clock.runFor(500);
   await expect(title(day).last()).toHaveValue("First");
+  await day.getByRole("checkbox", { name: "Complete First" }).uncheck();
+  await page.clock.runFor(499);
+  await expect(title(day).last()).toHaveValue("First");
+  await page.clock.runFor(1);
+  await expect(title(day).first()).toHaveValue("First");
 });
 
 test("Work: colors are created only for displayed cards and persist", async ({ page }) => {

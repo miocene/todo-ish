@@ -35,11 +35,12 @@ export function nextEntityId(items, prefix) {
   return `${prefix}-${index}`;
 }
 
-export function moveItemToEnd(items, item) {
+export function moveItemForCompletion(items, item, completed) {
   const itemIndex = items.indexOf(item);
-  if (itemIndex === -1 || itemIndex === items.length - 1) return false;
+  const destination = completed ? items.length - 1 : 0;
+  if (itemIndex === -1 || itemIndex === destination) return false;
   items.splice(itemIndex, 1);
-  items.push(item);
+  items.splice(destination, 0, item);
   return true;
 }
 
@@ -56,9 +57,8 @@ export function createCompletionMoveScheduler(delay = COMPLETION_MOVE_DELAY, clo
     clear() {
       for (const id of timers.keys()) cancel(id);
     },
-    schedule(id, completed, move) {
+    schedule(id, move) {
       cancel(id);
-      if (!completed) return;
       timers.set(
         id,
         clock.setTimeout(() => {

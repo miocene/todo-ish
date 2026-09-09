@@ -64,12 +64,11 @@ export default {
       this.editor.moves.cancel(task.id);
       setTaskCompletion(task, completed);
       this.save();
-      if (!completed) return;
-      if (task.filamentId) {
+      if (completed && task.filamentId) {
         void this.$router.push({ name: "catalog", query: { q: task.filamentId } });
         return;
       }
-      if (task.flossId) {
+      if (completed && task.flossId) {
         void this.$router.push({ name: "catalog", query: { catalog: "floss", q: task.flossId } });
         return;
       }
