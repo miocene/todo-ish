@@ -1,4 +1,5 @@
 <script>
+import { APP_DATA_LIMITS } from "../../backend/api/src/app-data-contract.mjs";
 import { subscribeAppData } from "../app/app-data.js";
 import { createTaskEditor } from "../app/task-editor.js";
 import { randomCardColor } from "../app/card-colors.js";
@@ -55,6 +56,7 @@ export default {
   data() {
     const pageData = loadProjectTasks(this.pageKey);
     return {
+      limits: APP_DATA_LIMITS,
       editor: createTaskEditor({
         save: () => this.save(),
       }),
@@ -79,9 +81,29 @@ export default {
         ? filamentSupplyStatus(projects, this.filamentInventory)
         : flossSupplyStatus(projects, this.flossInventory);
     },
+    projectIssue() {
+      if (!this.projectDraft) return "";
+      if (!this.editingProject && this.pageData.projects.length >= APP_DATA_LIMITS.projects)
+        return "You can have up to 500 projects. Remove a project before adding another.";
+      if (this.projectDraft.tasks.length > APP_DATA_LIMITS.tasks) return "A project can contain up to 2,000 items.";
+      for (const task of this.projectDraft.tasks) {
+        if (this.isPrinting && task.filaments.length > APP_DATA_LIMITS.filaments)
+          return "An item can use up to 100 filaments.";
+        if (
+          this.isCrossStitch &&
+          (!Number.isInteger(task.requiredSkeins) ||
+            task.requiredSkeins < 0 ||
+            task.requiredSkeins > APP_DATA_LIMITS.skeins)
+        )
+          return "Skeins needed must be a whole number between 0 and 10,000.";
+      }
+      return "";
+    },
     canCreateProject() {
       return Boolean(
+        !this.projectIssue &&
         this.projectDraft?.title.trim() &&
+        this.projectDraft.title.trim().length <= APP_DATA_LIMITS.title &&
         this.projectDraft.tasks.length &&
         this.projectDraft.tasks.every((task) =>
           this.isPrinting
@@ -91,9 +113,9 @@ export default {
                   usage.weightGrams === "" ||
                   (Number.isFinite(Number(usage.weightGrams)) &&
                     Number(usage.weightGrams) >= 0 &&
-                    Number(usage.weightGrams) <= 10000000),
+                    Number(usage.weightGrams) <= APP_DATA_LIMITS.quantity),
               )
-            : Boolean(task.flossId) && Number(task.crosses) > 0 && Number(task.crosses) <= 10000000,
+            : Boolean(task.flossId) && Number(task.crosses) > 0 && Number(task.crosses) <= APP_DATA_LIMITS.quantity,
         ),
       );
     },
@@ -219,6 +241,10 @@ export default {
       usage.weightGrams = value === "" ? "" : Number(value);
     },
     addFilament(task) {
+      if (task.filaments.length >= APP_DATA_LIMITS.filaments) {
+        this.editMessage = "An item can use up to 100 filaments.";
+        return;
+      }
       const usage = {
         id: nextEntityId(task.filaments, `${task.id}-filament`),
         catalogId: "",
@@ -297,6 +323,10 @@ export default {
       return task;
     },
     openProject(project, addItem = false) {
+      if (addItem && project.tasks.length >= APP_DATA_LIMITS.tasks) {
+        this.editMessage = "A project can contain up to 2,000 items.";
+        return;
+      }
       this.projectOriginal = JSON.stringify(project);
       this.editMessage = "";
       this.projectDraft = JSON.parse(JSON.stringify(project));
@@ -315,6 +345,10 @@ export default {
       this.projectDraft.tasks = this.projectDraft.tasks.filter((item) => item.id !== task.id);
     },
     addProject() {
+      if (this.pageData.projects.length >= APP_DATA_LIMITS.projects) {
+        this.editMessage = "You can have up to 500 projects. Remove a project before adding another.";
+        return;
+      }
       this.projectOriginal = null;
       this.editMessage = "";
       this.removedDraftTasks = [];
@@ -328,6 +362,10 @@ export default {
       this.$nextTick(() => this.$refs.projectModal.open());
     },
     addDraftTask() {
+      if (this.projectDraft.tasks.length >= APP_DATA_LIMITS.tasks) {
+        this.editMessage = "A project can contain up to 2,000 items.";
+        return;
+      }
       const task = this.makeTask();
       this.projectDraft.tasks.push(task);
       this.focusDraftTask(task);
@@ -375,6 +413,8 @@ export default {
     <JMButton ref="addProject" text="Add project" view="secondary" @click="addProject" />
   </header>
 
+  <p v-if="editMessage && !projectDraft" role="status">{{ editMessage }}</p>
+
   <JMCatalogLoader :catalog="catalog" />
 
   <JMModal
@@ -384,8 +424,8 @@ export default {
   >
     <form v-if="projectDraft" novalidate @submit.prevent="createProject">
       <h2>{{ editingProject ? "Edit project" : "New project" }}</h2>
-      <p v-if="editMessage" role="alert">{{ editMessage }}</p>
-      <JMInput v-model="projectDraft.title" label="Project name" required maxlength="500" autofocus />
+      <p v-if="projectIssue || editMessage" role="alert">{{ projectIssue || editMessage }}</p>
+      <JMInput v-model="projectDraft.title" label="Project name" required :maxlength="limits.title" autofocus />
       <fieldset v-for="(task, index) in projectDraft.tasks" :key="task.id">
         <legend>{{ isPrinting ? "Item" : "Color" }} {{ index + 1 }}</legend>
         <JMInput
@@ -394,7 +434,7 @@ export default {
           v-model="task.title"
           label="Item name"
           required
-          maxlength="500"
+          :maxlength="limits.title"
         />
         <JMPrintingTaskDetails
           v-if="isPrinting"

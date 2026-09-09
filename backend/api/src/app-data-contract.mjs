@@ -92,3 +92,13 @@ export function workTaskToApi(task) {
     ...(task.completed && task.completedAt && { checkedAt: task.completedAt }),
   };
 }
+
+export const APP_DATA_LIMITS = Object.freeze({
+  tasks: 2000,
+  lists: 100,
+  projects: 500,
+  filaments: 100,
+  title: 500,
+  quantity: 10000000,
+  skeins: 10000,
+});

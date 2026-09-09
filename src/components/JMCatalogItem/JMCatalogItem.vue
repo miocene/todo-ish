@@ -1,4 +1,5 @@
 <script>
+import { APP_DATA_LIMITS } from "../../../backend/api/src/app-data-contract.mjs";
 import JMInput from "../JMInput/JMInput.vue";
 import "./jm-catalog-item.css";
 
@@ -15,9 +16,24 @@ export default {
     },
   },
   emits: ["update:modelValue"],
+  data() {
+    return { quantityInput: null, quantityError: "", maxQuantity: APP_DATA_LIMITS.quantity };
+  },
+  watch: {
+    modelValue() {
+      if (!this.quantityError) this.quantityInput = null;
+    },
+  },
   methods: {
     updateQuantity(value) {
-      this.$emit("update:modelValue", Math.max(0, Math.floor(Number(value) || 0)));
+      this.quantityInput = value;
+      const count = Number(value);
+      if (!Number.isInteger(count) || count < 0 || count > APP_DATA_LIMITS.quantity) {
+        this.quantityError = "Enter a whole number between 0 and 10,000,000.";
+        return;
+      }
+      this.quantityError = "";
+      this.$emit("update:modelValue", count);
     },
   },
 };
@@ -56,9 +72,11 @@ export default {
         inputmode="numeric"
         min="0"
         step="1"
-        :model-value="modelValue"
+        :max="maxQuantity"
+        :model-value="quantityInput ?? modelValue"
         @update:model-value="updateQuantity"
       />
+      <p v-if="quantityError" role="alert">{{ quantityError }}</p>
       <template v-if="item.required > 0">
         <span class="jm-catalog-item__required" aria-hidden="true">/ {{ item.required }}</span>
         <span :id="`catalog-required-${item.id}`" class="jm-catalog-item__visually-hidden">

@@ -1,10 +1,10 @@
-import { APP_DATA_RESOURCES, NAVIGATION_IDS } from "./app-data-contract.mjs";
+import { APP_DATA_RESOURCES, NAVIGATION_IDS, APP_DATA_LIMITS } from "./app-data-contract.mjs";
 export { APP_DATA_RESOURCES };
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const HEX_COLOR = /^#[\dA-F]{6}$/i;
-const RESOURCE_LIMIT = 2_000;
-const TEXT_LIMIT = 500;
+const RESOURCE_LIMIT = APP_DATA_LIMITS.tasks;
+const TEXT_LIMIT = APP_DATA_LIMITS.title;
 const DESCRIPTION_LIMIT = 5_000;
 const URL_LIMIT = 2_000;
 
@@ -44,14 +44,14 @@ function id(value, path) {
   return text(value, path, { maximum: 200 });
 }
 
-function integer(value, path, { maximum = 10_000_000 } = {}) {
+function integer(value, path, { maximum = APP_DATA_LIMITS.quantity } = {}) {
   if (!Number.isInteger(value) || value < 0 || value > maximum) {
     fail(path, `must be an integer between 0 and ${maximum}`);
   }
   return value;
 }
 
-function number(value, path, { maximum = 10_000_000 } = {}) {
+function number(value, path, { maximum = APP_DATA_LIMITS.quantity } = {}) {
   if (typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > maximum) {
     fail(path, `must be a number between 0 and ${maximum}`);
   }
@@ -207,7 +207,7 @@ function chores(value) {
 function todos(value) {
   const source = object(value, "todos");
   const lists = uniqueIds(
-    array(source.lists, "todos.lists", 100).map((entry, listIndex) => {
+    array(source.lists, "todos.lists", APP_DATA_LIMITS.lists).map((entry, listIndex) => {
       const list = object(entry, `todos.lists[${listIndex}]`);
       return {
         id: id(list.id, `todos.lists[${listIndex}].id`),
@@ -320,7 +320,7 @@ function project(value, path) {
 function printing(value) {
   const source = object(value, "printing");
   const projects = uniqueIds(
-    array(source.projects, "printing.projects", 500).map((entry, projectIndex) => {
+    array(source.projects, "printing.projects", APP_DATA_LIMITS.projects).map((entry, projectIndex) => {
       const item = project(entry, `printing.projects[${projectIndex}]`);
       return {
         ...item,
@@ -331,19 +331,21 @@ function printing(value) {
             return {
               ...taskItem,
               filaments: uniqueIds(
-                array(taskEntry.filaments, `${taskPath}.filaments`, 100).map((filamentEntry, filamentIndex) => {
-                  const filamentPath = `${taskPath}.filaments[${filamentIndex}]`;
-                  const filament = object(filamentEntry, filamentPath);
-                  return {
-                    id: id(filament.id, `${filamentPath}.id`),
-                    catalogId: optionalText(filament.catalogId, `${filamentPath}.catalogId`, { maximum: 200 }),
-                    label: optionalText(filament.label, `${filamentPath}.label`),
-                    weightGrams:
-                      filament.weightGrams === "" || filament.weightGrams === undefined
-                        ? null
-                        : number(filament.weightGrams, `${filamentPath}.weightGrams`),
-                  };
-                }),
+                array(taskEntry.filaments, `${taskPath}.filaments`, APP_DATA_LIMITS.filaments).map(
+                  (filamentEntry, filamentIndex) => {
+                    const filamentPath = `${taskPath}.filaments[${filamentIndex}]`;
+                    const filament = object(filamentEntry, filamentPath);
+                    return {
+                      id: id(filament.id, `${filamentPath}.id`),
+                      catalogId: optionalText(filament.catalogId, `${filamentPath}.catalogId`, { maximum: 200 }),
+                      label: optionalText(filament.label, `${filamentPath}.label`),
+                      weightGrams:
+                        filament.weightGrams === "" || filament.weightGrams === undefined
+                          ? null
+                          : number(filament.weightGrams, `${filamentPath}.weightGrams`),
+                    };
+                  },
+                ),
                 `${taskPath}.filaments`,
               ),
             };
@@ -367,7 +369,7 @@ function printing(value) {
 function crossStitch(value) {
   const source = object(value, "cross-stitch");
   const projects = uniqueIds(
-    array(source.projects, "cross-stitch.projects", 500).map((entry, projectIndex) => {
+    array(source.projects, "cross-stitch.projects", APP_DATA_LIMITS.projects).map((entry, projectIndex) => {
       const item = project(entry, `cross-stitch.projects[${projectIndex}]`);
       return {
         ...item,
@@ -386,7 +388,9 @@ function crossStitch(value) {
               id: id(sourceTask.id, `${taskPath}.id`),
               title: text(sourceTask.title, `${taskPath}.title`),
               flossId: optionalText(sourceTask.flossId, `${taskPath}.flossId`, { maximum: 200 }),
-              requiredSkeins: integer(sourceTask.requiredSkeins, `${taskPath}.requiredSkeins`, { maximum: 10_000 }),
+              requiredSkeins: integer(sourceTask.requiredSkeins, `${taskPath}.requiredSkeins`, {
+                maximum: APP_DATA_LIMITS.skeins,
+              }),
               crosses: totalCrosses,
               crossesDone: completedCrosses,
               completedAt: isCompleted ? taskCompletedAt : null,

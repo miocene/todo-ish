@@ -1,4 +1,5 @@
 <script>
+import { APP_DATA_LIMITS } from "../../backend/api/src/app-data-contract.mjs";
 import { loadCardColors } from "../app/card-colors.js";
 import { appClock } from "../app/clock.js";
 import { subscribeAppData } from "../app/app-data.js";
@@ -33,6 +34,7 @@ export default {
   data() {
     const chores = loadPageTasks("chores");
     return {
+      limits: APP_DATA_LIMITS,
       cardColors: loadCardColors(["chores-today", "chores-all"]),
       chores: { ...chores, history: chores.history ?? [] },
       draft: null,
@@ -98,6 +100,10 @@ export default {
       });
     },
     addTask() {
+      if (this.chores.tasks.length >= APP_DATA_LIMITS.tasks) {
+        this.editMessage = "You can have up to 2,000 chores. Delete a chore before adding another.";
+        return;
+      }
       this.openEditor();
     },
     openEditor(task) {
@@ -116,7 +122,7 @@ export default {
     saveDraft() {
       const { id, schedule } = this.draft;
       const title = this.draft.title.trim();
-      if (!title || title.length > 500) return;
+      if (!title || title.length > APP_DATA_LIMITS.title) return;
       let task = this.chores.tasks.find((item) => item.id === id);
       if (id && JSON.stringify(task) !== this.draftOriginal) {
         this.editMessage =
@@ -172,6 +178,8 @@ export default {
   <header class="page-header">
     <h1>Chores</h1>
   </header>
+
+  <p v-if="editMessage && !draft" role="status">{{ editMessage }}</p>
 
   <JMCard class="chores-due" title="Today and overdue" empty-text="No chores due">
     <template v-if="dueChores.length" #list>
@@ -239,7 +247,14 @@ export default {
     <form v-if="draft" class="chore-form" @submit.prevent="saveDraft">
       <h2>{{ draft.id ? "Edit chore" : "Add chore" }}</h2>
       <p v-if="editMessage" role="alert">{{ editMessage }}</p>
-      <JMInput v-model="draft.title" label="Title" placeholder="Chore title" required maxlength="500" autofocus />
+      <JMInput
+        v-model="draft.title"
+        label="Title"
+        placeholder="Chore title"
+        required
+        :maxlength="limits.title"
+        autofocus
+      />
       <p v-if="draft.legacyRule">
         Previous rule: {{ draft.legacyRule }}. Choose a schedule to confirm how this chore repeats.
       </p>

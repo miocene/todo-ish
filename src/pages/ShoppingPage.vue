@@ -1,4 +1,5 @@
 <script>
+import { APP_DATA_LIMITS } from "../../backend/api/src/app-data-contract.mjs";
 import { createTaskEditor } from "../app/task-editor.js";
 import { subscribeAppData } from "../app/app-data.js";
 import { filamentCatalog } from "../app/filament-catalog.js";
@@ -23,6 +24,7 @@ export default {
     const shopping = syncSupplyShoppingLists();
     shopping.tasks = completedTasksLast(shopping.tasks);
     return {
+      limits: APP_DATA_LIMITS,
       filamentCatalog,
       flossCatalog,
       editor: createTaskEditor({
@@ -104,7 +106,7 @@ export default {
     },
     updateTitle(task, title) {
       if (task.source || task.title === title) return;
-      task.title = title.slice(0, 500);
+      task.title = title.slice(0, APP_DATA_LIMITS.title);
       if (task.title.trim()) {
         this.validTitles.set(task.id, task.title.trim());
         this.save();
@@ -122,7 +124,7 @@ export default {
         const owned = inventory[id] ?? 0;
         const quantity = task.quantity;
         const next = completed ? owned + quantity : Math.max(0, owned - quantity);
-        if (next > 10_000_000) {
+        if (next > APP_DATA_LIMITS.quantity) {
           const checkbox = document.getElementById(`task-item-complete-${task.id}`);
           if (checkbox) checkbox.checked = task.completed;
           this.notice = "This purchase exceeds the inventory limit. Update the quantity in Catalog first.";
@@ -163,7 +165,7 @@ export default {
       else this.$nextTick(() => document.getElementById("shopping-add")?.focus());
     },
     addTask() {
-      if (this.shopping.tasks.filter((task) => !task.source).length >= 2000) {
+      if (this.shopping.tasks.filter((task) => !task.source).length >= APP_DATA_LIMITS.tasks) {
         this.notice = "The shopping list can contain up to 2,000 manual items. Remove an item before adding another.";
         return;
       }
@@ -223,7 +225,7 @@ export default {
         :removable="!task.source || task.completed"
         :editable="!task.source"
         :completion-disabled="!task.title.trim()"
-        :title-maxlength="500"
+        :title-maxlength="limits.title"
         :remove-label="`Remove ${task.title || 'untitled item'} from shopping list`"
         @enter="handleEnter(task, $event)"
         @remove="removeTask(task)"

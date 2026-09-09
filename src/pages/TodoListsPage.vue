@@ -1,4 +1,5 @@
 <script>
+import { APP_DATA_LIMITS } from "../../backend/api/src/app-data-contract.mjs";
 import { subscribeAppData } from "../app/app-data.js";
 import { createTaskEditor } from "../app/task-editor.js";
 import { randomCardColor } from "../app/card-colors.js";
@@ -17,6 +18,7 @@ export default {
     const todos = loadPageTasks("todos");
     for (const list of todos.lists) list.tasks = completedTasksLast(list.tasks);
     return {
+      limits: APP_DATA_LIMITS,
       editor: createTaskEditor({
         save: () => this.save(),
       }),
@@ -42,7 +44,7 @@ export default {
   methods: {
     ensureGeneral() {
       if (this.todos.lists.some((list) => list.id === "general")) return false;
-      if (this.todos.lists.length >= 100) {
+      if (this.todos.lists.length >= APP_DATA_LIMITS.lists) {
         this.limitMessage = "Delete a list to make room for General. You can have up to 100 lists.";
         return false;
       }
@@ -50,7 +52,7 @@ export default {
       return true;
     },
     openNewList() {
-      if (this.todos.lists.length >= 100) {
+      if (this.todos.lists.length >= APP_DATA_LIMITS.lists) {
         this.limitMessage = "You can have up to 100 lists. Delete a list before adding another.";
         return;
       }
@@ -60,7 +62,7 @@ export default {
     },
     addList() {
       const title = this.listName.trim();
-      if (!title || title.length > 500 || this.todos.lists.length >= 100) return;
+      if (!title || title.length > APP_DATA_LIMITS.title || this.todos.lists.length >= APP_DATA_LIMITS.lists) return;
       const list = { id: `list-${crypto.randomUUID()}`, title, color: randomCardColor(), tasks: [] };
       this.todos.lists.push(list);
       this.save();
@@ -133,7 +135,7 @@ export default {
     },
     updateTitle(task, title) {
       if (task.title === title) return;
-      task.title = title.slice(0, 500);
+      task.title = title.slice(0, APP_DATA_LIMITS.title);
       if (task.title.trim()) {
         this.validTitles.set(task.id, task.title.trim());
         this.save();
@@ -147,7 +149,7 @@ export default {
       this.editor.scheduleMove(task, completed, list.tasks);
     },
     addTask(list) {
-      if (list.tasks.length >= 2000) {
+      if (list.tasks.length >= APP_DATA_LIMITS.tasks) {
         this.limitMessage = "A list can contain up to 2,000 tasks. Delete a task before adding another.";
         return;
       }
@@ -210,7 +212,7 @@ export default {
         :title-input-id="taskInputId(task)"
         :completed="task.completed"
         :completion-disabled="!task.title.trim()"
-        :title-maxlength="500"
+        :title-maxlength="limits.title"
         removable
         :remove-label="`Delete ${task.title || 'untitled task'}`"
         @remove="removeTask(list, task)"
@@ -225,7 +227,7 @@ export default {
   <JMModal ref="newListModal" class="todo-list-modal" aria-label="New list">
     <form class="todo-list-form" @submit.prevent="addList">
       <h2>New list</h2>
-      <JMInput v-model="listName" label="List name" required maxlength="500" autofocus />
+      <JMInput v-model="listName" label="List name" required :maxlength="limits.title" autofocus />
       <div class="todo-list-form__actions">
         <JMButton text="Cancel" view="ghost" @click="$refs.newListModal.close()" />
         <JMButton text="Create list" type="submit" :disabled="!listName.trim()" />

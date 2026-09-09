@@ -1,4 +1,5 @@
 <script>
+import { APP_DATA_LIMITS } from "../../backend/api/src/app-data-contract.mjs";
 import { subscribeAppData } from "../app/app-data.js";
 import { createTaskEditor } from "../app/task-editor.js";
 import { appClock } from "../app/clock.js";
@@ -24,6 +25,7 @@ export default {
       .filter((task) => task.archived)
       .map((task) => ({ ...task }));
     return {
+      limits: APP_DATA_LIMITS,
       calendarRangeDate: "",
       cardColors: {},
       editor: createTaskEditor({
@@ -31,6 +33,7 @@ export default {
       }),
       archivedWork,
       taskMoveStatus: "",
+      limitMessage: "",
       workTasks,
     };
   },
@@ -124,11 +127,17 @@ export default {
     },
     createTask(date) {
       if (!this.canEditTask(date)) return;
+      if (this.workTasks.length >= APP_DATA_LIMITS.tasks) {
+        this.limitMessage = "Work can contain up to 2,000 active tasks. Delete a task before adding another.";
+        return;
+      }
+      this.limitMessage = "";
       const task = { id: `work-${crypto.randomUUID()}`, date, title: "", completed: false };
       if (date !== null && date < this.todayIso) completeTask(task, true);
       return this.editor.add(this.workTasks, task);
     },
     focusTaskTitle(task) {
+      if (!task) return;
       this.editor.focus(this.taskInputId(task), { caretAtEnd: true });
     },
     goToday() {
@@ -266,6 +275,8 @@ export default {
     />
   </header>
 
+  <p v-if="limitMessage" role="status">{{ limitMessage }}</p>
+
   <JMCalendar
     ref="calendar"
     :activity="activityByDate"
@@ -298,6 +309,7 @@ export default {
         :key="task.id"
         :task-id="task.id"
         :title="task.title"
+        :title-maxlength="limits.title"
         :title-input-id="taskInputId(task)"
         :completion-input-id="taskCheckboxId(task)"
         :completed="task.completed"
@@ -330,6 +342,7 @@ export default {
         :key="task.id"
         :task-id="task.id"
         :title="task.title"
+        :title-maxlength="limits.title"
         :title-input-id="taskInputId(task)"
         :completion-input-id="taskCheckboxId(task)"
         :completed="task.completed"
