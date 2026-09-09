@@ -87,6 +87,10 @@ test("native anchors flip menus away from viewport edges", async ({ page }) => {
   await page.goto("/printing");
   const card = page.locator(".project-card").first();
   const trigger = card.getByRole("button", { name: /^Actions for/ });
+  await card.evaluate((element) => {
+    // Keep the relocated trigger above sibling card stacking contexts.
+    element.style.zIndex = "10";
+  });
   await trigger.evaluate((button) => {
     Object.assign(button.style, { position: "fixed", bottom: "90px", left: "8px", zIndex: "10" });
   });
