@@ -279,6 +279,7 @@ test("navigation opens application pages", async ({ page }) => {
   }
 
   await page.getByRole("button", { name: "Profile" }).click();
+  await page.getByRole("link", { name: "Activity", exact: true }).click();
   await expect.poll(() => new URL(page.url()).pathname).toBe("/profile");
   await expect(page).toHaveTitle("Profile — Done-ish");
   await expect(page.getByRole("heading", { level: 1, name: "Profile" })).toBeVisible();
@@ -291,6 +292,7 @@ test("profile shows yearly task activity and newly checked items", async ({ page
   await page.goto("/todos");
   await page.getByRole("checkbox", { name: "Complete Renew passport" }).check();
   await page.getByRole("button", { name: "Profile" }).click();
+  await page.getByRole("link", { name: "Activity", exact: true }).click();
 
   await expect(page.getByRole("navigation", { name: "Activity years" }).getByRole("link")).toHaveCount(5);
   await expect(page.getByRole("link", { name: String(currentYear), exact: true })).toHaveAttribute(

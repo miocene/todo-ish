@@ -2,20 +2,16 @@
 import { appClock } from "../app/clock.js";
 import { RouterLink } from "vue-router";
 import { activityYears, collectCompletedActivity, groupActivityByDay } from "../app/activity.js";
-import { createPasskey, signOut } from "../app/passkeys.js";
 import JMActivityGraph from "../components/JMActivityGraph/JMActivityGraph.vue";
-import JMButton from "../components/JMButton/JMButton.vue";
 import JMIcon from "../components/JMIcon/JMIcon.vue";
 import JMTabs from "../components/JMTabs/JMTabs.vue";
 
 export default {
   name: "ProfilePage",
-  components: { JMActivityGraph, JMButton, JMIcon, JMTabs, RouterLink },
+  components: { JMActivityGraph, JMIcon, JMTabs, RouterLink },
   data() {
     return {
       activity: collectCompletedActivity(),
-      authBusy: false,
-      authMessage: "",
     };
   },
   computed: {
@@ -43,31 +39,6 @@ export default {
     yearRoute(year) {
       return { name: "profile", query: year === this.currentYear ? {} : { year: String(year) } };
     },
-    async addPasskey() {
-      this.authBusy = true;
-      this.authMessage = "";
-      try {
-        await createPasskey();
-        this.authMessage = "Passkey added.";
-      } catch (error) {
-        if (error?.name !== "NotAllowedError" && error?.name !== "AbortError") {
-          this.authMessage = error?.message || "The passkey could not be added.";
-        }
-      } finally {
-        this.authBusy = false;
-      }
-    },
-    async logout() {
-      this.authBusy = true;
-      this.authMessage = "";
-      try {
-        await signOut();
-        window.location.assign("/");
-      } catch (error) {
-        this.authMessage = error?.message || "Could not sign out.";
-        this.authBusy = false;
-      }
-    },
   },
 };
 </script>
@@ -76,13 +47,7 @@ export default {
   <section class="profile-page" aria-labelledby="profile-title">
     <header class="profile-page__header">
       <h1 id="profile-title">Profile</h1>
-      <div class="profile-page__auth-actions">
-        <JMButton text="Add passkey" view="secondary" :disabled="authBusy" @click="addPasskey" />
-        <JMButton text="Sign out" view="ghost" :disabled="authBusy" @click="logout" />
-      </div>
     </header>
-
-    <p v-if="authMessage" class="profile-page__auth-message" role="status">{{ authMessage }}</p>
 
     <JMTabs :tabs="yearTabs" :active="selectedYear" aria-label="Activity years" />
 

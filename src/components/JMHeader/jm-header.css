@@ -31,3 +31,28 @@
     font-style: italic;
   }
 }
+
+
+.jm-header__profile-menu {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  inline-size: 14rem;
+  max-inline-size: calc(100vw - 16px);
+  padding: var(--space-2);
+  color: var(--color-text-default);
+  background: var(--color-bg-surface);
+  border: 0;
+  border-radius: var(--radius-popover);
+  box-shadow: var(--shadow-m);
+
+  &:popover-open {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  > .jm-button {
+    justify-content: flex-start;
+  }
+}
