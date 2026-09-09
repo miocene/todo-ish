@@ -1,19 +1,10 @@
 <script>
 import { appClock } from "../../app/clock.js";
+import { navigationItems } from "../../app/navigation.js";
 import { RouterLink } from "vue-router";
 import { getWorkStatus } from "../../app/work-status.js";
 import JMIcon from "../JMIcon/JMIcon.vue";
 import "./jm-navigation.css";
-
-const navigationItems = [
-  { icon: "work", label: "Work", to: { name: "work" } },
-  { icon: "chores", label: "Chores", to: { name: "chores" } },
-  { icon: "todo", label: "Todo lists", to: { name: "todos" } },
-  { icon: "shopping", label: "Shopping cart", to: { name: "shopping" } },
-  { icon: "printer", label: "3D printing", to: { name: "printing" } },
-  { icon: "yarn", label: "Cross stitch", to: { name: "cross-stitch" } },
-  { icon: "catalog", label: "Catalog", to: { name: "catalog" } },
-];
 
 export default {
   name: "JMNavigation",
@@ -22,6 +13,9 @@ export default {
     return { navigationItems };
   },
   computed: {
+    visibleNavigationItems() {
+      return this.navigationItems.filter((item) => item.visible);
+    },
     workIcon() {
       return getWorkStatus(appClock.state.today).icon;
     },
@@ -32,7 +26,7 @@ export default {
 <template>
   <nav class="jm-navigation" aria-label="Primary">
     <ul class="list" role="list">
-      <li v-for="item in navigationItems" :key="item.label" class="item">
+      <li v-for="item in visibleNavigationItems" :key="item.to.name" class="item">
         <RouterLink class="link" exact-active-class="link--active" :to="item.to">
           <JMIcon :name="item.to.name === 'work' ? workIcon : item.icon" />
           <span class="label">{{ item.label }}</span>

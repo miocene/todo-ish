@@ -1,0 +1,50 @@
+/* Native menus and select pickers share the same panel and row treatment. */
+.jm-popover,
+.jm-select::picker(select) {
+  min-inline-size: min(200px, calc(100vw - 16px));
+  max-inline-size: calc(100vw - 16px);
+  max-block-size: min(24rem, 70vh);
+  overflow: auto;
+  padding: var(--space-2);
+  color: var(--color-text-default);
+  background: var(--color-bg-surface);
+  border: 0;
+  border-radius: var(--radius-popover);
+  box-shadow: var(--shadow-m);
+  backdrop-filter: blur(var(--blur-s));
+}
+
+.jm-popover {
+  position-area: block-end center;
+}
+
+.jm-popover > .jm-button,
+.jm-select option {
+  display: flex;
+  gap: var(--space-4);
+  align-items: center;
+  justify-content: flex-start;
+  padding: var(--space-3) var(--space-4);
+  border-radius: calc(var(--radius-popover) - var(--space-2));
+  color: var(--color-text-default);
+}
+
+.jm-popover > .jm-button {
+  inline-size: 100%;
+}
+
+.jm-popover > .jm-button:not(:disabled),
+.jm-select option:not(:disabled) {
+  cursor: pointer;
+}
+
+.jm-popover > .jm-button:not(:disabled):is(:hover, :focus-visible, :active),
+.jm-select option:not(:disabled):is(:hover, :focus, :active) {
+  background: var(--control-ghost-background-hover);
+}
+
+.jm-popover > .jm-button:disabled,
+.jm-select option:disabled {
+  color: var(--control-disabled-text);
+  cursor: not-allowed;
+}

@@ -1,13 +1,12 @@
 <script>
 import { useId } from "vue";
 import JMButton from "../JMButton/JMButton.vue";
-import JMIcon from "../JMIcon/JMIcon.vue";
 import JMProgress from "../JMProgress/JMProgress.vue";
 import "./jm-card.css";
 
 export default {
   name: "JMCard",
-  components: { JMButton, JMIcon, JMProgress },
+  components: { JMButton, JMProgress },
   props: {
     title: { type: String, required: true },
     emptyText: { type: String, required: true },
@@ -30,27 +29,14 @@ export default {
       this.expanded = !value;
     },
   },
-  beforeUnmount() {
-    document.removeEventListener("pointerdown", this.handleOutsidePointer);
-  },
   methods: {
-    closeMenu(restoreFocus = false) {
-      if (restoreFocus) this.$refs.menuButton?.focus();
-      if (this.$refs.menu) this.$refs.menu.open = false;
-    },
-    handleMenuToggle(event) {
-      if (event.target.open) document.addEventListener("pointerdown", this.handleOutsidePointer);
-      else document.removeEventListener("pointerdown", this.handleOutsidePointer);
-    },
-    handleOutsidePointer(event) {
-      if (!this.$refs.menu?.contains(event.target)) this.closeMenu();
-    },
-    handleMenuBlur(event) {
-      if (!event.currentTarget.contains(event.relatedTarget)) this.closeMenu();
+    closeMenu() {
+      this.$refs.menu?.hidePopover();
+      this.$refs.menuButton?.$el.focus();
     },
     runAction(action) {
       if (action.disabled) return;
-      this.closeMenu(true);
+      this.closeMenu();
       if (action.id === "add") this.expanded = true;
       this.$emit("action", action.id);
     },
@@ -78,18 +64,15 @@ export default {
             @click="runAction(action)"
           />
         </template>
-        <details
-          v-else-if="actions.length > 1"
-          ref="menu"
-          class="jm-card__menu"
-          @toggle="handleMenuToggle"
-          @focusout="handleMenuBlur"
-          @keydown.esc.prevent.stop="closeMenu(true)"
-        >
-          <summary ref="menuButton" class="jm-button ghost m" :aria-label="`Actions for ${title}`">
-            <JMIcon name="kebab" />
-          </summary>
-          <div class="jm-card__menu-actions">
+        <template v-else-if="actions.length > 1">
+          <JMButton
+            ref="menuButton"
+            icon-name="kebab"
+            view="ghost"
+            :aria-label="`Actions for ${title}`"
+            :popovertarget="`${id}-menu`"
+          />
+          <div :id="`${id}-menu`" ref="menu" class="jm-popover jm-card__menu-actions" popover>
             <JMButton
               v-for="action in actions"
               :key="action.id"
@@ -101,7 +84,7 @@ export default {
               @click="runAction(action)"
             />
           </div>
-        </details>
+        </template>
         <JMButton
           v-if="collapsible"
           :icon-name="expanded ? 'chevron-up' : 'chevron-down'"

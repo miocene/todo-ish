@@ -8,37 +8,7 @@
   }
 
   &::picker(select) {
-    min-inline-size: min(200px, calc(100vw - var(--space-3)));
-    max-inline-size: calc(100vw - var(--space-3));
-    max-block-size: min(24rem, 70vh);
-    padding: var(--space-2);
     margin-block-start: var(--space-2);
-    background: var(--color-bg-surface);
-    border: 0;
-    border-radius: var(--radius-popover);
-    box-shadow: var(--shadow-m);
-    backdrop-filter: blur(var(--blur-s));
-  }
-
-  option {
-    display: flex;
-    gap: var(--space-4);
-    align-items: center;
-    padding: var(--space-3) var(--space-4);
-    border-radius: calc(var(--radius-popover) - var(--space-2));
-    
-    &:not(:disabled) {
-      cursor: pointer;
-
-      &:is(:hover, :focus, :active) {
-        background: var(--control-ghost-background-hover);
-      }
-    }
-
-    &:disabled {
-      color: var(--control-disabled-text);
-      cursor: not-allowed;
-    }
   }
 
   &::picker-icon,
