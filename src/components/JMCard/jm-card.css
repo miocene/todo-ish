@@ -14,6 +14,7 @@
     --radius-control: calc(var(--radius-card) - var(--space-3));
     --control-ghost-text: contrast-color(var(--color));
     --control-ghost-text-hover: contrast-color(var(--color));
+    
     display: flex;
     align-items: center;
     padding: 0 var(--space-3) var(--space-2) var(--space-6);
@@ -47,6 +48,16 @@
         border-radius: calc(var(--radius-card) - var(--space-3) * 3);
       }
     }
+  }
+
+  .empty {
+    margin-block-start: var(--space-1);
+    padding: var(--space-3);
+    background: var(--color-bg-surface);
+    box-shadow: 0px 24px 16px -20px rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(var(--blur-s));
+    border-radius: calc(var(--radius-card) - var(--space-3));
+    text-align: center;
   }
 }
 

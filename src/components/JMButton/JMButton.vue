@@ -12,7 +12,7 @@ export default {
     size: {
       type: String,
       default: "m",
-      validator: (value) => ["s", "m"].includes(value),
+      validator: (value) => ["xs", "s", "m"].includes(value),
     },
     view: {
       type: String,
@@ -24,8 +24,8 @@ export default {
 </script>
 
 <template>
-  <button class="jm-button" :class="[`jm-button--${view}`, `jm-button--${size}`]" type="button" :disabled="disabled">
+  <button class="jm-button" :class="[view, size]" type="button" :disabled="disabled">
     <JMIcon v-if="iconName" :name="iconName" />
-    {{ text }}
+    <span v-if="text">{{ text }}</span>
   </button>
 </template>

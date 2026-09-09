@@ -2,55 +2,76 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-2);
-  min-inline-size: var(--size-control);
-  block-size: var(--size-control);
-  padding-inline: var(--space-3);
   border: none;
   border-radius: var(--radius-control);
-}
 
-.jm-button--s {
-  min-inline-size: var(--size-control-s);
-  block-size: var(--size-control-s);
-}
+  &:not(:disabled) {
+    cursor: pointer;
 
-.jm-button--primary {
-  color: var(--control-primary-text);
-  background: var(--control-primary-background);
-}
+    &:active {
+      translate: 0 var(--space-1);
+    }
+  }
 
-.jm-button--secondary {
-  color: var(--control-secondary-text);
-  background: var(--control-secondary-background);
-}
+  &.ghost:not(:disabled) {
+    color: var(--control-ghost-text);
+    background: var(--control-ghost-background);
+    
+    &:is(:hover, :focus) {
+      color: var(--control-ghost-text-hover);
+      background: var(--control-ghost-background-hover);
+    }
+  }
 
-.jm-button--ghost {
-  color: var(--control-ghost-text);
-  background: var(--control-ghost-background);
-}
+  &.secondary:not(:disabled) {
+    color: var(--control-secondary-text);
+    background: var(--control-secondary-background);
 
-.jm-button--primary:not(:disabled):is(:hover, :focus-visible) {
-  color: var(--control-primary-text-hover);
-  background: var(--control-primary-background-hover);
-}
+    &:is(:hover, :focus) {
+      color: var(--control-secondary-text-hover);
+      background: var(--control-secondary-background-hover);
+    }
+  }
 
-.jm-button--secondary:not(:disabled):is(:hover, :focus-visible) {
-  color: var(--control-secondary-text-hover);
-  background: var(--control-secondary-background-hover);
-}
+  &.primary:not(:disabled) {
+    color: var(--control-primary-text);
+    background: var(--control-primary-background);
 
-.jm-button--ghost:not(:disabled):is(:hover, :focus-visible) {
-  color: var(--control-ghost-text-hover);
-  background: var(--control-ghost-background-hover);
-}
+    &:is(:hover, :focus) {
+      color: var(--control-primary-text-hover);
+      background: var(--control-primary-background-hover);
+    }
+  }
 
-.jm-button:not(:disabled):active {
-  background: #f0f;
-}
+  &.xs {
+    min-inline-size: var(--size-control-xs);
+    block-size: var(--size-control-xs);
+    padding-inline: var(--space-3);
+    gap: var(--space-2);
+  }
 
-.jm-button:disabled {
-  background: #f0f;
-  opacity: 0.55;
-  cursor: not-allowed;
+  &.s {
+    min-inline-size: var(--size-control-s);
+    block-size: var(--size-control-s);
+    padding-inline: var(--space-3);
+    gap: var(--space-2);
+  }
+
+  &.m {
+    min-inline-size: var(--size-control-m);
+    block-size: var(--size-control-m);
+    padding-inline: var(--space-3);
+    gap: var(--space-2);
+
+    span {
+      padding: 0 var(--space-3);
+    }
+  }
+
+  &:disabled {
+    background: var(--control-disabled-background);
+    border-color: var(--control-disabled-background);
+    color: var(--control-disabled-text);
+    cursor: not-allowed;
+  }
 }

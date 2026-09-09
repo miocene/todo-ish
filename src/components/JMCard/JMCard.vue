@@ -11,6 +11,7 @@ export default {
   components: { JMButton, JMIcon, JMModal, JMProgress },
   props: {
     title: { type: String, required: true },
+    emptyText: { type: String, required: true },
     color: { type: String, default: "#FF00FF" },
     actions: { type: Array, default: () => [] },
     progress: { type: Object, default: null },
@@ -115,9 +116,12 @@ export default {
         />
       </template>
     </header>
-    <ul v-show="!collapsible || expanded" :id="`${id}-tasks`" class="task-list" role="list">
-      <slot />
+    <ul v-if="$slots.list" v-show="!collapsible || expanded" :id="`${id}-tasks`" class="task-list" role="list">
+      <slot name="list" />
     </ul>
+    <div v-else class="empty">
+      {{ emptyText }}
+    </div>
     <JMModal v-if="actions.some((action) => action.id === 'edit')" ref="editModal" :aria-label="`Edit ${title}`" />
   </component>
 </template>

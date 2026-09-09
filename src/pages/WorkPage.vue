@@ -210,7 +210,7 @@ export default {
       return task.title;
     },
     toggleTaskAssignment(task) {
-      this.moveTask(task, task.date === null ? this.todayIso : null);
+      this.moveTask(task, task.date === null ? this.focusDateIso : null);
     },
     workStatusValue(date) {
       return getWorkStatus(date).value;
@@ -251,46 +251,49 @@ export default {
 
   <JMCard
     :title="`${selectedDay.today ? 'Today' : selectedDay.weekday}, ${selectedDay.dateLabel}`"
+    empty-text="Nothing recorded for this day"
     :color="cardColors[`work-day:${focusDateIso}`]"
-    :actions="[{ id: 'add', label: 'Add task', icon: 'plus', disabled: !canEditSelectedDay }]"
+    :actions="canEditSelectedDay ? [{ id: 'add', label: 'Add task', icon: 'plus' }] : []"
     @action="addSelectedDayTask"
   >
     <template #title>
       <span class="eyebrow">{{ selectedDay.today ? "Today" : selectedDay.weekday }}</span>
       <time :datetime="selectedDay.iso">{{ selectedDay.dateLabel }}</time>
     </template>
-    <li v-if="selectedDay.tasks.length === 0" class="work-day__empty">Nothing recorded for this day.</li>
-    <JMTaskItem
-      v-for="task in selectedDay.tasks" :key="task.id"
-      :task-id="task.id"
-      :title="taskTitle(task)"
-      :title-input-id="taskInputId(task)"
-      :completion-input-id="taskCheckboxId(task)"
-      :completed="isTaskComplete(task)"
-      :editable="canEditTask(selectedDay.iso)"
-      removable
-      :pin-icon="isTaskComplete(task) ? '' : 'pinned'"
-      :pin-label="`Move ${taskTitle(task) || 'untitled task'} to backlog`"
-      :remove-label="`Delete ${taskTitle(task) || 'untitled task'}`"
-      @enter="handleTaskTitleEnter(task, selectedDay.iso, selectedDay.tasks, $event)"
-      @pin="toggleTaskAssignment(task)"
-      @remove="removeTask(task)"
-      @title-blur="handleTaskTitleBlur(task)"
-      @update:completed="setTaskCompletion(task, $event)"
-      @update:title="updateTaskTitle(task, $event)"
-    />
+    <template #list v-if="selectedDay.tasks.length !== 0">
+      <JMTaskItem
+        v-for="task in selectedDay.tasks" :key="task.id"
+        :task-id="task.id"
+        :title="taskTitle(task)"
+        :title-input-id="taskInputId(task)"
+        :completion-input-id="taskCheckboxId(task)"
+        :completed="isTaskComplete(task)"
+        :editable="canEditTask(selectedDay.iso)"
+        removable
+        :pin-icon="isTaskComplete(task) ? '' : 'pinned'"
+        :pin-label="`Move ${taskTitle(task) || 'untitled task'} to backlog`"
+        :remove-label="`Delete ${taskTitle(task) || 'untitled task'}`"
+        @enter="handleTaskTitleEnter(task, selectedDay.iso, selectedDay.tasks, $event)"
+        @pin="toggleTaskAssignment(task)"
+        @remove="removeTask(task)"
+        @title-blur="handleTaskTitleBlur(task)"
+        @update:completed="setTaskCompletion(task, $event)"
+        @update:title="updateTaskTitle(task, $event)"
+      />
+    </template>
   </JMCard>
 
   <JMCard
     class="work-backlog"
     title="Backlog"
+    empty-text="No backlog tasks"
     :color="cardColors.backlog"
-    :actions="[{ id: 'add', label: 'Add task', ariaLabel: 'Add backlog task' }]"
+    :actions="[{ id: 'add', label: 'Add task', icon: 'plus', ariaLabel: 'Add backlog task' }]"
     @action="addBacklogTask"
   >
-    <li v-if="backlogTasks.length === 0" class="work-backlog__empty">No backlog tasks</li>
-    <li v-for="task in backlogTasks" :key="task.id">
+    <template #list v-if="backlogTasks.length !== 0">
       <JMTaskItem
+        v-for="task in backlogTasks" :key="task.id"
         :task-id="task.id"
         :title="taskTitle(task)"
         :title-input-id="taskInputId(task)"
@@ -298,7 +301,7 @@ export default {
         :completed="isTaskComplete(task)"
         removable
         pin-icon="pin"
-        :pin-label="`Mark ${taskTitle(task) || 'untitled task'} ready for today`"
+        :pin-label="`Move ${taskTitle(task) || 'untitled task'} to ${isTodaySelected ? 'today' : focusDateIso}`"
         :remove-label="`Delete ${taskTitle(task) || 'untitled task'}`"
         @enter="handleTaskTitleEnter(task, null, backlogTasks, $event)"
         @pin="toggleTaskAssignment(task)"
@@ -307,6 +310,6 @@ export default {
         @update:completed="setTaskCompletion(task, $event)"
         @update:title="updateTaskTitle(task, $event)"
       />
-    </li>
+    </template>
   </JMCard>
 </template>

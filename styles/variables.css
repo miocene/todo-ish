@@ -16,7 +16,7 @@
 
   --radius-checkbox: 6px;
   --radius-control: 12px;
-  --radius-popover: 16px;
+  --radius-popover: 12px;
   --radius-calendar: 24px;
   --radius-card: 32px;
 
@@ -24,28 +24,36 @@
 
   --size-control-xs: 24px;
   --size-control-s: 32px;
-  --size-control: 40px;
+  --size-control-m: 40px;
   --size-checkbox: 20px;
   --size-header: 50px;
+  --size-icon: 16px;
+
+  --shadow-s: 0 4px 6px -1px #0000001a, 0 2px 4px -2px #0000001a;
+  --shadow-m: 0 4px 6px -1px #0000001a, 0 2px 4px -2px #0000001a;
 
   --control-default-background: light-dark(#fff, #fff);
-  --control-default-border: light-dark(#ccc, #ccc);
+  --control-default-border: light-dark(#e5e5e5, #e5e5e5);
   --control-default-text: light-dark(#333, #333);
   
-  --control-primary-background: light-dark(transparent, transparent);
-  --control-primary-background-hover: light-dark(transparent, transparent);
-  --control-primary-text: light-dark(var(--color-text-default), var(--color-text-default));
-  --control-primary-text-hover: light-dark(var(--color-text-default), var(--color-text-default));
+  --control-primary-background: light-dark(#333, #333);
+  --control-primary-background-hover: light-dark(#454545, #454545);
+  --control-primary-text: light-dark(#fafafa, #fafafa);
+  --control-primary-text-hover: light-dark(#fafafa, #fafafa);
 
-  --control-secondary-background: light-dark(#f5f5f5, #f5f5f5);
-  --control-secondary-background-hover: light-dark(transparent, transparent);
+  --control-secondary-background: light-dark(rgba(51, 51, 51, 0.05), rgba(51, 51, 51, 0.05));
+  --control-secondary-background-hover: light-dark(#e6e6e6, #e6e6e6);
   --control-secondary-text: light-dark(var(--color-text-default), var(--color-text-default));
   --control-secondary-text-hover: light-dark(var(--color-text-default), var(--color-text-default));
 
   --control-ghost-background: light-dark(transparent, transparent);
-  --control-ghost-background-hover: light-dark(transparent, transparent);
+  --control-ghost-background-hover: light-dark(rgba(51, 51, 51, 0.05), rgba(51, 51, 51, 0.05));
   --control-ghost-text: light-dark(var(--color-text-default), var(--color-text-default));
   --control-ghost-text-hover: light-dark(var(--color-text-default), var(--color-text-default));
+  
+  --control-disabled-background: light-dark(#e8e8e8, #e8e8e8);
+  --control-disabled-text: light-dark(#ccc, #ccc);
+  --control-disabled-border: light-dark(#ddd, #ddd);
 
   --space-1: 2px;
   --space-2: 4px;

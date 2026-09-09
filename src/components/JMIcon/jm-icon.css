@@ -1,0 +1,10 @@
+.jm-icon {
+  display: inline-block;
+  flex-shrink: 0;
+  width: var(--size-icon);
+  height: var(--size-icon);
+  aspect-ratio: 1;
+  overflow: hidden;
+  color: inherit;
+  fill: none;
+}

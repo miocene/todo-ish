@@ -103,10 +103,6 @@ n {
     outline-offset: 2px;
   }
 
-  a[href]:active {
-    background: #f0f;
-  }
-
   .skip-link {
     position: fixed;
     inset-block-start: var(--space-3);
@@ -135,18 +131,6 @@ n {
     overflow: hidden;
     clip-path: inset(50%);
     white-space: nowrap;
-  }
-
-  /* Icons */
-
-  .jm-icon {
-    display: inline-block;
-    flex: none;
-    inline-size: 16px;
-    block-size: 16px;
-    overflow: hidden;
-    color: inherit;
-    fill: none;
   }
 
   /* Passkey gate */
@@ -195,7 +179,7 @@ n {
   .jm-input__control {
     inline-size: 100%;
     min-inline-size: 0;
-    min-block-size: var(--size-control);
+    min-block-size: var(--size-control-m);
     padding: var(--space-2) var(--space-3);
     color: var(--color-text-default);
     font: inherit;
@@ -932,7 +916,7 @@ n {
     display: flex;
     flex-direction: column;
     gap: var(--space-6);
-    padding-block-end: calc(var(--space-10) + var(--size-control));
+    padding-block-end: calc(var(--space-10) + var(--size-control-m));
   }
 
   .profile-page__header p {

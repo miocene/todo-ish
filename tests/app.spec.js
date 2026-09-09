@@ -1477,3 +1477,21 @@ test("pending todo edits recover against the older API while colors remain mocke
   await expect(page.locator(".app-sync-error")).toHaveCount(0);
   expect(data.get("todos").lists[0].color).toBeUndefined();
 });
+
+test("backlog pins move tasks to the selected date and persist", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-09-09T12:00:00Z"));
+  const data = appDataByPage.get(page);
+  data.set("work-tasks", [{ id: "backlog-pin", title: "Plan next week", date: null }]);
+  await page.goto("/?date=2026-09-10");
+  const backlog = page.locator(".work-backlog");
+  const selected = page.locator(".jm-card").filter({ has: page.locator('time[datetime="2026-09-10"]') });
+  await backlog.getByRole("button", { name: "Move Plan next week to 2026-09-10", exact: true }).click();
+  await expect(backlog.locator(".task-item")).toHaveCount(0);
+  await expect(selected.getByRole("textbox", { name: "Task title", exact: true })).toHaveValue("Plan next week");
+  await expect.poll(() => data.get("work-tasks")?.[0].date).toBe("2026-09-10");
+  await page.reload();
+  await expect(selected.getByRole("textbox", { name: "Task title", exact: true })).toHaveValue("Plan next week");
+  await selected.getByRole("button", { name: "Move Plan next week to backlog", exact: true }).click();
+  await expect(backlog.getByRole("textbox", { name: "Task title", exact: true })).toHaveValue("Plan next week");
+  await expect.poll(() => data.get("work-tasks")?.[0].date).toBe(null);
+});
