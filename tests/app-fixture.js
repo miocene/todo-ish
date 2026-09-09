@@ -5,8 +5,11 @@ import flossCatalog from "../backend/catalogs/dmc-floss.snapshot.json" with { ty
 
 const appDataByPage = new WeakMap();
 
-function emptyAppData(values, revisions) {
+function emptyAppData(values, revisions, userId = "owner") {
   return {
+    userId,
+    legacyOwner: userId === "owner",
+    preferences: values.preferences ?? { hiddenNavigation: [] },
     initializedResources: Object.keys(values),
     revisions,
     workTasks: values["work-tasks"] ?? [],
@@ -37,7 +40,7 @@ const test = base.extend({
       let session = {
         authenticated: true,
         bootstrapRequired: false,
-        user: { username: "owner", displayName: "Owner" },
+        user: { id: "owner", username: "owner", displayName: "Owner" },
       };
       const controller = {
         get: (resource) => values[resource],
@@ -45,6 +48,10 @@ const test = base.extend({
         setWriteFailure: (resource, status) => writeFailures.set(resource, status),
         set: (resource, value) => {
           values[resource] = value;
+        },
+        update: (resource, value) => {
+          values[resource] = value;
+          revisions[resource] += 1;
         },
         setSession: (value) => {
           session = value;
@@ -67,7 +74,7 @@ const test = base.extend({
         }
 
         if (request.method() === "GET" && url.pathname === "/api/data") {
-          const data = emptyAppData(values, { ...revisions });
+          const data = emptyAppData(values, { ...revisions }, session.user?.id);
           if (!supportsColors) {
             delete data.colors;
             delete data.revisions.colors;

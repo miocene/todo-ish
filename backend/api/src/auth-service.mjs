@@ -55,7 +55,7 @@ function expiry(seconds) {
 }
 
 function publicUser(user) {
-  return { username: user.username, displayName: user.displayName };
+  return { id: user.id, username: user.username, displayName: user.displayName };
 }
 
 export function createAuthService(repository, config, webAuthn = defaultWebAuthn) {
@@ -63,7 +63,6 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
   const challengeCookieName = `${cookiePrefix}doneish_challenge`;
   const sessionCookieName = `${cookiePrefix}doneish_session`;
   const secureAttribute = config.secureCookies ? "; Secure" : "";
-  const developmentUser = { username: config.username, displayName: config.displayName };
 
   function cookie(name, value, maxAge) {
     return `${name}=${value}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}${secureAttribute}`;
@@ -73,13 +72,14 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
     return cookie(name, "", 0);
   }
 
-  async function storeChallenge({ challenge, ceremony, userHandle }) {
+  async function storeChallenge({ challenge, ceremony, userHandle, setupCodeHash }) {
     const token = randomToken();
     await repository.storeChallenge({
       tokenHash: tokenHash(token),
       challenge,
       ceremony,
       userHandle,
+      setupCodeHash,
       expiresAt: expiry(config.challengeTtlSeconds),
     });
     return cookie(challengeCookieName, token, config.challengeTtlSeconds);
@@ -109,7 +109,11 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
   }
 
   async function requireUser(cookieHeader, authenticationBypass = false) {
-    if (authenticationBypass) return developmentUser;
+    if (authenticationBypass) {
+      const user = await repository.firstUser();
+      if (user) return user;
+      throw new AuthError("Complete account setup first", 401, "bootstrap_required");
+    }
     const user = await authenticatedUser(cookieHeader);
     if (!user) throw new AuthError("Authentication required", 401, "authentication_required");
     return user;
@@ -118,7 +122,11 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
   return {
     async session(cookieHeader, authenticationBypass = false) {
       if (authenticationBypass) {
-        return { authenticated: true, bootstrapRequired: false, user: publicUser(developmentUser) };
+        return {
+          authenticated: true,
+          bootstrapRequired: false,
+          user: publicUser(await requireUser(cookieHeader, true)),
+        };
       }
       const user = await authenticatedUser(cookieHeader);
       return {
@@ -135,7 +143,15 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
     async registrationOptions({ bootstrapToken, cookieHeader }) {
       const ownerExists = await repository.hasOwner();
       let user;
-      if (ownerExists) {
+      let setupCodeHash;
+      if (ownerExists && bootstrapToken) {
+        if (typeof bootstrapToken !== "string" || bootstrapToken.length > 256)
+          throw new AuthError("The setup code is invalid", 401, "invalid_setup_code");
+        setupCodeHash = tokenHash(bootstrapToken);
+        user = await repository.userForSetupCode(setupCodeHash);
+        if (!user)
+          throw new AuthError("The setup code is invalid, expired, or already used", 401, "invalid_setup_code");
+      } else if (ownerExists) {
         user = await requireUser(cookieHeader);
       } else {
         if (!bootstrapTokenMatches(bootstrapToken, config.bootstrapToken)) {
@@ -171,6 +187,7 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
         challenge: options.challenge,
         ceremony: REGISTRATION_CEREMONY,
         userHandle: user.id,
+        setupCodeHash,
       });
       return { body: options, cookies: [challengeCookie] };
     },
@@ -194,6 +211,11 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
       }
 
       const existingUser = await repository.userById(challenge.userHandle);
+      if (existingUser && !challenge.setupCodeHash) {
+        const currentUser = await requireUser(cookieHeader);
+        if (currentUser.id !== existingUser.id)
+          throw new AuthError("Sign in to the account that requested this passkey", 401, "account_changed");
+      }
       const user = existingUser ?? {
         id: challenge.userHandle,
         username: config.username,
@@ -204,6 +226,7 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
       try {
         await repository.storeCredentialAndSession({
           user,
+          setupCodeHash: challenge.setupCodeHash,
           credential: {
             id: registrationInfo.credential.id,
             publicKey: Buffer.from(registrationInfo.credential.publicKey).toString("base64url"),
@@ -216,7 +239,10 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
           session,
         });
       } catch (error) {
-        if (error instanceof AuthRepositoryConflictError || error?.code === "23505") {
+        if (error instanceof AuthRepositoryConflictError) {
+          throw new AuthError(error.message, 409, "registration_conflict");
+        }
+        if (error?.code === "23505") {
           throw new AuthError("This passkey is already registered", 409, "credential_exists");
         }
         throw error;

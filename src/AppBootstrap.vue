@@ -23,8 +23,8 @@ export default {
     this.loadSession();
   },
   methods: {
-    async initializeApplication() {
-      await Promise.all([initializeAppData(), initializeDemoData()]);
+    async initializeApplication(user) {
+      await Promise.all([initializeAppData(user), initializeDemoData()]);
       // The shell and route modules read the data cache when they are imported.
       this.applicationComponent = markRaw(await this.loadApplication());
       this.state = "ready";
@@ -35,7 +35,7 @@ export default {
       try {
         const session = await getSession();
         if (session.authenticated) {
-          await this.initializeApplication();
+          await this.initializeApplication(session.user);
           return;
         }
         this.bootstrapRequired = session.bootstrapRequired;
@@ -45,11 +45,11 @@ export default {
         this.state = "error";
       }
     },
-    async handleAuthenticated() {
+    async handleAuthenticated(user) {
       this.error = "";
       this.state = "loading";
       try {
-        await this.initializeApplication();
+        await this.initializeApplication(user);
       } catch (error) {
         this.error = error?.message || "Done-ish could not load app data.";
         this.state = "error";

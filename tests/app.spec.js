@@ -81,7 +81,7 @@ test("passkey sign-in opens the requested page after loading data", async ({ pag
       body: JSON.stringify(
         route.request().url().endsWith("/options")
           ? { challenge: "dGVzdA", rpId: "todo-ish.today" }
-          : { user: { username: "owner", displayName: "Owner" } },
+          : { user: { id: "owner", username: "owner", displayName: "Owner" } },
       ),
     }),
   );

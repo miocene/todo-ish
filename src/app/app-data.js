@@ -1,7 +1,9 @@
 import { reactive } from "vue";
-import { apiFetch } from "./api.js";
+import { apiFetch, setApiAccount } from "./api.js";
 import { APP_DATA_RESOURCES, validateAppDataResource } from "../../backend/api/src/app-data-validation.mjs";
+import { NAVIGATION_IDS } from "../../backend/api/src/app-data-contract.mjs";
 import { createResourceSync } from "./resource-sync.js";
+import { mergeSharedData } from "./shared-data-merge.js";
 
 const RESOURCES = APP_DATA_RESOURCES;
 
@@ -29,6 +31,7 @@ const emptyData = Object.freeze({
   "cross-stitch": { projects: [] },
   "filament-inventory": {},
   "floss-inventory": {},
+  preferences: { hiddenNavigation: [] },
 });
 let demoData = {};
 export async function initializeDemoData() {
@@ -47,6 +50,20 @@ const MOCK_COLORS_STORAGE_KEY = "done-ish.mock-colors.v1";
 const COLOR_COLLECTIONS = Object.freeze({ todos: "lists", printing: "projects", "cross-stitch": "projects" });
 let hydrated = false;
 let mockColors = false;
+let accountId;
+let legacyOwner = false;
+const subscribers = new Map();
+
+export function subscribeAppData(resource, callback) {
+  if (!subscribers.has(resource)) subscribers.set(resource, new Set());
+  subscribers.get(resource).add(callback);
+  return () => subscribers.get(resource).delete(callback);
+}
+
+function receiveAppData(resource, value) {
+  cache.set(resource, clone(value));
+  for (const callback of subscribers.get(resource) ?? []) callback(clone(value));
+}
 
 function readMockColors() {
   try {
@@ -91,11 +108,13 @@ function remoteValue(state, resource) {
     "cross-stitch": state.pages?.crossStitch,
     "filament-inventory": state.inventories?.filament,
     "floss-inventory": state.inventories?.floss,
+    preferences: state.preferences,
   };
   return values[resource];
 }
 
 function legacyValue(resource) {
+  if (!legacyOwner || !LEGACY_STORAGE_KEYS[resource]) return undefined;
   try {
     const value = localStorage.getItem(LEGACY_STORAGE_KEYS[resource]);
     return value === null ? undefined : JSON.parse(value);
@@ -105,6 +124,7 @@ function legacyValue(resource) {
 }
 
 function clearLegacyValue(resource) {
+  if (!legacyOwner || !LEGACY_STORAGE_KEYS[resource]) return;
   try {
     localStorage.removeItem(LEGACY_STORAGE_KEYS[resource]);
   } catch {
@@ -113,6 +133,7 @@ function clearLegacyValue(resource) {
 }
 
 const PENDING_PREFIX = "done-ish.pending-write.v1:";
+const pendingPrefix = () => `done-ish.pending-write.v2:${accountId}:`;
 export const syncState = reactive({ state: "saved", message: "", pending: 0, durable: true });
 
 const occurrenceKey = (item) => `${item.id}:${item.nextDue}`;
@@ -123,6 +144,8 @@ async function fetchRemoteState() {
     throw Object.assign(new Error(`Could not load saved data (${response.status}).`), { status: response.status });
   }
   const state = await response.json();
+  if (state.userId !== accountId)
+    throw Object.assign(new Error("Your account changed. Reload before saving."), { status: 401 });
   return state;
 }
 
@@ -130,18 +153,22 @@ const sync = createResourceSync({
   delay: 250,
   storage: {
     load() {
-      const entries = [];
+      const entries = new Map();
       for (let index = 0; index < localStorage.length; index++) {
         const key = localStorage.key(index);
-        if (!key?.startsWith(PENDING_PREFIX)) continue;
+        if (!key?.startsWith(pendingPrefix()) && !(legacyOwner && key?.startsWith(PENDING_PREFIX))) continue;
         const entry = JSON.parse(localStorage.getItem(key));
-        if (entry && typeof entry.id === "string" && RESOURCES.includes(entry.resource) && entry.value !== undefined)
-          entries.push(entry);
+        if (entry && typeof entry.id === "string" && RESOURCES.includes(entry.resource) && entry.value !== undefined) {
+          if (!entries.has(entry.id) || key.startsWith(pendingPrefix())) entries.set(entry.id, entry);
+        }
       }
-      return entries;
+      return [...entries.values()];
     },
-    save: (entry) => localStorage.setItem(`${PENDING_PREFIX}${entry.id}`, JSON.stringify(entry)),
-    remove: (id) => localStorage.removeItem(`${PENDING_PREFIX}${id}`),
+    save: (entry) => localStorage.setItem(`${pendingPrefix()}${entry.id}`, JSON.stringify(entry)),
+    remove: (id) => {
+      localStorage.removeItem(`${pendingPrefix()}${id}`);
+      if (legacyOwner) localStorage.removeItem(`${PENDING_PREFIX}${id}`);
+    },
   },
   normalize(resource, value) {
     const normalized = validateAppDataResource(resource, value);
@@ -184,9 +211,18 @@ const sync = createResourceSync({
     return result;
   },
   onChange: (state) => Object.assign(syncState, state),
+  onUpdate: receiveAppData,
+  merge: mergeSharedData,
   onSaved(resource) {
     initializedResources.add(resource);
     clearLegacyValue(resource);
+    if (resource === "preferences" && legacyOwner) {
+      try {
+        localStorage.removeItem("done-ish.hidden-navigation.v1");
+      } catch {
+        /* The saved account preferences are authoritative. */
+      }
+    }
   },
 });
 
@@ -210,9 +246,13 @@ export function downloadPendingWrites() {
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
-export async function initializeAppData() {
+export async function initializeAppData(user) {
+  if (!user?.id) throw new Error("The session did not include an account ID.");
+  accountId = user.id;
+  setApiAccount(accountId);
   const state = await fetchRemoteState();
   if (!state || typeof state !== "object") throw new Error("App data response is invalid");
+  legacyOwner = state.legacyOwner === true;
 
   mockColors = Boolean(import.meta.env.DEV && !Object.hasOwn(state.revisions ?? {}, "colors"));
   if (mockColors) cache.set("colors", readMockColors());
@@ -233,6 +273,45 @@ export async function initializeAppData() {
     if (pending !== undefined) cache.set(resource, pending);
   }
   hydrated = true;
+  if (legacyOwner && !initializedResources.has("preferences") && !sync.value("preferences")) {
+    try {
+      const hiddenNavigation = JSON.parse(localStorage.getItem("done-ish.hidden-navigation.v1"));
+      if (Array.isArray(hiddenNavigation))
+        writeAppData("preferences", { hiddenNavigation: hiddenNavigation.filter((id) => NAVIGATION_IDS.includes(id)) });
+    } catch {
+      // Unavailable legacy preferences leave the account defaults intact.
+    }
+  }
+}
+
+export function startAppDataRefresh() {
+  let busy = false;
+  let stopped = false;
+  const refresh = async () => {
+    if (busy || stopped || document.visibilityState === "hidden") return;
+    busy = true;
+    try {
+      const state = await fetchRemoteState();
+      if (!stopped)
+        sync.refresh(
+          state,
+          RESOURCES.filter((resource) => !mockColors || resource !== "colors"),
+        );
+    } catch (error) {
+      if (error.status === 401) Object.assign(syncState, { state: "auth", message: error.message });
+    } finally {
+      busy = false;
+    }
+  };
+  const timer = window.setInterval(refresh, 5000);
+  window.addEventListener("focus", refresh);
+  document.addEventListener("visibilitychange", refresh);
+  return () => {
+    stopped = true;
+    window.clearInterval(timer);
+    window.removeEventListener("focus", refresh);
+    document.removeEventListener("visibilitychange", refresh);
+  };
 }
 
 /**

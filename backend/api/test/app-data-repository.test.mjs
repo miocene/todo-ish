@@ -24,15 +24,20 @@ function fixture({ revision = 0, reject, rows } = {}) {
       released = true;
     },
   };
-  return { repository: createAppDataRepository({ connect: async () => client }), queries, released: () => released };
+  const raw = createAppDataRepository({ connect: async () => client });
+  return {
+    repository: { read: () => raw.read("owner"), replace: (...args) => raw.replace(...args, "owner") },
+    queries,
+    released: () => released,
+  };
 }
 const tasks = (count) =>
   Array.from({ length: count }, (_, index) => ({ id: `task-${index}`, title: "Bound 'value'", date: "2026-09-05" }));
 
-test("100 work tasks use seven queries and bind all task values", async () => {
+test("100 work tasks use eight queries and bind all task values", async () => {
   const f = fixture();
   assert.equal(await f.repository.replace("work-tasks", tasks(100), 0), 1);
-  assert.equal(f.queries.length, 7);
+  assert.equal(f.queries.length, 8);
   const insert = f.queries.find(({ text }) => text.startsWith("INSERT INTO work_tasks"));
   assert.equal(insert.values.length, 600);
   assert.equal(insert.values[1], "Bound 'value'");
@@ -236,7 +241,7 @@ test("shopping saves immutable purchase quantities and archived completed rows",
   assert.equal(insert.values[6], "pla");
   assert.equal(insert.values[7], 2);
   assert.equal(insert.values[8], false);
-  assert.equal(insert.values[17], true);
+  assert.equal(insert.values[18], true);
 });
 
 test("shopping reads purchases and retained history separately", async () => {

@@ -1,9 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { mergeSharedData } from "../src/app/shared-data-merge.js";
 import { createResourceSync } from "../src/app/resource-sync.js";
 
 const tick = () => new Promise((resolve) => setImmediate(resolve));
-function fixture({ records = new Map(), send, remote = { revisions: { tasks: 0 }, tasks: [] }, delay = 0 } = {}) {
+function fixture({
+  records = new Map(),
+  send,
+  remote = { revisions: { tasks: 0 }, tasks: [] },
+  delay = 0,
+  merge,
+  onUpdate,
+} = {}) {
   const timers = new Map();
   const states = [];
   let nextId = 0;
@@ -25,6 +33,8 @@ function fixture({ records = new Map(), send, remote = { revisions: { tasks: 0 }
       return send ? send(...args) : { revision: 1 };
     },
     onChange: (state) => states.push(state),
+    merge,
+    onUpdate,
     clock: {
       setTimeout: (fn, ms) => {
         const id = ++nextId;
@@ -285,4 +295,51 @@ test("Retry removes all pending entries when both drafts become acknowledged", a
   assert.equal(f.sync.pending().length, 0);
   assert.equal(f.sync.value("tasks"), undefined);
   assert.equal(f.states.at(-1).state, "saved");
+});
+
+const mergeLists = (_resource, base, local, remote) =>
+  mergeSharedData("shopping", { tasks: base }, { tasks: local }, { tasks: remote })?.tasks;
+
+test("a revision conflict merges independent shared edits before retrying", async () => {
+  const remote = { revisions: { tasks: 0 }, tasks: [{ id: "milk", title: "Milk" }] };
+  let attempts = 0;
+  const updates = [];
+  const f = fixture({
+    remote,
+    merge: mergeLists,
+    onUpdate: (_resource, value) => updates.push(value),
+    send: async (_resource, value, revision) => {
+      if (++attempts === 1) {
+        remote.tasks.push({ id: "eggs", title: "Eggs" });
+        remote.revisions.tasks++;
+        throw Object.assign(new Error("conflict"), { status: 409 });
+      }
+      assert.equal(revision, 1);
+      remote.tasks = value;
+      return { revision: ++remote.revisions.tasks };
+    },
+  });
+  f.sync.write("tasks", [...remote.tasks, { id: "bread", title: "Bread" }]);
+  await f.advance();
+  assert.deepEqual(
+    remote.tasks.map((item) => item.id),
+    ["milk", "bread", "eggs"],
+  );
+  assert.equal(updates.length, 1);
+  assert.equal(f.sync.pending().length, 0);
+});
+
+test("background refresh updates saved lists and rebases pending edits", async () => {
+  const remote = { revisions: { tasks: 0 }, tasks: [{ id: "milk", title: "Milk" }] };
+  const updates = [];
+  const f = fixture({ remote, merge: mergeLists, onUpdate: (_resource, value) => updates.push(value) });
+  f.sync.write("tasks", [...remote.tasks, { id: "bread", title: "Bread" }]);
+  remote.tasks.push({ id: "eggs", title: "Eggs" });
+  remote.revisions.tasks++;
+  f.sync.refresh(remote, ["tasks"]);
+  assert.deepEqual(
+    f.sync.value("tasks").map((item) => item.id),
+    ["milk", "bread", "eggs"],
+  );
+  assert.equal(updates.length, 1);
 });

@@ -1,17 +1,7 @@
 import { reactive } from "vue";
+import { readAppData, writeAppData, subscribeAppData } from "./app-data.js";
 
-const STORAGE_KEY = "done-ish.hidden-navigation.v1";
-
-function readHiddenItems() {
-  try {
-    const value = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return Array.isArray(value) ? value : [];
-  } catch {
-    return [];
-  }
-}
-
-const hiddenItems = readHiddenItems();
+const hiddenItems = readAppData("preferences")?.hiddenNavigation ?? [];
 
 export const navigationItems = reactive(
   [
@@ -27,12 +17,11 @@ export const navigationItems = reactive(
 
 export function toggleNavigationItem(item) {
   item.visible = !item.visible;
-  try {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(navigationItems.filter((entry) => !entry.visible).map((entry) => entry.to.name)),
-    );
-  } catch {
-    // Keep preferences in memory when browser storage is unavailable.
-  }
+  writeAppData("preferences", {
+    hiddenNavigation: navigationItems.filter((entry) => !entry.visible).map((entry) => entry.to.name),
+  });
 }
+
+subscribeAppData("preferences", (preferences) => {
+  for (const item of navigationItems) item.visible = !preferences.hiddenNavigation.includes(item.to.name);
+});

@@ -1,7 +1,13 @@
 <script>
 import { appClock } from "./app/clock.js";
 import { RouterView } from "vue-router";
-import { syncState, retryPendingWrites, downloadPendingWrites, discardPendingWrites } from "./app/app-data.js";
+import {
+  syncState,
+  retryPendingWrites,
+  downloadPendingWrites,
+  discardPendingWrites,
+  startAppDataRefresh,
+} from "./app/app-data.js";
 import JMButton from "./components/JMButton/JMButton.vue";
 import JMHeader from "./components/JMHeader/JMHeader.vue";
 import JMNavigation from "./components/JMNavigation/JMNavigation.vue";
@@ -14,9 +20,11 @@ export default {
   },
   mounted() {
     appClock.start();
+    this.stopDataRefresh = startAppDataRefresh();
   },
   beforeUnmount() {
     appClock.stop();
+    this.stopDataRefresh();
   },
   watch: {
     "$route.meta.title": {

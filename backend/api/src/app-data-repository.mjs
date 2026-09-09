@@ -1,4 +1,4 @@
-import { APP_DATA_RESOURCES, completionState as completion } from "./app-data-contract.mjs";
+import { APP_DATA_RESOURCES, SHARED_APP_DATA_RESOURCES, completionState as completion } from "./app-data-contract.mjs";
 
 export class AppDataRevisionConflictError extends Error {
   constructor(resource, expectedRevision, currentRevision) {
@@ -15,10 +15,12 @@ async function queryRows(executor, text, values = []) {
   return (await executor.query({ text, values })).rows;
 }
 
-async function transaction(pool, options, callback) {
+async function transaction(pool, options, userId, callback) {
+  if (typeof userId !== "string" || !userId) throw new Error("An authenticated user ID is required");
   const client = await pool.connect();
   try {
     await client.query(`BEGIN${options ? ` ${options}` : ""}`);
+    await client.query({ text: "SELECT set_config('app.user_id', $1, true)", values: [userId] });
     const result = await callback(client);
     await client.query("COMMIT");
     return result;
@@ -41,8 +43,10 @@ async function deleteMissing(executor, table, column, ids) {
   });
 }
 
-async function readAppData(pool) {
-  return transaction(pool, "ISOLATION LEVEL REPEATABLE READ READ ONLY", async (client) => {
+async function readAppData(pool, userId) {
+  return transaction(pool, "ISOLATION LEVEL REPEATABLE READ READ ONLY", userId, async (client) => {
+    const ownerRows = await queryRows(client, "SELECT id FROM auth_users ORDER BY created_at, id LIMIT 1");
+    const preferences = await queryRows(client, 'SELECT hidden_navigation AS "hiddenNavigation" FROM user_preferences');
     const revisionRows = await queryRows(
       client,
       `SELECT resource, revision
@@ -241,6 +245,9 @@ async function readAppData(pool) {
     }
 
     return {
+      userId,
+      legacyOwner: ownerRows[0]?.id === userId,
+      preferences: preferences[0] ?? { hiddenNavigation: [] },
       initializedResources: revisionRows.map((row) => row.resource),
       revisions,
       workTasks: workTaskRows.map((item) => ({
@@ -331,7 +338,22 @@ async function insertRows(client, table, columns, rows, conflict = "") {
   }
 }
 
+const PERSONAL_TABLES = new Set([
+  "work_tasks",
+  "work_day_statuses",
+  "colors",
+  "todo_lists",
+  "todo_items",
+  "printing_projects",
+  "printing_items",
+  "printing_item_filaments",
+  "stitch_projects",
+  "stitch_project_threads",
+  "completed_project_tasks",
+]);
+
 async function upsertRows(client, table, columns, rows, { keys = ["id"], updatedAt = true, preserve = [] } = {}) {
+  if (PERSONAL_TABLES.has(table)) keys = ["user_id", ...keys];
   const updates = columns
     .filter((column) => !keys.includes(column))
     .map(
@@ -453,7 +475,11 @@ async function replaceTodos(client, data) {
       AND (list_id = ANY($2::text[]) OR (list_id <> 'general' AND completed_at IS NULL))`,
     values: [items.map((item) => item[0]), listIds],
   });
-  // The FK detaches completed items when their list is removed. General is never removed.
+  // Detach completed items before cascading deletion of their list. General is never removed.
+  await client.query({
+    text: "UPDATE todo_items SET list_id = NULL WHERE completed_at IS NOT NULL AND list_id <> 'general' AND NOT (list_id = ANY($1::text[]))",
+    values: [listIds],
+  });
   await client.query({
     text: "DELETE FROM todo_lists WHERE id <> 'general' AND NOT (id = ANY($1::text[]))",
     values: [listIds],
@@ -463,7 +489,7 @@ async function replaceTodos(client, data) {
     "todo_items",
     ["id", "list_id", "title", "completed_at", "position"],
     (data.history ?? []).map((item) => [item.id, null, item.title, item.completedAt, 0]),
-    "ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, completed_at = EXCLUDED.completed_at WHERE todo_items.list_id IS NULL",
+    "ON CONFLICT (user_id, id) DO UPDATE SET title = EXCLUDED.title, completed_at = EXCLUDED.completed_at WHERE todo_items.list_id IS NULL",
   );
   // Replace only when explicitly requested; older clients submit history additions.
   if (data.replaceHistory === true) {
@@ -474,7 +500,7 @@ async function replaceTodos(client, data) {
   }
 }
 
-async function replaceShopping(client, data) {
+async function replaceShopping(client, data, userId) {
   const tasks = [
     ...data.tasks.map((item) => ({ ...item, archived: false })),
     ...(data.history ?? []).map((item) => ({ ...item, archived: true })),
@@ -482,7 +508,7 @@ async function replaceShopping(client, data) {
   await upsertRows(
     client,
     "manual_shopping_items",
-    ["id", "title", "product_url", "completed_at", "position", "source", "catalog_id", "quantity", "archived"],
+    ["id", "title", "product_url", "completed_at", "position", "source", "catalog_id", "quantity", "archived", "scope"],
     tasks.map((item, position) => [
       item.id,
       item.title,
@@ -493,7 +519,9 @@ async function replaceShopping(client, data) {
       item.filamentId ?? item.flossId,
       item.quantity,
       item.archived,
+      item.source ? userId : "",
     ]),
+    { keys: ["scope", "id"] },
   );
   // Legacy callers do not know retained history.
   await client.query({
@@ -616,6 +644,11 @@ async function replaceInventory(client, table, countColumn, inventory) {
 }
 
 const WRITERS = Object.freeze({
+  preferences: (client, data) =>
+    upsertRows(client, "user_preferences", ["hidden_navigation"], [[data.hiddenNavigation]], {
+      keys: ["user_id"],
+      updatedAt: false,
+    }),
   "work-tasks": replaceWorkTasks,
   "work-statuses": replaceWorkStatuses,
   colors: (client, colors) =>
@@ -629,35 +662,36 @@ const WRITERS = Object.freeze({
   "floss-inventory": (client, data) => replaceInventory(client, "floss_inventory", "skein_count", data),
 });
 
-async function replaceResource(pool, resource, data, expectedRevision) {
-  return transaction(pool, "", async (client) => {
+async function replaceResource(pool, resource, data, expectedRevision, userId) {
+  const scope = SHARED_APP_DATA_RESOURCES.includes(resource) ? "" : userId;
+  return transaction(pool, "", userId, async (client) => {
     await client.query({
-      text: `INSERT INTO app_data_revisions (resource, revision)
-             VALUES ($1, 0)
-             ON CONFLICT (resource) DO NOTHING`,
-      values: [resource],
+      text: `INSERT INTO app_data_revisions (resource, scope, revision)
+             VALUES ($1, $2, 0)
+             ON CONFLICT (scope, resource) DO NOTHING`,
+      values: [resource, scope],
     });
     const revisionRows = await queryRows(
       client,
       `SELECT revision
        FROM app_data_revisions
-       WHERE resource = $1
+       WHERE resource = $1 AND scope = $2
        FOR UPDATE`,
-      [resource],
+      [resource, scope],
     );
     const currentRevision = revisionRows[0].revision;
     if (currentRevision !== expectedRevision) {
       throw new AppDataRevisionConflictError(resource, expectedRevision, currentRevision);
     }
 
-    await WRITERS[resource](client, data);
+    await WRITERS[resource](client, data, userId);
     const updatedRows = await queryRows(
       client,
       `UPDATE app_data_revisions
        SET revision = revision + 1, updated_at = now()
-       WHERE resource = $1
+       WHERE resource = $1 AND scope = $2
        RETURNING revision`,
-      [resource],
+      [resource, scope],
     );
     return updatedRows[0].revision;
   });
@@ -665,7 +699,8 @@ async function replaceResource(pool, resource, data, expectedRevision) {
 
 export function createAppDataRepository(pool) {
   return {
-    read: () => readAppData(pool),
-    replace: (resource, data, expectedRevision) => replaceResource(pool, resource, data, expectedRevision),
+    read: (userId) => readAppData(pool, userId),
+    replace: (resource, data, expectedRevision, userId) =>
+      replaceResource(pool, resource, data, expectedRevision, userId),
   };
 }

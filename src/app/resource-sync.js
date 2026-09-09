@@ -20,6 +20,8 @@ export function createResourceSync({
   remoteValue,
   onChange = () => {},
   onSaved = () => {},
+  onUpdate = () => {},
+  merge = () => undefined,
   clock = globalThis,
   makeId = () => globalThis.crypto.randomUUID(),
   delay = 0,
@@ -84,7 +86,7 @@ export function createResourceSync({
     const revision = state.revisions?.[resource] ?? 0;
     const serialized = value === undefined ? undefined : canonical(resource, value);
     const initialized = !state.initializedResources || state.initializedResources.includes(resource);
-    saved.set(resource, { revision, serialized, initialized });
+    saved.set(resource, { revision, serialized, initialized, value: value === undefined ? undefined : copy(value) });
     if (initialized && serialized !== undefined && matches(resource, entry.value, serialized)) {
       onSaved(resource, copy(entry.value));
       remove(entry);
@@ -93,10 +95,30 @@ export function createResourceSync({
     if (serialized === entry.base || (entry.attempted !== undefined && serialized === entry.attempted)) {
       entry.revision = revision;
       entry.base = serialized;
+      entry.baseValue = copy(value);
       delete entry.attempted;
       persist(entry);
       states.delete(resource);
       return true;
+    }
+    if (entry.baseValue !== undefined && value !== undefined) {
+      try {
+        const merged = merge(resource, entry.baseValue, entry.value, value);
+        if (merged !== undefined) {
+          canonical(resource, merged);
+          entry.value = copy(merged);
+          entry.revision = revision;
+          entry.base = serialized;
+          entry.baseValue = copy(value);
+          delete entry.attempted;
+          persist(entry);
+          states.delete(resource);
+          onUpdate(resource, copy(merged));
+          return true;
+        }
+      } catch {
+        // Keep drafts recoverable if either version cannot be merged safely.
+      }
     }
     status(resource, "conflict", "The saved version differs from your local edits. Your local edits have been kept.");
     return false;
@@ -124,14 +146,16 @@ export function createResourceSync({
           if (entry.attempted !== undefined) {
             if (!reconcile(entry, await readRemote())) return;
             if (!entries.has(resource)) continue;
+            if (!matches(resource, entry.value, value)) continue;
           }
           entry.attempted = value;
           persist(entry);
           status(resource, "saving", "Saving changes…");
           const result = await send(resource, snapshot, entry.revision);
-          saved.set(resource, { revision: result.revision, serialized: value, initialized: true });
+          saved.set(resource, { revision: result.revision, serialized: value, initialized: true, value: snapshot });
           entry.revision = result.revision;
           entry.base = value;
+          entry.baseValue = snapshot;
           delete entry.attempted;
           delete entry.retryDelay;
           onSaved(resource, snapshot);
@@ -222,6 +246,7 @@ export function createResourceSync({
           revision: state.revisions?.[resource] ?? 0,
           initialized: !state.initializedResources || state.initializedResources.includes(resource),
           serialized: value === undefined ? undefined : canonical(resource, value),
+          value: value === undefined ? undefined : copy(value),
         });
       }
       let restored = [];
@@ -236,6 +261,28 @@ export function createResourceSync({
           state,
           restored.filter((entry) => entry.resource === resource),
         );
+      }
+      notify();
+    },
+    refresh(state, resources) {
+      for (const resource of resources) {
+        if (running.has(resource) || multipleDrafts.has(resource)) continue;
+        const value = remoteValue(state, resource);
+        if (value === undefined) continue;
+        const revision = state.revisions?.[resource] ?? 0;
+        if (revision === saved.get(resource)?.revision) continue;
+        const entry = entries.get(resource);
+        if (entry) {
+          if (reconcile(entry, state) && entries.has(resource)) schedule(resource);
+        } else {
+          saved.set(resource, {
+            revision,
+            serialized: canonical(resource, value),
+            initialized: true,
+            value: copy(value),
+          });
+          onUpdate(resource, copy(value));
+        }
       }
       notify();
     },
@@ -254,6 +301,7 @@ export function createResourceSync({
         resource,
         revision: saved.get(resource)?.revision ?? 0,
         base: saved.get(resource)?.serialized,
+        baseValue: saved.get(resource)?.value,
       };
       entry.value = copy(value);
       entries.set(resource, entry);
@@ -278,6 +326,7 @@ export function createResourceSync({
               revision: state.revisions?.[resource] ?? 0,
               initialized: !state.initializedResources || state.initializedResources.includes(resource),
               serialized: value === undefined ? undefined : canonical(resource, value),
+              value: value === undefined ? undefined : copy(value),
             });
             restoreResource(
               resource,

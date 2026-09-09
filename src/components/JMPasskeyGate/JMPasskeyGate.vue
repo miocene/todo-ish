@@ -14,6 +14,7 @@ export default {
   data() {
     return {
       bootstrapToken: "",
+      useSetupCode: this.bootstrapRequired,
       busy: false,
       error: "",
       supported: true,
@@ -25,7 +26,7 @@ export default {
   methods: {
     async submit() {
       if (this.busy || !this.supported) return;
-      if (this.bootstrapRequired && !this.bootstrapToken.trim()) {
+      if (this.useSetupCode && !this.bootstrapToken.trim()) {
         this.error = "Enter the one-time setup code from the home server.";
         return;
       }
@@ -33,7 +34,7 @@ export default {
       this.busy = true;
       this.error = "";
       try {
-        const result = this.bootstrapRequired
+        const result = this.useSetupCode
           ? await createPasskey(this.bootstrapToken.trim())
           : await authenticateWithPasskey();
         this.$emit("authenticated", result.user);
@@ -53,15 +54,15 @@ export default {
   <main class="jm-passkey-gate" aria-labelledby="passkey-title">
     <section class="jm-passkey-gate__panel" :aria-busy="busy">
       <p class="jm-passkey-gate__brand">Done-ish</p>
-      <h1 id="passkey-title">{{ bootstrapRequired ? "Create your passkey" : "Welcome back" }}</h1>
-      <p v-if="bootstrapRequired">
+      <h1 id="passkey-title">{{ useSetupCode ? "Create your passkey" : "Welcome back" }}</h1>
+      <p v-if="useSetupCode">
         Use the one-time setup code from the home server. After this, your passkey is all you need to sign in.
       </p>
       <p v-else>Use your passkey to open your lists.</p>
 
       <template v-if="supported">
         <JMInput
-          v-if="bootstrapRequired"
+          v-if="useSetupCode"
           v-model="bootstrapToken"
           label="One-time setup code"
           name="bootstrap-token"
@@ -72,10 +73,16 @@ export default {
           @keyup.enter="submit"
         />
 
+        <JMButton :text="useSetupCode ? 'Create passkey' : 'Sign in with passkey'" :disabled="busy" @click="submit" />
         <JMButton
-          :text="bootstrapRequired ? 'Create passkey' : 'Sign in with passkey'"
+          v-if="!bootstrapRequired"
+          :text="useSetupCode ? 'Back to sign in' : 'I have a setup code'"
+          view="ghost"
           :disabled="busy"
-          @click="submit"
+          @click="
+            useSetupCode = !useSetupCode;
+            error = '';
+          "
         />
       </template>
       <p v-else role="alert">This browser does not support passkeys.</p>

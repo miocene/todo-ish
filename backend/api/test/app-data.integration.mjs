@@ -4,6 +4,9 @@ import { readdir, readFile } from "node:fs/promises";
 import test from "node:test";
 import pg from "pg";
 import { createAppDataRepository, AppDataRevisionConflictError } from "../src/app-data-repository.mjs";
+import { createAuthRepository } from "../src/auth-repository.mjs";
+import { verifySetupCodes } from "./setup-code-cases.mjs";
+import { verifyMultiUserData } from "./multi-user-cases.mjs";
 import { validateAppDataResource } from "../src/app-data-validation.mjs";
 
 const connectionString = process.env.TEST_DATABASE_URL;
@@ -144,8 +147,17 @@ test("PostgreSQL application-data contract", async (t) => {
   url.pathname = `/${database}`;
   installer = new pg.Client({ connectionString: url.toString() });
   await installer.connect();
+  await installer.query(
+    `ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO "${role}"`,
+  );
   const migrationRoot = new URL("../../database/migrations/", import.meta.url);
   for (const filename of (await readdir(migrationRoot)).filter((name) => name.endsWith(".sql")).sort()) {
+    if (filename.startsWith("0008_")) {
+      await installer.query("INSERT INTO auth_users (id, username, display_name) VALUES ('first', 'first', 'First')");
+      await installer.query(
+        "INSERT INTO work_tasks (id, title, position) VALUES ('migrated', 'Existing personal work', 0)",
+      );
+    }
     const sql = (await readFile(new URL(filename, migrationRoot), "utf8")).replaceAll('"todo_runtime"', `"${role}"`);
     await installer.query("BEGIN");
     try {
@@ -157,7 +169,7 @@ test("PostgreSQL application-data contract", async (t) => {
     }
   }
   pool = new pg.Pool({ connectionString: url.toString(), max: 4 });
-  const repository = createAppDataRepository({
+  const runtimePool = {
     async connect() {
       const client = await pool.connect();
       try {
@@ -169,7 +181,24 @@ test("PostgreSQL application-data contract", async (t) => {
         throw error;
       }
     },
-  });
+  };
+  runtimePool.query = async (query) => {
+    const client = await runtimePool.connect();
+    try {
+      return await client.query(query);
+    } finally {
+      client.release();
+    }
+  };
+  const rawRepository = createAppDataRepository(runtimePool);
+
+  const repository = {
+    read: () => rawRepository.read("first"),
+    replace: (...args) => rawRepository.replace(...args, "first"),
+  };
+  await installer.query("INSERT INTO auth_users (id, username, display_name) VALUES ('second', 'second', 'Second')");
+  assert.equal((await repository.read()).workTasks[0].title, "Existing personal work");
+  assert.deepEqual((await rawRepository.read("second")).workTasks, []);
 
   await t.test("every resource survives validation, storage, and reconstruction", async () => {
     for (const [resource, value] of Object.entries(values)) {
@@ -381,4 +410,11 @@ test("PostgreSQL application-data contract", async (t) => {
     });
     assert.equal((await repository.read()).pages.printing.history[0].context, "Old project");
   });
+  await t.test("shared household data and private accounts remain isolated", () =>
+    verifyMultiUserData(rawRepository, "first", "second"),
+  );
+
+  await t.test("pre-created accounts use expiring, single-use setup codes", () =>
+    verifySetupCodes(createAuthRepository(runtimePool), "second"),
+  );
 });

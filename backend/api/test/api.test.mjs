@@ -23,7 +23,7 @@ async function withServer(repository, callback, authService = fakeAuthService(),
 function fakeAuthService(overrides = {}) {
   return {
     session: async () => ({ authenticated: true, bootstrapRequired: false, user: { displayName: "Owner" } }),
-    requireUser: async () => ({ username: "owner", displayName: "Owner" }),
+    requireUser: async () => ({ id: "owner", username: "owner", displayName: "Owner" }),
     registrationOptions: async () => ({ body: {}, cookies: [] }),
     verifyRegistration: async () => ({ body: {}, cookies: [] }),
     authenticationOptions: async () => ({ body: {}, cookies: [] }),
@@ -262,7 +262,7 @@ test("app-data API reads state and performs revision-checked writes", async () =
     assert.equal(write.headers.get("etag"), '"3"');
     assert.deepEqual(await write.json(), { resource: "shopping", revision: 3 });
     assert.deepEqual(calls, [
-      ["shopping", { tasks: [{ id: "manual", title: "Apples", completedAt: null, productLink: null }] }, 2],
+      ["shopping", { tasks: [{ id: "manual", title: "Apples", completedAt: null, productLink: null }] }, 2, "owner"],
     ]);
   });
 });
@@ -336,5 +336,40 @@ test("app-data API validates preconditions, payloads, and revision conflicts", a
       error: "The work-tasks data changed after revision 2",
       currentRevision: 4,
     });
+  });
+});
+
+test("data requests use the authenticated account and reject stale tabs after an account switch", async () => {
+  const calls = [];
+  const repository = fakeRepository({
+    read: async (id) => {
+      calls.push(["read", id]);
+      return { userId: id };
+    },
+    replace: async (...args) => {
+      calls.push(args);
+      return 1;
+    },
+  });
+  await withServer(repository, async (origin) => {
+    assert.equal((await fetch(`${origin}/api/data`, { headers: { "x-app-user-id": "other" } })).status, 401);
+    assert.equal(
+      (
+        await fetch(`${origin}/api/data/preferences`, {
+          method: "PUT",
+          headers: { "content-type": "application/json", "if-match": '"0"', "x-app-user-id": "other" },
+          body: JSON.stringify({ hiddenNavigation: [] }),
+        })
+      ).status,
+      401,
+    );
+    assert.deepEqual(calls, []);
+    const response = await fetch(`${origin}/api/data/preferences`, {
+      method: "PUT",
+      headers: { "content-type": "application/json", "if-match": '"0"', "x-app-user-id": "owner" },
+      body: JSON.stringify({ hiddenNavigation: ["printing"], userId: "other" }),
+    });
+    assert.equal(response.status, 200);
+    assert.deepEqual(calls[0], ["preferences", { hiddenNavigation: ["printing"] }, 0, "owner"]);
   });
 });

@@ -1,4 +1,5 @@
 <script>
+import { subscribeAppData } from "../app/app-data.js";
 import { filamentCatalog, filamentLabel, filamentProductLink, filaments } from "../app/filament-catalog.js";
 import { flossCatalog, floss, flossLabel, flossProductLink } from "../app/floss-catalog.js";
 import {
@@ -113,6 +114,19 @@ export default {
       this.family = "";
       this.query = typeof this.$route.query.q === "string" ? this.$route.query.q : "";
     },
+  },
+  mounted() {
+    this.subscriptions = [
+      subscribeAppData("filament-inventory", (value) => {
+        this.filamentInventory = value;
+      }),
+      subscribeAppData("floss-inventory", (value) => {
+        this.flossInventory = value;
+      }),
+    ];
+  },
+  beforeUnmount() {
+    for (const unsubscribe of this.subscriptions) unsubscribe();
   },
   methods: {
     catalogGroup(filament) {

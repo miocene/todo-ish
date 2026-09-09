@@ -31,6 +31,7 @@
  * @property {{ projects: (Project<StitchTask> & { totalCrosses?: number })[], history?: (Task & { context?: string })[] }} cross-stitch
  * @property {Record<string, number>} filament-inventory
  * @property {Record<string, number>} floss-inventory
+ * @property {{ hiddenNavigation: string[] }} preferences
  */
 
 export const APP_DATA_RESOURCES = Object.freeze([
@@ -44,6 +45,18 @@ export const APP_DATA_RESOURCES = Object.freeze([
   "cross-stitch",
   "filament-inventory",
   "floss-inventory",
+  "preferences",
+]);
+
+export const SHARED_APP_DATA_RESOURCES = Object.freeze(["chores", "shopping", "filament-inventory", "floss-inventory"]);
+export const NAVIGATION_IDS = Object.freeze([
+  "work",
+  "chores",
+  "todos",
+  "shopping",
+  "printing",
+  "cross-stitch",
+  "catalog",
 ]);
 
 /** @param {string | Date | null | undefined} completedAt */

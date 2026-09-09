@@ -1,5 +1,6 @@
 <script>
 import { createTaskEditor } from "../app/task-editor.js";
+import { subscribeAppData } from "../app/app-data.js";
 import { filamentCatalog } from "../app/filament-catalog.js";
 import { flossCatalog } from "../app/floss-catalog.js";
 import JMCatalogLoader from "../components/JMCatalogLoader/JMCatalogLoader.vue";
@@ -36,10 +37,40 @@ export default {
     "filamentCatalog.state.status": "refreshSupplies",
     "flossCatalog.state.status": "refreshSupplies",
   },
+  mounted() {
+    this.subscriptions = [
+      subscribeAppData("shopping", this.receiveShopping),
+      subscribeAppData("filament-inventory", () => this.refreshSupplies()),
+      subscribeAppData("floss-inventory", () => this.refreshSupplies()),
+    ];
+  },
   beforeUnmount() {
     this.editor.clear();
+    for (const unsubscribe of this.subscriptions) unsubscribe();
   },
   methods: {
+    receiveShopping() {
+      this.editor.moves.clear();
+      const shopping = syncSupplyShoppingLists();
+      const current = new Map(this.shopping.tasks.map((task) => [task.id, task]));
+      const tasks = shopping.tasks.map((item) => {
+        const task = current.get(item.id);
+        if (!item.source) this.validTitles.set(item.id, item.title);
+        if (!task) return item;
+        const editingBlank = document.activeElement?.id === this.taskInputId(task) && !task.title.trim();
+        Object.assign(
+          task,
+          { completed: false, completedAt: undefined },
+          item,
+          editingBlank ? { title: task.title } : {},
+        );
+        return task;
+      });
+      const ids = new Set(tasks.map((task) => task.id));
+      tasks.push(...this.shopping.tasks.filter((task) => this.editor.drafts.has(task.id) && !ids.has(task.id)));
+      this.shopping.tasks.splice(0, this.shopping.tasks.length, ...tasks);
+      this.shopping.history = shopping.history ?? [];
+    },
     refreshSupplies(status = "ready") {
       if (status !== "ready") return;
       const managed = new Map(

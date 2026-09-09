@@ -9,7 +9,7 @@ const MAX_OFFSET = 1_000_000;
 const MAX_QUERY_LENGTH = 100;
 const MAX_BODY_BYTES = 1_000_000;
 const CORS_METHODS = ["GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"];
-const CORS_HEADERS = ["content-type", "if-match"];
+const CORS_HEADERS = ["content-type", "if-match", "x-app-user-id"];
 
 class RequestError extends Error {
   constructor(message, statusCode = 400) {
@@ -60,6 +60,11 @@ function requireMethod(method, allowedMethods) {
   const error = new RequestError("Method not allowed", 405);
   error.allowedMethods = allowedMethods;
   throw error;
+}
+
+function checkAccount(request, user) {
+  if (request.headers["x-app-user-id"] && request.headers["x-app-user-id"] !== user.id)
+    throw new AuthError("Your account changed. Reload before saving.", 401, "account_changed");
 }
 
 function corsHeaders(request, allowedOrigin) {
@@ -168,8 +173,9 @@ export function createHttpServer(
         body = await authService.session(request.headers.cookie, authenticationBypass);
       } else if (url.pathname === "/api/auth/registration/options") {
         requireMethod(method, ["POST"]);
+        const input = await readJson(request);
         const result = await authService.registrationOptions({
-          bootstrapToken: (await readJson(request)).token,
+          bootstrapToken: input.token,
           cookieHeader: request.headers.cookie,
         });
         body = result.body;
@@ -214,17 +220,19 @@ export function createHttpServer(
         body = await repository.floss(pagination(url.searchParams));
         cacheControl = "private, max-age=60";
       } else if (url.pathname === "/api/data") {
-        await authService.requireUser(request.headers.cookie, authenticationBypass);
+        const user = await authService.requireUser(request.headers.cookie, authenticationBypass);
+        checkAccount(request, user);
         requireMethod(method, ["GET", "HEAD"]);
-        body = await repository.read();
+        body = await repository.read(user.id);
       } else {
-        await authService.requireUser(request.headers.cookie, authenticationBypass);
+        const user = await authService.requireUser(request.headers.cookie, authenticationBypass);
+        checkAccount(request, user);
         const resourceMatch = /^\/api\/data\/([a-z-]+)$/.exec(url.pathname);
         if (!resourceMatch || !isAppDataResource(resourceMatch[1])) throw new RequestError("Not found", 404);
         requireMethod(method, ["PUT"]);
         const resource = resourceMatch[1];
         const data = validateAppDataResource(resource, await readJson(request));
-        const revision = await repository.replace(resource, data, expectedRevision(request));
+        const revision = await repository.replace(resource, data, expectedRevision(request), user.id);
         body = { resource, revision };
         headers = { etag: `"${revision}"` };
       }

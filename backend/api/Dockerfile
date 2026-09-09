@@ -10,6 +10,7 @@ RUN corepack enable \
   && yarn cache clean
 
 COPY src ./src
+COPY scripts ./scripts
 
 USER node
 

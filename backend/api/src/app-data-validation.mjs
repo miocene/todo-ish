@@ -1,4 +1,4 @@
-import { APP_DATA_RESOURCES } from "./app-data-contract.mjs";
+import { APP_DATA_RESOURCES, NAVIGATION_IDS } from "./app-data-contract.mjs";
 export { APP_DATA_RESOURCES };
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -420,6 +420,13 @@ function inventory(value, resource) {
 }
 
 const VALIDATORS = Object.freeze({
+  preferences: (value) => {
+    const source = object(value, "preferences");
+    const hiddenNavigation = array(source.hiddenNavigation, "preferences.hiddenNavigation", 7);
+    if (hiddenNavigation.some((name) => !NAVIGATION_IDS.includes(name)))
+      fail("preferences.hiddenNavigation", "must contain known navigation items");
+    return { hiddenNavigation: [...new Set(hiddenNavigation)] };
+  },
   "work-tasks": workTasks,
   "work-statuses": workStatuses,
   colors: (value) => {

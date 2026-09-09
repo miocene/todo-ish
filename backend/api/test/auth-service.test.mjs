@@ -18,6 +18,8 @@ function fakeRepository(overrides = {}) {
   let challenge;
   return {
     hasOwner: async () => false,
+    firstUser: async () => ({ id: "owner-id", username: "julia", displayName: "Julia" }),
+    userForSetupCode: async () => null,
     userById: async () => null,
     credentialsForUser: async () => [],
     credentialById: async () => null,
@@ -26,7 +28,12 @@ function fakeRepository(overrides = {}) {
     },
     consumeChallenge: async (_tokenHash, ceremony) =>
       challenge?.ceremony === ceremony
-        ? { challenge: challenge.challenge, ceremony, userHandle: challenge.userHandle }
+        ? {
+            challenge: challenge.challenge,
+            ceremony,
+            userHandle: challenge.userHandle,
+            setupCodeHash: challenge.setupCodeHash,
+          }
         : null,
     storeCredentialAndSession: async () => {},
     sessionByTokenHash: async () => null,
@@ -85,7 +92,7 @@ test("passkey bootstrap stores a verified credential and creates a secure sessio
   });
   assert.deepEqual(result.body, {
     authenticated: true,
-    user: { username: "julia", displayName: "Julia" },
+    user: { id: result.body.user.id, username: "julia", displayName: "Julia" },
   });
   assert.match(result.cookies[1], /^__Host-doneish_session=/);
 
@@ -162,9 +169,10 @@ test("private development endpoint can explicitly bypass passkey sessions", asyn
   assert.deepEqual(await service.session("", true), {
     authenticated: true,
     bootstrapRequired: false,
-    user: { username: "julia", displayName: "Julia" },
+    user: { id: "owner-id", username: "julia", displayName: "Julia" },
   });
   assert.deepEqual(await service.requireUser("", true), {
+    id: "owner-id",
     username: "julia",
     displayName: "Julia",
   });

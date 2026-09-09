@@ -26,6 +26,51 @@ function mapCredential(row) {
 
 export function createAuthRepository(pool) {
   return {
+    async provisionUser({ user, setupCode }) {
+      const client = await pool.connect();
+      try {
+        await client.query("BEGIN");
+        await client.query({
+          text: "INSERT INTO auth_users (id, username, display_name) VALUES ($1, $2, $3) ON CONFLICT (username) DO NOTHING",
+          values: [user.id, user.username, user.displayName],
+        });
+        const existing = await client.query({
+          text: "SELECT id FROM auth_users WHERE username = $1 FOR UPDATE",
+          values: [user.username],
+        });
+        const userId = existing.rows[0].id;
+        await client.query({ text: "DELETE FROM auth_setup_codes WHERE user_id = $1", values: [userId] });
+        await client.query({
+          text: "INSERT INTO auth_setup_codes (token_hash, user_id, expires_at) VALUES ($1, $2, $3)",
+          values: [setupCode.tokenHash, userId, setupCode.expiresAt],
+        });
+        await client.query("COMMIT");
+        return userId;
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      } finally {
+        client.release();
+      }
+    },
+
+    async firstUser() {
+      const result = await pool.query(
+        `SELECT id AS "userId", username, display_name AS "displayName" FROM auth_users ORDER BY created_at, id LIMIT 1`,
+      );
+      return mapUser(result.rows[0]);
+    },
+
+    async userForSetupCode(tokenHash) {
+      const result = await pool.query({
+        text: `SELECT auth_users.id AS "userId", username, display_name AS "displayName"
+          FROM auth_setup_codes JOIN auth_users ON auth_users.id = auth_setup_codes.user_id
+          WHERE token_hash = $1 AND expires_at > now()`,
+        values: [tokenHash],
+      });
+      return mapUser(result.rows[0]);
+    },
+
     async hasOwner() {
       const result = await pool.query("SELECT EXISTS (SELECT 1 FROM auth_users) AS exists");
       return result.rows[0].exists;
@@ -77,8 +122,8 @@ export function createAuthRepository(pool) {
       await pool.query("DELETE FROM auth_challenges WHERE expires_at <= now()");
       await pool.query({
         text: `
-          INSERT INTO auth_challenges (token_hash, challenge, ceremony, user_handle, expires_at)
-          VALUES ($1, $2, $3, $4, $5)
+          INSERT INTO auth_challenges (token_hash, challenge, ceremony, user_handle, expires_at, setup_code_hash)
+          VALUES ($1, $2, $3, $4, $5, $6)
         `,
         values: [
           challenge.tokenHash,
@@ -86,6 +131,7 @@ export function createAuthRepository(pool) {
           challenge.ceremony,
           challenge.userHandle,
           challenge.expiresAt,
+          challenge.setupCodeHash ?? null,
         ],
       });
     },
@@ -95,30 +141,34 @@ export function createAuthRepository(pool) {
         text: `
           DELETE FROM auth_challenges
           WHERE token_hash = $1 AND ceremony = $2 AND expires_at > now()
-          RETURNING challenge, ceremony, user_handle AS "userHandle"
+          RETURNING challenge, ceremony, user_handle AS "userHandle", setup_code_hash AS "setupCodeHash"
         `,
         values: [tokenHash, ceremony],
       });
       return result.rows[0] ?? null;
     },
 
-    async storeCredentialAndSession({ credential, session, user }) {
+    async storeCredentialAndSession({ credential, session, user, setupCodeHash }) {
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
         await client.query("LOCK TABLE auth_users IN SHARE ROW EXCLUSIVE MODE");
-        const ownerResult = await client.query(
-          `SELECT id AS "userId", username, display_name AS "displayName" FROM auth_users LIMIT 1`,
-        );
-        const owner = mapUser(ownerResult.rows[0]);
-        if (owner && owner.id !== user.id) {
-          throw new AuthRepositoryConflictError("A different owner is already registered");
-        }
-        if (!owner) {
+        const existing = await client.query({ text: "SELECT id FROM auth_users WHERE id = $1", values: [user.id] });
+        if (!existing.rows.length) {
+          const owners = await client.query("SELECT id FROM auth_users LIMIT 1");
+          if (owners.rows.length) throw new AuthRepositoryConflictError("The account has not been provisioned");
           await client.query({
             text: "INSERT INTO auth_users (id, username, display_name) VALUES ($1, $2, $3)",
             values: [user.id, user.username, user.displayName],
           });
+        }
+        if (setupCodeHash) {
+          const setup = await client.query({
+            text: "DELETE FROM auth_setup_codes WHERE token_hash = $1 AND user_id = $2 AND expires_at > now() RETURNING user_id",
+            values: [setupCodeHash, user.id],
+          });
+          if (!setup.rows.length)
+            throw new AuthRepositoryConflictError("The setup code has expired or was already used");
         }
         await client.query({
           text: `
@@ -142,7 +192,7 @@ export function createAuthRepository(pool) {
           values: [session.tokenHash, user.id, session.expiresAt],
         });
         await client.query("COMMIT");
-        return owner ?? user;
+        return user;
       } catch (error) {
         await client.query("ROLLBACK");
         throw error;

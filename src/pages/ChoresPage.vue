@@ -1,6 +1,7 @@
 <script>
 import { loadCardColors } from "../app/card-colors.js";
 import { appClock } from "../app/clock.js";
+import { subscribeAppData } from "../app/app-data.js";
 import { loadPageTasks, savePageTasks } from "../app/page-tasks.js";
 import { setTaskCompletion, createCompletionMoveScheduler, moveItemForCompletion } from "../app/task-list.js";
 import { calendarDate } from "../app/date.js";
@@ -40,6 +41,12 @@ export default {
   },
   mounted() {
     this.advanceChores();
+    this.unsubscribeChores = subscribeAppData("chores", () => {
+      this.moves.clear();
+      const chores = loadPageTasks("chores");
+      this.chores = { ...chores, history: chores.history ?? [] };
+      this.advanceChores();
+    });
   },
   watch: {
     todayIso() {
@@ -48,6 +55,7 @@ export default {
   },
   beforeUnmount() {
     this.moves.clear();
+    this.unsubscribeChores();
   },
   computed: {
     todayIso() {
