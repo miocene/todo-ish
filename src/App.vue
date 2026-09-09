@@ -62,17 +62,15 @@ export default {
       Some local edits could not be read. Download your edits to preserve the original records.
     </p>
     <p v-if="!syncState.durable">Local backup is unavailable. Keep this tab open or download your edits.</p>
-    <template>
-      <JMButton text="Retry" view="secondary" @click="retryPendingWrites" />
-      <JMButton text="Download local edits" view="secondary" @click="downloadPendingWrites" />
-      <JMButton v-if="syncState.durable" text="Reload" view="secondary" @click="reload" />
-      <JMButton
-        v-if="syncState.state === 'conflict'"
-        text="Discard local edits and reload"
-        view="secondary"
-        @click="discardAndReload"
-      />
-    </template>
+    <JMButton text="Retry" view="secondary" @click="retryPendingWrites" />
+    <JMButton text="Download local edits" view="secondary" @click="downloadPendingWrites" />
+    <JMButton v-if="syncState.durable" text="Reload" view="secondary" @click="reload" />
+    <JMButton
+      v-if="syncState.state === 'conflict'"
+      text="Discard local edits and reload"
+      view="secondary"
+      @click="discardAndReload"
+    />
   </aside>
 
   <JMHeader />
