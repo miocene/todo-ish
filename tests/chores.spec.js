@@ -20,6 +20,7 @@ test("add and edit weekly schedules in a modal, applying only on submit", async 
   await dialog.getByRole("checkbox", { name: "Wednesday" }).check();
   await dialog.getByRole("checkbox", { name: "Friday" }).check();
   expect(appData.get("chores").tasks).toEqual([]);
+  await expect(dialog.locator(".chore-preview time")).toHaveAttribute("datetime", "2026-02-02");
   await dialog.getByRole("button", { name: "Add chore", exact: true }).click();
   await expect(dialog).not.toBeVisible();
   await expect.poll(() => appData.get("chores").tasks[0]?.schedule.weekdays).toEqual([0, 2, 4]);
@@ -74,6 +75,7 @@ test("monthly picker fits mobile and clamps dates to month-end", async ({ page, 
   await advisory(async (expect) =>
     expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true),
   );
+  await expect(dialog.locator(".chore-preview time")).toHaveAttribute("datetime", "2026-02-28");
   await page.screenshot({ path: "test-results/chore-modal-mobile.png" });
   await dialog.getByRole("button", { name: "Add chore", exact: true }).click();
   await expect.poll(() => appData.get("chores").tasks[0]?.nextDue).toBe("2026-02-28");
@@ -129,6 +131,8 @@ test("legacy chores render, future chores stay hidden, and title-only edits pres
   await page.getByRole("button", { name: "Edit past chore", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByRole("combobox", { name: "Frequency" })).toHaveValue("day");
+  await expect(dialog.locator(".chore-preview")).toContainText("Outstanding overdue occurrence");
+  await expect(dialog.locator(".chore-preview time")).toHaveAttribute("datetime", "2026-02-01");
   await dialog.getByRole("textbox", { name: "Title", exact: true }).fill("Overdue chore");
   await dialog.getByRole("textbox", { name: "Title", exact: true }).press("Enter");
   await expect.poll(() => appData.get("chores").tasks[0]?.title).toBe("Overdue chore");

@@ -4,7 +4,7 @@ import { appClock } from "../app/clock.js";
 import { subscribeAppData } from "../app/app-data.js";
 import { loadPageTasks, savePageTasks } from "../app/page-tasks.js";
 import { setTaskCompletion, createCompletionMoveScheduler, moveItemForCompletion } from "../app/task-list.js";
-import { calendarDate } from "../app/date.js";
+import { calendarDate, shiftIsoDate, toIsoDate } from "../app/date.js";
 import JMModal from "../components/JMModal/JMModal.vue";
 import JMInput from "../components/JMInput/JMInput.vue";
 import JMButton from "../components/JMButton/JMButton.vue";
@@ -61,6 +61,23 @@ export default {
     this.unsubscribeChores();
   },
   computed: {
+    occurrencePreview() {
+      if (!this.draft || !this.scheduleValid) return null;
+      const task = this.chores.tasks.find((item) => item.id === this.draft.id);
+      const schedule = this.draft.schedule;
+      if (task?.completed) {
+        const completedDate = task.completedAt ? toIsoDate(new Date(task.completedAt)) : this.todayIso;
+        const after = completedDate > task.nextDue ? completedDate : task.nextDue;
+        return { date: nextChoreDate(schedule, shiftIsoDate(after, 1)), label: "Next occurrence" };
+      }
+      if (task && (task.nextDue <= this.todayIso || sameChoreSchedule(task.schedule, schedule))) {
+        return {
+          date: task.nextDue,
+          label: task.nextDue < this.todayIso ? "Outstanding overdue occurrence" : "Next occurrence",
+        };
+      }
+      return { date: nextChoreDate(schedule, this.todayIso), label: "Next occurrence" };
+    },
     todayIso() {
       return appClock.state.today;
     },
@@ -73,6 +90,9 @@ export default {
   },
   methods: {
     description: choreDescription,
+    previewDate(date) {
+      return DUE_DATE_FORMATTER.format(calendarDate(date));
+    },
     advanceChores() {
       let changed = false;
       for (const task of this.chores.tasks) {
@@ -260,6 +280,11 @@ export default {
         Previous rule: {{ draft.legacyRule }}. Choose a schedule to confirm how this chore repeats.
       </p>
       <JMChoreSchedule v-model="draft.schedule" v-model:valid="scheduleValid" :title="draft.title" />
+      <p v-if="occurrencePreview" class="chore-preview" role="status">
+        {{ occurrencePreview.label }}:
+        <time :datetime="occurrencePreview.date">{{ previewDate(occurrencePreview.date) }}</time
+        >.
+      </p>
       <div class="chore-form__actions">
         <JMButton text="Cancel" view="ghost" @click="$refs.choreModal.close()" />
         <JMButton
