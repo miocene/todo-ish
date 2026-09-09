@@ -1,3 +1,4 @@
+import { createPendingStorage } from "./pending-storage.js";
 import { reactive } from "vue";
 import { apiFetch, setApiAccount } from "./api.js";
 import { APP_DATA_RESOURCES, validateAppDataResource } from "../../backend/api/src/app-data-validation.mjs";
@@ -134,7 +135,7 @@ function clearLegacyValue(resource) {
 
 const PENDING_PREFIX = "done-ish.pending-write.v1:";
 const pendingPrefix = () => `done-ish.pending-write.v2:${accountId}:`;
-export const syncState = reactive({ state: "saved", message: "", pending: 0, durable: true });
+export const syncState = reactive({ state: "saved", message: "", pending: 0, durable: true, corrupt: [] });
 
 const occurrenceKey = (item) => `${item.id}:${item.nextDue}`;
 
@@ -151,25 +152,15 @@ async function fetchRemoteState() {
 
 const sync = createResourceSync({
   delay: 250,
-  storage: {
-    load() {
-      const entries = new Map();
-      for (let index = 0; index < localStorage.length; index++) {
-        const key = localStorage.key(index);
-        if (!key?.startsWith(pendingPrefix()) && !(legacyOwner && key?.startsWith(PENDING_PREFIX))) continue;
-        const entry = JSON.parse(localStorage.getItem(key));
-        if (entry && typeof entry.id === "string" && RESOURCES.includes(entry.resource) && entry.value !== undefined) {
-          if (!entries.has(entry.id) || key.startsWith(pendingPrefix())) entries.set(entry.id, entry);
-        }
-      }
-      return [...entries.values()];
+  storage: createPendingStorage({
+    storage: () => localStorage,
+    prefix: pendingPrefix,
+    legacyPrefix: () => (legacyOwner ? PENDING_PREFIX : null),
+    resources: RESOURCES,
+    onCorrupt: (records) => {
+      syncState.corrupt = records;
     },
-    save: (entry) => localStorage.setItem(`${pendingPrefix()}${entry.id}`, JSON.stringify(entry)),
-    remove: (id) => {
-      localStorage.removeItem(`${pendingPrefix()}${id}`);
-      if (legacyOwner) localStorage.removeItem(`${PENDING_PREFIX}${id}`);
-    },
-  },
+  }),
   normalize(resource, value) {
     const normalized = validateAppDataResource(resource, value);
     // The older development API discards these mock-only fields. Exclude them from revision comparisons.
@@ -241,7 +232,9 @@ function queueWrite(resource, value) {
 export const retryPendingWrites = () => sync.retry();
 export const discardPendingWrites = () => sync.discard();
 export function downloadPendingWrites() {
-  const url = URL.createObjectURL(new Blob([JSON.stringify(sync.pending(), null, 2)], { type: "application/json" }));
+  const url = URL.createObjectURL(
+    new Blob([JSON.stringify([...sync.pending(), ...syncState.corrupt], null, 2)], { type: "application/json" }),
+  );
   const link = document.createElement("a");
   link.href = url;
   link.download = "done-ish-local-edits.json";
