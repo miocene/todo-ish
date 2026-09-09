@@ -335,6 +335,13 @@ export default {
         this.editMessage = "A project can contain up to 2,000 items.";
         return;
       }
+      // Settle our own delayed moves before taking the conflict-detection snapshot.
+      for (const task of project.tasks) this.editor.moves.cancel(task.id);
+      const ordered = completedTasksLast(project.tasks);
+      if (ordered.some((task, index) => task !== project.tasks[index])) {
+        project.tasks = ordered;
+        this.save();
+      }
       this.projectOriginal = JSON.stringify(project);
       this.editMessage = "";
       this.projectDraft = JSON.parse(JSON.stringify(project));

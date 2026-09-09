@@ -75,3 +75,21 @@ test("filament selects show catalog swatches in options and selected values", as
   await select.selectOption("");
   await expect(select.locator(".button .selection img.swatch")).toHaveCount(0);
 });
+
+test("opening an editor settles pending completion moves without creating a conflict", async ({ page, appData }) => {
+  await page.clock.install();
+  await page.goto("/printing");
+  const card = page.locator(".project-card").first();
+  await card.getByRole("checkbox", { name: "Complete Large cable clip", exact: true }).check();
+  await editFirst(page);
+  await page.clock.runFor(600);
+  const dialog = page.getByRole("dialog", { name: "Edit project" });
+  await dialog.getByRole("textbox", { name: "Project name" }).fill("Edited after completion");
+  await save(page);
+  await expect(dialog).not.toBeVisible();
+  await expect(card.getByRole("heading")).toContainText("Edited after completion");
+  await page.clock.runFor(300);
+  await expect.poll(() => appData.get("printing").projects[0].title).toBe("Edited after completion");
+  const completed = appData.get("printing").projects[0].tasks.find((task) => task.title === "Large cable clip");
+  expect(completed.completed).toBe(true);
+});
