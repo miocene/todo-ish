@@ -1,5 +1,5 @@
 <script>
-import { flossCatalog, flossById, floss, flossLabel } from "../../app/floss-catalog.js";
+import { flossCatalog, flossById, flossOptions } from "../../app/floss-catalog.js";
 import JMProgress from "../JMProgress/JMProgress.vue";
 import JMInput from "../JMInput/JMInput.vue";
 import JMSelect from "../JMSelect/JMSelect.vue";
@@ -22,7 +22,7 @@ export default {
       if (this.task.flossId && !flossById.has(this.task.flossId)) {
         options.push({ value: this.task.flossId, text: this.task.title || this.task.flossId });
       }
-      return [...options, ...floss.map((thread) => ({ value: thread.id, text: flossLabel(thread) }))];
+      return [...options, ...flossOptions.value];
     },
     shortage() {
       return this.supplyById.get(this.task.flossId);

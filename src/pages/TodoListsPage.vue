@@ -216,10 +216,10 @@ export default {
   </JMCard>
 
   <JMModal ref="newListModal" class="todo-list-modal" aria-label="New list">
-    <form class="todo-list-form" @submit.prevent="addList">
+    <form class="jm-modal__form" @submit.prevent="addList">
       <h2>New list</h2>
       <JMInput v-model="listName" label="List name" required :maxlength="limits.title" autofocus />
-      <div class="todo-list-form__actions">
+      <div class="jm-modal__actions">
         <JMButton text="Cancel" view="ghost" @click="$refs.newListModal.close()" />
         <JMButton text="Create list" type="submit" :disabled="!listName.trim()" />
       </div>

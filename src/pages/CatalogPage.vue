@@ -82,7 +82,7 @@ export default {
       return this.floss
         .filter((thread) => [thread.id, thread.number, thread.colorName].join(" ").toLocaleLowerCase().includes(query))
         .sort((first, second) => {
-          const priority = this.flossCatalogPriority(first) - this.flossCatalogPriority(second);
+          const priority = this.catalogPriority(first) - this.catalogPriority(second);
           return priority || first.number.localeCompare(second.number, undefined, { numeric: true });
         });
     },
@@ -96,7 +96,7 @@ export default {
           title: flossLabel(thread),
           href: flossProductLink(thread),
           swatch: thread.color,
-          group: this.flossCatalogGroup(thread),
+          group: this.catalogGroup(thread),
           required: this.flossSupplyById.get(thread.id)?.requiredSkeins ?? 0,
         }));
       }
@@ -151,22 +151,12 @@ export default {
     catalogGroup(filament) {
       return ["owned", "needed", "other"][this.catalogPriority(filament)];
     },
-    catalogPriority(filament) {
-      const ownedSpools = this.filamentInventory[filament.id] ?? 0;
-      const missingSpools = this.supplyById.get(filament.id)?.missingSpools ?? 0;
-      if (ownedSpools > 0 && missingSpools === 0) return 0;
-      if (missingSpools > 0) return 1;
-      return 2;
-    },
-    flossCatalogGroup(thread) {
-      return ["owned", "needed", "other"][this.flossCatalogPriority(thread)];
-    },
-    flossCatalogPriority(thread) {
-      const ownedSkeins = this.flossInventory[thread.id] ?? 0;
-      const missingSkeins = this.flossSupplyById.get(thread.id)?.missingSkeins ?? 0;
-      if (ownedSkeins > 0 && missingSkeins === 0) return 0;
-      if (missingSkeins > 0) return 1;
-      return 2;
+    catalogPriority(item) {
+      const owned = this.inventory[item.id] ?? 0;
+      const missing = this.isFlossCatalog
+        ? (this.flossSupplyById.get(item.id)?.missingSkeins ?? 0)
+        : (this.supplyById.get(item.id)?.missingSpools ?? 0);
+      return missing > 0 ? 1 : owned > 0 ? 0 : 2;
     },
     saveInventory() {
       if (this.isFlossCatalog) {

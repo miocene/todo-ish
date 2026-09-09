@@ -1,3 +1,4 @@
+import { computed } from "vue";
 import { createCatalog } from "./catalog-loader.js";
 
 export const flossCatalog = createCatalog({ path: "/catalogs/floss", label: "floss catalog" });
@@ -11,3 +12,5 @@ export function flossLabel(thread) {
 export function flossProductLink(thread) {
   return thread.link;
 }
+
+export const flossOptions = computed(() => floss.map((thread) => ({ value: thread.id, text: flossLabel(thread) })));

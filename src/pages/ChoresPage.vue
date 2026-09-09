@@ -265,7 +265,7 @@ export default {
     :aria-label="draft?.id ? 'Edit chore' : 'Add chore'"
     @close="draft = null"
   >
-    <form v-if="draft" class="chore-form" @submit.prevent="saveDraft">
+    <form v-if="draft" class="jm-modal__form" @submit.prevent="saveDraft">
       <h2>{{ draft.id ? "Edit chore" : "Add chore" }}</h2>
       <p v-if="editMessage" role="alert">{{ editMessage }}</p>
       <JMInput
@@ -285,7 +285,7 @@ export default {
         <time :datetime="occurrencePreview.date">{{ previewDate(occurrencePreview.date) }}</time
         >.
       </p>
-      <div class="chore-form__actions">
+      <div class="jm-modal__actions">
         <JMButton text="Cancel" view="ghost" @click="$refs.choreModal.close()" />
         <JMButton
           type="submit"

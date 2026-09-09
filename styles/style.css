@@ -44,20 +44,6 @@ main {
   border: 0;
 }
 
-.chore-form,
-.todo-list-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.chore-form__actions,
-.todo-list-form__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-3);
-}
-
 :is(.chores-all, .chores-due, .todo-list-card, .shopping-card) .task-item .content {
   min-inline-size: 0;
   overflow-wrap: anywhere;

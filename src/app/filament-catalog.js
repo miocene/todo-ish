@@ -1,3 +1,4 @@
+import { computed } from "vue";
 import { createCatalog } from "./catalog-loader.js";
 
 export const filamentCatalog = createCatalog({ path: "/catalogs/filaments", label: "filament catalog" });
@@ -18,3 +19,7 @@ export function filamentProductLink(filament) {
 export function filamentSearchLink(label) {
   return `https://eu.store.bambulab.com/search?q=${encodeURIComponent(label)}`;
 }
+
+export const filamentOptions = computed(() =>
+  filaments.map((filament) => ({ value: filament.id, text: filamentLabel(filament), swatch: filament.swatch })),
+);

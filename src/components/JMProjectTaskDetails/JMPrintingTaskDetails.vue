@@ -1,6 +1,6 @@
 <script>
 import JMSwatch from "../JMSwatch/JMSwatch.vue";
-import { filamentCatalog, filamentLabel, filaments, filamentsById } from "../../app/filament-catalog.js";
+import { filamentCatalog, filamentOptions, filamentsById } from "../../app/filament-catalog.js";
 import JMButton from "../JMButton/JMButton.vue";
 import JMInput from "../JMInput/JMInput.vue";
 import JMSelect from "../JMSelect/JMSelect.vue";
@@ -19,11 +19,7 @@ export default {
   },
   computed: {
     catalogOptions() {
-      return filaments.map((filament) => ({
-        value: filament.id,
-        text: filamentLabel(filament),
-        swatch: filament.swatch,
-      }));
+      return filamentOptions.value;
     },
   },
   methods: {
