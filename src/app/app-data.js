@@ -1,3 +1,5 @@
+import { archiveLegacyResource, legacyStorageExport } from "./legacy-storage.js";
+import { exportAccountData } from "../../backend/api/src/data-transfer.mjs";
 import {
   HISTORY_RESOURCES,
   historyDelta,
@@ -46,6 +48,8 @@ export const retryAppDataRefresh = () => refreshNow?.();
 let hydrated = false;
 let mockColors = false;
 let accountId;
+let account;
+export const legacyBackupState = reactive({ available: false, error: "" });
 let legacyOwner = false;
 const subscribers = new Map();
 
@@ -104,12 +108,15 @@ function legacyValue(resource) {
   }
 }
 
-function clearLegacyValue(resource) {
+function archiveLegacyValue(resource) {
   if (!legacyOwner || !LEGACY_STORAGE_KEYS[resource]) return;
   try {
-    localStorage.removeItem(LEGACY_STORAGE_KEYS[resource]);
+    if (archiveLegacyResource(localStorage, accountId, LEGACY_STORAGE_KEYS[resource]))
+      legacyBackupState.available = true;
   } catch {
-    // The database remains authoritative when browser storage is unavailable.
+    legacyBackupState.available = true;
+    legacyBackupState.error =
+      "The old browser data is still in place, but its backup could not be saved. Download it to keep a separate copy.";
   }
 }
 
@@ -241,14 +248,7 @@ const sync = createResourceSync({
   onSaved(resource, _snapshot, result) {
     if (result?.stockState) sync.refresh(result.stockState, ["filament-inventory", "floss-inventory"]);
     initializedResources.add(resource);
-    clearLegacyValue(resource);
-    if (resource === "preferences" && legacyOwner) {
-      try {
-        localStorage.removeItem("done-ish.hidden-navigation.v1");
-      } catch {
-        /* The saved account preferences are authoritative. */
-      }
-    }
+    archiveLegacyValue(resource);
   },
 });
 
@@ -287,12 +287,23 @@ function queueWrite(resource, value) {
 export const retryPendingWrites = () => sync.retry();
 export const discardPendingWrites = () => sync.discard();
 export function downloadPendingWrites() {
-  const url = URL.createObjectURL(
-    new Blob([JSON.stringify([...sync.pending(), ...syncState.corrupt], null, 2)], { type: "application/json" }),
+  downloadJson([...sync.pending(), ...syncState.corrupt], "done-ish-local-edits.json");
+}
+export async function downloadSavedData() {
+  downloadJson(exportAccountData(account, await fetchRemoteState()), `done-ish-${account.username}-data.json`);
+}
+export function downloadLegacyData() {
+  if (!legacyOwner) return;
+  downloadJson(
+    legacyStorageExport(localStorage, accountId, Object.values(LEGACY_STORAGE_KEYS)),
+    "done-ish-old-browser-data.json",
   );
+}
+function downloadJson(data, filename) {
+  const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
   const link = document.createElement("a");
   link.href = url;
-  link.download = "done-ish-local-edits.json";
+  link.download = filename;
   link.click();
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
@@ -300,10 +311,12 @@ export function downloadPendingWrites() {
 export async function initializeAppData(user) {
   if (!user?.id) throw new Error("The session did not include an account ID.");
   accountId = user.id;
+  account = { id: user.id, username: user.username ?? user.id };
   setApiAccount(accountId);
   const state = await fetchRemoteState();
   if (!state || typeof state !== "object") throw new Error("App data response is invalid");
   legacyOwner = state.legacyOwner === true;
+  for (const resource of RESOURCES) archiveLegacyValue(resource);
 
   mockColors = Boolean(import.meta.env.DEV && !Object.hasOwn(state.revisions ?? {}, "colors"));
   if (mockColors) cache.set("colors", readMockColors());
@@ -315,7 +328,7 @@ export async function initializeAppData(user) {
     if (value === undefined) throw new Error(`App data response is missing ${resource}`);
     initializedResources.add(resource);
     cache.set(resource, value);
-    clearLegacyValue(resource);
+    archiveLegacyValue(resource);
   }
   const resources = RESOURCES.filter((resource) => !mockColors || resource !== "colors");
   sync.hydrate(state, resources);

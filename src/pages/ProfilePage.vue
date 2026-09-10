@@ -1,19 +1,23 @@
 <script>
 import "./profile-page.css";
-import { subscribeAppData } from "../app/app-data.js";
+import { subscribeAppData, downloadSavedData, downloadLegacyData, legacyBackupState } from "../app/app-data.js";
 import { appClock } from "../app/clock.js";
 import { RouterLink } from "vue-router";
 import { activityYears, collectCompletedActivity, groupActivityByDay } from "../app/activity.js";
 import JMActivityGraph from "../components/JMActivityGraph/JMActivityGraph.vue";
+import JMButton from "../components/JMButton/JMButton.vue";
 import JMIcon from "../components/JMIcon/JMIcon.vue";
 import JMTabs from "../components/JMTabs/JMTabs.vue";
 
 export default {
   name: "ProfilePage",
-  components: { JMActivityGraph, JMIcon, JMTabs, RouterLink },
+  components: { JMButton, JMActivityGraph, JMIcon, JMTabs, RouterLink },
   data() {
     return {
       activity: collectCompletedActivity(),
+      legacyBackupState,
+      exporting: false,
+      exportError: "",
     };
   },
   mounted() {
@@ -48,6 +52,18 @@ export default {
     },
   },
   methods: {
+    downloadLegacyData,
+    async exportData() {
+      this.exporting = true;
+      this.exportError = "";
+      try {
+        await downloadSavedData();
+      } catch (error) {
+        this.exportError = error.message;
+      } finally {
+        this.exporting = false;
+      }
+    },
     yearRoute(year) {
       return { name: "profile", query: year === this.currentYear ? {} : { year: String(year) } };
     },
@@ -60,6 +76,23 @@ export default {
     <header class="profile-page__header">
       <h1 id="profile-title">Activity</h1>
     </header>
+
+    <section aria-label="Data backup">
+      <JMButton
+        :text="exporting ? 'Preparing download…' : 'Download saved data'"
+        view="secondary"
+        :disabled="exporting"
+        @click="exportData"
+      />
+      <JMButton
+        v-if="legacyBackupState.available"
+        text="Download old browser data"
+        view="secondary"
+        @click="downloadLegacyData"
+      />
+      <p v-if="exportError" role="alert">{{ exportError }}</p>
+      <p v-if="legacyBackupState.error" role="status">{{ legacyBackupState.error }}</p>
+    </section>
 
     <JMTabs :tabs="yearTabs" :active="selectedYear" aria-label="Activity years" />
 

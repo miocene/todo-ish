@@ -159,13 +159,8 @@ export function loadPageTasks(page) {
   const migrate =
     Boolean(normalized && collection) &&
     data[collection].some((item, index) => item.color !== saved[collection][index].color);
-  const value = migrate
-    ? {
-        ...saved,
-        [collection]: saved[collection].map((item, index) => ({ ...item, color: data[collection][index].color })),
-      }
-    : data;
-  initializeAppDataResource(resource, value, { migrate });
+  // Color migration must also retain normalized legacy task fields in the saved snapshot.
+  initializeAppDataResource(resource, data, { migrate });
   // Existing resources keep their cached value; the page still needs normalized fields.
   return data;
 }

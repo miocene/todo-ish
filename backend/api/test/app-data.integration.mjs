@@ -1,3 +1,4 @@
+import { verifyDataTransfer } from "./transfer-cases.mjs";
 import { measurePolling } from "./polling-cases.mjs";
 import { verifyAuthCleanup } from "./auth-cleanup-cases.mjs";
 import { verifyHistoryTransport } from "./history-cases.mjs";
@@ -427,6 +428,10 @@ test("PostgreSQL application-data contract", async (t) => {
   await t.test("bounded authentication expiry cleanup", () => verifyAuthCleanup(runtimePool, "first"));
 
   await t.test("revision polling measurement and query plan", () => measurePolling(runtimePool, "first", "second"));
+
+  await t.test("account-aware export, preview and atomic restore", () =>
+    verifyDataTransfer(rawRepository, runtimePool, "first", "second"),
+  );
 
   await t.test("pre-created accounts use expiring, single-use setup codes", () =>
     verifySetupCodes(createAuthRepository(runtimePool), "second"),

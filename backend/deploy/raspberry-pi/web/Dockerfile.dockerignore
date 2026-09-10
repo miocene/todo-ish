@@ -11,6 +11,7 @@ backend/api/src/*
 !backend/api/src/app-data-contract.mjs
 !backend/api/src/app-data-validation.mjs
 !backend/api/src/history-transport.mjs
+!backend/api/src/data-transfer.mjs
 backend/catalogs
 backend/database
 backend/scripts
