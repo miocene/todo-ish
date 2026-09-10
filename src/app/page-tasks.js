@@ -1,3 +1,4 @@
+import { pageResource } from "../../backend/api/src/app-data-contract.mjs";
 import { scheduleFromChore } from "./chore-schedule.js";
 import { todayIso, isIsoDate } from "./date.js";
 import { initialAppData, initializeAppDataResource, readAppData, writeAppData } from "./app-data.js";
@@ -146,7 +147,7 @@ const PAGE_NORMALIZERS = Object.freeze({
 });
 
 export function loadPageTasks(page) {
-  const resource = page === "crossStitch" ? "cross-stitch" : page;
+  const resource = pageResource(page);
   const defaultData = initialAppData(resource);
   const normalize = PAGE_NORMALIZERS[page];
   if (!defaultData || !normalize) throw new Error(`Unknown task page: ${page}`);
@@ -171,7 +172,7 @@ export function loadPageTasks(page) {
 
 export function savePageTasks(page, data) {
   for (const item of data.projects ?? data.lists ?? []) item.color = normalizeCardColor(item.color);
-  writeAppData(page === "crossStitch" ? "cross-stitch" : page, data);
+  writeAppData(pageResource(page), data);
 }
 
 export function loadFilamentInventory() {

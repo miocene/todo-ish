@@ -1,3 +1,4 @@
+import { emptyResource, setStateResource } from "../backend/api/src/app-data-contract.mjs";
 import { expect, test as base } from "@playwright/test";
 import { APP_DATA_RESOURCES, validateAppDataResource } from "../backend/api/src/app-data-validation.mjs";
 import filamentCatalog from "../backend/catalogs/bambu-filaments.snapshot.json" with { type: "json" };
@@ -6,27 +7,10 @@ import flossCatalog from "../backend/catalogs/dmc-floss.snapshot.json" with { ty
 const appDataByPage = new WeakMap();
 
 function emptyAppData(values, revisions, userId = "owner") {
-  return {
-    userId,
-    legacyOwner: userId === "owner",
-    preferences: values.preferences ?? { hiddenNavigation: [] },
-    initializedResources: Object.keys(values),
-    revisions,
-    workTasks: values["work-tasks"] ?? [],
-    workStatuses: values["work-statuses"] ?? {},
-    colors: values["colors"] ?? {},
-    pages: {
-      chores: values.chores ?? { occurrenceOrder: [], tasks: [] },
-      todos: values.todos ?? { lists: [] },
-      shopping: values.shopping ?? { tasks: [] },
-      printing: values.printing ?? { projects: [] },
-      crossStitch: values["cross-stitch"] ?? { projects: [] },
-    },
-    inventories: {
-      filament: values["filament-inventory"] ?? {},
-      floss: values["floss-inventory"] ?? {},
-    },
-  };
+  const state = { userId, legacyOwner: userId === "owner", initializedResources: Object.keys(values), revisions };
+  for (const resource of APP_DATA_RESOURCES)
+    setStateResource(state, resource, values[resource] ?? emptyResource(resource));
+  return state;
 }
 
 const test = base.extend({

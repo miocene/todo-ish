@@ -2,38 +2,20 @@ import { createPendingStorage } from "./pending-storage.js";
 import { reactive } from "vue";
 import { apiFetch, setApiAccount } from "./api.js";
 import { APP_DATA_RESOURCES, validateAppDataResource } from "../../backend/api/src/app-data-validation.mjs";
-import { NAVIGATION_IDS } from "../../backend/api/src/app-data-contract.mjs";
+import {
+  NAVIGATION_IDS,
+  RESOURCE_METADATA,
+  emptyResource,
+  resourceFromState as remoteValue,
+} from "../../backend/api/src/app-data-contract.mjs";
 import { createResourceSync } from "./resource-sync.js";
 import { mergeSharedData } from "./shared-data-merge.js";
 
 const RESOURCES = APP_DATA_RESOURCES;
 
-const LEGACY_STORAGE_KEYS = Object.freeze({
-  "work-tasks": "done-ish.work-tasks.v1",
-  "work-statuses": "done-ish.work-statuses.v1",
-  colors: "done-ish.colors.v1",
-  chores: "done-ish.page-tasks.v1.chores",
-  todos: "done-ish.page-tasks.v1.todos",
-  shopping: "done-ish.page-tasks.v1.shopping",
-  printing: "done-ish.page-tasks.v1.printing",
-  "cross-stitch": "done-ish.page-tasks.v1.crossStitch",
-  "filament-inventory": "done-ish.filament-inventory.v1",
-  "floss-inventory": "done-ish.floss-inventory.v1",
-});
-
-const emptyData = Object.freeze({
-  "work-tasks": [],
-  "work-statuses": {},
-  colors: {},
-  chores: { tasks: [], occurrenceOrder: [] },
-  todos: { lists: [] },
-  shopping: { tasks: [] },
-  printing: { projects: [] },
-  "cross-stitch": { projects: [] },
-  "filament-inventory": {},
-  "floss-inventory": {},
-  preferences: { hiddenNavigation: [] },
-});
+const LEGACY_STORAGE_KEYS = Object.fromEntries(
+  Object.entries(RESOURCE_METADATA).map(([resource, meta]) => [resource, meta.legacyKey]),
+);
 let demoData = {};
 export async function initializeDemoData() {
   if (import.meta.env.DEV && import.meta.env.VITE_DEMO_DATA === "true") {
@@ -41,7 +23,7 @@ export async function initializeDemoData() {
   }
 }
 export function initialAppData(resource) {
-  return clone(demoData[resource] ?? emptyData[resource]);
+  return clone(demoData[resource] ?? emptyResource(resource));
 }
 
 const cache = new Map();
@@ -98,28 +80,13 @@ function withMockColors(resource, value) {
   return value;
 }
 
-function remoteValue(state, resource) {
-  const values = {
-    "work-tasks": state.workTasks,
-    "work-statuses": state.workStatuses,
-    colors: state.colors,
-    chores: state.pages?.chores,
-    todos: state.pages?.todos,
-    shopping: state.pages?.shopping,
-    printing: state.pages?.printing,
-    "cross-stitch": state.pages?.crossStitch,
-    "filament-inventory": state.inventories?.filament,
-    "floss-inventory": state.inventories?.floss,
-    preferences: state.preferences,
-  };
-  return values[resource];
-}
-
 function legacyValue(resource) {
   if (!legacyOwner || !LEGACY_STORAGE_KEYS[resource]) return undefined;
   try {
     const value = localStorage.getItem(LEGACY_STORAGE_KEYS[resource]);
-    return value === null ? undefined : JSON.parse(value);
+    if (value === null) return undefined;
+    const parsed = JSON.parse(value);
+    return resource === "preferences" ? { hiddenNavigation: parsed } : parsed;
   } catch {
     return undefined;
   }

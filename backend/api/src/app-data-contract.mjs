@@ -48,6 +48,50 @@ export const APP_DATA_RESOURCES = Object.freeze([
   "preferences",
 ]);
 
+// Wire names and browser migration keys live here; callers never infer them from URLs.
+export const RESOURCE_METADATA = Object.freeze({
+  "work-tasks": { path: ["workTasks"], empty: [], legacyKey: "done-ish.work-tasks.v1" },
+  "work-statuses": { path: ["workStatuses"], empty: {}, legacyKey: "done-ish.work-statuses.v1" },
+  colors: { path: ["colors"], empty: {}, legacyKey: "done-ish.colors.v1" },
+  chores: {
+    path: ["pages", "chores"],
+    empty: { tasks: [], occurrenceOrder: [] },
+    legacyKey: "done-ish.page-tasks.v1.chores",
+  },
+  todos: { path: ["pages", "todos"], empty: { lists: [] }, legacyKey: "done-ish.page-tasks.v1.todos" },
+  shopping: { path: ["pages", "shopping"], empty: { tasks: [] }, legacyKey: "done-ish.page-tasks.v1.shopping" },
+  printing: { path: ["pages", "printing"], empty: { projects: [] }, legacyKey: "done-ish.page-tasks.v1.printing" },
+  "cross-stitch": {
+    path: ["pages", "crossStitch"],
+    empty: { projects: [] },
+    legacyKey: "done-ish.page-tasks.v1.crossStitch",
+  },
+  "filament-inventory": { path: ["inventories", "filament"], empty: {}, legacyKey: "done-ish.filament-inventory.v1" },
+  "floss-inventory": { path: ["inventories", "floss"], empty: {}, legacyKey: "done-ish.floss-inventory.v1" },
+  preferences: { path: ["preferences"], empty: { hiddenNavigation: [] }, legacyKey: "done-ish.hidden-navigation.v1" },
+});
+
+export function emptyResource(resource) {
+  return JSON.parse(JSON.stringify(RESOURCE_METADATA[resource].empty));
+}
+
+export function resourceFromState(state, resource) {
+  return RESOURCE_METADATA[resource].path.reduce((value, key) => value?.[key], state);
+}
+
+export function setStateResource(state, resource, value) {
+  const path = RESOURCE_METADATA[resource].path;
+  let target = state;
+  for (const key of path.slice(0, -1)) target = target[key] ??= {};
+  target[path.at(-1)] = value;
+}
+
+export function pageResource(page) {
+  return APP_DATA_RESOURCES.find(
+    (resource) => RESOURCE_METADATA[resource].path[0] === "pages" && RESOURCE_METADATA[resource].path[1] === page,
+  );
+}
+
 export const SHARED_APP_DATA_RESOURCES = Object.freeze(["chores", "shopping", "filament-inventory", "floss-inventory"]);
 export const NAVIGATION_IDS = Object.freeze([
   "work",
