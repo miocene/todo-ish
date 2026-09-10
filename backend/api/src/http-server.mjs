@@ -1,3 +1,4 @@
+import { AuthRequestLimitError, createAuthRequestLimit } from "./auth-request-limit.mjs";
 import { APP_DATA_LIMITS, APP_DATA_RESOURCES } from "./app-data-contract.mjs";
 import { HISTORY_RESOURCES, validateHistoryDelta } from "./history-transport.mjs";
 import { createServer } from "node:http";
@@ -119,10 +120,11 @@ function expectedRevision(request) {
 }
 
 async function readJson(request) {
+  const bodyLimit = request.url?.startsWith("/api/auth/") ? 64 * 1024 : MAX_BODY_BYTES;
   const contentType = request.headers["content-type"]?.split(";", 1)[0].trim().toLowerCase();
   if (contentType !== "application/json") throw new RequestError("Content-Type must be application/json", 415);
   const declaredLength = Number(request.headers["content-length"] ?? 0);
-  if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) {
+  if (Number.isFinite(declaredLength) && declaredLength > bodyLimit) {
     throw new RequestError("Request body is too large", 413);
   }
 
@@ -130,7 +132,7 @@ async function readJson(request) {
   let size = 0;
   for await (const chunk of request) {
     size += chunk.length;
-    if (size > MAX_BODY_BYTES) throw new RequestError("Request body is too large", 413);
+    if (size > bodyLimit) throw new RequestError("Request body is too large", 413);
     chunks.push(chunk);
   }
   if (size === 0) throw new RequestError("Request body is required");
@@ -144,11 +146,12 @@ async function readJson(request) {
 export function createHttpServer(
   repository,
   authService,
-  { allowedOrigin, authenticationBypass = false, logger = console } = {},
+  { allowedOrigin, authenticationBypass = false, logger = console, authRequestLimit = createAuthRequestLimit() } = {},
 ) {
   const server = createServer(async (request, response) => {
     const method = request.method || "GET";
     let responseCorsHeaders = {};
+    let releaseAuth;
 
     try {
       const url = new URL(request.url || "/", "http://localhost");
@@ -159,6 +162,8 @@ export function createHttpServer(
         return;
       }
 
+      if (method === "POST" && url.pathname.startsWith("/api/auth/"))
+        releaseAuth = authRequestLimit.acquire(request.socket.remoteAddress ?? "unknown");
       let body;
       let cacheControl = "no-store";
       let headers = {};
@@ -282,7 +287,7 @@ export function createHttpServer(
       writeJson(response, 200, body, cacheControl, { ...responseCorsHeaders, ...headers });
     } catch (error) {
       const statusCode =
-        error instanceof RequestError
+        error instanceof RequestError || error instanceof AuthRequestLimitError
           ? error.statusCode
           : error instanceof AuthError
             ? error.statusCode
@@ -294,6 +299,7 @@ export function createHttpServer(
       if (error instanceof RequestError && error.allowedMethods) {
         response.setHeader("allow", error.allowedMethods.join(", "));
       }
+      if (error instanceof AuthRequestLimitError) response.setHeader("retry-after", error.retryAfter);
       if (statusCode === 500) {
         logger.error({ error, method, path: request.url }, "API request failed");
       }
@@ -308,6 +314,8 @@ export function createHttpServer(
         "no-store",
         responseCorsHeaders,
       );
+    } finally {
+      releaseAuth?.();
     }
   });
 

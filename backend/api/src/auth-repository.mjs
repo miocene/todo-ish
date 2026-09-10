@@ -119,7 +119,6 @@ export function createAuthRepository(pool) {
     },
 
     async storeChallenge(challenge) {
-      await pool.query("DELETE FROM auth_challenges WHERE expires_at <= now()");
       await pool.query({
         text: `
           INSERT INTO auth_challenges (token_hash, challenge, ceremony, user_handle, expires_at, setup_code_hash)
@@ -204,6 +203,11 @@ export function createAuthRepository(pool) {
     async sessionByTokenHash(tokenHash) {
       const result = await pool.query({
         text: `
+          WITH seen AS (
+            UPDATE auth_sessions SET last_seen_at = now()
+            WHERE token_hash = $1 AND expires_at > now()
+              AND last_seen_at < now() - interval '5 minutes'
+          )
           SELECT auth_user.id AS "userId", auth_user.username,
                  auth_user.display_name AS "displayName"
           FROM auth_sessions AS session
@@ -241,6 +245,22 @@ export function createAuthRepository(pool) {
       } finally {
         client.release();
       }
+    },
+
+    async cleanExpired(limit = 500) {
+      if (!Number.isInteger(limit) || limit < 1 || limit > 500) throw new Error("Cleanup batch must be 1–500 rows");
+      const counts = {};
+      for (const table of ["auth_challenges", "auth_sessions", "auth_setup_codes"]) {
+        const result = await pool.query({
+          text: `DELETE FROM ${table} WHERE token_hash IN (
+            SELECT token_hash FROM ${table} WHERE expires_at <= now()
+            ORDER BY expires_at LIMIT $1 FOR UPDATE SKIP LOCKED
+          )`,
+          values: [limit],
+        });
+        counts[table] = result.rowCount;
+      }
+      return counts;
     },
 
     async deleteSession(tokenHash) {

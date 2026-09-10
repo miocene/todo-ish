@@ -1,3 +1,4 @@
+import { verifyAuthCleanup } from "./auth-cleanup-cases.mjs";
 import { verifyHistoryTransport } from "./history-cases.mjs";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -184,10 +185,10 @@ test("PostgreSQL application-data contract", async (t) => {
       }
     },
   };
-  runtimePool.query = async (query) => {
+  runtimePool.query = async (...args) => {
     const client = await runtimePool.connect();
     try {
-      return await client.query(query);
+      return await client.query(...args);
     } finally {
       client.release();
     }
@@ -421,6 +422,8 @@ test("PostgreSQL application-data contract", async (t) => {
   );
 
   await t.test("bounded history reads and patches", () => verifyHistoryTransport(rawRepository, "first"));
+
+  await t.test("bounded authentication expiry cleanup", () => verifyAuthCleanup(runtimePool, "first"));
 
   await t.test("pre-created accounts use expiring, single-use setup codes", () =>
     verifySetupCodes(createAuthRepository(runtimePool), "second"),

@@ -12,7 +12,21 @@ const repository = {
   ...createCatalogRepository(pool),
   ...createAppDataRepository(pool),
 };
-const authService = createAuthService(createAuthRepository(pool), config.auth);
+const authRepository = createAuthRepository(pool);
+const authService = createAuthService(authRepository, config.auth);
+let cleanupRunning;
+const cleanExpired = () => {
+  if (cleanupRunning) return;
+  cleanupRunning = authRepository
+    .cleanExpired()
+    .catch((error) => console.error("Authentication expiry cleanup failed", error))
+    .finally(() => {
+      cleanupRunning = null;
+    });
+};
+const cleanupTimer = setInterval(cleanExpired, 60_000);
+cleanupTimer.unref();
+cleanExpired();
 const server = createHttpServer(repository, authService, { allowedOrigin: config.auth.origin });
 const developmentServer = config.developmentPort
   ? createHttpServer(repository, authService, { authenticationBypass: true })
@@ -36,6 +50,8 @@ function closeServer(target) {
 async function shutdown(signal) {
   console.log(`Received ${signal}; shutting down`);
   try {
+    clearInterval(cleanupTimer);
+    await cleanupRunning;
     await Promise.all([closeServer(server), ...(developmentServer ? [closeServer(developmentServer)] : [])]);
     await pool.end();
   } catch (error) {

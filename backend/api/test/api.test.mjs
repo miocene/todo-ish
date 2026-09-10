@@ -396,3 +396,27 @@ test("registration options reject malformed JSON shapes before authentication wo
     }),
   );
 });
+
+test("authentication flood returns Retry-After without trusting forwarded addresses", async () => {
+  const { createAuthRequestLimit } = await import("../src/auth-request-limit.mjs");
+  let now = 0;
+  await withServer(
+    fakeRepository(),
+    async (origin) => {
+      const request = () =>
+        fetch(`${origin}/api/auth/authentication/options`, {
+          method: "POST",
+          headers: { "x-forwarded-for": String(Math.random()) },
+        });
+      assert.equal((await request()).status, 200);
+      const limited = await request();
+      assert.equal(limited.status, 429);
+      assert.equal(limited.headers.get("retry-after"), "2");
+      assert.equal((await fetch(`${origin}/api/auth/session`)).status, 200);
+      now = 2000;
+      assert.equal((await request()).status, 200);
+    },
+    fakeAuthService(),
+    { authRequestLimit: createAuthRequestLimit({ burst: 1, now: () => now }) },
+  );
+});
