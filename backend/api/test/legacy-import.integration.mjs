@@ -100,6 +100,8 @@ test("real browser legacy storage imports into PostgreSQL and remains downloadab
     if (response.status() >= 400) t.diagnostic(`${response.status()} ${response.url()}`);
   });
   const legacy = {
+    "done-ish.filament-inventory.v1": { "old-filament": 2 },
+    "done-ish.floss-inventory.v1": { "old-floss": 3 },
     "done-ish.work-tasks.v1": [{ id: "legacy-work", title: "Legacy work", date: null }],
     "done-ish.page-tasks.v1.todos": {
       lists: [
@@ -159,13 +161,15 @@ test("real browser legacy storage imports into PostgreSQL and remains downloadab
   assert.equal(state.pages.todos.lists.find((list) => list.id === "legacy-list").tasks[0].title, "Legacy todo");
   assert.equal(state.pages.printing.projects[0].tasks[0].filaments[0].catalogId, "old-filament");
   assert.equal(state.pages.chores.tasks[0].schedule.frequency, "day");
+  assert.deepEqual(state.inventories.filament, { "old-filament": 2 });
+  assert.deepEqual(state.inventories.floss, { "old-floss": 3 });
   for (const [key, value] of Object.entries(legacy))
     assert.equal(await page.evaluate((key) => localStorage.getItem(key), key), JSON.stringify(value));
   await page.goto(`${origin}/profile`);
   let downloaded = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download old browser data" }).click();
   const old = JSON.parse(await readFile(await (await downloaded).path(), "utf8"));
-  assert.equal(old.originals.length, 4);
+  assert.equal(old.originals.length, 6);
   downloaded = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download saved data", exact: true }).click();
   const data = JSON.parse(await readFile(await (await downloaded).path(), "utf8"));

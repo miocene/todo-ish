@@ -337,7 +337,8 @@ export async function initializeAppData(user) {
     if (pending !== undefined) cache.set(resource, pending);
   }
   for (const resource of ["filament-inventory", "floss-inventory"]) {
-    if (!sync.value(resource)) cache.set(resource, projectPendingStock(resource, remoteValue(state, resource) ?? {}));
+    if (initializedResources.has(resource) && !sync.value(resource))
+      cache.set(resource, projectPendingStock(resource, remoteValue(state, resource) ?? {}));
   }
   hydrated = true;
   if (legacyOwner && !initializedResources.has("preferences") && !sync.value("preferences")) {
