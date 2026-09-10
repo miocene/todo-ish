@@ -16,17 +16,19 @@ On the first deployment from the older filename-only runner, review the existing
 
 Node 22.22.1+ and 24.19.0+ are supported within their respective major versions. CI runs quality and disposable PostgreSQL tests on both, then builds both Docker images on Node 24.19.0 and starts the actual API image against a disposable migrated database. The image check verifies health, anonymous session state, and denial of protected data.
 
-Pi deployment requires Node, Yarn, Git, tar, SSH and rsync locally; Docker Compose, curl, flock and sha256sum on the Pi. It rejects a dirty tree, runs `yarn quality`, and verifies the commit/tree did not change during checks before staging or remote mutation. First install dependencies with `yarn setup`. Database runner integration is tested in CI; it never targets the Pi.
+Pi deployment requires Node, Yarn, Git, tar, SSH and rsync locally; Docker Compose, curl and flock on the Pi. It rejects a dirty tree, runs `yarn quality`, and verifies the commit/tree did not change during checks before staging or remote mutation. First install dependencies with `yarn setup`. Database runner integration is tested in CI; it never targets the Pi.
 
 Both web paths remain supported: Pages hosts the public frontend, and the Pi web container serves a local operational copy on loopback port 4173. Pages deployment runs the reusable quality workflow and publishes the matching Pages build. Verify the public app loads, authenticates and reads the protected API after publishing. To roll back Pages, redeploy a previously passing commit through its workflow; check that its API contract is compatible with the deployed backend. Pi web rollback follows the release instructions above.
 
 Docker is not required to run the local frontend quality suite. When Docker is unavailable locally, the container builds and image smoke test must pass in CI before using the release in production.
 
-## Pi-local backups
+## Backups through your existing Pi backup
 
-The chosen destination is the Pi. The daily service keeps `/var/backups/todo-db` on the existing root filesystem; deployment keeps pre-migration copies in `PI_APP_DIR/backups`. The maintained `backend/scripts/database_backup.sh` uses directory mode 0700, file mode 0600, temporary files, archive validation and SHA-256 before publishing a dump. It retains 90 recent successful backups plus the first successful backup of each of the latest 12 months. Monthly copies use hard links. Older runbook filenames are left alone.
+Use your existing Pi backup for storage and retention. If it already captures a consistent snapshot of all PostgreSQL files, or backs them up with PostgreSQL stopped, another database backup job is optional. Ordinary file copying while PostgreSQL runs needs a consistent database dump instead; see [PostgreSQL's backup guidance](https://www.postgresql.org/docs/18/backup-file.html).
 
-To update the existing daily service on the Pi from a reviewed release:
+The small `backend/scripts/database_backup.sh` creates `/var/backups/todo-db/todo.dump`. Include that file in your existing Pi backup along with the usual host configuration and secrets. Each successful run replaces the file atomically; a failed dump keeps the previous copy. The directory is private (0700), the file is private (0600), and PostgreSQL checks the archive before it is published. There are no monthly copies, checksum sidecar files or restore reports. Older backup files are left alone.
+
+Run the dump immediately before your existing backup, if it supports a pre-backup command. Otherwise, the existing daily timer can run it around 03:15 Amsterdam time. To install or update it on the Pi from the repository or a release directory:
 
 ```sh
 sudo install -m 0750 backend/scripts/database_backup.sh /usr/local/sbin/backup-todo-db
@@ -37,10 +39,19 @@ sudo systemctl enable --now todo-db-backup.timer
 sudo systemctl start todo-db-backup.service
 ```
 
-A restore drill checks the checksum, restores all objects/data in a single transaction with `pg_restore --exit-on-error`, reads every restored public table and writes a dated `.restore-check.txt` report. It creates and drops its own uniquely named temporary database; it never restores into `todo` and does not write a marker into the source database:
+To run it manually, use `sudo /usr/local/sbin/backup-todo-db`. Deployment uses the same script with a different directory to keep the most recent pre-migration copy at `PI_APP_DIR/backups/todo.dump`.
+
+To check a recovered dump once, restore it into a temporary database on the Pi and inspect its data:
 
 ```sh
-sudo /usr/local/sbin/backup-todo-db verify /var/backups/todo-db/todo-daily-REPLACE-WITH-ACTUAL-FILENAME.dump
+restore_db="todo_restore_check_$(date +%s)_$$"
+docker exec todo-postgres createdb -U todo_app --template=template0 "$restore_db"
+sudo cat /var/backups/todo-db/todo.dump | docker exec -i todo-postgres \
+  pg_restore -U todo_app --dbname="$restore_db" --no-owner --no-privileges \
+  --single-transaction --exit-on-error
+docker exec todo-postgres psql -U todo_app -d "$restore_db" \
+  -c 'SELECT count(*) FROM auth_users; SELECT count(*) FROM work_tasks;'
+docker exec todo-postgres dropdb -U todo_app "$restore_db"
 ```
 
-Current local evidence (2026-09-10): a disposable PostgreSQL 18.4 instance, PostgreSQL 18.6 client tools, full current migrations and a multilingual Work record passed backup, restore, cleanup, 0600/0700 permissions, retention and corrupted-checksum rejection. CI runs the same drill using its PostgreSQL container. This verifies the tooling; installing it on the Pi and checking the SSD cable/USB3-UAS connection remain operational follow-ups. A Pi-local copy does not cover loss of the entire host; a second-device copy remains optional.
+This check does not replace the live database. The integration test verifies an actual dump/restore, replacement with newer data, file permissions, and preservation of the last good dump after a failure. No recurring restore drill or SSD upgrade is required to use this setup. Account JSON export/import in `docs/data-recovery.md` remains an optional manual tool.

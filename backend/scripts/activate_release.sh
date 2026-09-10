@@ -7,7 +7,7 @@ public_address=$3
 case "$app_directory" in "" | /* | *..* | *[!A-Za-z0-9._/-]*) exit 2;; esac
 case "$revision" in "" | *[!0-9a-f]*) exit 2;; esac
 case "$public_address" in "" | *[!0-9.]*) exit 2;; esac
-for tool in docker curl flock sha256sum; do
+for tool in docker curl flock; do
   command -v "$tool" >/dev/null 2>&1 || { echo "Missing Pi tool: $tool" >&2; exit 2; }
 done
 docker compose version >/dev/null
@@ -24,7 +24,7 @@ compose() {
 }
 compose config --quiet
 compose build catalog-api web migrate
-backup_file=$(sh "$release/backend/scripts/database_backup.sh" backup "$HOME/$app_directory/backups")
+backup_file=$(sh "$release/backend/scripts/database_backup.sh" "$HOME/$app_directory/backups")
 echo "Database backup: $backup_file"
 compose run --rm migrate
 compose up -d --no-build --wait --wait-timeout 300 catalog-api web public-api

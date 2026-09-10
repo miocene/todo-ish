@@ -6,7 +6,7 @@ RequiresMountsFor=/srv/pissd
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/sbin/backup-todo-db backup /var/backups/todo-db
+ExecStart=/usr/local/sbin/backup-todo-db
 Nice=10
 IOSchedulingClass=best-effort
 IOSchedulingPriority=7
