@@ -11,3 +11,13 @@ The migration service uses the same Node/pg image as the API and one PostgreSQL 
 On the first deployment from the older filename-only runner, review the existing SQL against the deployed source and set `PI_ADOPT_LEGACY_CHECKSUMS=1` for that deployment. This records checksums for the reviewed historical files; it cannot retroactively prove their original bytes. Subsequent runs reject changed checksums even with the adoption option. A manually initialized catalog schema also requires explicit adoption and all four catalog tables.
 
 `current` changes only after API health, anonymous-session and protected-data checks plus web health succeed. `previous` records the prior successful release. To roll back application code, use that release as `TODO_APP_BUILD_CONTEXT` with its Compose files and rebuild/start `catalog-api`, `web` and `public-api`. Check API `/healthz`, `/api/auth/session`, anonymous `/api/data` = 401, and web `/healthz` again. Review migration compatibility first: application rollback does not undo database migrations. Keep the pre-deployment database dump for a separately planned data restore.
+
+## Quality and supported runtimes
+
+Node 22.22.1+ and 24.19.0+ are supported within their respective major versions. CI runs quality and disposable PostgreSQL tests on both, then builds both Docker images on Node 24.19.0 and starts the actual API image against a disposable migrated database. The image check verifies health, anonymous session state, and denial of protected data.
+
+Pi deployment requires Node, Yarn, Git, tar, SSH and rsync locally; Docker Compose, curl, flock and sha256sum on the Pi. It rejects a dirty tree, runs `yarn quality`, and verifies the commit/tree did not change during checks before staging or remote mutation. First install dependencies with `yarn setup`. Database runner integration is tested in CI; it never targets the Pi.
+
+Both web paths remain supported: Pages hosts the public frontend, and the Pi web container serves a local operational copy on loopback port 4173. Pages deployment runs the reusable quality workflow and publishes the matching Pages build. Verify the public app loads, authenticates and reads the protected API after publishing. To roll back Pages, redeploy a previously passing commit through its workflow; check that its API contract is compatible with the deployed backend. Pi web rollback follows the release instructions above.
+
+Docker is not required to run the local frontend quality suite. When Docker is unavailable locally, the container builds and image smoke test must pass in CI before using the release in production.

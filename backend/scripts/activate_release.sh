@@ -7,6 +7,12 @@ public_address=$3
 case "$app_directory" in "" | /* | *..* | *[!A-Za-z0-9._/-]*) exit 2;; esac
 case "$revision" in "" | *[!0-9a-f]*) exit 2;; esac
 case "$public_address" in "" | *[!0-9.]*) exit 2;; esac
+for tool in docker curl flock sha256sum; do
+  command -v "$tool" >/dev/null 2>&1 || { echo "Missing Pi tool: $tool" >&2; exit 2; }
+done
+docker compose version >/dev/null
+docker info >/dev/null
+test -r /opt/todo-db/compose.yaml || { echo 'Missing Pi database Compose configuration' >&2; exit 2; }
 release="$HOME/$app_directory/releases/$revision"
 exec 9>"$HOME/$app_directory/.deploy.lock"
 flock -n 9 || { echo 'Another Pi deployment is running' >&2; exit 1; }
