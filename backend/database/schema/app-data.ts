@@ -512,3 +512,18 @@ export const authSetupCodes = pgTable("auth_setup_codes", {
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const supplyPurchaseReceipts = pgTable(
+  "supply_purchase_receipts",
+  {
+    userId: userColumn(),
+    id: text("id").notNull(),
+    source: text("source").notNull(),
+    catalogId: text("catalog_id").notNull(),
+    quantity: integer("quantity").notNull(),
+    reversed: boolean("reversed").default(false).notNull(),
+    reversedQuantity: integer("reversed_quantity"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.id] }), userPolicy("supply_purchase_receipts", table.userId)],
+).enableRLS();

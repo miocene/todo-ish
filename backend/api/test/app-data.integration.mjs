@@ -5,6 +5,7 @@ import test from "node:test";
 import pg from "pg";
 import { createAppDataRepository, AppDataRevisionConflictError } from "../src/app-data-repository.mjs";
 import { createAuthRepository } from "../src/auth-repository.mjs";
+import { verifyAtomicPurchases } from "./purchase-cases.mjs";
 import { verifySetupCodes } from "./setup-code-cases.mjs";
 import { verifyMultiUserData } from "./multi-user-cases.mjs";
 import { validateAppDataResource } from "../src/app-data-validation.mjs";
@@ -412,6 +413,10 @@ test("PostgreSQL application-data contract", async (t) => {
   });
   await t.test("shared household data and private accounts remain isolated", () =>
     verifyMultiUserData(rawRepository, "first", "second"),
+  );
+
+  await t.test("atomic purchases, reversals and retries", () =>
+    verifyAtomicPurchases(rawRepository, "first", "second"),
   );
 
   await t.test("pre-created accounts use expiring, single-use setup codes", () =>

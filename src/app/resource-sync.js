@@ -159,7 +159,7 @@ export function createResourceSync({
           entry.baseValue = snapshot;
           delete entry.attempted;
           delete entry.retryDelay;
-          onSaved(resource, snapshot);
+          onSaved(resource, snapshot, result);
           if (matches(resource, entry.value, value)) remove(entry);
           else persist(entry);
         } catch (caughtError) {
@@ -311,6 +311,10 @@ export function createResourceSync({
         status(resource, "saving", "Saving changes…");
         schedule(resource);
       }
+    },
+    savedValue(resource) {
+      const value = saved.get(resource)?.value;
+      return value === undefined ? undefined : copy(value);
     },
     value(resource) {
       return entries.has(resource) ? copy(entries.get(resource).value) : undefined;

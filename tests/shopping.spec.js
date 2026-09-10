@@ -90,7 +90,8 @@ test("purchase deletion preserves stock and activity; inventory failures recover
   await row.getByRole("checkbox").check();
   await expect(page.getByRole("button", { name: "Download local edits" })).toBeVisible();
   await row.getByRole("button", { name: /Remove/ }).click();
-  await expect.poll(() => appData.get("shopping").history?.length).toBe(1);
+  expect(appData.get("shopping").history).toEqual([]);
+  expect(appData.get("filament-inventory")[filamentId]).toBe(1);
   appData.setWriteFailure("filament-inventory", 0);
   await page.reload();
   await expect.poll(() => appData.get("filament-inventory")[filamentId]).toBe(3);
@@ -267,7 +268,11 @@ test("rapid purchase toggles and a failed shopping save recover without duplicat
   await checkbox.check();
   await checkbox.uncheck();
   await checkbox.check();
-  await expect.poll(() => appData.get("filament-inventory")[filamentId]).toBe(3);
+  await expect(page.getByRole("button", { name: "Download local edits" })).toBeVisible();
+  expect(appData.get("filament-inventory")[filamentId]).toBe(1);
+  await page.reload();
+  await expect(materialRow(page, "filament")).toHaveCount(1);
+  await expect(checkbox).toBeChecked();
   appData.setWriteFailure("shopping", null);
   await page.reload();
   await expect(checkbox).toBeChecked();

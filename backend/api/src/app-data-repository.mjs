@@ -1,3 +1,4 @@
+import { adjustShoppingStock } from "./shopping-stock.mjs";
 import { APP_DATA_RESOURCES, SHARED_APP_DATA_RESOURCES, completionState as completion } from "./app-data-contract.mjs";
 
 export class AppDataRevisionConflictError extends Error {
@@ -665,6 +666,18 @@ const WRITERS = Object.freeze({
 async function replaceResource(pool, resource, data, expectedRevision, userId) {
   const scope = SHARED_APP_DATA_RESOURCES.includes(resource) ? "" : userId;
   return transaction(pool, "", userId, async (client) => {
+    if (resource === "shopping") {
+      for (const inventory of ["filament-inventory", "floss-inventory"]) {
+        await client.query({
+          text: "INSERT INTO app_data_revisions (scope, resource, revision) VALUES ('', $1, 0) ON CONFLICT DO NOTHING",
+          values: [inventory],
+        });
+        await client.query({
+          text: "SELECT revision FROM app_data_revisions WHERE scope = '' AND resource = $1 FOR UPDATE",
+          values: [inventory],
+        });
+      }
+    }
     await client.query({
       text: `INSERT INTO app_data_revisions (resource, scope, revision)
              VALUES ($1, $2, 0)
@@ -684,6 +697,7 @@ async function replaceResource(pool, resource, data, expectedRevision, userId) {
       throw new AppDataRevisionConflictError(resource, expectedRevision, currentRevision);
     }
 
+    if (resource === "shopping") await adjustShoppingStock(client, data, userId);
     await WRITERS[resource](client, data, userId);
     const updatedRows = await queryRows(
       client,

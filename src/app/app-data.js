@@ -62,6 +62,7 @@ export function subscribeAppData(resource, callback) {
 }
 
 function receiveAppData(resource, value) {
+  value = projectPendingStock(resource, value);
   cache.set(resource, clone(value));
   for (const callback of subscribers.get(resource) ?? []) callback(clone(value));
 }
@@ -192,13 +193,21 @@ const sync = createResourceSync({
             : value;
     const response = await apiFetch(`/data/${resource}`, {
       method: "PUT",
-      headers: { "content-type": "application/json", "if-match": `"${revision}"` },
+      headers: {
+        "content-type": "application/json",
+        "if-match": `"${revision}"`,
+        ...(resource === "shopping" && { "x-shopping-stock": "atomic-v1" }),
+      },
       body: JSON.stringify(submitted),
     });
     const result = await response.json().catch(() => ({}));
     if (!response.ok)
       throw Object.assign(new Error(result.error || "Changes could not be saved."), { status: response.status });
     if (!Number.isInteger(result.revision)) throw new Error("The save response did not include a revision.");
+    if (resource === "shopping") {
+      const state = await fetchRemoteState();
+      result.stockState = state;
+    }
     return result;
   },
   onChange: (state) => Object.assign(syncState, state),
@@ -207,7 +216,8 @@ const sync = createResourceSync({
   canRefresh: () =>
     !document.querySelector('dialog[open], main textarea:focus, main input:not([type="checkbox"]):focus'),
   merge: mergeSharedData,
-  onSaved(resource) {
+  onSaved(resource, _snapshot, result) {
+    if (result?.stockState) sync.refresh(result.stockState, ["filament-inventory", "floss-inventory"]);
     initializedResources.add(resource);
     clearLegacyValue(resource);
     if (resource === "preferences" && legacyOwner) {
@@ -219,6 +229,29 @@ const sync = createResourceSync({
     }
   },
 });
+
+function projectPendingStock(resource, value) {
+  if (!["filament-inventory", "floss-inventory"].includes(resource)) return value;
+  const pending = sync.value("shopping");
+  if (!pending) return value;
+  const purchases = (data) =>
+    new Map(
+      [...(data?.tasks ?? []), ...(data?.history ?? [])]
+        .filter((item) => item.source && item.completedAt)
+        .map((item) => [item.id, item]),
+    );
+  const before = purchases(sync.savedValue("shopping"));
+  const after = purchases(pending);
+  const inventory = { ...value };
+  const apply = (item, direction) => {
+    if ((item.source === "filament-shortage" ? "filament-inventory" : "floss-inventory") !== resource) return;
+    const id = item.filamentId ?? item.flossId;
+    inventory[id] = Math.max(0, (inventory[id] ?? 0) + direction * item.quantity);
+  };
+  for (const item of before.values()) if (!after.has(item.id)) apply(item, -1);
+  for (const item of after.values()) if (!before.has(item.id)) apply(item, 1);
+  return inventory;
+}
 
 function queueWrite(resource, value) {
   cache.set(resource, clone(value));
@@ -267,6 +300,9 @@ export async function initializeAppData(user) {
   for (const resource of resources) {
     const pending = sync.value(resource);
     if (pending !== undefined) cache.set(resource, pending);
+  }
+  for (const resource of ["filament-inventory", "floss-inventory"]) {
+    if (!sync.value(resource)) cache.set(resource, projectPendingStock(resource, remoteValue(state, resource) ?? {}));
   }
   hydrated = true;
   if (legacyOwner && !initializedResources.has("preferences") && !sync.value("preferences")) {

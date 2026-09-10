@@ -71,6 +71,13 @@
       "when": 1788984742155,
       "tag": "0009_vadik_navigation",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1789053252272,
+      "tag": "0010_atomic_purchases",
+      "breakpoints": true
     }
   ]
 }

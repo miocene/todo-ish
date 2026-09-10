@@ -244,7 +244,7 @@ test("app-data API reads state and performs revision-checked writes", async () =
 
     const write = await fetch(`${origin}/api/data/shopping`, {
       method: "PUT",
-      headers: { "content-type": "application/json", "if-match": '"2"' },
+      headers: { "content-type": "application/json", "if-match": '"2"', "x-shopping-stock": "atomic-v1" },
       body: JSON.stringify({
         tasks: [
           { id: "manual", title: "  Apples  ", completed: false },
@@ -328,7 +328,7 @@ test("app-data API validates preconditions, payloads, and revision conflicts", a
 
     const conflict = await fetch(`${origin}/api/data/work-tasks`, {
       method: "PUT",
-      headers: { "content-type": "application/json", "if-match": '"2"' },
+      headers: { "content-type": "application/json", "if-match": '"2"', "x-shopping-stock": "atomic-v1" },
       body: "[]",
     });
     assert.equal(conflict.status, 409);

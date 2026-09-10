@@ -9,7 +9,7 @@ const MAX_OFFSET = 1_000_000;
 const MAX_QUERY_LENGTH = 100;
 const MAX_BODY_BYTES = 1_000_000;
 const CORS_METHODS = ["GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"];
-const CORS_HEADERS = ["content-type", "if-match", "x-app-user-id"];
+const CORS_HEADERS = ["content-type", "if-match", "x-app-user-id", "x-shopping-stock"];
 
 class RequestError extends Error {
   constructor(message, statusCode = 400) {
@@ -233,6 +233,8 @@ export function createHttpServer(
         if (!resourceMatch || !isAppDataResource(resourceMatch[1])) throw new RequestError("Not found", 404);
         requireMethod(method, ["PUT"]);
         const resource = resourceMatch[1];
+        if (resource === "shopping" && request.headers["x-shopping-stock"] !== "atomic-v1")
+          throw new RequestError("Reload the app before saving shopping changes.", 426);
         const data = validateAppDataResource(resource, await readJson(request));
         const revision = await repository.replace(resource, data, expectedRevision(request), user.id);
         body = { resource, revision };

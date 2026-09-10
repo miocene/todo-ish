@@ -1,17 +1,11 @@
 <script>
 import { APP_DATA_LIMITS } from "../../backend/api/src/app-data-contract.mjs";
 import { createTaskEditor, createTitleEditor } from "../app/task-editor.js";
-import { subscribeAppData } from "../app/app-data.js";
+import { subscribeAppData, cacheAppData } from "../app/app-data.js";
 import { filamentCatalog } from "../app/filament-catalog.js";
 import { flossCatalog } from "../app/floss-catalog.js";
 import JMCatalogLoader from "../components/JMCatalogLoader/JMCatalogLoader.vue";
-import {
-  loadFilamentInventory,
-  loadFlossInventory,
-  saveFilamentInventory,
-  saveFlossInventory,
-  savePageTasks,
-} from "../app/page-tasks.js";
+import { loadFilamentInventory, loadFlossInventory, savePageTasks } from "../app/page-tasks.js";
 import { completedTasksLast, setTaskCompletion } from "../app/task-list.js";
 import { syncSupplyShoppingLists } from "../app/shopping-supplies.js";
 import JMCard from "../components/JMCard/JMCard.vue";
@@ -112,7 +106,7 @@ export default {
       if (task.source) {
         const filament = task.source === "filament-shortage";
         inventory = filament ? loadFilamentInventory() : loadFlossInventory();
-        saveInventory = filament ? saveFilamentInventory : saveFlossInventory;
+        saveInventory = (value) => cacheAppData(filament ? "filament-inventory" : "floss-inventory", value);
         const id = task.filamentId ?? task.flossId;
         const owned = inventory[id] ?? 0;
         const quantity = task.quantity;
@@ -129,9 +123,10 @@ export default {
             ? "Inventory is now zero. Some of this purchase had already been removed from inventory."
             : "";
       }
+      if (task.source && completed) task.id = `purchase-${crypto.randomUUID()}`;
       setTaskCompletion(task, completed);
       this.shopping.history = this.shopping.history.filter((item) => item.id !== task.id);
-      // Both writes are durable absolute snapshots; retrying never increments stock again.
+      // The shopping save applies the stock delta atomically on the server.
       this.save();
       if (inventory) {
         saveInventory(inventory);

@@ -150,6 +150,36 @@ const test = base.extend({
             else delete submittedValue.history;
             delete submittedValue.replaceHistory;
           }
+          if (resource === "shopping") {
+            const purchases = (data) =>
+              new Map(
+                [...(data?.tasks ?? []), ...(data?.history ?? [])]
+                  .filter((item) => item.source && item.completedAt)
+                  .map((item) => [item.id, item]),
+              );
+            const before = purchases(values.shopping);
+            const after = purchases(submittedValue);
+            const changes = [
+              ...[...before.values()].filter((item) => !after.has(item.id)).map((item) => ({ item, direction: -1 })),
+              ...[...after.values()].filter((item) => !before.has(item.id)).map((item) => ({ item, direction: 1 })),
+            ];
+            const affected = new Set(
+              changes.map(({ item }) =>
+                item.source === "filament-shortage" ? "filament-inventory" : "floss-inventory",
+              ),
+            );
+            if ([...affected].some((key) => writeFailures.get(key))) {
+              await json({ error: "Simulated atomic stock failure" }, 503);
+              return;
+            }
+            for (const { item, direction } of changes) {
+              const key = item.source === "filament-shortage" ? "filament-inventory" : "floss-inventory";
+              const id = item.filamentId ?? item.flossId;
+              values[key] ??= {};
+              values[key][id] = Math.max(0, (values[key][id] ?? 0) + direction * item.quantity);
+            }
+            for (const key of affected) revisions[key] += 1;
+          }
           values[resource] = submittedValue;
           revisions[resource] += 1;
           await json({ resource, revision: revisions[resource] }, 200, { etag: `"${revisions[resource]}"` });
