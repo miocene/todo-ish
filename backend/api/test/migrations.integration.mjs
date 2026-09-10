@@ -1,0 +1,72 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { randomUUID } from "node:crypto";
+import { mkdtemp, cp, rm, writeFile, readFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { Client } from "pg";
+import { runMigrations } from "../src/migrations.mjs";
+
+const connectionString = process.env.TEST_DATABASE_URL;
+if (!connectionString) throw new Error("Set TEST_DATABASE_URL to a disposable PostgreSQL instance");
+test("actual migration runner: fresh, rerun, upgrade, concurrent, rollback and checksum protection", async (t) => {
+  const suffix = randomUUID().replaceAll("-", "");
+  const database = `todo_migrations_${suffix}`;
+  const runtimeRole = `todo_runtime_${suffix}`;
+  const admin = new Client({ connectionString });
+  await admin.connect();
+  const directory = await mkdtemp(join(tmpdir(), "todo-migrations-"));
+  const clients = [];
+  t.after(async () => {
+    await Promise.all(clients.map((client) => client.end()));
+    await admin.query(`DROP DATABASE IF EXISTS "${database}" WITH (FORCE)`);
+    await admin.query(`DROP ROLE IF EXISTS "${runtimeRole}"`);
+    await admin.end();
+    await rm(directory, { recursive: true, force: true });
+  });
+  await admin.query(`CREATE ROLE "${runtimeRole}" NOLOGIN`);
+  await admin.query(`CREATE DATABASE "${database}"`);
+  const url = new URL(connectionString);
+  url.pathname = `/${database}`;
+  const connect = async () => {
+    const client = new Client({ connectionString: url.toString() });
+    await client.connect();
+    clients.push(client);
+    return client;
+  };
+  const client = await connect();
+  await cp(new URL("../../database/migrations/", import.meta.url), directory, { recursive: true });
+  const options = { runtimeRole, log: () => {} };
+  const first = await runMigrations(client, directory, options);
+  assert.ok(first.length >= 11);
+  assert.deepEqual(await runMigrations(client, directory, options), first);
+  const extra = join(directory, "9998_upgrade.sql");
+  await writeFile(extra, "CREATE TABLE runner_upgrade(id integer); SELECT pg_sleep(0.1);");
+  await Promise.all([runMigrations(client, directory, options), runMigrations(await connect(), directory, options)]);
+  assert.equal(
+    (await client.query("SELECT count(*)::integer AS count FROM schema_migrations WHERE filename='9998_upgrade.sql'"))
+      .rows[0].count,
+    1,
+  );
+  await writeFile(
+    join(directory, "9999_failure.sql"),
+    "CREATE TABLE rolled_back(id integer); SELECT does_not_exist();",
+  );
+  await assert.rejects(runMigrations(client, directory, options), /does_not_exist/);
+  assert.equal((await client.query("SELECT to_regclass('rolled_back') AS value")).rows[0].value, null);
+  await rm(join(directory, "9999_failure.sql"));
+  const source = await readFile(extra, "utf8");
+  await writeFile(extra, source + "\n-- edited after deployment");
+  await assert.rejects(runMigrations(client, directory, options), /checksum changed/);
+  await writeFile(extra, source);
+  await client.query("UPDATE schema_migrations SET checksum=NULL");
+  await assert.rejects(runMigrations(client, directory, options), /MIGRATION_ADOPT_LEGACY_CHECKSUMS/);
+  await runMigrations(client, directory, { ...options, adoptLegacy: true });
+  assert.equal(
+    (await client.query("SELECT count(*)::integer AS count FROM schema_migrations WHERE checksum IS NULL")).rows[0]
+      .count,
+    0,
+  );
+  await rm(extra);
+  await assert.rejects(runMigrations(client, directory, options), /Applied migration is missing/);
+});
