@@ -276,12 +276,12 @@ function projectPendingStock(resource, value) {
 }
 
 function queueWrite(resource, value) {
-  cache.set(resource, clone(value));
   if (mockColors && (resource === "colors" || COLOR_COLLECTIONS[resource])) {
     saveMockColors(resource, value);
     if (resource === "colors") return;
   }
-  sync.write(resource, value);
+  // The sync engine owns a detached snapshot; reads still return caller-owned copies.
+  cache.set(resource, sync.write(resource, value));
 }
 
 export const retryPendingWrites = () => sync.retry();

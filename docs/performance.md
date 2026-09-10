@@ -14,3 +14,16 @@ Disposable PostgreSQL 18.4, two accounts with 5,000 archived Work rows each plus
 At one poll every five seconds in two idle tabs, response bodies fall from roughly 22.4 MB/minute to 4.9 KB/minute. Authentication work and HTTP overhead are excluded from this comparison. The revision query plan's sort over the small RLS-filtered revision table took 0.012 ms; no speculative index was added.
 
 The client compares remote revisions to the last **applied** editor baseline, so a refresh deferred during editing remains eligible later. Changed resources are selected explicitly and retain consistent history-page revision checks. Three consecutive refresh failures show a visible retry action. The integration fixture records current measurements on every run.
+
+## Durable title editing (2026-09-10)
+
+`node tools/benchmark-edits.mjs` measures 50 edits with 100 active Todo items and 5,000 completed entries, using an in-memory localStorage adapter to isolate serialization/copying (no browser disk or rendering time):
+
+| Implementation                                    | Mean JS time/edit | Bytes written/edit |
+| ------------------------------------------------- | ----------------: | -----------------: |
+| Full baseline copied and written each time        |          10.53 ms |          1,417,674 |
+| Reused baseline snapshot, one detached draft copy |           3.09 ms |            471,077 |
+
+Each edit still synchronously writes its latest draft. Baseline and uncertain-attempt snapshots are stored once and referenced by the draft head; new snapshots publish before the head, so a quota failure preserves the previous durable edit. Corrupt/missing references remain exportable and cannot point into another account. Acknowledgement removes referenced snapshots. Total retained storage is essentially unchanged (about 1.42 MB for this fixture), so the existing quota warning/recovery controls remain necessary.
+
+The cache reuses the sync engine's detached snapshot instead of cloning the same input twice. R04's history patch avoids retransmitting unchanged history. These measurements support the smaller local write and history transport changes without introducing a second item-mutation API.

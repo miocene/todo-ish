@@ -49,7 +49,8 @@ export function createResourceSync({
   }
   function persist(entry) {
     try {
-      storage.save(copy(entry));
+      // Values are immutable snapshots; only the entry envelope changes.
+      storage.save({ ...entry });
     } catch {
       durable = false;
     }
@@ -131,7 +132,7 @@ export function createResourceSync({
     try {
       while (entries.has(resource)) {
         const entry = entries.get(resource);
-        const snapshot = copy(entry.value);
+        const snapshot = entry.value;
         let value;
         try {
           value = canonical(resource, snapshot);
@@ -298,7 +299,7 @@ export function createResourceSync({
         remote.serialized !== undefined &&
         matches(resource, value, remote.serialized)
       )
-        return;
+        return remote.value;
       const entry = current ?? {
         id: makeId(),
         resource,
@@ -313,6 +314,7 @@ export function createResourceSync({
         status(resource, "saving", "Saving changes…");
         schedule(resource);
       }
+      return entry.value;
     },
     revision(resource) {
       return saved.get(resource)?.revision ?? 0;
