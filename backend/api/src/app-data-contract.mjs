@@ -138,6 +138,9 @@ export function workTaskToApi(task) {
 }
 
 export const APP_DATA_LIMITS = Object.freeze({
+  bodyBytes: 8 * 1024 * 1024,
+  historyPage: 500,
+  historyChanges: 2000,
   tasks: 2000,
   lists: 100,
   projects: 500,

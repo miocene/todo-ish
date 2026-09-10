@@ -1,3 +1,5 @@
+import { APP_DATA_LIMITS, APP_DATA_RESOURCES } from "./app-data-contract.mjs";
+import { HISTORY_RESOURCES, validateHistoryDelta } from "./history-transport.mjs";
 import { createServer } from "node:http";
 import { AppDataRevisionConflictError } from "./app-data-repository.mjs";
 import { AppDataValidationError, isAppDataResource, validateAppDataResource } from "./app-data-validation.mjs";
@@ -7,9 +9,9 @@ const DEFAULT_LIMIT = 100;
 const MAX_LIMIT = 500;
 const MAX_OFFSET = 1_000_000;
 const MAX_QUERY_LENGTH = 100;
-const MAX_BODY_BYTES = 1_000_000;
+const MAX_BODY_BYTES = APP_DATA_LIMITS.bodyBytes;
 const CORS_METHODS = ["GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"];
-const CORS_HEADERS = ["content-type", "if-match", "x-app-user-id", "x-shopping-stock"];
+const CORS_HEADERS = ["content-type", "if-match", "x-app-user-id", "x-shopping-stock", "x-history-mode"];
 
 class RequestError extends Error {
   constructor(message, statusCode = 400) {
@@ -225,18 +227,43 @@ export function createHttpServer(
         const user = await authService.requireUser(request.headers.cookie, authenticationBypass);
         checkAccount(request, user);
         requireMethod(method, ["GET", "HEAD"]);
-        body = await repository.read(user.id);
+        const selected = url.searchParams.get("resources")?.split(",") ?? APP_DATA_RESOURCES;
+        if (!selected.length || selected.some((resource) => !isAppDataResource(resource)))
+          throw new RequestError("Unknown resource selection");
+        body = await repository.read(user.id, {
+          resources: [...new Set(selected)],
+          history: url.searchParams.get("history") === "omit" ? "omit" : "all",
+        });
       } else {
         const user = await authService.requireUser(request.headers.cookie, authenticationBypass);
         checkAccount(request, user);
+        const historyMatch = /^\/api\/data\/history\/([a-z-]+)$/.exec(url.pathname);
+        if (historyMatch && HISTORY_RESOURCES.includes(historyMatch[1])) {
+          requireMethod(method, ["GET"]);
+          body = await repository.history(
+            historyMatch[1],
+            user.id,
+            integerParameter(url.searchParams, "offset", 0, 0, 1_000_000),
+            integerParameter(url.searchParams, "limit", APP_DATA_LIMITS.historyPage, 1, APP_DATA_LIMITS.historyPage),
+          );
+          writeJson(response, 200, body, "no-store", responseCorsHeaders);
+          return;
+        }
         const resourceMatch = /^\/api\/data\/([a-z-]+)$/.exec(url.pathname);
         if (!resourceMatch || !isAppDataResource(resourceMatch[1])) throw new RequestError("Not found", 404);
         requireMethod(method, ["PUT"]);
         const resource = resourceMatch[1];
         if (resource === "shopping" && request.headers["x-shopping-stock"] !== "atomic-v1")
           throw new RequestError("Reload the app before saving shopping changes.", 426);
-        const data = validateAppDataResource(resource, await readJson(request));
-        const revision = await repository.replace(resource, data, expectedRevision(request), user.id);
+        const input = await readJson(request);
+        const patch = request.headers["x-history-mode"] === "patch-v1";
+        const data = patch ? validateHistoryDelta(resource, input) : validateAppDataResource(resource, input);
+        const revision = await repository[patch ? "patch" : "replace"](
+          resource,
+          data,
+          expectedRevision(request),
+          user.id,
+        );
         body = { resource, revision };
         headers = { etag: `"${revision}"` };
       }

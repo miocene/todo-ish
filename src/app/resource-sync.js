@@ -174,6 +174,8 @@ export function createResourceSync({
           }
           if (error.status === 401) {
             status(resource, "auth", "Sign in again to save. Your local edits have been kept.");
+          } else if (error.name === "AppDataValidationError") {
+            status(resource, "invalid", error.message);
           } else if (error.status >= 400 && error.status < 500 && ![408, 429].includes(error.status)) {
             if (!matches(resource, entry.value, value)) continue;
             status(

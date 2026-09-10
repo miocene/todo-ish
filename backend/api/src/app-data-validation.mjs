@@ -11,7 +11,9 @@ const URL_LIMIT = 2_000;
 const RESOURCE_SET = new Set(APP_DATA_RESOURCES);
 const WORK_STATUS_SET = new Set(["work", "pto", "sick-leave", "holiday", "business-trip", "weekend", "conference"]);
 
-export class AppDataValidationError extends Error {}
+export class AppDataValidationError extends Error {
+  name = "AppDataValidationError";
+}
 
 function fail(path, message) {
   throw new AppDataValidationError(`${path} ${message}`);

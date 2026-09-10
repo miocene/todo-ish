@@ -1,3 +1,9 @@
+import {
+  applyHistoryDelta,
+  HISTORY_RESOURCES,
+  splitHistory,
+  validateHistoryDelta,
+} from "../backend/api/src/history-transport.mjs";
 import { emptyResource, setStateResource } from "../backend/api/src/app-data-contract.mjs";
 import { expect, test as base } from "@playwright/test";
 import { APP_DATA_RESOURCES, validateAppDataResource } from "../backend/api/src/app-data-validation.mjs";
@@ -64,7 +70,31 @@ const test = base.extend({
             delete data.revisions.colors;
             data.initializedResources = data.initializedResources.filter((resource) => resource !== "colors");
           }
+          if (url.searchParams.get("history") === "omit") {
+            data.historyTransport = 1;
+            for (const resource of HISTORY_RESOURCES)
+              setStateResource(
+                data,
+                resource,
+                splitHistory(resource, values[resource] ?? emptyResource(resource)).active,
+              );
+          }
           await json(data);
+          return;
+        }
+        const historyMatch = /^\/api\/data\/history\/([a-z-]+)$/.exec(url.pathname);
+        if (request.method() === "GET" && historyMatch) {
+          const resource = historyMatch[1];
+          const history = splitHistory(resource, values[resource] ?? emptyResource(resource)).history;
+          const offset = Number(url.searchParams.get("offset") || 0);
+          const items = history.slice(offset, offset + 500);
+          await json({
+            userId: session.user?.id,
+            resource,
+            revision: revisions[resource],
+            items,
+            nextOffset: items.length === 500 ? offset + 500 : null,
+          });
           return;
         }
 
@@ -84,8 +114,14 @@ const test = base.extend({
             await json({ error: "Revision conflict", currentRevision: revisions[resource] }, 409);
             return;
           }
-          const submittedValue = request.postDataJSON();
+          let submittedValue = request.postDataJSON();
           try {
+            if (request.headers()["x-history-mode"] === "patch-v1") {
+              validateHistoryDelta(resource, submittedValue);
+              submittedValue = applyHistoryDelta(resource, values[resource] ?? emptyResource(resource), submittedValue);
+              if (["chores", "todos"].includes(resource))
+                submittedValue = { ...submittedValue, history: submittedValue.history ?? [], replaceHistory: true };
+            }
             validateAppDataResource(resource, submittedValue);
           } catch (error) {
             validationErrors.push(error.message);

@@ -55,7 +55,8 @@ test("large resources use bounded batches and empty replacements still delete re
   );
   const empty = fixture();
   await empty.repository.replace("work-tasks", [], 0);
-  assert.ok(empty.queries.some(({ text }) => text === "DELETE FROM work_tasks"));
+  const deletion = empty.queries.find(({ text }) => text.startsWith("DELETE FROM work_tasks"));
+  assert.deepEqual(deletion.values, [[], true]); // Full replacement also deletes archives.
   assert.equal(
     empty.queries.some(({ text }) => text.startsWith("INSERT INTO work_tasks")),
     false,

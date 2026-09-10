@@ -3,12 +3,12 @@ import { APP_DATA_LIMITS } from "./app-data-contract.mjs";
 
 // A purchase ID is its durable operation ID. Reversed IDs are never reused.
 // Called inside the shopping transaction, after inventory and shopping revision locks.
-export async function adjustShoppingStock(client, data, userId) {
+export async function adjustShoppingStock(client, data, userId, patch) {
   const query = (text, values = []) => client.query({ text, values });
   const previous = (
     await query(
-      "SELECT id, source, catalog_id, quantity FROM manual_shopping_items WHERE source IS NOT NULL AND (NOT archived OR $1)",
-      [data.history !== undefined],
+      "SELECT id, source, catalog_id, quantity FROM manual_shopping_items WHERE source IS NOT NULL AND (NOT archived OR $1 OR id = ANY($2::text[]))",
+      [data.history !== undefined && !patch, patch?.remove ?? []],
     )
   ).rows;
   const next = new Map(

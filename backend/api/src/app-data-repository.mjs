@@ -1,3 +1,6 @@
+import { AppDataValidationError } from "./app-data-validation.mjs";
+import { splitHistory } from "./history-transport.mjs";
+import { resourceFromState, setStateResource } from "./app-data-contract.mjs";
 import { adjustShoppingStock } from "./shopping-stock.mjs";
 import { APP_DATA_RESOURCES, SHARED_APP_DATA_RESOURCES, completionState as completion } from "./app-data-contract.mjs";
 
@@ -44,31 +47,46 @@ async function deleteMissing(executor, table, column, ids) {
   });
 }
 
-async function readAppData(pool, userId) {
+async function readAppData(
+  pool,
+  userId,
+  { resources = APP_DATA_RESOURCES, history = "all", offset = 0, limit = 500 } = {},
+) {
   return transaction(pool, "ISOLATION LEVEL REPEATABLE READ READ ONLY", userId, async (client) => {
+    const onlyHistory = history === "page";
+    const page = onlyHistory ? ` LIMIT ${limit} OFFSET ${offset}` : "";
+    const rows = (resource, sql, values = [], historyQuery = false) =>
+      resources.includes(resource) && (!onlyHistory || historyQuery) && (history !== "omit" || !historyQuery)
+        ? queryRows(client, sql, values)
+        : [];
+    const mixedRows = (resource, sql) => (resources.includes(resource) ? queryRows(client, sql) : []);
     const ownerRows = await queryRows(client, "SELECT id FROM auth_users ORDER BY created_at, id LIMIT 1");
-    const preferences = await queryRows(client, 'SELECT hidden_navigation AS "hiddenNavigation" FROM user_preferences');
+    const preferences = await rows(
+      "preferences",
+      'SELECT hidden_navigation AS "hiddenNavigation" FROM user_preferences',
+    );
     const revisionRows = await queryRows(
       client,
       `SELECT resource, revision
        FROM app_data_revisions
        ORDER BY resource`,
     );
-    const workTaskRows = await queryRows(
-      client,
+    const workTaskRows = await mixedRows(
+      "work-tasks",
       `SELECT id, title, archived, scheduled_for::text AS date, completed_at AS "checkedAt"
        FROM work_tasks
-       ORDER BY position, created_at, id`,
+       ${onlyHistory ? "WHERE archived" : history === "omit" ? "WHERE NOT archived" : ""}
+       ORDER BY position, created_at, id${page}`,
     );
-    const workStatusRows = await queryRows(
-      client,
+    const workStatusRows = await rows(
+      "work-statuses",
       `SELECT work_date::text AS date, status
        FROM work_day_statuses
        ORDER BY work_date`,
     );
-    const colorRows = await queryRows(client, "SELECT id, color FROM colors ORDER BY id");
-    const choreRows = await queryRows(
-      client,
+    const colorRows = await rows("colors", "SELECT id, color FROM colors ORDER BY id");
+    const choreRows = await rows(
+      "chores",
       `SELECT
          chores.id,
          chores.title,
@@ -89,14 +107,17 @@ async function readAppData(pool, userId) {
        WHERE chores.enabled
        ORDER BY chores.position, chores.created_at, chores.id`,
     );
-    const choreHistoryRows = await queryRows(
-      client,
+    const choreHistoryRows = await rows(
+      "chores",
       `SELECT chores.id, chores.title,
       chores.schedule_description AS details, occurrence.due_on::text AS "nextDue",
       occurrence.completed_at AS "completedAt"
       FROM chore_occurrences AS occurrence JOIN chores ON chores.id = occurrence.chore_id
       WHERE occurrence.completed_at IS NOT NULL
-      ORDER BY occurrence.due_on, chores.id`,
+      AND NOT (chores.enabled AND occurrence.due_on IS NOT DISTINCT FROM chores.next_due_on)
+      ORDER BY occurrence.due_on, chores.id${page}`,
+      [],
+      true,
     );
     const currentChores = new Set(choreRows.map((row) => `${row.id}:${row.nextDue}`));
     const choreHistory = choreHistoryRows
@@ -108,28 +129,34 @@ async function readAppData(pool, userId) {
         nextDue: row.nextDue,
         ...completion(row.completedAt),
       }));
-    const todoListRows = await queryRows(
-      client,
+    const todoListRows = await rows(
+      "todos",
       `SELECT id, title, color
        FROM todo_lists
        ORDER BY position, created_at, id`,
     );
-    const todoItemRows = await queryRows(
-      client,
+    const todoItemRows = await mixedRows(
+      "todos",
       `SELECT id, list_id AS "listId", title, completed_at AS "completedAt"
        FROM todo_items
-       ORDER BY list_id, position, created_at, id`,
+       ${onlyHistory ? "WHERE list_id IS NULL" : history === "omit" ? "WHERE list_id IS NOT NULL" : ""}
+       ORDER BY list_id, position, created_at, id${page}`,
     );
-    const shoppingRows = await queryRows(
-      client,
+    const shoppingRows = await mixedRows(
+      "shopping",
       `SELECT id, title, source, catalog_id AS "catalogId", quantity, archived, product_url AS "productLink", completed_at AS "completedAt"
        FROM manual_shopping_items
-       ORDER BY position, created_at, id`,
+       ${onlyHistory ? "WHERE archived" : history === "omit" ? "WHERE NOT archived" : ""}
+       ORDER BY position, created_at, id${page}`,
     );
-    const projectHistory = await queryRows(
-      client,
-      'SELECT resource, id, title, context, completed_at AS "completedAt" FROM completed_project_tasks ORDER BY resource, id',
-    );
+    const projectHistory =
+      history === "omit"
+        ? []
+        : await queryRows(
+            client,
+            `SELECT resource, id, title, context, completed_at AS "completedAt" FROM completed_project_tasks WHERE resource = ANY($1::text[]) ORDER BY resource, id${page}`,
+            [resources.filter((resource) => ["printing", "cross-stitch"].includes(resource))],
+          );
     const historyFor = (resource) =>
       projectHistory
         .filter((row) => row.resource === resource)
@@ -145,20 +172,20 @@ async function readAppData(pool, userId) {
       }),
       ...completion(item.completedAt),
     });
-    const printingProjectRows = await queryRows(
-      client,
+    const printingProjectRows = await rows(
+      "printing",
       `SELECT id, title, color, description
        FROM printing_projects
        ORDER BY position, created_at, id`,
     );
-    const printingItemRows = await queryRows(
-      client,
+    const printingItemRows = await rows(
+      "printing",
       `SELECT id, project_id AS "projectId", title, completed_at AS "completedAt"
        FROM printing_items
        ORDER BY project_id, position, created_at, id`,
     );
-    const filamentUsageRows = await queryRows(
-      client,
+    const filamentUsageRows = await rows(
+      "printing",
       `SELECT
          usages.id,
          usages.printing_item_id AS "itemId",
@@ -169,14 +196,14 @@ async function readAppData(pool, userId) {
        LEFT JOIN current_filament_catalog AS catalog ON catalog.catalog_id = usages.catalog_id
        ORDER BY usages.printing_item_id, usages.position, usages.id`,
     );
-    const stitchProjectRows = await queryRows(
-      client,
+    const stitchProjectRows = await rows(
+      "cross-stitch",
       `SELECT id, title, color, description
        FROM stitch_projects
        ORDER BY position, created_at, id`,
     );
-    const stitchThreadRows = await queryRows(
-      client,
+    const stitchThreadRows = await rows(
+      "cross-stitch",
       `SELECT
          threads.id,
          threads.project_id AS "projectId",
@@ -190,15 +217,15 @@ async function readAppData(pool, userId) {
        LEFT JOIN current_floss_catalog AS catalog ON catalog.catalog_id = threads.floss_catalog_id
        ORDER BY threads.project_id, threads.position, threads.created_at, threads.id`,
     );
-    const filamentInventoryRows = await queryRows(
-      client,
+    const filamentInventoryRows = await rows(
+      "filament-inventory",
       `SELECT catalog_id AS "catalogId", spool_count AS count
        FROM filament_inventory
        WHERE spool_count > 0
        ORDER BY catalog_id`,
     );
-    const flossInventoryRows = await queryRows(
-      client,
+    const flossInventoryRows = await rows(
+      "floss-inventory",
       `SELECT catalog_id AS "catalogId", skein_count AS count
        FROM floss_inventory
        WHERE skein_count > 0
@@ -245,7 +272,7 @@ async function readAppData(pool, userId) {
       });
     }
 
-    return {
+    const state = {
       userId,
       legacyOwner: ownerRows[0]?.id === userId,
       preferences: preferences[0] ?? { hiddenNavigation: [] },
@@ -321,6 +348,22 @@ async function readAppData(pool, userId) {
         floss: Object.fromEntries(flossInventoryRows.map((row) => [row.catalogId, row.count])),
       },
     };
+    if (onlyHistory) {
+      const resource = resources[0];
+      const items = splitHistory(resource, resourceFromState(state, resource)).history;
+      return {
+        userId,
+        resource,
+        revision: revisions[resource],
+        items,
+        nextOffset: items.length === limit ? offset + limit : null,
+      };
+    }
+    if (history === "omit") state.historyTransport = 1;
+    state.includedResources = resources;
+    for (const resource of APP_DATA_RESOURCES)
+      if (!resources.includes(resource)) setStateResource(state, resource, undefined);
+    return state;
   });
 }
 
@@ -371,19 +414,17 @@ async function upsertRows(client, table, columns, rows, { keys = ["id"], updated
   );
 }
 
-async function replaceWorkTasks(client, tasks) {
+async function replaceWorkTasks(client, tasks, _userId, patch = false) {
   await upsertRows(
     client,
     "work_tasks",
     ["id", "title", "scheduled_for", "completed_at", "position", "archived"],
     tasks.map((task, position) => [task.id, task.title, task.date, task.checkedAt, position, task.archived ?? false]),
   );
-  await deleteMissing(
-    client,
-    "work_tasks",
-    "id",
-    tasks.map((task) => task.id),
-  );
+  await client.query({
+    text: "DELETE FROM work_tasks WHERE NOT (id = ANY($1::text[])) AND (NOT archived OR $2)",
+    values: [tasks.map((task) => task.id), !patch],
+  });
 }
 
 async function replaceWorkStatuses(client, statuses) {
@@ -501,7 +542,7 @@ async function replaceTodos(client, data) {
   }
 }
 
-async function replaceShopping(client, data, userId) {
+async function replaceShopping(client, data, userId, patch = false) {
   const tasks = [
     ...data.tasks.map((item) => ({ ...item, archived: false })),
     ...(data.history ?? []).map((item) => ({ ...item, archived: true })),
@@ -527,23 +568,25 @@ async function replaceShopping(client, data, userId) {
   // Legacy callers do not know retained history.
   await client.query({
     text: "DELETE FROM manual_shopping_items WHERE NOT (id = ANY($1::text[])) AND (NOT archived OR $2)",
-    values: [tasks.map((item) => item.id), data.history !== undefined],
+    values: [tasks.map((item) => item.id), data.history !== undefined && !patch],
   });
 }
 
-async function replaceProjectHistory(client, resource, data) {
+async function replaceProjectHistory(client, resource, data, patch) {
   if (data.history === undefined) return;
-  await client.query({ text: "DELETE FROM completed_project_tasks WHERE resource = $1", values: [resource] });
+  if (!patch)
+    await client.query({ text: "DELETE FROM completed_project_tasks WHERE resource = $1", values: [resource] });
   await insertRows(
     client,
     "completed_project_tasks",
     ["resource", "id", "title", "context", "completed_at"],
     data.history.map((item) => [resource, item.id, item.title, item.context ?? "", item.completedAt]),
+    "ON CONFLICT (user_id, resource, id) DO UPDATE SET title = EXCLUDED.title, context = EXCLUDED.context, completed_at = EXCLUDED.completed_at",
   );
 }
 
-async function replacePrinting(client, data) {
-  await replaceProjectHistory(client, "printing", data);
+async function replacePrinting(client, data, _userId, patch = false) {
+  await replaceProjectHistory(client, "printing", data, patch);
   const items = [];
   const usages = [];
   for (const project of data.projects) {
@@ -588,8 +631,8 @@ async function replacePrinting(client, data) {
   );
 }
 
-async function replaceCrossStitch(client, data) {
-  await replaceProjectHistory(client, "cross-stitch", data);
+async function replaceCrossStitch(client, data, _userId, patch = false) {
+  await replaceProjectHistory(client, "cross-stitch", data, patch);
   const threads = data.projects.flatMap((project) =>
     project.tasks.map((thread, position) => [
       thread.id,
@@ -663,7 +706,21 @@ const WRITERS = Object.freeze({
   "floss-inventory": (client, data) => replaceInventory(client, "floss_inventory", "skein_count", data),
 });
 
-async function replaceResource(pool, resource, data, expectedRevision, userId) {
+const HISTORY_TABLES = {
+  "work-tasks": ["work_tasks", "id", "archived"],
+  chores: ["chore_occurrences", "(chore_id || ':' || due_on::text)", "completed_at IS NOT NULL"],
+  todos: ["todo_items", "id", "list_id IS NULL"],
+  shopping: ["manual_shopping_items", "id", "archived"],
+  printing: ["completed_project_tasks", "id", "resource = 'printing'"],
+  "cross-stitch": ["completed_project_tasks", "id", "resource = 'cross-stitch'"],
+};
+
+async function removeHistory(client, resource, keys) {
+  const [table, key, predicate] = HISTORY_TABLES[resource];
+  await client.query({ text: `DELETE FROM ${table} WHERE ${predicate} AND ${key} = ANY($1::text[])`, values: [keys] });
+}
+
+async function replaceResource(pool, resource, data, expectedRevision, userId, historyPatch) {
   const scope = SHARED_APP_DATA_RESOURCES.includes(resource) ? "" : userId;
   return transaction(pool, "", userId, async (client) => {
     if (resource === "shopping") {
@@ -697,8 +754,20 @@ async function replaceResource(pool, resource, data, expectedRevision, userId) {
       throw new AppDataRevisionConflictError(resource, expectedRevision, currentRevision);
     }
 
-    if (resource === "shopping") await adjustShoppingStock(client, data, userId);
-    await WRITERS[resource](client, data, userId);
+    if (resource === "shopping") await adjustShoppingStock(client, data, userId, historyPatch);
+    await WRITERS[resource](client, data, userId, Boolean(historyPatch));
+    if (historyPatch?.remove.length) await removeHistory(client, resource, historyPatch.remove);
+    if (historyPatch) {
+      const [table, , predicate] = HISTORY_TABLES[resource];
+      const count = await queryRows(
+        client,
+        `SELECT count(*)::integer AS count FROM ${table} WHERE ${resource === "work-tasks" ? "true" : predicate}`,
+      );
+      if (count[0].count > 100_000)
+        throw new AppDataValidationError(
+          "This resource has reached its 100,000-entry history limit. Export history before removing entries.",
+        );
+    }
     const updatedRows = await queryRows(
       client,
       `UPDATE app_data_revisions
@@ -713,7 +782,20 @@ async function replaceResource(pool, resource, data, expectedRevision, userId) {
 
 export function createAppDataRepository(pool) {
   return {
-    read: (userId) => readAppData(pool, userId),
+    read: (userId, options) => readAppData(pool, userId, options),
+    history: (resource, userId, offset, limit) =>
+      readAppData(pool, userId, { resources: [resource], history: "page", offset, limit }),
+    patch: (resource, patch, expectedRevision, userId) =>
+      replaceResource(
+        pool,
+        resource,
+        resource === "work-tasks"
+          ? [...patch.value, ...patch.history.upsert]
+          : { ...patch.value, history: patch.history.upsert },
+        expectedRevision,
+        userId,
+        patch.history,
+      ),
     replace: (resource, data, expectedRevision, userId) =>
       replaceResource(pool, resource, data, expectedRevision, userId),
   };

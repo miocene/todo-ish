@@ -208,7 +208,7 @@ test("failed chore saves recover after reload and deletion cancels a pending reo
   expect(appData.validationErrors).toEqual([]);
 });
 
-test("multiple completions survive reload and complete history snapshots", async ({ page, appData }) => {
+test("multiple completions survive reload without resending unchanged history", async ({ page, appData }) => {
   const dialog = await add(page, "Sweep twice");
   await dialog.getByRole("combobox", { name: "Frequency" }).selectOption("day");
   await dialog.getByRole("button", { name: "Add chore", exact: true }).click();
@@ -227,8 +227,9 @@ test("multiple completions survive reload and complete history snapshots", async
   await add(page, "New chore");
   await dialog.getByRole("button", { name: "Add chore", exact: true }).click();
   const request = await requestPromise;
-  expect(request.postDataJSON().history).toHaveLength(2);
-  expect(request.postDataJSON().replaceHistory).toBe(true);
+  expect(request.postDataJSON().history).toEqual({ upsert: [], remove: [] });
+  expect(request.headers()["x-history-mode"]).toBe("patch-v1");
+  expect(appData.get("chores").history).toHaveLength(2);
   await expect.poll(() => appData.get("chores").tasks.length).toBe(1);
   await page.reload();
   await page.goto("/profile");

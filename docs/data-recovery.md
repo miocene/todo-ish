@@ -20,3 +20,11 @@ The following compatibility paths remain supported until their data population i
 - WebAuthn JSON helpers: `passkeys.js` imports `webauthn-polyfills`; removing these requires confirming the supported clients implement those helpers.
 
 Do not remove stored values or compatibility readers merely because a new account starts with the current format.
+
+## Resource capacity
+
+The browser requests active data plus history pages of at most 500 entries. Every page carries its resource revision; if that resource changes during loading, the browser restarts the snapshot (up to three attempts). The current Activity UI still collects history in memory; transport paging does not imply virtualized rendering.
+
+Modern saves use `x-history-mode: patch-v1`: the active resource plus history upserts/removals, with `If-Match` guarding the whole transaction. Unchanged history is never written. Limit each save to 2,000 changed history entries and 8 MiB of UTF-8 JSON. These limits apply in addition to field and collection limits; 2,000 maximum-length multilingual Work titles fit. Oversized or invalid drafts remain recoverable. Large legacy imports must be divided into these bounded changes through recovery tooling rather than silently truncated. Legacy full-snapshot clients remain readable; their saves have the same byte limit.
+
+Tests exercise 100,000-entry history differences, multilingual payload sizes, PostgreSQL pagination across all history resources, stale revisions, and completion/deletion recovery in the browser.

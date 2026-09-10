@@ -1,3 +1,11 @@
+import {
+  HISTORY_RESOURCES,
+  historyDelta,
+  joinHistory,
+  serializeWrite,
+  splitHistory,
+} from "../../backend/api/src/history-transport.mjs";
+import { setStateResource } from "../../backend/api/src/app-data-contract.mjs";
 import { createPendingStorage } from "./pending-storage.js";
 import { reactive } from "vue";
 import { apiFetch, setApiAccount } from "./api.js";
@@ -31,6 +39,7 @@ const initializedResources = new Set();
 const clone = (value) => JSON.parse(JSON.stringify(value));
 const MOCK_COLORS_STORAGE_KEY = "done-ish.mock-colors.v1";
 const COLOR_COLLECTIONS = Object.freeze({ todos: "lists", printing: "projects", "cross-stitch": "projects" });
+let historyTransport = false;
 let hydrated = false;
 let mockColors = false;
 let accountId;
@@ -107,15 +116,44 @@ export const syncState = reactive({ state: "saved", message: "", pending: 0, dur
 
 const occurrenceKey = (item) => `${item.id}:${item.nextDue}`;
 
-async function fetchRemoteState() {
-  const response = await apiFetch("/data", { headers: { accept: "application/json" } });
-  if (!response.ok) {
+async function fetchJson(path) {
+  const response = await apiFetch(path, { headers: { accept: "application/json" } });
+  if (!response.ok)
     throw Object.assign(new Error(`Could not load saved data (${response.status}).`), { status: response.status });
-  }
   const state = await response.json();
   if (state.userId !== accountId)
     throw Object.assign(new Error("Your account changed. Reload before saving."), { status: 401 });
   return state;
+}
+
+async function fetchRemoteState(resources = RESOURCES) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const state = await fetchJson(`/data?history=omit&resources=${resources.join(",")}`);
+    historyTransport = state.historyTransport === 1;
+    if (!historyTransport) return state;
+    let changed = false;
+    for (const resource of resources.filter((resource) => HISTORY_RESOURCES.includes(resource))) {
+      const history = [];
+      let offset = 0;
+      do {
+        const page = await fetchJson(`/data/history/${resource}?offset=${offset}`);
+        if (page.revision !== state.revisions[resource]) {
+          changed = true;
+          break;
+        }
+        history.push(...page.items);
+        offset = page.nextOffset;
+      } while (offset !== null);
+      if (changed) break;
+      setStateResource(
+        state,
+        resource,
+        joinHistory(resource, splitHistory(resource, remoteValue(state, resource)).active, history),
+      );
+    }
+    if (!changed) return state;
+  }
+  throw new Error("Saved data changed while loading history. Please retry.");
 }
 
 const sync = createResourceSync({
@@ -158,14 +196,20 @@ const sync = createResourceSync({
           : resource === "todos" && value.history !== undefined
             ? { ...value, replaceHistory: true }
             : value;
+    const patch = historyTransport && HISTORY_RESOURCES.includes(resource);
+    const payload = patch
+      ? historyDelta(resource, sync.savedValue(resource) ?? emptyResource(resource), submitted)
+      : submitted;
+    const body = serializeWrite(payload);
     const response = await apiFetch(`/data/${resource}`, {
       method: "PUT",
       headers: {
         "content-type": "application/json",
         "if-match": `"${revision}"`,
         ...(resource === "shopping" && { "x-shopping-stock": "atomic-v1" }),
+        ...(patch && { "x-history-mode": "patch-v1" }),
       },
-      body: JSON.stringify(submitted),
+      body,
     });
     const result = await response.json().catch(() => ({}));
     if (!response.ok)

@@ -1,3 +1,4 @@
+import { verifyHistoryTransport } from "./history-cases.mjs";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
@@ -418,6 +419,8 @@ test("PostgreSQL application-data contract", async (t) => {
   await t.test("atomic purchases, reversals and retries", () =>
     verifyAtomicPurchases(rawRepository, "first", "second"),
   );
+
+  await t.test("bounded history reads and patches", () => verifyHistoryTransport(rawRepository, "first"));
 
   await t.test("pre-created accounts use expiring, single-use setup codes", () =>
     verifySetupCodes(createAuthRepository(runtimePool), "second"),

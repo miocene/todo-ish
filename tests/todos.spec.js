@@ -21,6 +21,7 @@ test.beforeEach(async ({ page, appData }) => {
   });
   await page.clock.install({ time: new Date("2026-02-02T14:00:00") });
   await page.goto("/todos");
+  await expect(page.locator("#todo-title-done")).toHaveValue("Finished task");
 });
 
 test("cards use the shared kebab menu and General has one direct action", async ({ page }) => {
@@ -188,6 +189,7 @@ for (const removeList of [false, true]) {
       appData,
     }) => {
       if (offline) appData.setWriteFailure("todos", 503);
+      await expect(page.getByRole("checkbox", { name: "Complete Finished task", exact: true })).toBeChecked();
       await page.clock.pauseAt(new Date("2026-02-02T14:01:00"));
       await page.getByRole("checkbox", { name: "Complete Finished task", exact: true }).uncheck();
       if (removeList) await listAction(page, "Home", "Delete Home list");
