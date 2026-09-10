@@ -27,10 +27,13 @@ test("startup waits for saved data before loading the application", async ({ pag
   const dataReady = new Promise((resolve) => {
     releaseData = resolve;
   });
-  await page.route("**/api/data", async (route) => {
-    await dataReady;
-    await route.fallback();
-  });
+  await page.route(
+    (url) => url.pathname === "/api/data",
+    async (route) => {
+      await dataReady;
+      await route.fallback();
+    },
+  );
   await page.goto("/work?date=2026-09-06");
   await expect(page.getByRole("status")).toHaveText("Opening Done-ish…");
   await expect(page.locator(".jm-header")).toHaveCount(0);
@@ -48,7 +51,7 @@ test("startup waits for saved data before loading the application", async ({ pag
 for (const resource of ["auth/session", "data"]) {
   test(`startup retries a failed ${resource} request without reloading`, async ({ page }) => {
     await page.route(
-      `**/api/${resource}`,
+      (url) => url.pathname === `/api/${resource}`,
       (route) =>
         route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: "Offline" }) }),
       { times: 1 },
@@ -75,16 +78,15 @@ test("passkey sign-in opens the requested page after loading data", async ({ pag
       value: async () => ({ toJSON: () => ({ id: "test-passkey" }) }),
     });
   });
-  await page.route("**/api/auth/authentication/*", (route) =>
-    route.fulfill({
+  await page.route("**/api/auth/authentication/*", (route) => {
+    const options = route.request().url().endsWith("/options");
+    const user = { id: "owner", username: "owner", displayName: "Owner" };
+    if (!options) appDataByPage.get(page).setSession({ authenticated: true, bootstrapRequired: false, user });
+    return route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify(
-        route.request().url().endsWith("/options")
-          ? { challenge: "dGVzdA", rpId: "todo-ish.today" }
-          : { user: { id: "owner", username: "owner", displayName: "Owner" } },
-      ),
-    }),
-  );
+      body: JSON.stringify(options ? { challenge: "dGVzdA", rpId: "todo-ish.today" } : { user }),
+    });
+  });
   await page.goto("/shopping");
   await expect(page.getByRole("heading", { name: "Welcome back", exact: true })).toBeVisible();
   expect(dataRequests).toBe(0);
@@ -750,10 +752,9 @@ test("items move down when checked and back up when unchecked after 500 millisec
   const testTime = Date.now();
   await page.clock.install({ time: testTime });
   await page.goto("/todos");
-  await page.clock.pauseAt(testTime + 60_000);
-
   const todoTitles = page.locator("#todo-list-general textarea");
   await expect(todoTitles.first()).toHaveValue("Renew passport");
+  await page.clock.pauseAt(testTime + 60_000);
   await page.getByRole("checkbox", { name: "Complete Renew passport" }).check();
   await page.clock.runFor(499);
   await expect(todoTitles.first()).toHaveValue("Renew passport");
