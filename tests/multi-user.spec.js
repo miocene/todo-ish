@@ -182,3 +182,36 @@ test("Project shortages respond to shared stock while Activity responds to remot
   await page.evaluate(() => globalThis.dispatchEvent(new Event("focus")));
   await expect(page.locator(".activity-day p", { hasText: "Completed elsewhere" })).toBeVisible();
 });
+
+test("idle polling uses revisions and persistent refresh failures are visible", async ({ page, appData }) => {
+  for (const [resource, value] of Object.entries({
+    shopping: { tasks: [] },
+    printing: { projects: [] },
+    "cross-stitch": { projects: [] },
+    "filament-inventory": {},
+    "floss-inventory": {},
+  }))
+    appData.set(resource, value);
+  await page.clock.install();
+  await page.goto("/shopping");
+  await expect(page.getByRole("button", { name: "Add item", exact: true })).toBeVisible();
+  let snapshots = 0;
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname === "/api/data") snapshots++;
+  });
+
+  const polled = page.waitForRequest((request) => request.url().endsWith("/data/revisions"));
+  await page.clock.runFor(5100);
+  await polled;
+  expect(snapshots).toBe(0);
+  await page.route("**/api/data/revisions", (route) => route.fulfill({ status: 503, body: "{}" }));
+  for (let i = 0; i < 3; i++) {
+    const response = page.waitForResponse((response) => response.url().endsWith("/data/revisions"));
+    await page.clock.runFor(5100);
+    await response;
+  }
+  await expect(page.getByText(/Saved data could not be refreshed/)).toBeVisible();
+  await page.unroute("**/api/data/revisions");
+  await page.getByRole("button", { name: "Retry refresh" }).click();
+  await expect(page.getByText(/Saved data could not be refreshed/)).toBeHidden();
+});

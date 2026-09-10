@@ -40,6 +40,9 @@ const clone = (value) => JSON.parse(JSON.stringify(value));
 const MOCK_COLORS_STORAGE_KEY = "done-ish.mock-colors.v1";
 const COLOR_COLLECTIONS = Object.freeze({ todos: "lists", printing: "projects", "cross-stitch": "projects" });
 let historyTransport = false;
+let revisionTransport = false;
+let refreshNow;
+export const retryAppDataRefresh = () => refreshNow?.();
 let hydrated = false;
 let mockColors = false;
 let accountId;
@@ -112,7 +115,14 @@ function clearLegacyValue(resource) {
 
 const PENDING_PREFIX = "done-ish.pending-write.v1:";
 const pendingPrefix = () => `done-ish.pending-write.v2:${accountId}:`;
-export const syncState = reactive({ state: "saved", message: "", pending: 0, durable: true, corrupt: [] });
+export const syncState = reactive({
+  state: "saved",
+  message: "",
+  pending: 0,
+  durable: true,
+  corrupt: [],
+  refreshMessage: "",
+});
 
 const occurrenceKey = (item) => `${item.id}:${item.nextDue}`;
 
@@ -130,6 +140,7 @@ async function fetchRemoteState(resources = RESOURCES) {
   for (let attempt = 0; attempt < 3; attempt++) {
     const state = await fetchJson(`/data?history=omit&resources=${resources.join(",")}`);
     historyTransport = state.historyTransport === 1;
+    revisionTransport = state.revisionTransport === 1;
     if (!historyTransport) return state;
     let changed = false;
     for (const resource of resources.filter((resource) => HISTORY_RESOURCES.includes(resource))) {
@@ -330,27 +341,38 @@ export async function initializeAppData(user) {
 export function startAppDataRefresh() {
   let busy = false;
   let stopped = false;
+  let failures = 0;
   const refresh = async () => {
     if (busy || stopped || document.visibilityState === "hidden") return;
     busy = true;
     try {
-      const state = await fetchRemoteState();
-      if (!stopped)
-        sync.refresh(
-          state,
-          RESOURCES.filter((resource) => !mockColors || resource !== "colors"),
-        );
+      let resources = RESOURCES.filter((resource) => !mockColors || resource !== "colors");
+      if (revisionTransport) {
+        const state = await fetchJson("/data/revisions");
+        resources = resources.filter((resource) => state.revisions[resource] !== sync.revision(resource));
+      }
+      if (resources.length) {
+        const state = await fetchRemoteState(resources);
+        if (!stopped) sync.refresh(state, resources);
+      }
+      failures = 0;
+      syncState.refreshMessage = "";
     } catch (error) {
+      failures++;
       if (error.status === 401) Object.assign(syncState, { state: "auth", message: error.message });
+      else if (failures >= 3)
+        syncState.refreshMessage = "Saved data could not be refreshed. Other users’ changes may be missing.";
     } finally {
       busy = false;
     }
   };
+  refreshNow = refresh;
   const timer = window.setInterval(refresh, 5000);
   window.addEventListener("focus", refresh);
   document.addEventListener("visibilitychange", refresh);
   return () => {
     stopped = true;
+    if (refreshNow === refresh) refreshNow = undefined;
     window.clearInterval(timer);
     window.removeEventListener("focus", refresh);
     document.removeEventListener("visibilitychange", refresh);

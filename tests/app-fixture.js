@@ -13,7 +13,13 @@ import flossCatalog from "../backend/catalogs/dmc-floss.snapshot.json" with { ty
 const appDataByPage = new WeakMap();
 
 function emptyAppData(values, revisions, userId = "owner") {
-  const state = { userId, legacyOwner: userId === "owner", initializedResources: Object.keys(values), revisions };
+  const state = {
+    userId,
+    revisionTransport: 1,
+    legacyOwner: userId === "owner",
+    initializedResources: Object.keys(values),
+    revisions,
+  };
   for (const resource of APP_DATA_RESOURCES)
     setStateResource(state, resource, values[resource] ?? emptyResource(resource));
   return state;
@@ -63,6 +69,10 @@ const test = base.extend({
           return;
         }
 
+        if (request.method() === "GET" && url.pathname === "/api/data/revisions") {
+          await json({ userId: session.user?.id, revisions: { ...revisions } });
+          return;
+        }
         if (request.method() === "GET" && url.pathname === "/api/data") {
           const data = emptyAppData(values, { ...revisions }, session.user?.id);
           if (!supportsColors) {

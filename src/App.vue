@@ -4,6 +4,7 @@ import { RouterView } from "vue-router";
 import {
   syncState,
   retryPendingWrites,
+  retryAppDataRefresh,
   downloadPendingWrites,
   discardPendingWrites,
   startAppDataRefresh,
@@ -36,6 +37,7 @@ export default {
   },
   methods: {
     retryPendingWrites,
+    retryAppDataRefresh,
     downloadPendingWrites,
     discardAndReload() {
       discardPendingWrites();
@@ -71,6 +73,11 @@ export default {
       view="secondary"
       @click="discardAndReload"
     />
+  </aside>
+
+  <aside v-if="syncState.refreshMessage" class="app-sync-error" role="alert">
+    <p>{{ syncState.refreshMessage }}</p>
+    <JMButton text="Retry refresh" view="secondary" @click="retryAppDataRefresh" />
   </aside>
 
   <JMHeader />

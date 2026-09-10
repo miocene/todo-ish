@@ -274,6 +274,7 @@ async function readAppData(
 
     const state = {
       userId,
+      revisionTransport: 1,
       legacyOwner: ownerRows[0]?.id === userId,
       preferences: preferences[0] ?? { hiddenNavigation: [] },
       initializedResources: revisionRows.map((row) => row.resource),
@@ -782,6 +783,17 @@ async function replaceResource(pool, resource, data, expectedRevision, userId, h
 
 export function createAppDataRepository(pool) {
   return {
+    revisions: (userId) =>
+      transaction(pool, "READ ONLY", userId, async (client) => {
+        const rows = await queryRows(client, "SELECT resource, revision FROM app_data_revisions ORDER BY resource");
+        return {
+          userId,
+          revisions: {
+            ...Object.fromEntries(APP_DATA_RESOURCES.map((resource) => [resource, 0])),
+            ...Object.fromEntries(rows.map((row) => [row.resource, row.revision])),
+          },
+        };
+      }),
     read: (userId, options) => readAppData(pool, userId, options),
     history: (resource, userId, offset, limit) =>
       readAppData(pool, userId, { resources: [resource], history: "page", offset, limit }),

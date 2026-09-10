@@ -314,6 +314,9 @@ export function createResourceSync({
         schedule(resource);
       }
     },
+    revision(resource) {
+      return saved.get(resource)?.revision ?? 0;
+    },
     savedValue(resource) {
       const value = saved.get(resource)?.value;
       return value === undefined ? undefined : copy(value);

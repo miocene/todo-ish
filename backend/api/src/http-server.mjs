@@ -228,6 +228,11 @@ export function createHttpServer(
         requireMethod(method, ["GET", "HEAD"]);
         body = await repository.floss(pagination(url.searchParams));
         cacheControl = "private, max-age=60";
+      } else if (url.pathname === "/api/data/revisions") {
+        const user = await authService.requireUser(request.headers.cookie, authenticationBypass);
+        checkAccount(request, user);
+        requireMethod(method, ["GET"]);
+        body = await repository.revisions(user.id);
       } else if (url.pathname === "/api/data") {
         const user = await authService.requireUser(request.headers.cookie, authenticationBypass);
         checkAccount(request, user);
