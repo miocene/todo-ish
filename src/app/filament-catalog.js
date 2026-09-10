@@ -23,3 +23,15 @@ export function filamentSearchLink(label) {
 export const filamentOptions = computed(() =>
   filaments.map((filament) => ({ value: filament.id, text: filamentLabel(filament), swatch: filament.swatch })),
 );
+
+const filamentOrder = new Intl.Collator();
+export const filamentSearchIndex = computed(() =>
+  filaments
+    .map((item) => ({
+      ...item,
+      title: filamentLabel(item),
+      href: filamentProductLink(item),
+      searchText: [item.id, item.family, item.color, item.productCode].filter(Boolean).join(" ").toLocaleLowerCase(),
+    }))
+    .sort((a, b) => filamentOrder.compare(a.family, b.family) || filamentOrder.compare(a.color, b.color)),
+);

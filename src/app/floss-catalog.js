@@ -14,3 +14,16 @@ export function flossProductLink(thread) {
 }
 
 export const flossOptions = computed(() => floss.map((thread) => ({ value: thread.id, text: flossLabel(thread) })));
+
+const flossOrder = new Intl.Collator(undefined, { numeric: true });
+export const flossSearchIndex = computed(() =>
+  floss
+    .map((item) => ({
+      ...item,
+      title: flossLabel(item),
+      href: flossProductLink(item),
+      swatch: item.color,
+      searchText: [item.id, item.number, item.colorName].join(" ").toLocaleLowerCase(),
+    }))
+    .sort((a, b) => flossOrder.compare(a.number, b.number)),
+);

@@ -1,8 +1,8 @@
 <script>
 import "./catalog-page.css";
 import { subscribeAppData } from "../app/app-data.js";
-import { filamentCatalog, filamentLabel, filamentProductLink, filaments } from "../app/filament-catalog.js";
-import { flossCatalog, floss, flossLabel, flossProductLink } from "../app/floss-catalog.js";
+import { filamentCatalog, filamentSearchIndex } from "../app/filament-catalog.js";
+import { flossCatalog, flossSearchIndex } from "../app/floss-catalog.js";
 import {
   loadFilamentInventory,
   loadFlossInventory,
@@ -30,8 +30,6 @@ export default {
       catalogKind: this.$route.query.catalog === "floss" ? "floss" : "filament",
       family: typeof this.$route.query.family === "string" ? this.$route.query.family : "",
       filamentInventory: loadFilamentInventory(),
-      filaments,
-      floss,
       flossInventory: loadFlossInventory(),
       printingProjects: loadPageTasks("printing").projects,
       query: typeof this.$route.query.q === "string" ? this.$route.query.q : "",
@@ -46,7 +44,7 @@ export default {
       return this.catalogKind === "floss";
     },
     families() {
-      return [...new Set(this.filaments.map((filament) => filament.family))].sort((first, second) =>
+      return [...new Set(filamentSearchIndex.value.map((filament) => filament.family))].sort((first, second) =>
         first.localeCompare(second),
       );
     },
@@ -59,55 +57,32 @@ export default {
     flossSupplyById() {
       return flossSupplyStatus(this.stitchingProjects, this.flossInventory);
     },
-    filteredFilaments() {
-      const query = this.query.trim().toLocaleLowerCase();
-      return this.filaments
-        .filter(
-          (filament) =>
-            (!this.family || filament.family === this.family) &&
-            (!query ||
-              [filament.id, filament.family, filament.color, filament.productCode]
-                .filter(Boolean)
-                .join(" ")
-                .toLocaleLowerCase()
-                .includes(query)),
-        )
-        .sort((first, second) => {
-          const priority = this.catalogPriority(first) - this.catalogPriority(second);
-          return priority || first.family.localeCompare(second.family) || first.color.localeCompare(second.color);
-        });
-    },
-    filteredFloss() {
-      const query = this.query.trim().toLocaleLowerCase();
-      return this.floss
-        .filter((thread) => [thread.id, thread.number, thread.colorName].join(" ").toLocaleLowerCase().includes(query))
-        .sort((first, second) => {
-          const priority = this.catalogPriority(first) - this.catalogPriority(second);
-          return priority || first.number.localeCompare(second.number, undefined, { numeric: true });
-        });
-    },
     inventory() {
       return this.isFlossCatalog ? this.flossInventory : this.filamentInventory;
     },
+    orderedItems() {
+      const groups = [[], [], []];
+      const rows = this.isFlossCatalog ? flossSearchIndex.value : filamentSearchIndex.value;
+      for (const item of rows) groups[this.catalogPriority(item)].push(item);
+      return groups.flat();
+    },
     items() {
-      if (this.isFlossCatalog) {
-        return this.filteredFloss.map((thread) => ({
-          id: thread.id,
-          title: flossLabel(thread),
-          href: flossProductLink(thread),
-          swatch: thread.color,
-          group: this.catalogGroup(thread),
-          required: this.flossSupplyById.get(thread.id)?.requiredSkeins ?? 0,
+      const query = this.query.trim().toLocaleLowerCase();
+      return this.orderedItems
+        .filter(
+          (item) =>
+            (this.isFlossCatalog || !this.family || item.family === this.family) && item.searchText.includes(query),
+        )
+        .map((item) => ({
+          id: item.id,
+          title: item.title,
+          href: item.href,
+          swatch: item.swatch,
+          group: this.catalogGroup(item),
+          required: this.isFlossCatalog
+            ? (this.flossSupplyById.get(item.id)?.requiredSkeins ?? 0)
+            : (this.supplyById.get(item.id)?.requiredSpools ?? 0),
         }));
-      }
-      return this.filteredFilaments.map((filament) => ({
-        id: filament.id,
-        title: filamentLabel(filament),
-        href: filamentProductLink(filament),
-        swatch: filament.swatch,
-        group: this.catalogGroup(filament),
-        required: this.supplyById.get(filament.id)?.requiredSpools ?? 0,
-      }));
     },
   },
   watch: {
