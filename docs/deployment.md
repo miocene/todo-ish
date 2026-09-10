@@ -21,3 +21,26 @@ Pi deployment requires Node, Yarn, Git, tar, SSH and rsync locally; Docker Compo
 Both web paths remain supported: Pages hosts the public frontend, and the Pi web container serves a local operational copy on loopback port 4173. Pages deployment runs the reusable quality workflow and publishes the matching Pages build. Verify the public app loads, authenticates and reads the protected API after publishing. To roll back Pages, redeploy a previously passing commit through its workflow; check that its API contract is compatible with the deployed backend. Pi web rollback follows the release instructions above.
 
 Docker is not required to run the local frontend quality suite. When Docker is unavailable locally, the container builds and image smoke test must pass in CI before using the release in production.
+
+## Pi-local backups
+
+The chosen destination is the Pi. The daily service keeps `/var/backups/todo-db` on the existing root filesystem; deployment keeps pre-migration copies in `PI_APP_DIR/backups`. The maintained `backend/scripts/database_backup.sh` uses directory mode 0700, file mode 0600, temporary files, archive validation and SHA-256 before publishing a dump. It retains 90 recent successful backups plus the first successful backup of each of the latest 12 months. Monthly copies use hard links. Older runbook filenames are left alone.
+
+To update the existing daily service on the Pi from a reviewed release:
+
+```sh
+sudo install -m 0750 backend/scripts/database_backup.sh /usr/local/sbin/backup-todo-db
+sudo install -m 0644 backend/deploy/raspberry-pi/todo-db-backup.service /etc/systemd/system/
+sudo install -m 0644 backend/deploy/raspberry-pi/todo-db-backup.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now todo-db-backup.timer
+sudo systemctl start todo-db-backup.service
+```
+
+A restore drill checks the checksum, restores all objects/data in a single transaction with `pg_restore --exit-on-error`, reads every restored public table and writes a dated `.restore-check.txt` report. It creates and drops its own uniquely named temporary database; it never restores into `todo` and does not write a marker into the source database:
+
+```sh
+sudo /usr/local/sbin/backup-todo-db verify /var/backups/todo-db/todo-daily-REPLACE-WITH-ACTUAL-FILENAME.dump
+```
+
+Current local evidence (2026-09-10): a disposable PostgreSQL 18.4 instance, PostgreSQL 18.6 client tools, full current migrations and a multilingual Work record passed backup, restore, cleanup, 0600/0700 permissions, retention and corrupted-checksum rejection. CI runs the same drill using its PostgreSQL container. This verifies the tooling; installing it on the Pi and checking the SSD cable/USB3-UAS connection remain operational follow-ups. A Pi-local copy does not cover loss of the entire host; a second-device copy remains optional.

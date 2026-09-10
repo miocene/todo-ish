@@ -58,10 +58,11 @@ jobs:
       - name: Lint, format, test, and build
         run: yarn quality
 
-      - name: Verify PostgreSQL round trips
+      - name: Verify PostgreSQL round trips and backup restore
         run: yarn test:integration
         env:
           TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/postgres
+          TEST_BACKUP_CONTAINER: ${{ job.services.postgres.id }}
 
       - name: Verify web container build
         if: matrix.node == '24.19.0'

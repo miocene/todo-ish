@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -7,6 +8,7 @@ export async function runMigrations(
   directory,
   { adoptLegacy = false, runtimeRole = "todo_runtime", log = console.log } = {},
 ) {
+  if (directory instanceof URL) directory = fileURLToPath(directory);
   if (!/^[a-z_][a-z0-9_]*$/.test(runtimeRole)) throw new Error("Unsafe migration runtime role");
   const names = (await readdir(directory)).filter((name) => name.endsWith(".sql")).sort();
   if (!names.length || names.some((name) => !/^\d{4}_[A-Za-z0-9_.-]+\.sql$/.test(name)))

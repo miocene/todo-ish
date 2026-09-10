@@ -24,14 +24,7 @@ compose() {
 }
 compose config --quiet
 compose build catalog-api web migrate
-backup_directory="$HOME/$app_directory/backups"
-mkdir -p "$backup_directory"
-chmod 700 "$backup_directory"
-backup_file="$backup_directory/todo-before-deploy-$(date -u +%Y%m%dT%H%M%SZ).dump"
-docker exec todo-postgres pg_dump -U todo_app -d todo --format=custom > "$backup_file.partial"
-test -s "$backup_file.partial"
-docker exec -i todo-postgres pg_restore --list < "$backup_file.partial" > /dev/null
-mv "$backup_file.partial" "$backup_file"
+backup_file=$(sh "$release/backend/scripts/database_backup.sh" backup "$HOME/$app_directory/backups")
 echo "Database backup: $backup_file"
 compose run --rm migrate
 compose up -d --no-build --wait --wait-timeout 300 catalog-api web public-api
