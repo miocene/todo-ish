@@ -1,9 +1,19 @@
-import { AuthRequestLimitError, createAuthRequestLimit } from "./auth-request-limit.mjs";
+import {
+  AuthRequestLimitError,
+  createAuthRequestLimit,
+} from "./auth-request-limit.mjs";
 import { APP_DATA_LIMITS, APP_DATA_RESOURCES } from "./app-data-contract.mjs";
-import { HISTORY_RESOURCES, validateHistoryDelta } from "./history-transport.mjs";
+import {
+  HISTORY_RESOURCES,
+  validateHistoryDelta,
+} from "./history-transport.mjs";
 import { createServer } from "node:http";
 import { AppDataRevisionConflictError } from "./app-data-repository.mjs";
-import { AppDataValidationError, isAppDataResource, validateAppDataResource } from "./app-data-validation.mjs";
+import {
+  AppDataValidationError,
+  isAppDataResource,
+  validateAppDataResource,
+} from "./app-data-validation.mjs";
 import { AuthError } from "./auth-service.mjs";
 
 const DEFAULT_LIMIT = 100;
@@ -12,7 +22,13 @@ const MAX_OFFSET = 1_000_000;
 const MAX_QUERY_LENGTH = 100;
 const MAX_BODY_BYTES = APP_DATA_LIMITS.bodyBytes;
 const CORS_METHODS = ["GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"];
-const CORS_HEADERS = ["content-type", "if-match", "x-app-user-id", "x-shopping-stock", "x-history-mode"];
+const CORS_HEADERS = [
+  "content-type",
+  "if-match",
+  "x-app-user-id",
+  "x-shopping-stock",
+  "x-history-mode",
+];
 
 class RequestError extends Error {
   constructor(message, statusCode = 400) {
@@ -24,8 +40,14 @@ class RequestError extends Error {
 function integerParameter(searchParams, name, fallback, minimum, maximum) {
   const value = searchParams.get(name);
   if (value === null || value === "") return fallback;
-  if (!/^\d+$/.test(value) || Number(value) < minimum || Number(value) > maximum) {
-    throw new RequestError(`${name} must be an integer between ${minimum} and ${maximum}`);
+  if (
+    !/^\d+$/.test(value) ||
+    Number(value) < minimum ||
+    Number(value) > maximum
+  ) {
+    throw new RequestError(
+      `${name} must be an integer between ${minimum} and ${maximum}`,
+    );
   }
   return Number(value);
 }
@@ -33,7 +55,9 @@ function integerParameter(searchParams, name, fallback, minimum, maximum) {
 function textParameter(searchParams, name) {
   const value = searchParams.get(name)?.trim() || "";
   if (value.length > MAX_QUERY_LENGTH) {
-    throw new RequestError(`${name} must be at most ${MAX_QUERY_LENGTH} characters`);
+    throw new RequestError(
+      `${name} must be at most ${MAX_QUERY_LENGTH} characters`,
+    );
   }
   return value;
 }
@@ -46,7 +70,13 @@ function pagination(searchParams) {
   };
 }
 
-function writeJson(response, statusCode, body, cacheControl = "no-store", headers = {}) {
+function writeJson(
+  response,
+  statusCode,
+  body,
+  cacheControl = "no-store",
+  headers = {},
+) {
   const payload = JSON.stringify(body);
   response.writeHead(statusCode, {
     "cache-control": cacheControl,
@@ -66,8 +96,15 @@ function requireMethod(method, allowedMethods) {
 }
 
 function checkAccount(request, user) {
-  if (request.headers["x-app-user-id"] && request.headers["x-app-user-id"] !== user.id)
-    throw new AuthError("Your account changed. Reload before saving.", 401, "account_changed");
+  if (
+    request.headers["x-app-user-id"] &&
+    request.headers["x-app-user-id"] !== user.id
+  )
+    throw new AuthError(
+      "Your account changed. Reload before saving.",
+      401,
+      "account_changed",
+    );
 }
 
 function corsHeaders(request, allowedOrigin) {
@@ -79,20 +116,34 @@ function corsHeaders(request, allowedOrigin) {
   };
 }
 
-function validateOrigin(request, allowedOrigin, pathname, method, authenticationBypass) {
-  if (authenticationBypass || !allowedOrigin || !pathname.startsWith("/api/")) return;
+function validateOrigin(
+  request,
+  allowedOrigin,
+  pathname,
+  method,
+  authenticationBypass,
+) {
+  if (authenticationBypass || !allowedOrigin || !pathname.startsWith("/api/"))
+    return;
   const origin = request.headers.origin;
-  if (origin && origin !== allowedOrigin) throw new RequestError("Origin not allowed", 403);
-  if (!["GET", "HEAD", "OPTIONS"].includes(method) && origin !== allowedOrigin) {
+  if (origin && origin !== allowedOrigin)
+    throw new RequestError("Origin not allowed", 403);
+  if (
+    !["GET", "HEAD", "OPTIONS"].includes(method) &&
+    origin !== allowedOrigin
+  ) {
     throw new RequestError("Origin header is required", 403);
   }
 }
 
 function writePreflight(response, request, allowedOrigin) {
   const requestedMethod = request.headers["access-control-request-method"];
-  if (!CORS_METHODS.includes(requestedMethod)) throw new RequestError("CORS method not allowed", 405);
+  if (!CORS_METHODS.includes(requestedMethod))
+    throw new RequestError("CORS method not allowed", 405);
 
-  const requestedHeaders = (request.headers["access-control-request-headers"] || "")
+  const requestedHeaders = (
+    request.headers["access-control-request-headers"] || ""
+  )
     .split(",")
     .map((header) => header.trim().toLowerCase())
     .filter(Boolean);
@@ -111,7 +162,8 @@ function writePreflight(response, request, allowedOrigin) {
 
 function expectedRevision(request) {
   const value = request.headers["if-match"];
-  if (typeof value !== "string") throw new RequestError("If-Match is required", 428);
+  if (typeof value !== "string")
+    throw new RequestError("If-Match is required", 428);
   const match = /^"(\d+)"$/.exec(value.trim());
   if (!match || Number(match[1]) > 2_147_483_646) {
     throw new RequestError('If-Match must contain a revision such as "0"');
@@ -120,9 +172,15 @@ function expectedRevision(request) {
 }
 
 async function readJson(request) {
-  const bodyLimit = request.url?.startsWith("/api/auth/") ? 64 * 1024 : MAX_BODY_BYTES;
-  const contentType = request.headers["content-type"]?.split(";", 1)[0].trim().toLowerCase();
-  if (contentType !== "application/json") throw new RequestError("Content-Type must be application/json", 415);
+  const bodyLimit = request.url?.startsWith("/api/auth/")
+    ? 64 * 1024
+    : MAX_BODY_BYTES;
+  const contentType = request.headers["content-type"]
+    ?.split(";", 1)[0]
+    .trim()
+    .toLowerCase();
+  if (contentType !== "application/json")
+    throw new RequestError("Content-Type must be application/json", 415);
   const declaredLength = Number(request.headers["content-length"] ?? 0);
   if (Number.isFinite(declaredLength) && declaredLength > bodyLimit) {
     throw new RequestError("Request body is too large", 413);
@@ -132,7 +190,8 @@ async function readJson(request) {
   let size = 0;
   for await (const chunk of request) {
     size += chunk.length;
-    if (size > bodyLimit) throw new RequestError("Request body is too large", 413);
+    if (size > bodyLimit)
+      throw new RequestError("Request body is too large", 413);
     chunks.push(chunk);
   }
   if (size === 0) throw new RequestError("Request body is required");
@@ -146,7 +205,12 @@ async function readJson(request) {
 export function createHttpServer(
   repository,
   authService,
-  { allowedOrigin, authenticationBypass = false, logger = console, authRequestLimit = createAuthRequestLimit() } = {},
+  {
+    allowedOrigin,
+    authenticationBypass = false,
+    logger = console,
+    authRequestLimit = createAuthRequestLimit(),
+  } = {},
 ) {
   const server = createServer(async (request, response) => {
     const method = request.method || "GET";
@@ -155,7 +219,13 @@ export function createHttpServer(
 
     try {
       const url = new URL(request.url || "/", "http://localhost");
-      validateOrigin(request, allowedOrigin, url.pathname, method, authenticationBypass);
+      validateOrigin(
+        request,
+        allowedOrigin,
+        url.pathname,
+        method,
+        authenticationBypass,
+      );
       responseCorsHeaders = corsHeaders(request, allowedOrigin);
       if (method === "OPTIONS" && url.pathname.startsWith("/api/")) {
         writePreflight(response, request, allowedOrigin);
@@ -163,7 +233,9 @@ export function createHttpServer(
       }
 
       if (method === "POST" && url.pathname.startsWith("/api/auth/"))
-        releaseAuth = authRequestLimit.acquire(request.socket.remoteAddress ?? "unknown");
+        releaseAuth = authRequestLimit.acquire(
+          request.socket.remoteAddress ?? "unknown",
+        );
       let body;
       let cacheControl = "no-store";
       let headers = {};
@@ -177,7 +249,10 @@ export function createHttpServer(
         headers = { "set-cookie": result.cookies };
       } else if (url.pathname === "/api/auth/session") {
         requireMethod(method, ["GET"]);
-        body = await authService.session(request.headers.cookie, authenticationBypass);
+        body = await authService.session(
+          request.headers.cookie,
+          authenticationBypass,
+        );
       } else if (url.pathname === "/api/auth/registration/options") {
         requireMethod(method, ["POST"]);
         const input = await readJson(request);
@@ -211,12 +286,18 @@ export function createHttpServer(
         body = result.body;
         headers = { "set-cookie": result.cookies };
       } else if (url.pathname === "/api/catalogs") {
-        await authService.requireUser(request.headers.cookie, authenticationBypass);
+        await authService.requireUser(
+          request.headers.cookie,
+          authenticationBypass,
+        );
         requireMethod(method, ["GET", "HEAD"]);
         body = await repository.summary();
         cacheControl = "private, max-age=60";
       } else if (url.pathname === "/api/catalogs/filaments") {
-        await authService.requireUser(request.headers.cookie, authenticationBypass);
+        await authService.requireUser(
+          request.headers.cookie,
+          authenticationBypass,
+        );
         requireMethod(method, ["GET", "HEAD"]);
         body = await repository.filaments({
           ...pagination(url.searchParams),
@@ -224,50 +305,83 @@ export function createHttpServer(
         });
         cacheControl = "private, max-age=60";
       } else if (url.pathname === "/api/catalogs/floss") {
-        await authService.requireUser(request.headers.cookie, authenticationBypass);
+        await authService.requireUser(
+          request.headers.cookie,
+          authenticationBypass,
+        );
         requireMethod(method, ["GET", "HEAD"]);
         body = await repository.floss(pagination(url.searchParams));
         cacheControl = "private, max-age=60";
       } else if (url.pathname === "/api/data/revisions") {
-        const user = await authService.requireUser(request.headers.cookie, authenticationBypass);
+        const user = await authService.requireUser(
+          request.headers.cookie,
+          authenticationBypass,
+        );
         checkAccount(request, user);
         requireMethod(method, ["GET"]);
         body = await repository.revisions(user.id);
       } else if (url.pathname === "/api/data") {
-        const user = await authService.requireUser(request.headers.cookie, authenticationBypass);
+        const user = await authService.requireUser(
+          request.headers.cookie,
+          authenticationBypass,
+        );
         checkAccount(request, user);
         requireMethod(method, ["GET", "HEAD"]);
-        const selected = url.searchParams.get("resources")?.split(",") ?? APP_DATA_RESOURCES;
-        if (!selected.length || selected.some((resource) => !isAppDataResource(resource)))
+        const selected =
+          url.searchParams.get("resources")?.split(",") ?? APP_DATA_RESOURCES;
+        if (
+          !selected.length ||
+          selected.some((resource) => !isAppDataResource(resource))
+        )
           throw new RequestError("Unknown resource selection");
         body = await repository.read(user.id, {
           resources: [...new Set(selected)],
           history: url.searchParams.get("history") === "omit" ? "omit" : "all",
         });
       } else {
-        const user = await authService.requireUser(request.headers.cookie, authenticationBypass);
+        const user = await authService.requireUser(
+          request.headers.cookie,
+          authenticationBypass,
+        );
         checkAccount(request, user);
-        const historyMatch = /^\/api\/data\/history\/([a-z-]+)$/.exec(url.pathname);
+        const historyMatch = /^\/api\/data\/history\/([a-z-]+)$/.exec(
+          url.pathname,
+        );
         if (historyMatch && HISTORY_RESOURCES.includes(historyMatch[1])) {
           requireMethod(method, ["GET"]);
           body = await repository.history(
             historyMatch[1],
             user.id,
             integerParameter(url.searchParams, "offset", 0, 0, 1_000_000),
-            integerParameter(url.searchParams, "limit", APP_DATA_LIMITS.historyPage, 1, APP_DATA_LIMITS.historyPage),
+            integerParameter(
+              url.searchParams,
+              "limit",
+              APP_DATA_LIMITS.historyPage,
+              1,
+              APP_DATA_LIMITS.historyPage,
+            ),
           );
           writeJson(response, 200, body, "no-store", responseCorsHeaders);
           return;
         }
         const resourceMatch = /^\/api\/data\/([a-z-]+)$/.exec(url.pathname);
-        if (!resourceMatch || !isAppDataResource(resourceMatch[1])) throw new RequestError("Not found", 404);
+        if (!resourceMatch || !isAppDataResource(resourceMatch[1]))
+          throw new RequestError("Not found", 404);
         requireMethod(method, ["PUT"]);
         const resource = resourceMatch[1];
-        if (resource === "shopping" && request.headers["x-shopping-stock"] !== "atomic-v1")
-          throw new RequestError("Reload the app before saving shopping changes.", 426);
+        if (
+          resource === "shopping" &&
+          request.headers["x-shopping-stock"] !== "atomic-v1"
+        )
+          throw new RequestError(
+            "Reload the app before saving shopping changes.",
+            426,
+          );
         const input = await readJson(request);
         const patch = request.headers["x-history-mode"] === "patch-v1";
-        const data = patch ? validateHistoryDelta(resource, input) : validateAppDataResource(resource, input);
+        const data = patch
+          ? validateHistoryDelta(resource, input)
+          : validateAppDataResource(resource, input);
         const revision = await repository[patch ? "patch" : "replace"](
           resource,
           data,
@@ -289,7 +403,10 @@ export function createHttpServer(
         return;
       }
 
-      writeJson(response, 200, body, cacheControl, { ...responseCorsHeaders, ...headers });
+      writeJson(response, 200, body, cacheControl, {
+        ...responseCorsHeaders,
+        ...headers,
+      });
     } catch (error) {
       const statusCode =
         error instanceof RequestError || error instanceof AuthRequestLimitError
@@ -304,9 +421,13 @@ export function createHttpServer(
       if (error instanceof RequestError && error.allowedMethods) {
         response.setHeader("allow", error.allowedMethods.join(", "));
       }
-      if (error instanceof AuthRequestLimitError) response.setHeader("retry-after", error.retryAfter);
+      if (error instanceof AuthRequestLimitError)
+        response.setHeader("retry-after", error.retryAfter);
       if (statusCode === 500) {
-        logger.error({ error, method, path: request.url }, "API request failed");
+        logger.error(
+          { error, method, path: request.url },
+          "API request failed",
+        );
       }
       writeJson(
         response,
@@ -315,7 +436,10 @@ export function createHttpServer(
           ? { error: error.message, currentRevision: error.currentRevision }
           : error instanceof AuthError
             ? { error: error.message, code: error.code }
-            : { error: statusCode === 500 ? "Internal server error" : error.message },
+            : {
+                error:
+                  statusCode === 500 ? "Internal server error" : error.message,
+              },
         "no-store",
         responseCorsHeaders,
       );

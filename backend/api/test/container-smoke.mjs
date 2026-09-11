@@ -9,7 +9,9 @@ import { Client } from "pg";
 import { runMigrations } from "../src/migrations.mjs";
 const connectionString = process.env.TEST_DATABASE_URL;
 if (!connectionString || process.platform !== "linux")
-  throw new Error("Run on Linux with a disposable TEST_DATABASE_URL and Docker");
+  throw new Error(
+    "Run on Linux with a disposable TEST_DATABASE_URL and Docker",
+  );
 const suffix = randomUUID().replaceAll("-", "");
 const database = `todo_image_${suffix}`;
 const role = `todo_image_runtime_${suffix}`;
@@ -20,15 +22,28 @@ const admin = new Client({ connectionString });
 const url = new URL(connectionString);
 url.pathname = `/${database}`;
 const installer = new Client({ connectionString: url.toString() });
-const docker = (...args) => execFileSync("docker", args, { stdio: "pipe" }).toString().trim();
+const docker = (...args) =>
+  execFileSync("docker", args, { stdio: "pipe" }).toString().trim();
 await admin.connect();
 try {
   await admin.query(`CREATE ROLE "${role}" NOLOGIN`);
   await admin.query(`CREATE DATABASE "${database}"`);
   await installer.connect();
-  await runMigrations(installer, new URL("../../database/migrations/", import.meta.url), { runtimeRole: role });
-  await writeFile(join(directory, "password"), decodeURIComponent(url.password), { mode: 0o444 });
-  await writeFile(join(directory, "bootstrap"), "disposable-bootstrap-token-for-ci-only", { mode: 0o444 });
+  await runMigrations(
+    installer,
+    new URL("../../database/migrations/", import.meta.url),
+    { runtimeRole: role },
+  );
+  await writeFile(
+    join(directory, "password"),
+    decodeURIComponent(url.password),
+    { mode: 0o444 },
+  );
+  await writeFile(
+    join(directory, "bootstrap"),
+    "disposable-bootstrap-token-for-ci-only",
+    { mode: 0o444 },
+  );
   docker(
     "run",
     "-d",

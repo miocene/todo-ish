@@ -3,7 +3,11 @@ import { APP_DATA_LIMITS } from "../../backend/api/src/app-data-contract.mjs";
 import { appClock } from "../app/clock.js";
 import { subscribeAppData } from "../app/app-data.js";
 import { loadPageTasks, savePageTasks } from "../app/page-tasks.js";
-import { setTaskCompletion, createCompletionMoveScheduler, moveItemForCompletion } from "../app/task-list.js";
+import {
+  setTaskCompletion,
+  createCompletionMoveScheduler,
+  moveItemForCompletion,
+} from "../app/task-list.js";
 import { calendarDate, shiftIsoDate, toIsoDate } from "../app/date.js";
 import JMModal from "../components/JMModal/JMModal.vue";
 import JMInput from "../components/JMInput/JMInput.vue";
@@ -29,7 +33,14 @@ const DUE_DATE_FORMATTER = new Intl.DateTimeFormat("en", {
 
 export default {
   name: "ChoresPage",
-  components: { JMModal, JMInput, JMButton, JMCard, JMChoreSchedule, JMTaskItem },
+  components: {
+    JMModal,
+    JMInput,
+    JMButton,
+    JMCard,
+    JMChoreSchedule,
+    JMTaskItem,
+  },
   data() {
     const chores = loadPageTasks("chores");
     return {
@@ -66,23 +77,41 @@ export default {
       const task = this.chores.tasks.find((item) => item.id === this.draft.id);
       const schedule = this.draft.schedule;
       if (task?.completed) {
-        const completedDate = task.completedAt ? toIsoDate(new Date(task.completedAt)) : this.todayIso;
-        const after = completedDate > task.nextDue ? completedDate : task.nextDue;
-        return { date: nextChoreDate(schedule, shiftIsoDate(after, 1)), label: "Next occurrence" };
-      }
-      if (task && (task.nextDue <= this.todayIso || sameChoreSchedule(task.schedule, schedule))) {
+        const completedDate = task.completedAt
+          ? toIsoDate(new Date(task.completedAt))
+          : this.todayIso;
+        const after =
+          completedDate > task.nextDue ? completedDate : task.nextDue;
         return {
-          date: task.nextDue,
-          label: task.nextDue < this.todayIso ? "Outstanding overdue occurrence" : "Next occurrence",
+          date: nextChoreDate(schedule, shiftIsoDate(after, 1)),
+          label: "Next occurrence",
         };
       }
-      return { date: nextChoreDate(schedule, this.todayIso), label: "Next occurrence" };
+      if (
+        task &&
+        (task.nextDue <= this.todayIso ||
+          sameChoreSchedule(task.schedule, schedule))
+      ) {
+        return {
+          date: task.nextDue,
+          label:
+            task.nextDue < this.todayIso
+              ? "Outstanding overdue occurrence"
+              : "Next occurrence",
+        };
+      }
+      return {
+        date: nextChoreDate(schedule, this.todayIso),
+        label: "Next occurrence",
+      };
     },
     todayIso() {
       return appClock.state.today;
     },
     dueChores() {
-      const tasksById = new Map(this.chores.tasks.map((task) => [task.id, task]));
+      const tasksById = new Map(
+        this.chores.tasks.map((task) => [task.id, task]),
+      );
       return this.chores.occurrenceOrder
         .map((taskId) => tasksById.get(taskId))
         .filter((task) => task?.title.trim() && task.nextDue <= this.todayIso);
@@ -115,12 +144,16 @@ export default {
       setTaskCompletion(task, completed);
       this.save();
       this.moves.schedule(task.id, () => {
-        if (moveItemForCompletion(this.chores.occurrenceOrder, task.id, completed)) this.save();
+        if (
+          moveItemForCompletion(this.chores.occurrenceOrder, task.id, completed)
+        )
+          this.save();
       });
     },
     addTask() {
       if (this.chores.tasks.length >= APP_DATA_LIMITS.tasks) {
-        this.editMessage = "You can have up to 2,000 chores. Delete a chore before adding another.";
+        this.editMessage =
+          "You can have up to 2,000 chores. Delete a chore before adding another.";
         return;
       }
       this.openEditor();
@@ -134,7 +167,11 @@ export default {
         title: task?.title ?? "",
         legacyRule: task && !task.schedule ? task.details : "",
         schedule: task?.schedule
-          ? { ...task.schedule, weekdays: [...task.schedule.weekdays], monthDays: [...task.schedule.monthDays] }
+          ? {
+              ...task.schedule,
+              weekdays: [...task.schedule.weekdays],
+              monthDays: [...task.schedule.monthDays],
+            }
           : defaultChoreSchedule(this.todayIso),
       };
       this.$nextTick(() => this.$refs.choreModal.open());
@@ -156,7 +193,11 @@ export default {
           this.$refs.choreModal.close();
           return;
         }
-        if (scheduleChanged && !task.completed && task.nextDue > this.todayIso) {
+        if (
+          scheduleChanged &&
+          !task.completed &&
+          task.nextDue > this.todayIso
+        ) {
           this.moves.cancel(task.id);
           const nextDue = nextChoreDate(schedule, this.todayIso);
           if (nextDue !== task.nextDue) setTaskCompletion(task, false);
@@ -171,7 +212,11 @@ export default {
         this.chores.tasks.push(task);
         this.chores.occurrenceOrder.push(task.id);
       }
-      Object.assign(task, { title, schedule, details: choreScheduleLabel(schedule) });
+      Object.assign(task, {
+        title,
+        schedule,
+        details: choreScheduleLabel(schedule),
+      });
       this.save();
       this.$refs.choreModal.close();
     },
@@ -181,7 +226,9 @@ export default {
       this.moves.cancel(task.id);
       retainChoreCompletion(this.chores, task);
       this.chores.tasks.splice(index, 1);
-      this.chores.occurrenceOrder = this.chores.occurrenceOrder.filter((id) => id !== task.id);
+      this.chores.occurrenceOrder = this.chores.occurrenceOrder.filter(
+        (id) => id !== task.id,
+      );
       this.save();
       const next = this.chores.tasks[index] ?? this.chores.tasks[index - 1];
       this.$nextTick(() => {
@@ -202,7 +249,11 @@ export default {
 
   <p v-if="editMessage && !draft" role="status">{{ editMessage }}</p>
 
-  <JMCard class="chores-due" title="Today and overdue" empty-text="No chores due">
+  <JMCard
+    class="chores-due"
+    title="Today and overdue"
+    empty-text="No chores due"
+  >
     <template v-if="dueChores.length" #list>
       <JMTaskItem
         v-for="task in dueChores"
@@ -277,16 +328,27 @@ export default {
         autofocus
       />
       <p v-if="draft.legacyRule">
-        Previous rule: {{ draft.legacyRule }}. Choose a schedule to confirm how this chore repeats.
+        Previous rule: {{ draft.legacyRule }}. Choose a schedule to confirm how
+        this chore repeats.
       </p>
-      <JMChoreSchedule v-model="draft.schedule" v-model:valid="scheduleValid" :title="draft.title" />
+      <JMChoreSchedule
+        v-model="draft.schedule"
+        v-model:valid="scheduleValid"
+        :title="draft.title"
+      />
       <p v-if="occurrencePreview" class="chore-preview" role="status">
         {{ occurrencePreview.label }}:
-        <time :datetime="occurrencePreview.date">{{ previewDate(occurrencePreview.date) }}</time
+        <time :datetime="occurrencePreview.date">{{
+          previewDate(occurrencePreview.date)
+        }}</time
         >.
       </p>
       <div class="jm-modal__actions">
-        <JMButton text="Cancel" view="ghost" @click="$refs.choreModal.close()" />
+        <JMButton
+          text="Cancel"
+          view="ghost"
+          @click="$refs.choreModal.close()"
+        />
         <JMButton
           type="submit"
           :text="draft.id ? 'Save' : 'Add chore'"

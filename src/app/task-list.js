@@ -7,11 +7,22 @@ const taskTitle = (task) => task.title;
 /** @template {{ id: string, title: string }} T
  * @param {T[]} tasks @param {Set<string>} draftTaskIds @returns {T[]}
  */
-export function serializableTasks(tasks, draftTaskIds, getTaskTitle = taskTitle) {
-  return tasks.filter((task) => !draftTaskIds.has(task.id) || getTaskTitle(task).trim());
+export function serializableTasks(
+  tasks,
+  draftTaskIds,
+  getTaskTitle = taskTitle,
+) {
+  return tasks.filter(
+    (task) => !draftTaskIds.has(task.id) || getTaskTitle(task).trim(),
+  );
 }
 
-export function finishTaskDraft(tasks, task, draftTaskIds, getTaskTitle = taskTitle) {
+export function finishTaskDraft(
+  tasks,
+  task,
+  draftTaskIds,
+  getTaskTitle = taskTitle,
+) {
   if (!draftTaskIds.delete(task.id) || getTaskTitle(task).trim()) return false;
   const taskIndex = tasks.findIndex((item) => item.id === task.id);
   if (taskIndex !== -1) tasks.splice(taskIndex, 1);
@@ -19,7 +30,10 @@ export function finishTaskDraft(tasks, task, draftTaskIds, getTaskTitle = taskTi
 }
 
 export function completedTasksLast(tasks) {
-  return [...tasks.filter((task) => !task.completed), ...tasks.filter((task) => task.completed)];
+  return [
+    ...tasks.filter((task) => !task.completed),
+    ...tasks.filter((task) => task.completed),
+  ];
 }
 
 export function nextEntityId(items, prefix) {
@@ -38,7 +52,10 @@ export function moveItemForCompletion(items, item, completed) {
   return true;
 }
 
-export function createCompletionMoveScheduler(delay = COMPLETION_MOVE_DELAY, clock = globalThis) {
+export function createCompletionMoveScheduler(
+  delay = COMPLETION_MOVE_DELAY,
+  clock = globalThis,
+) {
   const timers = new Map();
 
   function cancel(id) {

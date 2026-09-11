@@ -18,10 +18,13 @@ export const navigationItems = reactive(
 export function toggleNavigationItem(item) {
   item.visible = !item.visible;
   writeAppData("preferences", {
-    hiddenNavigation: navigationItems.filter((entry) => !entry.visible).map((entry) => entry.to.name),
+    hiddenNavigation: navigationItems
+      .filter((entry) => !entry.visible)
+      .map((entry) => entry.to.name),
   });
 }
 
 subscribeAppData("preferences", (preferences) => {
-  for (const item of navigationItems) item.visible = !preferences.hiddenNavigation.includes(item.to.name);
+  for (const item of navigationItems)
+    item.visible = !preferences.hiddenNavigation.includes(item.to.name);
 });

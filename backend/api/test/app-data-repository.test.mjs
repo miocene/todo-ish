@@ -1,13 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createAppDataRepository, AppDataRevisionConflictError } from "../src/app-data-repository.mjs";
+import {
+  createAppDataRepository,
+  AppDataRevisionConflictError,
+} from "../src/app-data-repository.mjs";
 
 function fixture({ revision = 0, reject, rows } = {}) {
   const queries = [];
   let released = false;
   const client = {
     async query(query) {
-      const command = typeof query === "string" ? { text: query, values: [] } : query;
+      const command =
+        typeof query === "string" ? { text: query, values: [] } : query;
       queries.push(command);
       if (reject?.(command)) throw new Error("database rejected write");
       return {
@@ -26,19 +30,28 @@ function fixture({ revision = 0, reject, rows } = {}) {
   };
   const raw = createAppDataRepository({ connect: async () => client });
   return {
-    repository: { read: () => raw.read("owner"), replace: (...args) => raw.replace(...args, "owner") },
+    repository: {
+      read: () => raw.read("owner"),
+      replace: (...args) => raw.replace(...args, "owner"),
+    },
     queries,
     released: () => released,
   };
 }
 const tasks = (count) =>
-  Array.from({ length: count }, (_, index) => ({ id: `task-${index}`, title: "Bound 'value'", date: "2026-09-05" }));
+  Array.from({ length: count }, (_, index) => ({
+    id: `task-${index}`,
+    title: "Bound 'value'",
+    date: "2026-09-05",
+  }));
 
 test("100 work tasks use eight queries and bind all task values", async () => {
   const f = fixture();
   assert.equal(await f.repository.replace("work-tasks", tasks(100), 0), 1);
   assert.equal(f.queries.length, 8);
-  const insert = f.queries.find(({ text }) => text.startsWith("INSERT INTO work_tasks"));
+  const insert = f.queries.find(({ text }) =>
+    text.startsWith("INSERT INTO work_tasks"),
+  );
   assert.equal(insert.values.length, 600);
   assert.equal(insert.values[1], "Bound 'value'");
   assert.equal(insert.text.includes("Bound"), false);
@@ -50,12 +63,16 @@ test("large resources use bounded batches and empty replacements still delete re
   const f = fixture();
   await f.repository.replace("work-tasks", tasks(1001), 0);
   assert.deepEqual(
-    f.queries.filter(({ text }) => text.startsWith("INSERT INTO work_tasks")).map(({ values }) => values.length),
+    f.queries
+      .filter(({ text }) => text.startsWith("INSERT INTO work_tasks"))
+      .map(({ values }) => values.length),
     [3000, 3000, 6],
   );
   const empty = fixture();
   await empty.repository.replace("work-tasks", [], 0);
-  const deletion = empty.queries.find(({ text }) => text.startsWith("DELETE FROM work_tasks"));
+  const deletion = empty.queries.find(({ text }) =>
+    text.startsWith("DELETE FROM work_tasks"),
+  );
   assert.deepEqual(deletion.values, [[], true]); // Full replacement also deletes archives.
   assert.equal(
     empty.queries.some(({ text }) => text.startsWith("INSERT INTO work_tasks")),
@@ -65,35 +82,66 @@ test("large resources use bounded batches and empty replacements still delete re
 
 test("revision conflicts and failed batches roll back and release their connection", async () => {
   const conflict = fixture({ revision: 2 });
-  await assert.rejects(conflict.repository.replace("work-tasks", tasks(1), 1), AppDataRevisionConflictError);
+  await assert.rejects(
+    conflict.repository.replace("work-tasks", tasks(1), 1),
+    AppDataRevisionConflictError,
+  );
   assert.equal(conflict.queries.at(-1).text, "ROLLBACK");
   assert.equal(
-    conflict.queries.some(({ text }) => text.startsWith("INSERT INTO work_tasks")),
+    conflict.queries.some(({ text }) =>
+      text.startsWith("INSERT INTO work_tasks"),
+    ),
     false,
   );
-  const failed = fixture({ reject: ({ text }) => text.startsWith("INSERT INTO work_tasks") });
-  await assert.rejects(failed.repository.replace("work-tasks", tasks(501), 0), /database rejected/);
+  const failed = fixture({
+    reject: ({ text }) => text.startsWith("INSERT INTO work_tasks"),
+  });
+  await assert.rejects(
+    failed.repository.replace("work-tasks", tasks(501), 0),
+    /database rejected/,
+  );
   assert.equal(failed.queries.at(-1).text, "ROLLBACK");
   assert.equal(failed.released(), true);
 });
 
 test("chore writes bind structured schedules and current dates without deleting occurrence history", async () => {
   const f = fixture();
-  const schedule = { frequency: "month", interval: 2, startDate: "2026-01-31", weekdays: [5], monthDays: [15, 31] };
+  const schedule = {
+    frequency: "month",
+    interval: 2,
+    startDate: "2026-01-31",
+    weekdays: [5],
+    monthDays: [15, 31],
+  };
   await f.repository.replace(
     "chores",
     {
       occurrenceOrder: ["chore-1"],
-      tasks: [{ id: "chore-1", title: "Filter", details: "Monthly", nextDue: "2026-03-15", schedule }],
+      tasks: [
+        {
+          id: "chore-1",
+          title: "Filter",
+          details: "Monthly",
+          nextDue: "2026-03-15",
+          schedule,
+        },
+      ],
     },
     0,
   );
-  const insert = f.queries.find(({ text }) => text.startsWith("INSERT INTO chores"));
+  const insert = f.queries.find(({ text }) =>
+    text.startsWith("INSERT INTO chores"),
+  );
   assert.equal(insert.values[3], JSON.stringify(schedule));
   assert.equal(insert.values[4], "2026-03-15");
-  assert.match(insert.text, /schedule = coalesce\(EXCLUDED.schedule, chores.schedule\)/);
+  assert.match(
+    insert.text,
+    /schedule = coalesce\(EXCLUDED.schedule, chores.schedule\)/,
+  );
   assert.equal(
-    f.queries.some(({ text }) => text.startsWith("DELETE FROM chore_occurrences")),
+    f.queries.some(({ text }) =>
+      text.startsWith("DELETE FROM chore_occurrences"),
+    ),
     false,
   );
 });
@@ -106,21 +154,31 @@ test("chore deletion archives definitions and offline completions insert without
       tasks: [],
       occurrenceOrder: [],
       history: [
-        { id: "offline", title: "Sweep", details: "Daily", nextDue: "2026-02-01", completedAt: "2026-02-02T12:00:00Z" },
+        {
+          id: "offline",
+          title: "Sweep",
+          details: "Daily",
+          nextDue: "2026-02-01",
+          completedAt: "2026-02-02T12:00:00Z",
+        },
       ],
     },
     0,
   );
   assert.ok(
     f.queries.some(
-      ({ text, values }) => text.startsWith("UPDATE chores SET enabled = false") && values[0].length === 0,
+      ({ text, values }) =>
+        text.startsWith("UPDATE chores SET enabled = false") &&
+        values[0].length === 0,
     ),
   );
   assert.equal(
     f.queries.some(({ text }) => text.startsWith("DELETE FROM chores")),
     false,
   );
-  const history = f.queries.find(({ text }) => text.startsWith("INSERT INTO chore_occurrences"));
+  const history = f.queries.find(({ text }) =>
+    text.startsWith("INSERT INTO chore_occurrences"),
+  );
   assert.match(history.text, /ON CONFLICT \(chore_id, due_on\) DO NOTHING/);
   assert.equal(history.values[0], "offline");
 });
@@ -140,7 +198,11 @@ test("reading chores includes archived and previous occurrences without duplicat
       text.includes("WHERE chores.enabled")
         ? [current]
         : text.includes("JOIN chores ON chores.id")
-          ? [current, { ...current, nextDue: "2026-02-01" }, { ...current, id: "archived" }]
+          ? [
+              current,
+              { ...current, nextDue: "2026-02-01" },
+              { ...current, id: "archived" },
+            ]
           : undefined,
   });
   const state = await f.repository.read();
@@ -156,18 +218,36 @@ test("todo list deletion protects General and preserves detached completed tasks
   const f = fixture();
   await f.repository.replace(
     "todos",
-    { lists: [], history: [{ id: "offline", title: "Done", completedAt: "2026-02-02T12:00:00Z" }] },
+    {
+      lists: [],
+      history: [
+        { id: "offline", title: "Done", completedAt: "2026-02-02T12:00:00Z" },
+      ],
+    },
     0,
   );
-  const detach = f.queries.find(({ text }) => text.startsWith("UPDATE todo_items SET list_id = NULL"));
+  const detach = f.queries.find(({ text }) =>
+    text.startsWith("UPDATE todo_items SET list_id = NULL"),
+  );
   assert.match(detach.text, /completed_at IS NOT NULL/);
-  assert.ok(f.queries.indexOf(detach) < f.queries.findIndex(({ text }) => text.startsWith("DELETE FROM todo_items")));
-  const tasks = f.queries.find(({ text }) => text.startsWith("DELETE FROM todo_items"));
+  assert.ok(
+    f.queries.indexOf(detach) <
+      f.queries.findIndex(({ text }) =>
+        text.startsWith("DELETE FROM todo_items"),
+      ),
+  );
+  const tasks = f.queries.find(({ text }) =>
+    text.startsWith("DELETE FROM todo_items"),
+  );
   assert.match(tasks.text, /list_id IS NOT NULL/);
   assert.match(tasks.text, /list_id <> 'general' AND completed_at IS NULL/);
-  const lists = f.queries.find(({ text }) => text.startsWith("DELETE FROM todo_lists"));
+  const lists = f.queries.find(({ text }) =>
+    text.startsWith("DELETE FROM todo_lists"),
+  );
   assert.match(lists.text, /id <> 'general'/);
-  const history = f.queries.find(({ text }) => text.startsWith("INSERT INTO todo_items"));
+  const history = f.queries.find(({ text }) =>
+    text.startsWith("INSERT INTO todo_items"),
+  );
   assert.equal(history.values[1], null);
   assert.match(history.text, /WHERE todo_items.list_id IS NULL/);
 });
@@ -176,7 +256,14 @@ test("todo history reads independently of active lists", async () => {
   const f = fixture({
     rows: ({ text }) =>
       text.includes("FROM todo_items")
-        ? [{ id: "past", listId: null, title: "Done", completedAt: "2026-02-02T12:00:00Z" }]
+        ? [
+            {
+              id: "past",
+              listId: null,
+              title: "Done",
+              completedAt: "2026-02-02T12:00:00Z",
+            },
+          ]
         : undefined,
   });
   const data = await f.repository.read();
@@ -196,10 +283,17 @@ test("explicit history replacement removes undone completions after detaching de
     0,
   );
   const cleanup = f.queries.find(
-    ({ text }) => text === "DELETE FROM todo_items WHERE list_id IS NULL AND NOT (id = ANY($1::text[]))",
+    ({ text }) =>
+      text ===
+      "DELETE FROM todo_items WHERE list_id IS NULL AND NOT (id = ANY($1::text[]))",
   );
   assert.deepEqual(cleanup.values, [[]]);
-  assert.ok(f.queries.indexOf(cleanup) > f.queries.findIndex(({ text }) => text.startsWith("DELETE FROM todo_lists")));
+  assert.ok(
+    f.queries.indexOf(cleanup) >
+      f.queries.findIndex(({ text }) =>
+        text.startsWith("DELETE FROM todo_lists"),
+      ),
+  );
 });
 
 test("legacy history additions never trigger authoritative history deletion", async () => {
@@ -208,12 +302,16 @@ test("legacy history additions never trigger authoritative history deletion", as
     "todos",
     {
       lists: [],
-      history: [{ id: "kept", title: "Done", completedAt: "2026-02-02T12:00:00Z" }],
+      history: [
+        { id: "kept", title: "Done", completedAt: "2026-02-02T12:00:00Z" },
+      ],
     },
     0,
   );
   assert.equal(
-    f.queries.some(({ text }) => text.startsWith("DELETE FROM todo_items WHERE list_id IS NULL")),
+    f.queries.some(({ text }) =>
+      text.startsWith("DELETE FROM todo_items WHERE list_id IS NULL"),
+    ),
     false,
   );
 });
@@ -233,11 +331,15 @@ test("shopping saves immutable purchase quantities and archived completed rows",
           completedAt: "2026-09-09T10:00:00Z",
         },
       ],
-      history: [{ id: "past", title: "Milk", completedAt: "2026-09-08T10:00:00Z" }],
+      history: [
+        { id: "past", title: "Milk", completedAt: "2026-09-08T10:00:00Z" },
+      ],
     },
     0,
   );
-  const insert = f.queries.find(({ text }) => text.startsWith("INSERT INTO manual_shopping_items"));
+  const insert = f.queries.find(({ text }) =>
+    text.startsWith("INSERT INTO manual_shopping_items"),
+  );
   assert.equal(insert.values[5], "filament-shortage");
   assert.equal(insert.values[6], "pla");
   assert.equal(insert.values[7], 2);
@@ -259,7 +361,12 @@ test("shopping reads purchases and retained history separately", async () => {
               completedAt: "2026-09-09T10:00:00Z",
               archived: false,
             },
-            { id: "past", title: "Milk", completedAt: "2026-09-08T10:00:00Z", archived: true },
+            {
+              id: "past",
+              title: "Milk",
+              completedAt: "2026-09-08T10:00:00Z",
+              archived: true,
+            },
           ]
         : undefined,
   });
@@ -276,19 +383,40 @@ test("project removal retains the completed snapshot within the transaction", as
     "printing",
     {
       projects: [],
-      history: [{ id: "past", title: "Part", context: "Deleted project", completedAt: "2026-09-09T10:00:00Z" }],
+      history: [
+        {
+          id: "past",
+          title: "Part",
+          context: "Deleted project",
+          completedAt: "2026-09-09T10:00:00Z",
+        },
+      ],
     },
     0,
   );
-  const history = f.queries.find(({ text }) => text.startsWith("INSERT INTO completed_project_tasks"));
-  assert.deepEqual(history.values, ["printing", "past", "Part", "Deleted project", "2026-09-09T10:00:00Z"]);
+  const history = f.queries.find(({ text }) =>
+    text.startsWith("INSERT INTO completed_project_tasks"),
+  );
+  assert.deepEqual(history.values, [
+    "printing",
+    "past",
+    "Part",
+    "Deleted project",
+    "2026-09-09T10:00:00Z",
+  ]);
   assert.equal(f.queries.at(-1).text, "COMMIT");
 });
 
 test("explicit chore history removes a completion undone before deleting the chore", async () => {
   const f = fixture();
-  await f.repository.replace("chores", { tasks: [], occurrenceOrder: [], history: [], replaceHistory: true }, 0);
-  const cleanup = f.queries.find(({ text }) => text.includes("chore_id || ':' || due_on::text"));
+  await f.repository.replace(
+    "chores",
+    { tasks: [], occurrenceOrder: [], history: [], replaceHistory: true },
+    0,
+  );
+  const cleanup = f.queries.find(({ text }) =>
+    text.includes("chore_id || ':' || due_on::text"),
+  );
   assert.deepEqual(cleanup.values, [[]]);
   assert.equal(f.queries.at(-1).text, "COMMIT");
 });

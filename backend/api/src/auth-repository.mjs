@@ -39,7 +39,10 @@ export function createAuthRepository(pool) {
           values: [user.username],
         });
         const userId = existing.rows[0].id;
-        await client.query({ text: "DELETE FROM auth_setup_codes WHERE user_id = $1", values: [userId] });
+        await client.query({
+          text: "DELETE FROM auth_setup_codes WHERE user_id = $1",
+          values: [userId],
+        });
         await client.query({
           text: "INSERT INTO auth_setup_codes (token_hash, user_id, expires_at) VALUES ($1, $2, $3)",
           values: [setupCode.tokenHash, userId, setupCode.expiresAt],
@@ -72,7 +75,9 @@ export function createAuthRepository(pool) {
     },
 
     async hasOwner() {
-      const result = await pool.query("SELECT EXISTS (SELECT 1 FROM auth_users) AS exists");
+      const result = await pool.query(
+        "SELECT EXISTS (SELECT 1 FROM auth_users) AS exists",
+      );
       return result.rows[0].exists;
     },
 
@@ -147,15 +152,28 @@ export function createAuthRepository(pool) {
       return result.rows[0] ?? null;
     },
 
-    async storeCredentialAndSession({ credential, session, user, setupCodeHash }) {
+    async storeCredentialAndSession({
+      credential,
+      session,
+      user,
+      setupCodeHash,
+    }) {
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
         await client.query("LOCK TABLE auth_users IN SHARE ROW EXCLUSIVE MODE");
-        const existing = await client.query({ text: "SELECT id FROM auth_users WHERE id = $1", values: [user.id] });
+        const existing = await client.query({
+          text: "SELECT id FROM auth_users WHERE id = $1",
+          values: [user.id],
+        });
         if (!existing.rows.length) {
-          const owners = await client.query("SELECT id FROM auth_users LIMIT 1");
-          if (owners.rows.length) throw new AuthRepositoryConflictError("The account has not been provisioned");
+          const owners = await client.query(
+            "SELECT id FROM auth_users LIMIT 1",
+          );
+          if (owners.rows.length)
+            throw new AuthRepositoryConflictError(
+              "The account has not been provisioned",
+            );
           await client.query({
             text: "INSERT INTO auth_users (id, username, display_name) VALUES ($1, $2, $3)",
             values: [user.id, user.username, user.displayName],
@@ -167,7 +185,9 @@ export function createAuthRepository(pool) {
             values: [setupCodeHash, user.id],
           });
           if (!setup.rows.length)
-            throw new AuthRepositoryConflictError("The setup code has expired or was already used");
+            throw new AuthRepositoryConflictError(
+              "The setup code has expired or was already used",
+            );
         }
         await client.query({
           text: `
@@ -219,7 +239,13 @@ export function createAuthRepository(pool) {
       return mapUser(result.rows[0]);
     },
 
-    async authenticateCredential({ credentialId, counter, backedUp, deviceType, session }) {
+    async authenticateCredential({
+      credentialId,
+      counter,
+      backedUp,
+      deviceType,
+      session,
+    }) {
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
@@ -233,7 +259,10 @@ export function createAuthRepository(pool) {
           values: [credentialId, counter, backedUp, deviceType],
         });
         const userId = result.rows[0]?.userId;
-        if (!userId) throw new AuthRepositoryConflictError("Passkey credential no longer exists");
+        if (!userId)
+          throw new AuthRepositoryConflictError(
+            "Passkey credential no longer exists",
+          );
         await client.query({
           text: "INSERT INTO auth_sessions (token_hash, user_id, expires_at) VALUES ($1, $2, $3)",
           values: [session.tokenHash, userId, session.expiresAt],
@@ -248,9 +277,14 @@ export function createAuthRepository(pool) {
     },
 
     async cleanExpired(limit = 500) {
-      if (!Number.isInteger(limit) || limit < 1 || limit > 500) throw new Error("Cleanup batch must be 1–500 rows");
+      if (!Number.isInteger(limit) || limit < 1 || limit > 500)
+        throw new Error("Cleanup batch must be 1–500 rows");
       const counts = {};
-      for (const table of ["auth_challenges", "auth_sessions", "auth_setup_codes"]) {
+      for (const table of [
+        "auth_challenges",
+        "auth_sessions",
+        "auth_setup_codes",
+      ]) {
         const result = await pool.query({
           text: `DELETE FROM ${table} WHERE token_hash IN (
             SELECT token_hash FROM ${table} WHERE expires_at <= now()
@@ -265,7 +299,10 @@ export function createAuthRepository(pool) {
 
     async deleteSession(tokenHash) {
       if (!tokenHash) return;
-      await pool.query({ text: "DELETE FROM auth_sessions WHERE token_hash = $1", values: [tokenHash] });
+      await pool.query({
+        text: "DELETE FROM auth_sessions WHERE token_hash = $1",
+        values: [tokenHash],
+      });
     },
   };
 }

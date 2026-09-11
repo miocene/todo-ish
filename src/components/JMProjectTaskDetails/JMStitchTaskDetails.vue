@@ -1,5 +1,9 @@
 <script>
-import { flossCatalog, flossById, flossOptions } from "../../app/floss-catalog.js";
+import {
+  flossCatalog,
+  flossById,
+  flossOptions,
+} from "../../app/floss-catalog.js";
 import JMProgress from "../JMProgress/JMProgress.vue";
 import JMInput from "../JMInput/JMInput.vue";
 import JMSelect from "../JMSelect/JMSelect.vue";
@@ -7,7 +11,12 @@ import JMSelect from "../JMSelect/JMSelect.vue";
 export default {
   name: "JMStitchTaskDetails",
   components: { JMInput, JMSelect, JMProgress },
-  emits: ["update:crosses", "update:crosses-done", "update:floss", "update:skeins"],
+  emits: [
+    "update:crosses",
+    "update:crosses-done",
+    "update:floss",
+    "update:skeins",
+  ],
   props: {
     readonly: { type: Boolean, default: false },
     supplyById: { type: Map, required: true },
@@ -20,7 +29,10 @@ export default {
     flossOptions() {
       const options = [{ value: "", text: "Choose DMC color" }];
       if (this.task.flossId && !flossById.has(this.task.flossId)) {
-        options.push({ value: this.task.flossId, text: this.task.title || this.task.flossId });
+        options.push({
+          value: this.task.flossId,
+          text: this.task.title || this.task.flossId,
+        });
       }
       return [...options, ...flossOptions.value];
     },
@@ -28,7 +40,9 @@ export default {
       return this.supplyById.get(this.task.flossId);
     },
     isMissing() {
-      return Boolean(this.task.flossId && (this.shortage?.missingSkeins ?? 0) > 0);
+      return Boolean(
+        this.task.flossId && (this.shortage?.missingSkeins ?? 0) > 0,
+      );
     },
     missingStatus() {
       if (!this.shortage) return "";
@@ -46,13 +60,24 @@ export default {
 <template>
   <template v-if="readonly">
     <p>
-      {{ task.requiredSkeins }} {{ task.requiredSkeins === 1 ? "skein" : "skeins" }} · {{ task.crossesDone }} /
-      {{ task.crosses }} crosses
+      {{ task.requiredSkeins }}
+      {{ task.requiredSkeins === 1 ? "skein" : "skeins" }} ·
+      {{ task.crossesDone }} / {{ task.crosses }} crosses
     </p>
-    <span v-if="isMissing && !task.completed" class="stitch-color__missing">{{ missingStatus }}</span>
-    <JMProgress :value="task.crossesDone" :max="task.crosses" :label="`Crosses completed for ${task.title}`" />
+    <span v-if="isMissing && !task.completed" class="stitch-color__missing">{{
+      missingStatus
+    }}</span>
+    <JMProgress
+      :value="task.crossesDone"
+      :max="task.crosses"
+      :label="`Crosses completed for ${task.title}`"
+    />
   </template>
-  <fieldset v-else class="stitch-color__fields" :class="{ 'stitch-color__fields--missing': isMissing }">
+  <fieldset
+    v-else
+    class="stitch-color__fields"
+    :class="{ 'stitch-color__fields--missing': isMissing }"
+  >
     <legend class="sr-only">Thread and progress for {{ task.title }}</legend>
     <div class="stitch-color__field stitch-color__field--thread">
       <label :for="inputId('floss')">Thread color</label>
@@ -66,7 +91,12 @@ export default {
         :aria-describedby="isMissing ? inputId('status') : undefined"
         @update:model-value="$emit('update:floss', $event)"
       />
-      <span v-if="isMissing" :id="inputId('status')" class="stitch-color__missing">{{ missingStatus }}</span>
+      <span
+        v-if="isMissing"
+        :id="inputId('status')"
+        class="stitch-color__missing"
+        >{{ missingStatus }}</span
+      >
     </div>
     <JMInput
       :id="inputId('skeins')"

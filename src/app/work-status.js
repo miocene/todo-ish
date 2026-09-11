@@ -1,5 +1,10 @@
 import { reactive } from "vue";
-import { initializeAppDataResource, readAppData, writeAppData, subscribeAppData } from "./app-data.js";
+import {
+  initializeAppDataResource,
+  readAppData,
+  writeAppData,
+  subscribeAppData,
+} from "./app-data.js";
 
 export const WORK_STATUSES = Object.freeze([
   { value: "work", label: "Workday", icon: "work" },
@@ -18,9 +23,15 @@ const STATUS_VALUES = new Set(WORK_STATUSES.map((status) => status.value));
 function loadStatuses() {
   const savedStatuses = readAppData("work-statuses");
   const statuses =
-    !savedStatuses || typeof savedStatuses !== "object" || Array.isArray(savedStatuses) ? {} : savedStatuses;
+    !savedStatuses ||
+    typeof savedStatuses !== "object" ||
+    Array.isArray(savedStatuses)
+      ? {}
+      : savedStatuses;
   const normalized = Object.fromEntries(
-    Object.entries(statuses).filter(([date, value]) => ISO_DATE.test(date) && STATUS_VALUES.has(value)),
+    Object.entries(statuses).filter(
+      ([date, value]) => ISO_DATE.test(date) && STATUS_VALUES.has(value),
+    ),
   );
   return initializeAppDataResource("work-statuses", normalized);
 }
@@ -37,11 +48,14 @@ subscribeAppData("work-statuses", (value) => {
 
 export function getWorkStatus(date) {
   const value = statusesByDate[date];
-  return WORK_STATUSES.find((status) => status.value === value) ?? DEFAULT_STATUS;
+  return (
+    WORK_STATUSES.find((status) => status.value === value) ?? DEFAULT_STATUS
+  );
 }
 
 export function setWorkStatus(date, value) {
-  const status = WORK_STATUSES.find((option) => option.value === value) ?? DEFAULT_STATUS;
+  const status =
+    WORK_STATUSES.find((option) => option.value === value) ?? DEFAULT_STATUS;
   statusesByDate[date] = status.value;
   saveStatuses(statusesByDate);
 }

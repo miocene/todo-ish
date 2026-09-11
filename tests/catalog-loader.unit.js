@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createCatalog } from "../src/app/catalog-loader.js";
-const page = (items, total = items.length) => ({ ok: true, json: async () => ({ items, total }) });
+const page = (items, total = items.length) => ({
+  ok: true,
+  json: async () => ({ items, total }),
+});
 
 test("catalog requests are shared, paginated, and cached across callers", async () => {
   let release;
@@ -38,7 +41,11 @@ test("a failed later page publishes no partial catalog and can be retried", asyn
     path: "/catalog",
     label: "Test catalog",
     fetchPage: async (url) =>
-      url.endsWith("offset=0") ? page([{ id: "a" }], 2) : fail ? page([], 2) : page([{ id: "b" }], 2),
+      url.endsWith("offset=0")
+        ? page([{ id: "a" }], 2)
+        : fail
+          ? page([], 2)
+          : page([{ id: "b" }], 2),
   });
   assert.equal(await catalog.load(), false);
   assert.equal(catalog.state.status, "error");

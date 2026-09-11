@@ -14,12 +14,18 @@ test("navigation choices save to the account and another account ignores its pen
   appData.set("preferences", { hiddenNavigation: ["printing"] });
   await page.goto("/work");
   const navigation = page.getByRole("navigation", { name: "Primary" });
-  await expect(navigation.getByRole("link", { name: "3D printing" })).toHaveCount(0);
+  await expect(
+    navigation.getByRole("link", { name: "3D printing" }),
+  ).toHaveCount(0);
   await page.getByRole("button", { name: "Profile", exact: true }).click();
   await page.getByRole("switch", { name: "Chores", exact: true }).click();
-  await expect.poll(() => appData.get("preferences").hiddenNavigation).toEqual(["chores", "printing"]);
+  await expect
+    .poll(() => appData.get("preferences").hiddenNavigation)
+    .toEqual(["chores", "printing"]);
   await page.reload();
-  await expect(navigation.getByRole("link", { name: "Chores", exact: true })).toHaveCount(0);
+  await expect(
+    navigation.getByRole("link", { name: "Chores", exact: true }),
+  ).toHaveCount(0);
   await page.evaluate(() => {
     localStorage.setItem(
       "done-ish.pending-write.v2:owner:private-draft",
@@ -27,10 +33,15 @@ test("navigation choices save to the account and another account ignores its pen
         id: "private-draft",
         resource: "work-tasks",
         revision: 0,
-        value: [{ id: "private", title: "Other user's private draft", date: null }],
+        value: [
+          { id: "private", title: "Other user's private draft", date: null },
+        ],
       }),
     );
-    localStorage.setItem("done-ish.hidden-navigation.v1", JSON.stringify(["work"]));
+    localStorage.setItem(
+      "done-ish.hidden-navigation.v1",
+      JSON.stringify(["work"]),
+    );
   });
   appData.setSession({
     authenticated: true,
@@ -40,55 +51,110 @@ test("navigation choices save to the account and another account ignores its pen
   appData.set("preferences", { hiddenNavigation: [] });
   appData.set("work-tasks", []);
   await page.reload();
-  await expect(navigation.getByRole("link", { name: "3D printing" })).toBeVisible();
-  await expect(navigation.getByRole("link", { name: "Work", exact: true })).toBeVisible();
-  await expect(page.getByText("Other user's private draft", { exact: true })).toHaveCount(0);
+  await expect(
+    navigation.getByRole("link", { name: "3D printing" }),
+  ).toBeVisible();
+  await expect(
+    navigation.getByRole("link", { name: "Work", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Other user's private draft", { exact: true }),
+  ).toHaveCount(0);
   expect(
-    await page.evaluate(() => localStorage.getItem("done-ish.pending-write.v2:owner:private-draft")),
+    await page.evaluate(() =>
+      localStorage.getItem("done-ish.pending-write.v2:owner:private-draft"),
+    ),
   ).not.toBeNull();
 });
 
-test("shared shopping changes refresh while the page stays open", async ({ page, appData }) => {
+test("shared shopping changes refresh while the page stays open", async ({
+  page,
+  appData,
+}) => {
   appData.set("shopping", { tasks: [manual("milk", "Milk")] });
   appData.set("printing", { projects: [] });
   appData.set("cross-stitch", { projects: [] });
   await page.goto("/shopping");
   await expect(page.locator("#shopping-title-milk")).toHaveValue("Milk");
   appData.update("shopping", {
-    tasks: [manual("milk", "Oat milk", "2026-09-09T12:00:00.000Z"), manual("bread", "Bread")],
+    tasks: [
+      manual("milk", "Oat milk", "2026-09-09T12:00:00.000Z"),
+      manual("bread", "Bread"),
+    ],
   });
   await page.evaluate(() => globalThis.dispatchEvent(new Event("focus")));
   await expect(page.locator("#shopping-title-milk")).toHaveValue("Oat milk");
   await expect(page.locator("#task-item-complete-milk")).toBeChecked();
   await expect(page.locator("#shopping-title-bread")).toHaveValue("Bread");
   await page.locator("#shopping-title-bread").fill("Rye bread");
-  await expect.poll(() => appData.get("shopping").tasks.find((item) => item.id === "bread").title).toBe("Rye bread");
+  await expect
+    .poll(
+      () =>
+        appData.get("shopping").tasks.find((item) => item.id === "bread").title,
+    )
+    .toBe("Rye bread");
   expect(appData.validationErrors).toEqual([]);
 });
 
-test("a pre-created second account can enter its one-time setup code", async ({ page, appData }) => {
-  appData.setSession({ authenticated: false, bootstrapRequired: false, user: null });
+test("a pre-created second account can enter its one-time setup code", async ({
+  page,
+  appData,
+}) => {
+  appData.setSession({
+    authenticated: false,
+    bootstrapRequired: false,
+    user: null,
+  });
   let received;
   await page.route("**/api/auth/registration/options", async (route) => {
     received = route.request().postDataJSON();
-    await route.fulfill({ status: 401, json: { error: "The setup code is invalid, expired, or already used" } });
+    await route.fulfill({
+      status: 401,
+      json: { error: "The setup code is invalid, expired, or already used" },
+    });
   });
   await page.goto("/work");
   await page.getByRole("button", { name: "I have a setup code" }).click();
   await page.getByLabel("One-time setup code").fill("second-user-code");
-  await page.getByRole("button", { name: "Create passkey", exact: true }).click();
-  await expect(page.getByRole("alert")).toHaveText("The setup code is invalid, expired, or already used");
+  await page
+    .getByRole("button", { name: "Create passkey", exact: true })
+    .click();
+  await expect(page.getByRole("alert")).toHaveText(
+    "The setup code is invalid, expired, or already used",
+  );
   expect(received).toEqual({ token: "second-user-code" });
 });
 
 for (const resource of ["work-tasks", "todos", "printing", "cross-stitch"]) {
-  test(`${resource} receives remote replacements before a later edit`, async ({ page, appData }) => {
+  test(`${resource} receives remote replacements before a later edit`, async ({
+    page,
+    appData,
+  }) => {
     const snapshot = (title) =>
       resource === "work-tasks"
         ? [{ id: "remote", title, date: null }]
         : resource === "todos"
-          ? { lists: [{ id: "general", title: "General", color: "#2765EC", tasks: [manual("remote", title)] }] }
-          : { projects: [{ id: "remote", title, description: "", color: "#2765EC", tasks: [] }] };
+          ? {
+              lists: [
+                {
+                  id: "general",
+                  title: "General",
+                  color: "#2765EC",
+                  tasks: [manual("remote", title)],
+                },
+              ],
+            }
+          : {
+              projects: [
+                {
+                  id: "remote",
+                  title,
+                  description: "",
+                  color: "#2765EC",
+                  tasks: [],
+                },
+              ],
+            };
     appData.set(resource, snapshot("Original"));
     await page.goto(resource === "work-tasks" ? "/work" : `/${resource}`);
     const item =
@@ -103,7 +169,9 @@ for (const resource of ["work-tasks", "todos", "printing", "cross-stitch"]) {
     if (resource === "work-tasks" || resource === "todos") {
       await expect(item).toHaveValue("Changed remotely");
       await item.fill("Edited locally");
-      await expect.poll(() => JSON.stringify(appData.get(resource))).toContain("Edited locally");
+      await expect
+        .poll(() => JSON.stringify(appData.get(resource)))
+        .toContain("Edited locally");
     } else {
       await expect(item).toContainText("Changed remotely");
     }
@@ -112,7 +180,16 @@ for (const resource of ["work-tasks", "todos", "printing", "cross-stitch"]) {
       resource === "work-tasks"
         ? []
         : resource === "todos"
-          ? { lists: [{ id: "general", title: "General", color: "#2765EC", tasks: [] }] }
+          ? {
+              lists: [
+                {
+                  id: "general",
+                  title: "General",
+                  color: "#2765EC",
+                  tasks: [],
+                },
+              ],
+            }
           : { projects: [] },
     );
     await page.locator("h1").click();
@@ -147,7 +224,10 @@ const suppliesProject = (weight) => ({
   ],
 });
 
-test("Catalog and Shopping recalculate remote project shortages without navigation", async ({ page, appData }) => {
+test("Catalog and Shopping recalculate remote project shortages without navigation", async ({
+  page,
+  appData,
+}) => {
   appData.set("printing", suppliesProject(1000));
   appData.set("cross-stitch", { projects: [] });
   appData.set("filament-inventory", {});
@@ -177,13 +257,23 @@ test("Project shortages respond to shared stock while Activity responds to remot
   await page.evaluate(() => globalThis.dispatchEvent(new Event("focus")));
   await expect(page.locator(".missing")).toHaveCount(0);
   await page.goto("/profile");
-  await expect(page.getByRole("heading", { name: "Activity", exact: true })).toBeVisible();
-  appData.update("todos", { lists: [], history: [manual("done", "Completed elsewhere", new Date().toISOString())] });
+  await expect(
+    page.getByRole("heading", { name: "Activity", exact: true }),
+  ).toBeVisible();
+  appData.update("todos", {
+    lists: [],
+    history: [manual("done", "Completed elsewhere", new Date().toISOString())],
+  });
   await page.evaluate(() => globalThis.dispatchEvent(new Event("focus")));
-  await expect(page.locator(".activity-day p", { hasText: "Completed elsewhere" })).toBeVisible();
+  await expect(
+    page.locator(".activity-day p", { hasText: "Completed elsewhere" }),
+  ).toBeVisible();
 });
 
-test("idle polling uses revisions and persistent refresh failures are visible", async ({ page, appData }) => {
+test("idle polling uses revisions and persistent refresh failures are visible", async ({
+  page,
+  appData,
+}) => {
   for (const [resource, value] of Object.entries({
     shopping: { tasks: [] },
     printing: { projects: [] },
@@ -194,24 +284,36 @@ test("idle polling uses revisions and persistent refresh failures are visible", 
     appData.set(resource, value);
   await page.clock.install();
   await page.goto("/shopping");
-  await expect(page.getByRole("button", { name: "Add item", exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Add item", exact: true }),
+  ).toBeVisible();
   let snapshots = 0;
   page.on("request", (request) => {
     if (new URL(request.url()).pathname === "/api/data") snapshots++;
   });
 
-  const polled = page.waitForRequest((request) => request.url().endsWith("/data/revisions"));
+  const polled = page.waitForRequest((request) =>
+    request.url().endsWith("/data/revisions"),
+  );
   await page.clock.runFor(5100);
   await polled;
   expect(snapshots).toBe(0);
-  await page.route("**/api/data/revisions", (route) => route.fulfill({ status: 503, body: "{}" }));
+  await page.route("**/api/data/revisions", (route) =>
+    route.fulfill({ status: 503, body: "{}" }),
+  );
   for (let i = 0; i < 3; i++) {
-    const response = page.waitForResponse((response) => response.url().endsWith("/data/revisions"));
+    const response = page.waitForResponse((response) =>
+      response.url().endsWith("/data/revisions"),
+    );
     await page.clock.runFor(5100);
     await response;
   }
-  await expect(page.getByText(/Saved data could not be refreshed/)).toBeVisible();
+  await expect(
+    page.getByText(/Saved data could not be refreshed/),
+  ).toBeVisible();
   await page.unroute("**/api/data/revisions");
   await page.getByRole("button", { name: "Retry refresh" }).click();
-  await expect(page.getByText(/Saved data could not be refreshed/)).toBeHidden();
+  await expect(
+    page.getByText(/Saved data could not be refreshed/),
+  ).toBeHidden();
 });

@@ -5,7 +5,11 @@ const DEFAULT_FILAMENT_INVENTORY = Object.freeze({
   "bambu-pla-basic-filament-10501": 1,
   "bambu-pla-basic-filament-10601": 1,
 });
-const DEFAULT_FLOSS_INVENTORY = Object.freeze({ dmc310: 1, dmc321: 1, dmc3347: 1 });
+const DEFAULT_FLOSS_INVENTORY = Object.freeze({
+  dmc310: 1,
+  dmc321: 1,
+  dmc3347: 1,
+});
 
 function nextWeekdayIso(weekday) {
   const date = new Date();
@@ -14,7 +18,11 @@ function nextWeekdayIso(weekday) {
   return isoDate(date);
 }
 
-const DEFAULT_CHORE_DUE_DATES = [nextWeekdayIso(6), nextWeekdayIso(0), nextWeekdayIso(3)];
+const DEFAULT_CHORE_DUE_DATES = [
+  nextWeekdayIso(6),
+  nextWeekdayIso(0),
+  nextWeekdayIso(3),
+];
 const completedAtDaysAgo = (dayOffset) => {
   const date = new Date();
   date.setDate(date.getDate() - dayOffset);
@@ -57,14 +65,22 @@ const DEFAULT_PAGE_DATA = Object.freeze({
         title: "General",
         tasks: [
           { id: "todo-general-1", title: "Renew passport", completed: false },
-          { id: "todo-general-2", title: "Book a dentist appointment", completed: false },
+          {
+            id: "todo-general-2",
+            title: "Book a dentist appointment",
+            completed: false,
+          },
         ],
       },
       {
         id: "home",
         title: "Home",
         tasks: [
-          { id: "todo-home-1", title: "Measure the hallway for a runner", completed: false },
+          {
+            id: "todo-home-1",
+            title: "Measure the hallway for a runner",
+            completed: false,
+          },
           {
             id: "todo-home-2",
             title: "Choose frames for the prints",
@@ -78,7 +94,11 @@ const DEFAULT_PAGE_DATA = Object.freeze({
         title: "Travel",
         tasks: [
           { id: "todo-travel-1", title: "Check train times", completed: false },
-          { id: "todo-travel-2", title: "Pack a power adapter", completed: false },
+          {
+            id: "todo-travel-2",
+            title: "Pack a power adapter",
+            completed: false,
+          },
         ],
       },
     ],
@@ -250,10 +270,16 @@ const DEFAULT_PAGE_DATA = Object.freeze({
 
 const TODAY = new Date();
 const TASK_GROUPS = [
-  { dayOffset: -7, tasks: [{ checkedAt: "09:00:00", title: "Set up the work calendar" }] },
+  {
+    dayOffset: -7,
+    tasks: [{ checkedAt: "09:00:00", title: "Set up the work calendar" }],
+  },
   {
     dayOffset: -1,
-    tasks: [{ title: "Triage inbox" }, { title: "Prepare the quarterly planning notes" }],
+    tasks: [
+      { title: "Triage inbox" },
+      { title: "Prepare the quarterly planning notes" },
+    ],
   },
   {
     dayOffset: 0,
@@ -264,7 +290,12 @@ const TASK_GROUPS = [
       { title: "Update the team roadmap" },
     ],
   },
-  { dayOffset: 1, tasks: [{ title: "Document the release process and share it with the team" }] },
+  {
+    dayOffset: 1,
+    tasks: [
+      { title: "Document the release process and share it with the team" },
+    ],
+  },
 ];
 
 function dateFromToday(dayOffset) {

@@ -75,7 +75,10 @@ test("activity helpers group completed items and build a complete calendar year"
 
   assert.equal(groups.length, 1);
   assert.equal(groups[0].items.length, 2);
-  assert.equal(calendar.days.filter((day) => day.count !== undefined).length, 365);
+  assert.equal(
+    calendar.days.filter((day) => day.count !== undefined).length,
+    365,
+  );
   assert.equal(calendar.days.find((day) => day.date === "2026-08-28").level, 2);
   assert.deepEqual(activityYears(items, 2026), [2026, 2025, 2024, 2023, 2022]);
 });
@@ -116,20 +119,30 @@ test("filament requirements aggregate unfinished usages into whole spools", () =
         {
           completed: false,
           filaments: [
-            { catalogId: "bambu-pla-basic-filament-10101", label: "PLA Basic · Black", weightGrams: 1002 },
-            { catalogId: "bambu-pla-basic-filament-10101", label: "PLA Basic · Black", weightGrams: 8 },
+            {
+              catalogId: "bambu-pla-basic-filament-10101",
+              label: "PLA Basic · Black",
+              weightGrams: 1002,
+            },
+            {
+              catalogId: "bambu-pla-basic-filament-10101",
+              label: "PLA Basic · Black",
+              weightGrams: 8,
+            },
           ],
         },
         {
           completed: true,
-          filaments: [{ catalogId: "bambu-pla-basic-filament-10101", weightGrams: 5000 }],
+          filaments: [
+            { catalogId: "bambu-pla-basic-filament-10101", weightGrams: 5000 },
+          ],
         },
       ],
     },
   ];
-  const supply = filamentSupplyStatus(projects, { "bambu-pla-basic-filament-10101": 1 }).get(
-    "bambu-pla-basic-filament-10101",
-  );
+  const supply = filamentSupplyStatus(projects, {
+    "bambu-pla-basic-filament-10101": 1,
+  }).get("bambu-pla-basic-filament-10101");
 
   assert.equal(supply.requiredGrams, 1010);
   assert.equal(supply.requiredSpools, 2);
@@ -140,9 +153,24 @@ test("floss requirements aggregate skeins and compare them with inventory", () =
   const projects = [
     {
       tasks: [
-        { completed: false, flossId: "dmc3347", requiredSkeins: 2, title: "DMC 3347" },
-        { completed: false, flossId: "dmc3347", requiredSkeins: 1, title: "DMC 3347" },
-        { completed: true, flossId: "dmc3347", requiredSkeins: 10, title: "DMC 3347" },
+        {
+          completed: false,
+          flossId: "dmc3347",
+          requiredSkeins: 2,
+          title: "DMC 3347",
+        },
+        {
+          completed: false,
+          flossId: "dmc3347",
+          requiredSkeins: 1,
+          title: "DMC 3347",
+        },
+        {
+          completed: true,
+          flossId: "dmc3347",
+          requiredSkeins: 10,
+          title: "DMC 3347",
+        },
       ],
     },
   ];
@@ -154,18 +182,32 @@ test("floss requirements aggregate skeins and compare them with inventory", () =
 });
 
 test("todo history replacement requires an explicit complete snapshot", async () => {
-  const { validateAppDataResource } = await import("../backend/api/src/app-data-validation.mjs");
-  assert.throws(() => validateAppDataResource("todos", { lists: [], replaceHistory: true }), /history/);
-  assert.deepEqual(validateAppDataResource("todos", { lists: [], history: [], replaceHistory: true }), {
+  const { validateAppDataResource } =
+    await import("../backend/api/src/app-data-validation.mjs");
+  assert.throws(
+    () => validateAppDataResource("todos", { lists: [], replaceHistory: true }),
+    /history/,
+  );
+  assert.deepEqual(
+    validateAppDataResource("todos", {
+      lists: [],
+      history: [],
+      replaceHistory: true,
+    }),
+    {
+      lists: [],
+      history: [],
+      replaceHistory: true,
+    },
+  );
+  assert.deepEqual(validateAppDataResource("todos", { lists: [] }), {
     lists: [],
-    history: [],
-    replaceHistory: true,
   });
-  assert.deepEqual(validateAppDataResource("todos", { lists: [] }), { lists: [] });
 });
 
 test("shopping validation saves purchases and history but excludes unfinished shortages", async () => {
-  const { validateAppDataResource } = await import("../backend/api/src/app-data-validation.mjs");
+  const { validateAppDataResource } =
+    await import("../backend/api/src/app-data-validation.mjs");
   const purchase = {
     id: "purchase",
     title: "Two spools",
@@ -175,26 +217,64 @@ test("shopping validation saves purchases and history but excludes unfinished sh
     quantity: 2,
   };
   const value = validateAppDataResource("shopping", {
-    tasks: [purchase, ...Array.from({ length: 2001 }, (_, i) => ({ id: `derived-${i}`, source: "filament-shortage" }))],
+    tasks: [
+      purchase,
+      ...Array.from({ length: 2001 }, (_, i) => ({
+        id: `derived-${i}`,
+        source: "filament-shortage",
+      })),
+    ],
     history: [{ id: "milk", title: "Milk", completedAt: purchase.completedAt }],
   });
   assert.equal(value.tasks.length, 1);
   assert.equal(value.tasks[0].quantity, 2);
   assert.equal(value.history[0].title, "Milk");
-  assert.throws(() => validateAppDataResource("shopping", { tasks: [{ ...purchase, quantity: 0 }] }), /quantity/);
-  assert.throws(() => validateAppDataResource("shopping", { tasks: [purchase], history: [purchase] }), /distinct/);
+  assert.throws(
+    () =>
+      validateAppDataResource("shopping", {
+        tasks: [{ ...purchase, quantity: 0 }],
+      }),
+    /quantity/,
+  );
+  assert.throws(
+    () =>
+      validateAppDataResource("shopping", {
+        tasks: [purchase],
+        history: [purchase],
+      }),
+    /distinct/,
+  );
 });
 
 test("Activity accepts large histories without spreading function arguments", () => {
   const items = Array.from({ length: 200_000 }, () => ({ date: "2020-02-01" }));
-  assert.deepEqual(activityYears(items, 2026), [2026, 2025, 2024, 2023, 2022, 2021, 2020]);
+  assert.deepEqual(
+    activityYears(items, 2026),
+    [2026, 2025, 2024, 2023, 2022, 2021, 2020],
+  );
 });
 
 test("Activity reads completed records without changing its snapshot", () => {
   const data = {
-    "work-tasks": [{ id: "work", title: "Done", date: "2026-09-01", checkedAt: "2026-09-03T12:00:00Z" }],
+    "work-tasks": [
+      {
+        id: "work",
+        title: "Done",
+        date: "2026-09-01",
+        checkedAt: "2026-09-03T12:00:00Z",
+      },
+    ],
     chores: { tasks: [], history: [] },
-    todos: { lists: [], history: [{ id: "retained", title: "Deleted", completedAt: "2026-09-02T12:00:00Z" }] },
+    todos: {
+      lists: [],
+      history: [
+        {
+          id: "retained",
+          title: "Deleted",
+          completedAt: "2026-09-02T12:00:00Z",
+        },
+      ],
+    },
     shopping: { tasks: [] },
     printing: { projects: [] },
     "cross-stitch": { projects: [] },
@@ -212,7 +292,8 @@ test("Activity reads completed records without changing its snapshot", () => {
 });
 
 test("shopping links accept only absolute HTTP and HTTPS URLs, including imported purchases", async () => {
-  const { validateAppDataResource } = await import("../backend/api/src/app-data-validation.mjs");
+  const { validateAppDataResource } =
+    await import("../backend/api/src/app-data-validation.mjs");
   for (const item of [
     { id: "manual", title: "Milk" },
     {
@@ -224,12 +305,30 @@ test("shopping links accept only absolute HTTP and HTTPS URLs, including importe
       quantity: 1,
     },
   ]) {
-    for (const productLink of ["https://example.com/item?q=1", "http://example.com", null, ""]) {
-      assert.doesNotThrow(() => validateAppDataResource("shopping", { tasks: [{ ...item, productLink }] }));
+    for (const productLink of [
+      "https://example.com/item?q=1",
+      "http://example.com",
+      null,
+      "",
+    ]) {
+      assert.doesNotThrow(() =>
+        validateAppDataResource("shopping", {
+          tasks: [{ ...item, productLink }],
+        }),
+      );
     }
-    for (const productLink of ["javascript:alert(1)", "data:text/html,test", "//example.com", "/item", "not a URL"]) {
+    for (const productLink of [
+      "javascript:alert(1)",
+      "data:text/html,test",
+      "//example.com",
+      "/item",
+      "not a URL",
+    ]) {
       assert.throws(
-        () => validateAppDataResource("shopping", { tasks: [{ ...item, productLink }] }),
+        () =>
+          validateAppDataResource("shopping", {
+            tasks: [{ ...item, productLink }],
+          }),
         /productLink.*HTTP/,
       );
     }

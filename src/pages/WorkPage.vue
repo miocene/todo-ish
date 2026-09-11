@@ -5,8 +5,17 @@ import { createTaskEditor } from "../app/task-editor.js";
 import { appClock } from "../app/clock.js";
 import { activityLevel } from "../app/activity.js";
 import { loadCardColors } from "../app/card-colors.js";
-import { setTaskCompletion as completeTask, serializableTasks } from "../app/task-list.js";
-import { calendarDate, getCalendarDay, getWorkDateBounds, isoDate, requestedDate } from "../app/work-calendar.js";
+import {
+  setTaskCompletion as completeTask,
+  serializableTasks,
+} from "../app/task-list.js";
+import {
+  calendarDate,
+  getCalendarDay,
+  getWorkDateBounds,
+  isoDate,
+  requestedDate,
+} from "../app/work-calendar.js";
 import { getWorkStatus, setWorkStatus } from "../app/work-status.js";
 import { getAllWorkTasks, saveWorkTasks } from "../app/work-tasks.js";
 import JMButton from "../components/JMButton/JMButton.vue";
@@ -65,7 +74,12 @@ export default {
         counts.set(task.date, (counts.get(task.date) ?? 0) + 1);
       }
 
-      return Object.fromEntries([...counts].map(([date, count]) => [date, { count, level: activityLevel(count) }]));
+      return Object.fromEntries(
+        [...counts].map(([date, count]) => [
+          date,
+          { count, level: activityLevel(count) },
+        ]),
+      );
     },
     backlogTasks() {
       return this.workTasks.filter((task) => task.date === null);
@@ -74,10 +88,15 @@ export default {
       return this.canEditTask(this.selectedDay.iso);
     },
     dateBounds() {
-      return getWorkDateBounds(this.today, [...this.workTasks, ...this.archivedWork]);
+      return getWorkDateBounds(this.today, [
+        ...this.workTasks,
+        ...this.archivedWork,
+      ]);
     },
     firstAvailableDate() {
-      return this.dateBounds.firstDate ? isoDate(this.dateBounds.firstDate) : "";
+      return this.dateBounds.firstDate
+        ? isoDate(this.dateBounds.firstDate)
+        : "";
     },
     focusDate() {
       return requestedDate(this.$route.query.date, this.today, this.dateBounds);
@@ -105,8 +124,12 @@ export default {
     this.unsubscribeWork = subscribeAppData("work-tasks", () => {
       this.editor.clear();
       const tasks = getAllWorkTasks();
-      this.workTasks = tasks.filter((task) => !task.archived).map((task) => ({ ...task }));
-      this.archivedWork = tasks.filter((task) => task.archived).map((task) => ({ ...task }));
+      this.workTasks = tasks
+        .filter((task) => !task.archived)
+        .map((task) => ({ ...task }));
+      this.archivedWork = tasks
+        .filter((task) => task.archived)
+        .map((task) => ({ ...task }));
       this.rollOverIncompleteTasks();
     });
     this.rollOverIncompleteTasks();
@@ -120,19 +143,30 @@ export default {
       this.focusTaskTitle(this.createTask(null));
     },
     addSelectedDayTask() {
-      if (this.canEditSelectedDay) this.focusTaskTitle(this.createTask(this.selectedDay.iso));
+      if (this.canEditSelectedDay)
+        this.focusTaskTitle(this.createTask(this.selectedDay.iso));
     },
     canEditTask(date) {
-      return date === null || (date >= isoDate(this.dateBounds.firstAssignableDate) && date <= this.lastAvailableDate);
+      return (
+        date === null ||
+        (date >= isoDate(this.dateBounds.firstAssignableDate) &&
+          date <= this.lastAvailableDate)
+      );
     },
     createTask(date) {
       if (!this.canEditTask(date)) return;
       if (this.workTasks.length >= APP_DATA_LIMITS.tasks) {
-        this.limitMessage = "Work can contain up to 2,000 active tasks. Delete a task before adding another.";
+        this.limitMessage =
+          "Work can contain up to 2,000 active tasks. Delete a task before adding another.";
         return;
       }
       this.limitMessage = "";
-      const task = { id: `work-${crypto.randomUUID()}`, date, title: "", completed: false };
+      const task = {
+        id: `work-${crypto.randomUUID()}`,
+        date,
+        title: "",
+        completed: false,
+      };
       if (date !== null && date < this.todayIso) completeTask(task, true);
       return this.editor.add(this.workTasks, task);
     },
@@ -161,7 +195,8 @@ export default {
       task.date = date;
       completeTask(task, date !== null && date < this.todayIso);
       this.saveTasks();
-      const destination = date === null ? "backlog" : date === this.todayIso ? "today" : date;
+      const destination =
+        date === null ? "backlog" : date === this.todayIso ? "today" : date;
       this.taskMoveStatus = `${task.title || "Untitled task"} moved to ${destination}${task.completed ? " and marked completed" : ""}.`;
       this.focusTask(task);
     },
@@ -173,7 +208,11 @@ export default {
       const query = { ...this.$route.query };
       if (normalized) query.date = normalized;
       else delete query.date;
-      return this.$router.replace({ name: "work", query, hash: this.$route.hash });
+      return this.$router.replace({
+        name: "work",
+        query,
+        hash: this.$route.hash,
+      });
     },
     focusTask(task) {
       this.$nextTick(() => {
@@ -189,7 +228,8 @@ export default {
         this.$nextTick(async () => {
           await this.normalizeDateQuery();
           await this.$nextTick();
-          const card = date === null ? this.$refs.backlogCard : this.$refs.dayCard;
+          const card =
+            date === null ? this.$refs.backlogCard : this.$refs.dayCard;
           const button = card?.$el.querySelector(".header button");
           (button || this.$refs.calendar.$el.querySelector("select"))?.focus();
         });
@@ -197,7 +237,11 @@ export default {
     rollOverIncompleteTasks() {
       let taskMoved = false;
       for (const task of this.workTasks) {
-        if (!task.completed && task.date !== null && task.date < this.todayIso) {
+        if (
+          !task.completed &&
+          task.date !== null &&
+          task.date < this.todayIso
+        ) {
           task.date = this.todayIso;
           taskMoved = true;
         }
@@ -207,7 +251,8 @@ export default {
     removeTask(task) {
       const taskIndex = this.workTasks.indexOf(task);
       if (taskIndex === -1) return;
-      const list = task.date === null ? this.backlogTasks : this.selectedDay.tasks;
+      const list =
+        task.date === null ? this.backlogTasks : this.selectedDay.tasks;
       const listIndex = list.indexOf(task);
       this.editor.moves.cancel(task.id);
       this.editor.drafts.delete(task.id);
@@ -218,7 +263,10 @@ export default {
       this.focusAfterRemoval(list, listIndex, task.date);
     },
     saveTasks() {
-      saveWorkTasks([...serializableTasks(this.workTasks, this.editor.drafts), ...this.archivedWork]);
+      saveWorkTasks([
+        ...serializableTasks(this.workTasks, this.editor.drafts),
+        ...this.archivedWork,
+      ]);
     },
     scheduleCompletedTaskMove(task, completed) {
       this.editor.scheduleMove(task, completed, this.workTasks);
@@ -228,12 +276,17 @@ export default {
     },
     setTaskCompletion(task, completed) {
       const previousDate = task.date;
-      const previousTasks = previousDate === null ? this.backlogTasks : this.selectedDay.tasks;
+      const previousTasks =
+        previousDate === null ? this.backlogTasks : this.selectedDay.tasks;
       const index = previousTasks.indexOf(task);
       completeTask(task, completed);
       if (completed && task.date === null) {
         task.date = this.todayIso;
-      } else if (!completed && task.date !== null && task.date < this.todayIso) {
+      } else if (
+        !completed &&
+        task.date !== null &&
+        task.date < this.todayIso
+      ) {
         task.date = this.todayIso;
       }
       this.saveTasks();
@@ -289,18 +342,24 @@ export default {
     @update:day-type="setDayStatus"
   />
 
-  <p class="work-page__status sr-only" aria-live="polite" aria-atomic="true">{{ taskMoveStatus }}</p>
+  <p class="work-page__status sr-only" aria-live="polite" aria-atomic="true">
+    {{ taskMoveStatus }}
+  </p>
 
   <JMCard
     ref="dayCard"
     :title="`${selectedDay.today ? 'Today' : selectedDay.weekday}, ${selectedDay.dateLabel}`"
     empty-text="Nothing recorded for this day"
     :color="cardColors[`work-day:${focusDateIso}`]"
-    :actions="canEditSelectedDay ? [{ id: 'add', label: 'Add task', icon: 'plus' }] : []"
+    :actions="
+      canEditSelectedDay ? [{ id: 'add', label: 'Add task', icon: 'plus' }] : []
+    "
     @action="addSelectedDayTask"
   >
     <template #title>
-      <span class="eyebrow">{{ selectedDay.today ? "Today" : selectedDay.weekday }}</span>
+      <span class="eyebrow">{{
+        selectedDay.today ? "Today" : selectedDay.weekday
+      }}</span>
       <time :datetime="selectedDay.iso">{{ selectedDay.dateLabel }}</time>
     </template>
     <template #list v-if="selectedDay.tasks.length !== 0">
@@ -318,7 +377,9 @@ export default {
         :pin-icon="task.completed ? '' : 'pinned'"
         :pin-label="`Move ${task.title || 'untitled task'} to backlog`"
         :remove-label="`Delete ${task.title || 'untitled task'}`"
-        @enter="handleTaskTitleEnter(task, selectedDay.iso, selectedDay.tasks, $event)"
+        @enter="
+          handleTaskTitleEnter(task, selectedDay.iso, selectedDay.tasks, $event)
+        "
         @pin="toggleTaskAssignment(task)"
         @remove="removeTask(task)"
         @title-blur="handleTaskTitleBlur(task)"
@@ -333,7 +394,14 @@ export default {
     class="work-backlog"
     title="Backlog"
     empty-text="No backlog tasks"
-    :actions="[{ id: 'add', label: 'Add task', icon: 'plus', ariaLabel: 'Add backlog task' }]"
+    :actions="[
+      {
+        id: 'add',
+        label: 'Add task',
+        icon: 'plus',
+        ariaLabel: 'Add backlog task',
+      },
+    ]"
     @action="addBacklogTask"
   >
     <template #list v-if="backlogTasks.length !== 0">

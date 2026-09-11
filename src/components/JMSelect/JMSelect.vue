@@ -24,7 +24,9 @@ export default {
   emits: ["update:modelValue"],
   computed: {
     selectedOption() {
-      return this.options.find((option) => String(option.value) === String(this.modelValue));
+      return this.options.find(
+        (option) => String(option.value) === String(this.modelValue),
+      );
     },
     value: {
       get() {
@@ -39,7 +41,11 @@ export default {
 </script>
 
 <template>
-  <select v-model="value" :class="['jm-select', view, size]" :disabled="disabled">
+  <select
+    v-model="value"
+    :class="['jm-select', view, size]"
+    :disabled="disabled"
+  >
     <component :is="'button'" class="button" type="button">
       <span v-if="selectedOption?.swatch" class="selection">
         <JMSwatch class="swatch" :value="selectedOption.swatch" />
@@ -48,7 +54,12 @@ export default {
       <component v-else :is="'selectedcontent'" class="selection" />
       <JMIcon class="chevron" name="chevron-down" />
     </component>
-    <option v-for="option in options" :key="option.value" :value="option.value" :disabled="option.disabled">
+    <option
+      v-for="option in options"
+      :key="option.value"
+      :value="option.value"
+      :disabled="option.disabled"
+    >
       <JMSwatch v-if="option.swatch" class="swatch" :value="option.swatch" />
       <JMIcon v-if="option.iconName" :name="option.iconName" />
       <component :is="'span'" class="text">{{ option.text }}</component>

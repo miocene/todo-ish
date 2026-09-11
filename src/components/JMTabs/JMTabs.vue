@@ -23,7 +23,12 @@ export default {
             :href="href"
             :aria-current="tab.value === active ? 'page' : undefined"
             @click="navigate"
-            @focus="$event.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest' })"
+            @focus="
+              $event.currentTarget.scrollIntoView({
+                block: 'nearest',
+                inline: 'nearest',
+              })
+            "
           >
             {{ tab.text }}
           </a>

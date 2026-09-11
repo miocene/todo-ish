@@ -52,7 +52,12 @@
   cursor: pointer;
 }
 
-.jm-popover > :is(.jm-button, .jm-switch):not(:disabled):is(:hover, :focus-visible, :active),
+.jm-popover
+  > :is(.jm-button, .jm-switch):not(:disabled):is(
+    :hover,
+    :focus-visible,
+    :active
+  ),
 .jm-select option:not(:disabled):is(:hover, :focus, :active) {
   background: var(--control-ghost-background-hover);
 }

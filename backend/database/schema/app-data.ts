@@ -19,8 +19,12 @@ import {
 
 const orderedEntityColumns = () => ({
   position: integer("position").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
 const completionColumns = () => ({
@@ -33,7 +37,9 @@ export const appDataRevisions = pgTable(
     scope: text("scope").notNull(),
     resource: text("resource").notNull(),
     revision: integer("revision").default(0).notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => [
     primaryKey({ columns: [table.scope, table.resource] }),
@@ -50,7 +56,10 @@ export const appDataRevisions = pgTable(
       "app_data_revisions_resource_valid",
       sql`${table.resource} IN ('work-tasks', 'work-statuses', 'colors', 'chores', 'todos', 'shopping', 'printing', 'cross-stitch', 'filament-inventory', 'floss-inventory', 'preferences')`,
     ),
-    check("app_data_revisions_revision_non_negative", sql`${table.revision} >= 0`),
+    check(
+      "app_data_revisions_revision_non_negative",
+      sql`${table.revision} >= 0`,
+    ),
   ],
 ).enableRLS();
 
@@ -75,12 +84,20 @@ export const authUsers = pgTable(
     id: text("id").primaryKey(),
     username: text("username").notNull(),
     displayName: text("display_name").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => [
     check("auth_users_id_not_blank", sql`length(trim(${table.id})) > 0`),
-    check("auth_users_username_not_blank", sql`length(trim(${table.username})) > 0`),
-    check("auth_users_display_name_not_blank", sql`length(trim(${table.displayName})) > 0`),
+    check(
+      "auth_users_username_not_blank",
+      sql`length(trim(${table.username})) > 0`,
+    ),
+    check(
+      "auth_users_display_name_not_blank",
+      sql`length(trim(${table.displayName})) > 0`,
+    ),
     uniqueIndex("auth_users_username_unique").on(table.username),
   ],
 );
@@ -98,14 +115,28 @@ export const passkeyCredentials = pgTable(
     backedUp: boolean("backed_up").default(false).notNull(),
     transports: text("transports").array().notNull(),
     aaguid: text("aaguid").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
     lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
   },
   (table) => [
-    check("passkey_credentials_id_not_blank", sql`length(trim(${table.id})) > 0`),
-    check("passkey_credentials_public_key_not_blank", sql`length(trim(${table.publicKey})) > 0`),
-    check("passkey_credentials_device_type_valid", sql`${table.deviceType} IN ('singleDevice', 'multiDevice')`),
-    check("passkey_credentials_counter_non_negative", sql`${table.counter} >= 0`),
+    check(
+      "passkey_credentials_id_not_blank",
+      sql`length(trim(${table.id})) > 0`,
+    ),
+    check(
+      "passkey_credentials_public_key_not_blank",
+      sql`length(trim(${table.publicKey})) > 0`,
+    ),
+    check(
+      "passkey_credentials_device_type_valid",
+      sql`${table.deviceType} IN ('singleDevice', 'multiDevice')`,
+    ),
+    check(
+      "passkey_credentials_counter_non_negative",
+      sql`${table.counter} >= 0`,
+    ),
     index("passkey_credentials_user_id_idx").on(table.userId),
   ],
 );
@@ -119,12 +150,23 @@ export const authChallenges = pgTable(
     userHandle: text("user_handle"),
     setupCodeHash: text("setup_code_hash"),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => [
-    check("auth_challenges_token_hash_not_blank", sql`length(trim(${table.tokenHash})) > 0`),
-    check("auth_challenges_challenge_not_blank", sql`length(trim(${table.challenge})) > 0`),
-    check("auth_challenges_ceremony_valid", sql`${table.ceremony} IN ('registration', 'authentication')`),
+    check(
+      "auth_challenges_token_hash_not_blank",
+      sql`length(trim(${table.tokenHash})) > 0`,
+    ),
+    check(
+      "auth_challenges_challenge_not_blank",
+      sql`length(trim(${table.challenge})) > 0`,
+    ),
+    check(
+      "auth_challenges_ceremony_valid",
+      sql`${table.ceremony} IN ('registration', 'authentication')`,
+    ),
     index("auth_challenges_expires_at_idx").on(table.expiresAt),
   ],
 );
@@ -137,11 +179,18 @@ export const authSessions = pgTable(
       .notNull()
       .references(() => authUsers.id, { onDelete: "cascade" }),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => [
-    check("auth_sessions_token_hash_not_blank", sql`length(trim(${table.tokenHash})) > 0`),
+    check(
+      "auth_sessions_token_hash_not_blank",
+      sql`length(trim(${table.tokenHash})) > 0`,
+    ),
     index("auth_sessions_user_id_idx").on(table.userId),
     index("auth_sessions_expires_at_idx").on(table.expiresAt),
   ],
@@ -190,7 +239,10 @@ export const workTasks = pgTable(
     check("work_tasks_id_not_blank", sql`length(trim(${table.id})) > 0`),
     check("work_tasks_title_not_blank", sql`length(trim(${table.title})) > 0`),
     check("work_tasks_position_non_negative", sql`${table.position} >= 0`),
-    index("work_tasks_scheduled_for_position_idx").on(table.scheduledFor, table.position),
+    index("work_tasks_scheduled_for_position_idx").on(
+      table.scheduledFor,
+      table.position,
+    ),
     index("work_tasks_completed_at_idx").on(table.completedAt),
   ],
 ).enableRLS();
@@ -201,7 +253,9 @@ export const workDayStatuses = pgTable(
     userId: userColumn(),
     workDate: date("work_date").notNull(),
     status: text("status").notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => [
     primaryKey({ columns: [table.userId, table.workDate] }),
@@ -243,9 +297,10 @@ export const todoItems = pgTable(
     ...orderedEntityColumns(),
   },
   (table) => [
-    foreignKey({ columns: [table.userId, table.listId], foreignColumns: [todoLists.userId, todoLists.id] }).onDelete(
-      "cascade",
-    ),
+    foreignKey({
+      columns: [table.userId, table.listId],
+      foreignColumns: [todoLists.userId, todoLists.id],
+    }).onDelete("cascade"),
     primaryKey({ columns: [table.userId, table.id] }),
     userPolicy("todo_items", table.userId),
     check("todo_items_id_not_blank", sql`length(trim(${table.id})) > 0`),
@@ -270,7 +325,10 @@ export const chores = pgTable(
   (table) => [
     check("chores_id_not_blank", sql`length(trim(${table.id})) > 0`),
     check("chores_title_not_blank", sql`length(trim(${table.title})) > 0`),
-    check("chores_schedule_not_blank", sql`length(trim(${table.scheduleDescription})) > 0`),
+    check(
+      "chores_schedule_not_blank",
+      sql`length(trim(${table.scheduleDescription})) > 0`,
+    ),
     check("chores_position_non_negative", sql`${table.position} >= 0`),
   ],
 );
@@ -284,11 +342,16 @@ export const choreOccurrences = pgTable(
     dueOn: date("due_on").notNull(),
     ...completionColumns(),
     position: integer("position").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => [
     primaryKey({ columns: [table.choreId, table.dueOn] }),
-    check("chore_occurrences_position_non_negative", sql`${table.position} >= 0`),
+    check(
+      "chore_occurrences_position_non_negative",
+      sql`${table.position} >= 0`,
+    ),
     index("chore_occurrences_due_position_idx").on(table.dueOn, table.position),
     index("chore_occurrences_completed_at_idx").on(table.completedAt),
   ],
@@ -319,9 +382,18 @@ export const manualShoppingItems = pgTable(
       using: sql`${table.scope} = '' OR ${table.scope} = nullif(current_setting('app.user_id', true), '')`,
       withCheck: sql`${table.scope} = '' OR ${table.scope} = nullif(current_setting('app.user_id', true), '')`,
     }),
-    check("manual_shopping_items_id_not_blank", sql`length(trim(${table.id})) > 0`),
-    check("manual_shopping_items_title_not_blank", sql`length(trim(${table.title})) > 0`),
-    check("manual_shopping_items_position_non_negative", sql`${table.position} >= 0`),
+    check(
+      "manual_shopping_items_id_not_blank",
+      sql`length(trim(${table.id})) > 0`,
+    ),
+    check(
+      "manual_shopping_items_title_not_blank",
+      sql`length(trim(${table.title})) > 0`,
+    ),
+    check(
+      "manual_shopping_items_position_non_negative",
+      sql`${table.position} >= 0`,
+    ),
     index("manual_shopping_items_completed_at_idx").on(table.completedAt),
   ],
 ).enableRLS();
@@ -340,9 +412,18 @@ export const printingProjects = pgTable(
     primaryKey({ columns: [table.userId, table.id] }),
     userPolicy("printing_projects", table.userId),
     check("printing_projects_id_not_blank", sql`length(trim(${table.id})) > 0`),
-    check("printing_projects_title_not_blank", sql`length(trim(${table.title})) > 0`),
-    check("printing_projects_color_format", sql`${table.color} BETWEEN 1 AND 42`),
-    check("printing_projects_position_non_negative", sql`${table.position} >= 0`),
+    check(
+      "printing_projects_title_not_blank",
+      sql`length(trim(${table.title})) > 0`,
+    ),
+    check(
+      "printing_projects_color_format",
+      sql`${table.color} BETWEEN 1 AND 42`,
+    ),
+    check(
+      "printing_projects_position_non_negative",
+      sql`${table.position} >= 0`,
+    ),
   ],
 ).enableRLS();
 
@@ -364,9 +445,15 @@ export const printingItems = pgTable(
     primaryKey({ columns: [table.userId, table.id] }),
     userPolicy("printing_items", table.userId),
     check("printing_items_id_not_blank", sql`length(trim(${table.id})) > 0`),
-    check("printing_items_title_not_blank", sql`length(trim(${table.title})) > 0`),
+    check(
+      "printing_items_title_not_blank",
+      sql`length(trim(${table.title})) > 0`,
+    ),
     check("printing_items_position_non_negative", sql`${table.position} >= 0`),
-    index("printing_items_project_position_idx").on(table.projectId, table.position),
+    index("printing_items_project_position_idx").on(
+      table.projectId,
+      table.position,
+    ),
     index("printing_items_completed_at_idx").on(table.completedAt),
   ],
 ).enableRLS();
@@ -379,7 +466,11 @@ export const printingItemFilaments = pgTable(
     printingItemId: text("printing_item_id").notNull(),
     catalogId: text("catalog_id"),
     fallbackLabel: text("fallback_label"),
-    weightGrams: numeric("weight_grams", { precision: 10, scale: 2, mode: "number" }),
+    weightGrams: numeric("weight_grams", {
+      precision: 10,
+      scale: 2,
+      mode: "number",
+    }),
     position: integer("position").notNull(),
   },
   (table) => [
@@ -389,7 +480,10 @@ export const printingItemFilaments = pgTable(
     }).onDelete("cascade"),
     primaryKey({ columns: [table.userId, table.id] }),
     userPolicy("printing_item_filaments", table.userId),
-    check("printing_item_filaments_id_not_blank", sql`length(trim(${table.id})) > 0`),
+    check(
+      "printing_item_filaments_id_not_blank",
+      sql`length(trim(${table.id})) > 0`,
+    ),
     check(
       "printing_item_filaments_catalog_id_not_blank",
       sql`${table.catalogId} IS NULL OR length(trim(${table.catalogId})) > 0`,
@@ -398,8 +492,14 @@ export const printingItemFilaments = pgTable(
       "printing_item_filaments_weight_non_negative",
       sql`${table.weightGrams} IS NULL OR ${table.weightGrams} >= 0`,
     ),
-    check("printing_item_filaments_position_non_negative", sql`${table.position} >= 0`),
-    index("printing_item_filaments_item_position_idx").on(table.printingItemId, table.position),
+    check(
+      "printing_item_filaments_position_non_negative",
+      sql`${table.position} >= 0`,
+    ),
+    index("printing_item_filaments_item_position_idx").on(
+      table.printingItemId,
+      table.position,
+    ),
     index("printing_item_filaments_catalog_id_idx").on(table.catalogId),
   ],
 ).enableRLS();
@@ -418,7 +518,10 @@ export const stitchProjects = pgTable(
     primaryKey({ columns: [table.userId, table.id] }),
     userPolicy("stitch_projects", table.userId),
     check("stitch_projects_id_not_blank", sql`length(trim(${table.id})) > 0`),
-    check("stitch_projects_title_not_blank", sql`length(trim(${table.title})) > 0`),
+    check(
+      "stitch_projects_title_not_blank",
+      sql`length(trim(${table.title})) > 0`,
+    ),
     check("stitch_projects_color_format", sql`${table.color} BETWEEN 1 AND 42`),
     check("stitch_projects_position_non_negative", sql`${table.position} >= 0`),
   ],
@@ -445,18 +548,41 @@ export const stitchProjectThreads = pgTable(
     }).onDelete("cascade"),
     primaryKey({ columns: [table.userId, table.id] }),
     userPolicy("stitch_project_threads", table.userId),
-    check("stitch_project_threads_id_not_blank", sql`length(trim(${table.id})) > 0`),
+    check(
+      "stitch_project_threads_id_not_blank",
+      sql`length(trim(${table.id})) > 0`,
+    ),
     check(
       "stitch_project_threads_floss_id_not_blank",
       sql`${table.flossCatalogId} IS NULL OR length(trim(${table.flossCatalogId})) > 0`,
     ),
-    check("stitch_project_threads_required_skeins_non_negative", sql`${table.requiredSkeins} >= 0`),
-    check("stitch_project_threads_total_crosses_non_negative", sql`${table.totalCrosses} >= 0`),
-    check("stitch_project_threads_completed_crosses_non_negative", sql`${table.completedCrosses} >= 0`),
-    check("stitch_project_threads_completed_crosses_bounded", sql`${table.completedCrosses} <= ${table.totalCrosses}`),
-    check("stitch_project_threads_position_non_negative", sql`${table.position} >= 0`),
-    index("stitch_project_threads_project_position_idx").on(table.projectId, table.position),
-    index("stitch_project_threads_floss_catalog_id_idx").on(table.flossCatalogId),
+    check(
+      "stitch_project_threads_required_skeins_non_negative",
+      sql`${table.requiredSkeins} >= 0`,
+    ),
+    check(
+      "stitch_project_threads_total_crosses_non_negative",
+      sql`${table.totalCrosses} >= 0`,
+    ),
+    check(
+      "stitch_project_threads_completed_crosses_non_negative",
+      sql`${table.completedCrosses} >= 0`,
+    ),
+    check(
+      "stitch_project_threads_completed_crosses_bounded",
+      sql`${table.completedCrosses} <= ${table.totalCrosses}`,
+    ),
+    check(
+      "stitch_project_threads_position_non_negative",
+      sql`${table.position} >= 0`,
+    ),
+    index("stitch_project_threads_project_position_idx").on(
+      table.projectId,
+      table.position,
+    ),
+    index("stitch_project_threads_floss_catalog_id_idx").on(
+      table.flossCatalogId,
+    ),
     index("stitch_project_threads_completed_at_idx").on(table.completedAt),
   ],
 ).enableRLS();
@@ -466,11 +592,19 @@ export const filamentInventory = pgTable(
   {
     catalogId: text("catalog_id").primaryKey(),
     spoolCount: integer("spool_count").notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => [
-    check("filament_inventory_catalog_id_not_blank", sql`length(trim(${table.catalogId})) > 0`),
-    check("filament_inventory_spool_count_non_negative", sql`${table.spoolCount} >= 0`),
+    check(
+      "filament_inventory_catalog_id_not_blank",
+      sql`length(trim(${table.catalogId})) > 0`,
+    ),
+    check(
+      "filament_inventory_spool_count_non_negative",
+      sql`${table.spoolCount} >= 0`,
+    ),
   ],
 );
 
@@ -479,11 +613,19 @@ export const flossInventory = pgTable(
   {
     catalogId: text("catalog_id").primaryKey(),
     skeinCount: integer("skein_count").notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => [
-    check("floss_inventory_catalog_id_not_blank", sql`length(trim(${table.catalogId})) > 0`),
-    check("floss_inventory_skein_count_non_negative", sql`${table.skeinCount} >= 0`),
+    check(
+      "floss_inventory_catalog_id_not_blank",
+      sql`length(trim(${table.catalogId})) > 0`,
+    ),
+    check(
+      "floss_inventory_skein_count_non_negative",
+      sql`${table.skeinCount} >= 0`,
+    ),
   ],
 );
 
@@ -500,7 +642,10 @@ export const completedProjectTasks = pgTable(
   (table) => [
     primaryKey({ columns: [table.userId, table.resource, table.id] }),
     userPolicy("completed_project_tasks", table.userId),
-    check("completed_project_tasks_resource_valid", sql`${table.resource} IN ('printing', 'cross-stitch')`),
+    check(
+      "completed_project_tasks_resource_valid",
+      sql`${table.resource} IN ('printing', 'cross-stitch')`,
+    ),
   ],
 ).enableRLS();
 
@@ -510,7 +655,9 @@ export const authSetupCodes = pgTable("auth_setup_codes", {
     .notNull()
     .references(() => authUsers.id, { onDelete: "cascade" }),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
 export const supplyPurchaseReceipts = pgTable(
@@ -523,7 +670,12 @@ export const supplyPurchaseReceipts = pgTable(
     quantity: integer("quantity").notNull(),
     reversed: boolean("reversed").default(false).notNull(),
     reversedQuantity: integer("reversed_quantity"),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
-  (table) => [primaryKey({ columns: [table.userId, table.id] }), userPolicy("supply_purchase_receipts", table.userId)],
+  (table) => [
+    primaryKey({ columns: [table.userId, table.id] }),
+    userPolicy("supply_purchase_receipts", table.userId),
+  ],
 ).enableRLS();

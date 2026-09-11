@@ -46,7 +46,8 @@ export function createTaskEditor({
         const input = findInput(inputId);
         if (!input) return;
         input.focus();
-        if (caretAtEnd) input.setSelectionRange(input.value.length, input.value.length);
+        if (caretAtEnd)
+          input.setSelectionRange(input.value.length, input.value.length);
       });
     },
     scheduleMove(task, completed, items, item = task) {
@@ -55,7 +56,10 @@ export function createTaskEditor({
         if (!moveItemForCompletion(items, item, completed)) return;
         save();
         afterRender(() => {
-          if (focused?.isConnected && globalThis.document.activeElement === globalThis.document.body)
+          if (
+            focused?.isConnected &&
+            globalThis.document.activeElement === globalThis.document.body
+          )
             focused.focus({ preventScroll: true });
         });
       });
@@ -90,7 +94,10 @@ export function createTitleEditor(tasks) {
       if (!task.title.trim()) task.title = title(task);
     },
     serialize(tasks, drafts) {
-      return serializableTasks(tasks, drafts, title).map((task) => ({ ...task, title: title(task) }));
+      return serializableTasks(tasks, drafts, title).map((task) => ({
+        ...task,
+        title: title(task),
+      }));
     },
   };
 }

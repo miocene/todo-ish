@@ -87,20 +87,28 @@ test("baseline snapshots are reused while each title edit stays durable, includi
   storage.save(draft);
   assert.equal(writes.length, 2);
   writes = [];
-  draft.value = { lists: [{ id: "general", title: "Latest title", tasks: [] }] };
+  draft.value = {
+    lists: [{ id: "general", title: "Latest title", tasks: [] }],
+  };
   storage.save(draft);
   assert.deepEqual(writes, ["owner:draft"]);
   assert.deepEqual(createPendingStorage(options).load(), [draft]);
   const original = [...data];
   rejectHead = true;
-  assert.throws(() => storage.save({ ...draft, revision: 2, base: "new baseline" }), /quota/);
+  assert.throws(
+    () => storage.save({ ...draft, revision: 2, base: "new baseline" }),
+    /quota/,
+  );
   assert.deepEqual([...data], original);
   rejectHead = false;
   const head = JSON.parse(data.get("owner:draft"));
   data.set(head.baseRef, "{");
   assert.deepEqual(storage.load(), []);
   assert.equal(corrupt.length, 2);
-  data.set(head.baseRef, JSON.stringify({ base: draft.base, baseValue: draft.baseValue }));
+  data.set(
+    head.baseRef,
+    JSON.stringify({ base: draft.base, baseValue: draft.baseValue }),
+  );
   storage.remove("draft");
   assert.equal(data.size, 0);
 });

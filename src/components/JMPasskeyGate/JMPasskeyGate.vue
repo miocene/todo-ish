@@ -1,5 +1,9 @@
 <script>
-import { authenticateWithPasskey, createPasskey, passkeysSupported } from "../../app/passkeys.js";
+import {
+  authenticateWithPasskey,
+  createPasskey,
+  passkeysSupported,
+} from "../../app/passkeys.js";
 import JMButton from "../JMButton/JMButton.vue";
 import JMInput from "../JMInput/JMInput.vue";
 import "./jm-passkey-gate.css";
@@ -55,9 +59,12 @@ export default {
   <main class="jm-passkey-gate" aria-labelledby="passkey-title">
     <section class="jm-passkey-gate__panel" :aria-busy="busy">
       <p class="jm-passkey-gate__brand">Done-ish</p>
-      <h1 id="passkey-title">{{ useSetupCode ? "Create your passkey" : "Welcome back" }}</h1>
+      <h1 id="passkey-title">
+        {{ useSetupCode ? "Create your passkey" : "Welcome back" }}
+      </h1>
       <p v-if="useSetupCode">
-        Use the one-time setup code from the home server. After this, your passkey is all you need to sign in.
+        Use the one-time setup code from the home server. After this, your
+        passkey is all you need to sign in.
       </p>
       <p v-else>Use your passkey to open your lists.</p>
 
@@ -74,7 +81,11 @@ export default {
           @keyup.enter="submit"
         />
 
-        <JMButton :text="useSetupCode ? 'Create passkey' : 'Sign in with passkey'" :disabled="busy" @click="submit" />
+        <JMButton
+          :text="useSetupCode ? 'Create passkey' : 'Sign in with passkey'"
+          :disabled="busy"
+          @click="submit"
+        />
         <JMButton
           v-if="!bootstrapRequired"
           :text="useSetupCode ? 'Back to sign in' : 'I have a setup code'"
@@ -88,7 +99,9 @@ export default {
       </template>
       <p v-else role="alert">This browser does not support passkeys.</p>
 
-      <p v-if="error" class="jm-passkey-gate__error" role="alert">{{ error }}</p>
+      <p v-if="error" class="jm-passkey-gate__error" role="alert">
+        {{ error }}
+      </p>
     </section>
   </main>
 </template>

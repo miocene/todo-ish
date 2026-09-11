@@ -1,4 +1,9 @@
-import { filamentLabel, filamentProductLink, filamentSearchLink, filamentsById } from "./filament-catalog.js";
+import {
+  filamentLabel,
+  filamentProductLink,
+  filamentSearchLink,
+  filamentsById,
+} from "./filament-catalog.js";
 import { syncManagedShoppingTasks } from "./managed-shopping.js";
 import { loadFilamentInventory, loadPageTasks } from "./page-tasks.js";
 
@@ -17,10 +22,13 @@ export function filamentSupplyStatus(projects, inventory) {
           label: usage.label || usage.catalogId,
           requiredGrams: 0,
         };
-        current.requiredGrams += typeof usage.weightGrams === "number" ? usage.weightGrams : 0;
+        current.requiredGrams +=
+          typeof usage.weightGrams === "number" ? usage.weightGrams : 0;
         if (!current.label || current.label === current.catalogId) {
           const catalogFilament = filamentsById.get(usage.catalogId);
-          current.label = catalogFilament ? filamentLabel(catalogFilament) : usage.label || usage.catalogId;
+          current.label = catalogFilament
+            ? filamentLabel(catalogFilament)
+            : usage.label || usage.catalogId;
         }
         supplyById.set(usage.catalogId, current);
       }
@@ -31,7 +39,10 @@ export function filamentSupplyStatus(projects, inventory) {
     const catalogFilament = filamentsById.get(supply.catalogId);
     supply.requiredSpools = Math.ceil(supply.requiredGrams / 1000);
     supply.ownedSpools = inventory[supply.catalogId] ?? 0;
-    supply.missingSpools = Math.max(0, supply.requiredSpools - supply.ownedSpools);
+    supply.missingSpools = Math.max(
+      0,
+      supply.requiredSpools - supply.ownedSpools,
+    );
     supply.productLink = catalogFilament
       ? filamentProductLink(catalogFilament)
       : filamentSearchLink(supply.label || supply.catalogId);
@@ -40,11 +51,14 @@ export function filamentSupplyStatus(projects, inventory) {
   return supplyById;
 }
 
-export function syncFilamentShoppingList(projects, inventory = loadFilamentInventory()) {
+export function syncFilamentShoppingList(
+  projects,
+  inventory = loadFilamentInventory(),
+) {
   const printingProjects = projects ?? loadPageTasks("printing").projects;
-  const shortages = [...filamentSupplyStatus(printingProjects, inventory).values()].filter(
-    (supply) => supply.missingSpools > 0,
-  );
+  const shortages = [
+    ...filamentSupplyStatus(printingProjects, inventory).values(),
+  ].filter((supply) => supply.missingSpools > 0);
   return syncManagedShoppingTasks({
     source: SHOPPING_SOURCE,
     resourceIdKey: "filamentId",
@@ -53,7 +67,9 @@ export function syncFilamentShoppingList(projects, inventory = loadFilamentInven
       id: existingTask?.id ?? `shopping-${crypto.randomUUID()}`,
       title: `${supply.label} filament · ${supply.missingSpools} ${supply.missingSpools === 1 ? "spool" : "spools"}`,
       completed: existingTask?.completed ?? false,
-      ...(existingTask?.completedAt && { completedAt: existingTask.completedAt }),
+      ...(existingTask?.completedAt && {
+        completedAt: existingTask.completedAt,
+      }),
       source: SHOPPING_SOURCE,
       filamentId: supply.catalogId,
       productLink: supply.productLink,

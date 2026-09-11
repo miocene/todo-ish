@@ -18,7 +18,11 @@ function fakeRepository(overrides = {}) {
   let challenge;
   return {
     hasOwner: async () => false,
-    firstUser: async () => ({ id: "owner-id", username: "julia", displayName: "Julia" }),
+    firstUser: async () => ({
+      id: "owner-id",
+      username: "julia",
+      displayName: "Julia",
+    }),
     userForSetupCode: async () => null,
     userById: async () => null,
     credentialsForUser: async () => [],
@@ -48,7 +52,10 @@ test("passkey bootstrap requires the one-time setup token", async () => {
 
   await assert.rejects(
     service.registrationOptions({ bootstrapToken: "wrong", cookieHeader: "" }),
-    (error) => error instanceof AuthError && error.statusCode === 401 && error.code === "invalid_bootstrap_token",
+    (error) =>
+      error instanceof AuthError &&
+      error.statusCode === 401 &&
+      error.code === "invalid_bootstrap_token",
   );
 });
 
@@ -68,7 +75,11 @@ test("passkey bootstrap stores a verified credential and creates a secure sessio
         verified: true,
         registrationInfo: {
           aaguid: "00000000-0000-0000-0000-000000000000",
-          credential: { id: "credential-id", publicKey: Uint8Array.from([1, 2, 3]), counter: 0 },
+          credential: {
+            id: "credential-id",
+            publicKey: Uint8Array.from([1, 2, 3]),
+            counter: 0,
+          },
           credentialDeviceType: "multiDevice",
           credentialBackedUp: true,
         },
@@ -102,12 +113,16 @@ test("passkey bootstrap stores a verified credential and creates a secure sessio
   assert.equal(stored.credential.deviceType, "multiDevice");
   assert.equal(stored.user.username, "julia");
 
-  const generated = calls.find((call) => call.registrationOptions).registrationOptions;
+  const generated = calls.find(
+    (call) => call.registrationOptions,
+  ).registrationOptions;
   assert.equal(generated.rpID, "todo-ish.today");
   assert.equal(generated.authenticatorSelection.residentKey, "required");
   assert.equal(generated.authenticatorSelection.userVerification, "required");
   assert.ok(generated.userID instanceof Uint8Array);
-  const verification = calls.find((call) => call.registrationVerification).registrationVerification;
+  const verification = calls.find(
+    (call) => call.registrationVerification,
+  ).registrationVerification;
   assert.equal(verification.expectedOrigin, config.origin);
 });
 
@@ -155,8 +170,14 @@ test("passkey authentication verifies the stored public key and rotates the sess
   });
 
   assert.equal(result.body.authenticated, true);
-  assert.equal(calls.find((call) => call.authenticationOptions).authenticationOptions.allowCredentials.length, 0);
-  const verification = calls.find((call) => call.authenticationVerification).authenticationVerification;
+  assert.equal(
+    calls.find((call) => call.authenticationOptions).authenticationOptions
+      .allowCredentials.length,
+    0,
+  );
+  const verification = calls.find(
+    (call) => call.authenticationVerification,
+  ).authenticationVerification;
   assert.deepEqual([...verification.credential.publicKey], [1, 2, 3]);
   assert.equal(verification.expectedOrigin, config.origin);
   assert.equal(verification.requireUserVerification, true);
@@ -180,11 +201,18 @@ test("private development endpoint can explicitly bypass passkey sessions", asyn
 
 test("bootstrap and existing accounts reject malformed setup tokens before hashing", async () => {
   for (const ownerExists of [false, true]) {
-    const service = createAuthService(fakeRepository({ hasOwner: async () => ownerExists }), config, {});
+    const service = createAuthService(
+      fakeRepository({ hasOwner: async () => ownerExists }),
+      config,
+      {},
+    );
     for (const bootstrapToken of [null, [], {}, 12, true, "x".repeat(257)]) {
       await assert.rejects(
         service.registrationOptions({ bootstrapToken }),
-        (error) => error instanceof AuthError && error.statusCode === 400 && error.code === "invalid_setup_code",
+        (error) =>
+          error instanceof AuthError &&
+          error.statusCode === 400 &&
+          error.code === "invalid_setup_code",
       );
     }
   }

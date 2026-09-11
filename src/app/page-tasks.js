@@ -1,13 +1,19 @@
 import { pageResource } from "../../backend/api/src/app-data-contract.mjs";
 import { scheduleFromChore } from "./chore-schedule.js";
 import { todayIso, isIsoDate } from "./date.js";
-import { initialAppData, initializeAppDataResource, readAppData, writeAppData } from "./app-data.js";
+import {
+  initialAppData,
+  initializeAppDataResource,
+  readAppData,
+  writeAppData,
+} from "./app-data.js";
 import { normalizeCardColor } from "./card-colors.js";
 
 const clone = structuredClone;
 
 function normalizeInventory(value, fallback) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return clone(fallback);
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    return clone(fallback);
   return Object.fromEntries(
     Object.entries(value)
       .filter(([, count]) => Number.isInteger(count) && count >= 0)
@@ -45,7 +51,8 @@ function isProjectData(data) {
 }
 
 function normalizePrinting(data) {
-  if (!data || typeof data !== "object" || !isProjectData(data)) return undefined;
+  if (!data || typeof data !== "object" || !isProjectData(data))
+    return undefined;
   return {
     ...data,
     projects: data.projects.map((project) => ({
@@ -53,21 +60,30 @@ function normalizePrinting(data) {
       color: normalizeCardColor(project.color),
       tasks: project.tasks.map((task) => {
         const { filamentId, filamentLabel, weightGrams, ...taskData } = task;
-        const savedFilaments = Array.isArray(task.filaments) ? task.filaments : [];
+        const savedFilaments = Array.isArray(task.filaments)
+          ? task.filaments
+          : [];
         const legacyFilaments =
           typeof filamentId === "string" || typeof weightGrams === "number"
             ? [{ catalogId: filamentId, label: filamentLabel, weightGrams }]
             : [];
-        const sourceFilaments = savedFilaments.length > 0 ? savedFilaments : legacyFilaments;
+        const sourceFilaments =
+          savedFilaments.length > 0 ? savedFilaments : legacyFilaments;
         return {
           ...taskData,
           filaments: sourceFilaments.map((filament, filamentIndex) => ({
             id:
-              typeof filament.id === "string" && filament.id ? filament.id : `${task.id}-filament-${filamentIndex + 1}`,
-            catalogId: typeof filament.catalogId === "string" ? filament.catalogId : "",
+              typeof filament.id === "string" && filament.id
+                ? filament.id
+                : `${task.id}-filament-${filamentIndex + 1}`,
+            catalogId:
+              typeof filament.catalogId === "string" ? filament.catalogId : "",
             label: typeof filament.label === "string" ? filament.label : "",
             weightGrams:
-              typeof filament.weightGrams === "number" && filament.weightGrams >= 0 ? filament.weightGrams : "",
+              typeof filament.weightGrams === "number" &&
+              filament.weightGrams >= 0
+                ? filament.weightGrams
+                : "",
           })),
         };
       }),
@@ -76,26 +92,40 @@ function normalizePrinting(data) {
 }
 
 function normalizeCrossStitch(data) {
-  if (!data || typeof data !== "object" || !isProjectData(data)) return undefined;
+  if (!data || typeof data !== "object" || !isProjectData(data))
+    return undefined;
   return {
     ...data,
     projects: data.projects.map((project) => ({
       ...project,
       color: normalizeCardColor(project.color),
-      totalCrosses: project.tasks.reduce((total, task) => total + (Number(task.crosses) || 0), 0),
+      totalCrosses: project.tasks.reduce(
+        (total, task) => total + (Number(task.crosses) || 0),
+        0,
+      ),
       tasks: project.tasks.map((task) => {
-        const crosses = Number.isFinite(task.crosses) && task.crosses >= 0 ? Math.floor(task.crosses) : 0;
+        const crosses =
+          Number.isFinite(task.crosses) && task.crosses >= 0
+            ? Math.floor(task.crosses)
+            : 0;
         const crossesDone =
-          Number.isFinite(task.crossesDone) && task.crossesDone >= 0 ? Math.floor(task.crossesDone) : 0;
+          Number.isFinite(task.crossesDone) && task.crossesDone >= 0
+            ? Math.floor(task.crossesDone)
+            : 0;
         return {
           ...task,
           flossId: typeof task.flossId === "string" ? task.flossId : "",
           requiredSkeins:
-            Number.isFinite(task.requiredSkeins) && task.requiredSkeins >= 0 ? Math.floor(task.requiredSkeins) : 1,
+            Number.isFinite(task.requiredSkeins) && task.requiredSkeins >= 0
+              ? Math.floor(task.requiredSkeins)
+              : 1,
           crosses,
           crossesDone: Math.min(crossesDone, crosses),
           completed: crosses > 0 && crossesDone >= crosses,
-          completedAt: crosses > 0 && crossesDone >= crosses ? task.completedAt : undefined,
+          completedAt:
+            crosses > 0 && crossesDone >= crosses
+              ? task.completedAt
+              : undefined,
         };
       }),
     })),
@@ -103,17 +133,20 @@ function normalizeCrossStitch(data) {
 }
 
 function normalizeChores(data) {
-  if (!data || typeof data !== "object" || !isTaskList(data.tasks)) return undefined;
-  if (!data.tasks.every((task) => typeof task.details === "string")) return undefined;
+  if (!data || typeof data !== "object" || !isTaskList(data.tasks))
+    return undefined;
+  if (!data.tasks.every((task) => typeof task.details === "string"))
+    return undefined;
   const tasks = data.tasks.map((task) => ({
     ...task,
     nextDue: isIsoDate(task.nextDue) ? task.nextDue : todayIso(),
     schedule: scheduleFromChore(task, todayIso()),
   }));
   const taskIds = new Set(tasks.map((task) => task.id));
-  const defaultOrder = [...tasks.filter((task) => !task.completed), ...tasks.filter((task) => task.completed)].map(
-    (task) => task.id,
-  );
+  const defaultOrder = [
+    ...tasks.filter((task) => !task.completed),
+    ...tasks.filter((task) => task.completed),
+  ].map((task) => task.id);
   const savedOrder = Array.isArray(data.occurrenceOrder)
     ? data.occurrenceOrder.filter((taskId) => taskIds.has(taskId))
     : defaultOrder;
@@ -126,15 +159,28 @@ function normalizeChores(data) {
 }
 
 function normalizeShopping(data) {
-  return data && typeof data === "object" && isTaskList(data.tasks) ? data : undefined;
+  return data && typeof data === "object" && isTaskList(data.tasks)
+    ? data
+    : undefined;
 }
 
 function normalizeTodos(data) {
-  if (!data || typeof data !== "object" || !Array.isArray(data.lists)) return undefined;
+  if (!data || typeof data !== "object" || !Array.isArray(data.lists))
+    return undefined;
   return data.lists.every(
-    (list) => list && typeof list.id === "string" && typeof list.title === "string" && isTaskList(list.tasks),
+    (list) =>
+      list &&
+      typeof list.id === "string" &&
+      typeof list.title === "string" &&
+      isTaskList(list.tasks),
   )
-    ? { ...data, lists: data.lists.map((list) => ({ ...list, color: normalizeCardColor(list.color) })) }
+    ? {
+        ...data,
+        lists: data.lists.map((list) => ({
+          ...list,
+          color: normalizeCardColor(list.color),
+        })),
+      }
     : undefined;
 }
 
@@ -158,7 +204,9 @@ export function loadPageTasks(page) {
   const collection = data.projects ? "projects" : data.lists ? "lists" : "";
   const migrate =
     Boolean(normalized && collection) &&
-    data[collection].some((item, index) => item.color !== saved[collection][index].color);
+    data[collection].some(
+      (item, index) => item.color !== saved[collection][index].color,
+    );
   // Color migration must also retain normalized legacy task fields in the saved snapshot.
   initializeAppDataResource(resource, data, { migrate });
   // Existing resources keep their cached value; the page still needs normalized fields.
@@ -166,12 +214,16 @@ export function loadPageTasks(page) {
 }
 
 export function savePageTasks(page, data) {
-  for (const item of data.projects ?? data.lists ?? []) item.color = normalizeCardColor(item.color);
+  for (const item of data.projects ?? data.lists ?? [])
+    item.color = normalizeCardColor(item.color);
   writeAppData(pageResource(page), data);
 }
 
 export function loadFilamentInventory() {
-  const inventory = normalizeInventory(readAppData("filament-inventory"), initialAppData("filament-inventory"));
+  const inventory = normalizeInventory(
+    readAppData("filament-inventory"),
+    initialAppData("filament-inventory"),
+  );
   return initializeAppDataResource("filament-inventory", inventory);
 }
 
@@ -180,7 +232,10 @@ export function saveFilamentInventory(inventory) {
 }
 
 export function loadFlossInventory() {
-  const inventory = normalizeInventory(readAppData("floss-inventory"), initialAppData("floss-inventory"));
+  const inventory = normalizeInventory(
+    readAppData("floss-inventory"),
+    initialAppData("floss-inventory"),
+  );
   return initializeAppDataResource("floss-inventory", inventory);
 }
 

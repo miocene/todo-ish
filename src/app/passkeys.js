@@ -21,7 +21,11 @@ async function request(path, options = {}) {
   }
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new PasskeyRequestError(body.error || "The passkey request failed.", response.status, body.code);
+    throw new PasskeyRequestError(
+      body.error || "The passkey request failed.",
+      response.status,
+      body.code,
+    );
   }
   return body;
 }
@@ -49,8 +53,11 @@ export function getSession() {
 }
 
 export async function createPasskey(bootstrapToken = "") {
-  const optionsJSON = await jsonPost("/auth/registration/options", { token: bootstrapToken });
-  const publicKey = PublicKeyCredential.parseCreationOptionsFromJSON(optionsJSON);
+  const optionsJSON = await jsonPost("/auth/registration/options", {
+    token: bootstrapToken,
+  });
+  const publicKey =
+    PublicKeyCredential.parseCreationOptionsFromJSON(optionsJSON);
   const credential = await navigator.credentials.create({ publicKey });
   if (!credential) throw new PasskeyRequestError("No passkey was created.");
   const encoded = credential.toJSON();
@@ -72,7 +79,8 @@ export async function createPasskey(bootstrapToken = "") {
 
 export async function authenticateWithPasskey() {
   const optionsJSON = await jsonPost("/auth/authentication/options", {});
-  const publicKey = PublicKeyCredential.parseRequestOptionsFromJSON(optionsJSON);
+  const publicKey =
+    PublicKeyCredential.parseRequestOptionsFromJSON(optionsJSON);
   const credential = await navigator.credentials.get({ publicKey });
   if (!credential) throw new PasskeyRequestError("No passkey was selected.");
   const encoded = credential.toJSON();
@@ -80,10 +88,14 @@ export async function authenticateWithPasskey() {
   try {
     return await jsonPost("/auth/authentication/verify", encoded);
   } catch (error) {
-    if (error.code === "credential_not_found" && PublicKeyCredential.signalUnknownCredential) {
-      await PublicKeyCredential.signalUnknownCredential({ rpId: optionsJSON.rpId, credentialId: encoded.id }).catch(
-        () => {},
-      );
+    if (
+      error.code === "credential_not_found" &&
+      PublicKeyCredential.signalUnknownCredential
+    ) {
+      await PublicKeyCredential.signalUnknownCredential({
+        rpId: optionsJSON.rpId,
+        credentialId: encoded.id,
+      }).catch(() => {});
     }
     throw error;
   }

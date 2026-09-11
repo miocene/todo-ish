@@ -24,7 +24,10 @@ const value = {
       id: "general",
       title: "General",
       color: "#2765EC",
-      tasks: Array.from({ length: 100 }, (_, i) => ({ id: `active-${i}`, title: `Task ${i}` })),
+      tasks: Array.from({ length: 100 }, (_, i) => ({
+        id: `active-${i}`,
+        title: `Task ${i}`,
+      })),
     },
   ],
   history: Array.from({ length: 5000 }, (_, i) => ({
@@ -62,6 +65,9 @@ console.log(
     millisecondsPerEdit: (performance.now() - started) / 50,
     bytesWrittenPerEdit: Math.round(bytes / 50),
     storageWrites: writes,
-    storedBytes: [...rows.values()].reduce((n, value) => n + Buffer.byteLength(value), 0),
+    storedBytes: [...rows.values()].reduce(
+      (n, value) => n + Buffer.byteLength(value),
+      0,
+    ),
   }),
 );

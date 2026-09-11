@@ -45,7 +45,9 @@ main {
   border: 0;
 }
 
-:is(.chores-all, .chores-due, .todo-list-card, .shopping-card) .task-item .content {
+:is(.chores-all, .chores-due, .todo-list-card, .shopping-card)
+  .task-item
+  .content {
   min-inline-size: 0;
   overflow-wrap: anywhere;
 }

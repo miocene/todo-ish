@@ -5,7 +5,11 @@ import { subscribeAppData, cacheAppData } from "../app/app-data.js";
 import { filamentCatalog } from "../app/filament-catalog.js";
 import { flossCatalog } from "../app/floss-catalog.js";
 import JMCatalogLoader from "../components/JMCatalogLoader/JMCatalogLoader.vue";
-import { loadFilamentInventory, loadFlossInventory, savePageTasks } from "../app/page-tasks.js";
+import {
+  loadFilamentInventory,
+  loadFlossInventory,
+  savePageTasks,
+} from "../app/page-tasks.js";
 import { completedTasksLast, setTaskCompletion } from "../app/task-list.js";
 import { syncSupplyShoppingLists } from "../app/shopping-supplies.js";
 import JMCard from "../components/JMCard/JMCard.vue";
@@ -50,12 +54,16 @@ export default {
     receiveShopping() {
       this.editor.moves.clear();
       const shopping = syncSupplyShoppingLists();
-      const current = new Map(this.shopping.tasks.map((task) => [task.id, task]));
+      const current = new Map(
+        this.shopping.tasks.map((task) => [task.id, task]),
+      );
       const tasks = shopping.tasks.map((item) => {
         const task = current.get(item.id);
         if (!item.source) this.titles.remember(item);
         if (!task) return item;
-        const editingBlank = document.activeElement?.id === this.taskInputId(task) && !task.title.trim();
+        const editingBlank =
+          document.activeElement?.id === this.taskInputId(task) &&
+          !task.title.trim();
         Object.assign(
           task,
           { completed: false, completedAt: undefined },
@@ -65,7 +73,11 @@ export default {
         return task;
       });
       const ids = new Set(tasks.map((task) => task.id));
-      tasks.push(...this.shopping.tasks.filter((task) => this.editor.drafts.has(task.id) && !ids.has(task.id)));
+      tasks.push(
+        ...this.shopping.tasks.filter(
+          (task) => this.editor.drafts.has(task.id) && !ids.has(task.id),
+        ),
+      );
       this.shopping.tasks.splice(0, this.shopping.tasks.length, ...tasks);
       this.shopping.history = shopping.history ?? [];
     },
@@ -106,15 +118,24 @@ export default {
       if (task.source) {
         const filament = task.source === "filament-shortage";
         inventory = filament ? loadFilamentInventory() : loadFlossInventory();
-        saveInventory = (value) => cacheAppData(filament ? "filament-inventory" : "floss-inventory", value);
+        saveInventory = (value) =>
+          cacheAppData(
+            filament ? "filament-inventory" : "floss-inventory",
+            value,
+          );
         const id = task.filamentId ?? task.flossId;
         const owned = inventory[id] ?? 0;
         const quantity = task.quantity;
-        const next = completed ? owned + quantity : Math.max(0, owned - quantity);
+        const next = completed
+          ? owned + quantity
+          : Math.max(0, owned - quantity);
         if (next > APP_DATA_LIMITS.quantity) {
-          const checkbox = document.getElementById(`task-item-complete-${task.id}`);
+          const checkbox = document.getElementById(
+            `task-item-complete-${task.id}`,
+          );
           if (checkbox) checkbox.checked = task.completed;
-          this.notice = "This purchase exceeds the inventory limit. Update the quantity in Catalog first.";
+          this.notice =
+            "This purchase exceeds the inventory limit. Update the quantity in Catalog first.";
           return;
         }
         inventory[id] = next;
@@ -125,7 +146,9 @@ export default {
       }
       if (task.source && completed) task.id = `purchase-${crypto.randomUUID()}`;
       setTaskCompletion(task, completed);
-      this.shopping.history = this.shopping.history.filter((item) => item.id !== task.id);
+      this.shopping.history = this.shopping.history.filter(
+        (item) => item.id !== task.id,
+      );
       // The shopping save applies the stock delta atomically on the server.
       this.save();
       if (inventory) {
@@ -140,8 +163,11 @@ export default {
       if (index < 0) return;
       this.editor.moves.cancel(task.id);
       this.editor.drafts.delete(task.id);
-      const history = new Map(this.shopping.history.map((item) => [item.id, item]));
-      if (task.completedAt) history.set(task.id, { ...task, title: this.titles.title(task) });
+      const history = new Map(
+        this.shopping.history.map((item) => [item.id, item]),
+      );
+      if (task.completedAt)
+        history.set(task.id, { ...task, title: this.titles.title(task) });
       else history.delete(task.id);
       this.shopping.history = [...history.values()];
       this.titles.forget(task.id);
@@ -149,11 +175,16 @@ export default {
       this.save();
       const next = this.shopping.tasks[index] ?? this.shopping.tasks[index - 1];
       if (next) this.focusTask(next);
-      else this.$nextTick(() => document.getElementById("shopping-add")?.focus());
+      else
+        this.$nextTick(() => document.getElementById("shopping-add")?.focus());
     },
     addTask() {
-      if (this.shopping.tasks.filter((task) => !task.source).length >= APP_DATA_LIMITS.tasks) {
-        this.notice = "The shopping list can contain up to 2,000 manual items. Remove an item before adding another.";
+      if (
+        this.shopping.tasks.filter((task) => !task.source).length >=
+        APP_DATA_LIMITS.tasks
+      ) {
+        this.notice =
+          "The shopping list can contain up to 2,000 manual items. Remove an item before adding another.";
         return;
       }
       this.notice = "";
@@ -163,7 +194,9 @@ export default {
         completed: false,
       };
       const index = this.shopping.tasks.findIndex((item) => item.completed);
-      this.editor.add(this.shopping.tasks, task, { index: index < 0 ? this.shopping.tasks.length : index });
+      this.editor.add(this.shopping.tasks, task, {
+        index: index < 0 ? this.shopping.tasks.length : index,
+      });
       this.focusTask(task);
       return task;
     },
@@ -173,7 +206,9 @@ export default {
     },
     handleEnter(task, event) {
       this.editor.enter(
-        this.shopping.tasks.filter((item) => !item.source && (!item.completed || item.id === task.id)),
+        this.shopping.tasks.filter(
+          (item) => !item.source && (!item.completed || item.id === task.id),
+        ),
         task,
         event,
         { create: this.addTask, focus: this.focusTask },
@@ -181,7 +216,8 @@ export default {
     },
     focusTask(task) {
       if (!task) return;
-      if (task.source || task.productLink) this.editor.focus(`task-item-complete-${task.id}`);
+      if (task.source || task.productLink)
+        this.editor.focus(`task-item-complete-${task.id}`);
       else this.editor.focus(this.taskInputId(task));
     },
   },
@@ -197,7 +233,9 @@ export default {
     class="shopping-card"
     title="Shopping cart"
     empty-text="The shopping list is empty."
-    :actions="[{ id: 'add', buttonId: 'shopping-add', label: 'Add item', icon: 'plus' }]"
+    :actions="[
+      { id: 'add', buttonId: 'shopping-add', label: 'Add item', icon: 'plus' },
+    ]"
     @action="addTask"
   >
     <template v-if="shopping.tasks.length" #list>

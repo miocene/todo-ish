@@ -25,18 +25,29 @@ export default [
       sourceType: "module",
     },
     rules: {
-      "no-unused-vars": ["error", { argsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" }],
+      "no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
+      ],
     },
   },
   {
-    files: ["*.{js,mjs}", "backend/**/*.{js,mjs}", "tools/**/*.{js,mjs}", "tests/**/*.js"],
+    files: [
+      "*.{js,mjs}",
+      "backend/**/*.{js,mjs}",
+      "tools/**/*.{js,mjs}",
+      "tests/**/*.js",
+    ],
     languageOptions: {
       ecmaVersion: "latest",
       globals: globals.node,
       sourceType: "module",
     },
     rules: {
-      "no-unused-vars": ["error", { argsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" }],
+      "no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
+      ],
     },
   },
   eslintConfigPrettier,

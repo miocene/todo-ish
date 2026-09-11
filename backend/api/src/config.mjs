@@ -8,7 +8,8 @@ function required(name, environment) {
 
 function positiveInteger(name, value, fallback) {
   if (value === undefined) return fallback;
-  if (!/^\d+$/.test(value) || Number(value) < 1) throw new Error(`${name} must be a positive integer`);
+  if (!/^\d+$/.test(value) || Number(value) < 1)
+    throw new Error(`${name} must be a positive integer`);
   return Number(value);
 }
 
@@ -31,7 +32,9 @@ function webOrigin(name, value, rpID) {
     throw new Error(`${name} must contain a valid origin`);
   }
   if (url.origin !== value || url.protocol !== "https:") {
-    throw new Error(`${name} must contain an HTTPS origin without a path or trailing slash`);
+    throw new Error(
+      `${name} must contain an HTTPS origin without a path or trailing slash`,
+    );
   }
   if (url.hostname !== rpID && !url.hostname.endsWith(`.${rpID}`)) {
     throw new Error(`${name} must belong to the configured WebAuthn RP ID`);
@@ -48,13 +51,26 @@ export function loadConfig(environment = process.env) {
   const passwordFile = required("PGPASSWORD_FILE", environment);
   const password = readSecret(passwordFile);
   if (!password) throw new Error("The PostgreSQL password secret is empty");
-  const bootstrapToken = readSecret(required("AUTH_BOOTSTRAP_TOKEN_FILE", environment));
-  if (bootstrapToken.length < 32) throw new Error("The authentication bootstrap token must be at least 32 characters");
+  const bootstrapToken = readSecret(
+    required("AUTH_BOOTSTRAP_TOKEN_FILE", environment),
+  );
+  if (bootstrapToken.length < 32)
+    throw new Error(
+      "The authentication bootstrap token must be at least 32 characters",
+    );
   const rpID = required("AUTH_RP_ID", environment);
-  const origin = webOrigin("AUTH_ORIGIN", required("AUTH_ORIGIN", environment), rpID);
+  const origin = webOrigin(
+    "AUTH_ORIGIN",
+    required("AUTH_ORIGIN", environment),
+    rpID,
+  );
   const port = positiveInteger("PORT", environment.PORT, 3000);
-  const developmentPort = optionalPositiveInteger("DEVELOPMENT_PORT", environment.DEVELOPMENT_PORT);
-  if (developmentPort === port) throw new Error("DEVELOPMENT_PORT must differ from PORT");
+  const developmentPort = optionalPositiveInteger(
+    "DEVELOPMENT_PORT",
+    environment.DEVELOPMENT_PORT,
+  );
+  if (developmentPort === port)
+    throw new Error("DEVELOPMENT_PORT must differ from PORT");
 
   return {
     developmentPort,
@@ -73,7 +89,11 @@ export function loadConfig(environment = process.env) {
     },
     auth: {
       bootstrapToken,
-      challengeTtlSeconds: positiveInteger("AUTH_CHALLENGE_TTL_SECONDS", environment.AUTH_CHALLENGE_TTL_SECONDS, 300),
+      challengeTtlSeconds: positiveInteger(
+        "AUTH_CHALLENGE_TTL_SECONDS",
+        environment.AUTH_CHALLENGE_TTL_SECONDS,
+        300,
+      ),
       displayName: environment.AUTH_USER_DISPLAY_NAME?.trim() || "Owner",
       origin,
       rpID,
@@ -83,7 +103,11 @@ export function loadConfig(environment = process.env) {
         environment.AUTH_SECURE_COOKIES,
         origin.startsWith("https://"),
       ),
-      sessionTtlSeconds: positiveInteger("AUTH_SESSION_TTL_SECONDS", environment.AUTH_SESSION_TTL_SECONDS, 2_592_000),
+      sessionTtlSeconds: positiveInteger(
+        "AUTH_SESSION_TTL_SECONDS",
+        environment.AUTH_SESSION_TTL_SECONDS,
+        2_592_000,
+      ),
       username: environment.AUTH_USER_NAME?.trim() || "owner",
     },
   };

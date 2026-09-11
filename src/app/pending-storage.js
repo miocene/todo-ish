@@ -1,11 +1,20 @@
 /** Read each account-scoped record independently so one damaged draft cannot hide the others. */
-export function createPendingStorage({ storage, prefix, legacyPrefix, resources, onCorrupt = () => {} }) {
+export function createPendingStorage({
+  storage,
+  prefix,
+  legacyPrefix,
+  resources,
+  onCorrupt = () => {},
+}) {
   const written = new Map();
   const blobPrefix = (id) => `${prefix()}blob:${id}:`;
-  const ownRef = (id, ref) => typeof ref === "string" && ref.startsWith(blobPrefix(id));
+  const ownRef = (id, ref) =>
+    typeof ref === "string" && ref.startsWith(blobPrefix(id));
   function refs(entry) {
     if (!entry) return [];
-    return [entry.baseRef, entry.attemptedRef].filter((ref) => ownRef(entry.id, ref));
+    return [entry.baseRef, entry.attemptedRef].filter((ref) =>
+      ownRef(entry.id, ref),
+    );
   }
   function readHead(store, key) {
     try {
@@ -25,7 +34,8 @@ export function createPendingStorage({ storage, prefix, legacyPrefix, resources,
       const legacy = legacyPrefix();
       for (let index = 0; index < store.length; index++) {
         const key = store.key(index);
-        if (!key?.startsWith(current) && !(legacy && key?.startsWith(legacy))) continue;
+        if (!key?.startsWith(current) && !(legacy && key?.startsWith(legacy)))
+          continue;
         const raw = store.getItem(key);
         if (key.startsWith(`${current}blob:`)) {
           blobs.set(key, raw);
@@ -47,7 +57,8 @@ export function createPendingStorage({ storage, prefix, legacyPrefix, resources,
             const { baseRef, attemptedRef, ...head } = entry;
             delete head.storageVersion;
             const read = (ref) => {
-              if (!ownRef(entry.id, ref)) throw new Error("Invalid account-scoped reference");
+              if (!ownRef(entry.id, ref))
+                throw new Error("Invalid account-scoped reference");
               const source = store.getItem(ref);
               if (source === null) throw new Error("Missing pending snapshot");
               const value = JSON.parse(source);
@@ -59,22 +70,33 @@ export function createPendingStorage({ storage, prefix, legacyPrefix, resources,
               !baseline ||
               typeof baseline !== "object" ||
               Array.isArray(baseline) ||
-              Object.keys(baseline).some((key) => !["base", "baseValue"].includes(key)) ||
+              Object.keys(baseline).some(
+                (key) => !["base", "baseValue"].includes(key),
+              ) ||
               (baseline.base !== undefined && typeof baseline.base !== "string")
             )
               throw new Error("Invalid pending baseline");
-            entry = { ...head, ...baseline, ...(attemptedRef && { attempted: read(attemptedRef) }) };
-            if (entry.attempted !== undefined && typeof entry.attempted !== "string")
+            entry = {
+              ...head,
+              ...baseline,
+              ...(attemptedRef && { attempted: read(attemptedRef) }),
+            };
+            if (
+              entry.attempted !== undefined &&
+              typeof entry.attempted !== "string"
+            )
               throw new Error("Invalid attempted snapshot");
           }
           for (const ref of usedByEntry) used.add(ref);
-          if (!entries.has(entry.id) || key.startsWith(current)) entries.set(entry.id, entry);
+          if (!entries.has(entry.id) || key.startsWith(current))
+            entries.set(entry.id, entry);
         } catch {
           corrupt.push({ storageKey: key, raw });
         }
       }
       // Orphaned snapshots may be the only recovery copy after a damaged head.
-      for (const [key, raw] of blobs) if (!used.has(key)) corrupt.push({ storageKey: key, raw });
+      for (const [key, raw] of blobs)
+        if (!used.has(key)) corrupt.push({ storageKey: key, raw });
       onCorrupt(corrupt);
       return [...entries.values()];
     },
@@ -95,9 +117,14 @@ export function createPendingStorage({ storage, prefix, legacyPrefix, resources,
       try {
         if (base !== undefined || baseValue !== undefined)
           head.baseRef =
-            previous?.base === base && previous?.revision === entry.revision && previous?.head.baseRef
+            previous?.base === base &&
+            previous?.revision === entry.revision &&
+            previous?.head.baseRef
               ? previous?.head.baseRef
-              : blob({ ...(base !== undefined && { base }), ...(baseValue !== undefined && { baseValue }) });
+              : blob({
+                  ...(base !== undefined && { base }),
+                  ...(baseValue !== undefined && { baseValue }),
+                });
         if (attempted !== undefined)
           head.attemptedRef =
             previous?.attempted === attempted && previous?.head.attemptedRef
@@ -111,7 +138,8 @@ export function createPendingStorage({ storage, prefix, legacyPrefix, resources,
       }
       written.set(key, { base, revision: entry.revision, attempted, head });
       const retained = new Set(refs(head));
-      for (const ref of refs(previousHead)) if (!retained.has(ref)) store.removeItem(ref);
+      for (const ref of refs(previousHead))
+        if (!retained.has(ref)) store.removeItem(ref);
     },
     remove(id) {
       const store = storage();

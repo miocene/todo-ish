@@ -26,7 +26,10 @@ function localDateFromTimestamp(timestamp) {
 
 function activityItem(task, source, context, route) {
   const completedAt = task.completedAt;
-  const date = completedAt && source === "Work" && task.date ? task.date : localDateFromTimestamp(completedAt);
+  const date =
+    completedAt && source === "Work" && task.date
+      ? task.date
+      : localDateFromTimestamp(completedAt);
   if (!date || !task.title?.trim()) return undefined;
   return {
     id: `${source}-${task.id}`,
@@ -39,7 +42,9 @@ function activityItem(task, source, context, route) {
   };
 }
 
-export function collectCompletedActivity(read = (resource) => readAppData(resource) ?? initialAppData(resource)) {
+export function collectCompletedActivity(
+  read = (resource) => readAppData(resource) ?? initialAppData(resource),
+) {
   const items = [];
   const add = (item) => {
     if (item) items.push(item);
@@ -59,39 +64,62 @@ export function collectCompletedActivity(read = (resource) => readAppData(resour
     add(activityItem(task, "Chores", task.details, { name: "chores" }));
 
   const todos = read("todos");
-  const todoActivity = new Map((todos.history ?? []).map((task) => [task.id, task]));
+  const todoActivity = new Map(
+    (todos.history ?? []).map((task) => [task.id, task]),
+  );
   for (const list of todos.lists) {
     for (const task of list.tasks) {
       if (task.completedAt) todoActivity.set(task.id, task);
       else todoActivity.delete(task.id);
     }
   }
-  for (const task of todoActivity.values()) add(activityItem(task, "Todo lists", "", { name: "todos" }));
+  for (const task of todoActivity.values())
+    add(activityItem(task, "Todo lists", "", { name: "todos" }));
 
   const shopping = read("shopping");
   for (const task of [...shopping.tasks, ...(shopping.history ?? [])]) {
-    add(activityItem(task, "Shopping cart", "Shopping cart", { name: "shopping" }));
+    add(
+      activityItem(task, "Shopping cart", "Shopping cart", {
+        name: "shopping",
+      }),
+    );
   }
 
   const printing = read("printing");
   for (const task of printing.history ?? [])
-    add(activityItem(task, "3D printing", task.context || "", { name: "printing" }));
+    add(
+      activityItem(task, "3D printing", task.context || "", {
+        name: "printing",
+      }),
+    );
   for (const project of printing.projects) {
     for (const task of project.tasks) {
-      add(activityItem(task, "3D printing", project.title, { name: "printing" }));
+      add(
+        activityItem(task, "3D printing", project.title, { name: "printing" }),
+      );
     }
   }
 
   const crossStitch = read("cross-stitch");
   for (const task of crossStitch.history ?? [])
-    add(activityItem(task, "Cross stitch", task.context || "", { name: "cross-stitch" }));
+    add(
+      activityItem(task, "Cross stitch", task.context || "", {
+        name: "cross-stitch",
+      }),
+    );
   for (const project of crossStitch.projects) {
     for (const task of project.tasks) {
-      add(activityItem(task, "Cross stitch", project.title, { name: "cross-stitch" }));
+      add(
+        activityItem(task, "Cross stitch", project.title, {
+          name: "cross-stitch",
+        }),
+      );
     }
   }
 
-  return items.sort((first, second) => second.completedAt.localeCompare(first.completedAt));
+  return items.sort((first, second) =>
+    second.completedAt.localeCompare(first.completedAt),
+  );
 }
 
 export function groupActivityByDay(items, year) {
@@ -111,7 +139,11 @@ export function groupActivityByDay(items, year) {
     }));
 }
 
-export function activityYears(items, currentYear = new Date().getFullYear(), minimumYears = 5) {
+export function activityYears(
+  items,
+  currentYear = new Date().getFullYear(),
+  minimumYears = 5,
+) {
   let earliestYear = currentYear;
   for (const item of items) {
     const year = Number(item.date.slice(0, 4));
@@ -122,7 +154,9 @@ export function activityYears(items, currentYear = new Date().getFullYear(), min
 }
 
 export function buildActivityCalendar(year, groups) {
-  const countByDate = new Map(groups.map((group) => [group.date, group.items.length]));
+  const countByDate = new Map(
+    groups.map((group) => [group.date, group.items.length]),
+  );
   const firstDay = new Date(year, 0, 1, 12);
   const lastDay = new Date(year, 11, 31, 12);
   const gridStart = new Date(firstDay);
@@ -131,15 +165,22 @@ export function buildActivityCalendar(year, groups) {
   gridEnd.setDate(gridEnd.getDate() + (6 - gridEnd.getDay()));
 
   const days = [];
-  for (const cursor = new Date(gridStart); cursor <= gridEnd; cursor.setDate(cursor.getDate() + 1)) {
+  for (
+    const cursor = new Date(gridStart);
+    cursor <= gridEnd;
+    cursor.setDate(cursor.getDate() + 1)
+  ) {
     const date = isoDate(cursor);
-    const count = cursor.getFullYear() === year ? (countByDate.get(date) ?? 0) : undefined;
+    const count =
+      cursor.getFullYear() === year ? (countByDate.get(date) ?? 0) : undefined;
     const label = DAY_FORMATTER.format(cursor);
     days.push({
       date,
       count,
       description:
-        count > 0 ? `${count} checked ${count === 1 ? "item" : "items"} on ${label}` : `No checked items on ${label}`,
+        count > 0
+          ? `${count} checked ${count === 1 ? "item" : "items"} on ${label}`
+          : `No checked items on ${label}`,
       level: activityLevel(count),
     });
   }
@@ -147,7 +188,10 @@ export function buildActivityCalendar(year, groups) {
   const months = Array.from({ length: 12 }, (_, month) => {
     const firstOfMonth = new Date(year, month, 1, 12);
     const dayOffset = Math.round((firstOfMonth - gridStart) / 86_400_000);
-    return { label: MONTH_FORMATTER.format(firstOfMonth), column: Math.floor(dayOffset / 7) + 1 };
+    return {
+      label: MONTH_FORMATTER.format(firstOfMonth),
+      column: Math.floor(dayOffset / 7) + 1,
+    };
   });
 
   return { days, months };

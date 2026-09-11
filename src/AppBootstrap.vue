@@ -41,7 +41,8 @@ export default {
         this.bootstrapRequired = session.bootstrapRequired;
         this.state = "anonymous";
       } catch (error) {
-        this.error = error?.message || "Done-ish could not connect to the home server.";
+        this.error =
+          error?.message || "Done-ish could not connect to the home server.";
         this.state = "error";
       }
     },
@@ -60,7 +61,9 @@ export default {
 </script>
 
 <template>
-  <p v-if="state === 'loading'" class="app-startup-status" role="status">Opening Done-ish…</p>
+  <p v-if="state === 'loading'" class="app-startup-status" role="status">
+    Opening Done-ish…
+  </p>
 
   <section v-else-if="state === 'error'" class="app-startup-error" role="alert">
     <p>{{ error }}</p>

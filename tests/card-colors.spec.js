@@ -1,7 +1,10 @@
 import { test, expect } from "./app-fixture.js";
 import { CARD_COLORS } from "../src/app/card-colors.js";
 
-test("all numbered card backgrounds resolve through CSS", async ({ page, appData }, testInfo) => {
+test("all numbered card backgrounds resolve through CSS", async ({
+  page,
+  appData,
+}, testInfo) => {
   appData.set("todos", {
     lists: CARD_COLORS.map((color) => ({
       id: color === 1 ? "general" : `palette-${color}`,
@@ -16,7 +19,10 @@ test("all numbered card backgrounds resolve through CSS", async ({ page, appData
   const rendered = await cards.evaluateAll((elements) =>
     elements.map((element, index) => {
       const token = `--color-${index + 1}`;
-      const hex = globalThis.getComputedStyle(element).getPropertyValue(token).trim();
+      const hex = globalThis
+        .getComputedStyle(element)
+        .getPropertyValue(token)
+        .trim();
       const rgb = hex
         .slice(1)
         .match(/../g)
@@ -33,5 +39,8 @@ test("all numbered card backgrounds resolve through CSS", async ({ page, appData
     expect(card.reference).toBe(`var(--color-${index + 1})`);
     expect(card.background).toBe(card.expected);
   }
-  await page.screenshot({ path: testInfo.outputPath("card-palette.png"), fullPage: true });
+  await page.screenshot({
+    path: testInfo.outputPath("card-palette.png"),
+    fullPage: true,
+  });
 });

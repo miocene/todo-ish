@@ -16,7 +16,8 @@ export function flossSupplyStatus(projects, inventory) {
         label: thread ? flossLabel(thread) : task.title || task.flossId,
         requiredSkeins: 0,
       };
-      current.requiredSkeins += typeof task.requiredSkeins === "number" ? task.requiredSkeins : 0;
+      current.requiredSkeins +=
+        typeof task.requiredSkeins === "number" ? task.requiredSkeins : 0;
       supplyById.set(task.flossId, current);
     }
   }
@@ -24,18 +25,24 @@ export function flossSupplyStatus(projects, inventory) {
   for (const supply of supplyById.values()) {
     const thread = flossById.get(supply.catalogId);
     supply.ownedSkeins = inventory[supply.catalogId] ?? 0;
-    supply.missingSkeins = Math.max(0, supply.requiredSkeins - supply.ownedSkeins);
+    supply.missingSkeins = Math.max(
+      0,
+      supply.requiredSkeins - supply.ownedSkeins,
+    );
     supply.productLink = thread ? flossProductLink(thread) : "";
   }
 
   return supplyById;
 }
 
-export function syncFlossShoppingList(projects, inventory = loadFlossInventory()) {
+export function syncFlossShoppingList(
+  projects,
+  inventory = loadFlossInventory(),
+) {
   const stitchingProjects = projects ?? loadPageTasks("crossStitch").projects;
-  const shortages = [...flossSupplyStatus(stitchingProjects, inventory).values()].filter(
-    (supply) => supply.missingSkeins > 0,
-  );
+  const shortages = [
+    ...flossSupplyStatus(stitchingProjects, inventory).values(),
+  ].filter((supply) => supply.missingSkeins > 0);
   return syncManagedShoppingTasks({
     source: SHOPPING_SOURCE,
     resourceIdKey: "flossId",
@@ -44,7 +51,9 @@ export function syncFlossShoppingList(projects, inventory = loadFlossInventory()
       id: existingTask?.id ?? `shopping-${crypto.randomUUID()}`,
       title: `${supply.label} floss · ${supply.missingSkeins} ${supply.missingSkeins === 1 ? "skein" : "skeins"}`,
       completed: existingTask?.completed ?? false,
-      ...(existingTask?.completedAt && { completedAt: existingTask.completedAt }),
+      ...(existingTask?.completedAt && {
+        completedAt: existingTask.completedAt,
+      }),
       source: SHOPPING_SOURCE,
       flossId: supply.catalogId,
       productLink: supply.productLink,

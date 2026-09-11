@@ -147,8 +147,14 @@ export function createCatalogRepository(pool) {
 
       return {
         catalogs: [
-          { catalog: "filament", ...(filament.rows[0] || { importedAt: null, entryCount: 0 }) },
-          { catalog: "floss", ...(floss.rows[0] || { importedAt: null, entryCount: 0 }) },
+          {
+            catalog: "filament",
+            ...(filament.rows[0] || { importedAt: null, entryCount: 0 }),
+          },
+          {
+            catalog: "floss",
+            ...(floss.rows[0] || { importedAt: null, entryCount: 0 }),
+          },
         ],
       };
     },

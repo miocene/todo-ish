@@ -1,8 +1,13 @@
 import { initializeAppDataResource, readAppData } from "./app-data.js";
 
-import { CARD_COLOR_COUNT, cardColorNumber } from "../../backend/api/src/card-colors.mjs";
+import {
+  CARD_COLOR_COUNT,
+  cardColorNumber,
+} from "../../backend/api/src/card-colors.mjs";
 
-export const CARD_COLORS = Object.freeze(Array.from({ length: CARD_COLOR_COUNT }, (_, index) => index + 1));
+export const CARD_COLORS = Object.freeze(
+  Array.from({ length: CARD_COLOR_COUNT }, (_, index) => index + 1),
+);
 
 export function randomCardColor() {
   return CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)];

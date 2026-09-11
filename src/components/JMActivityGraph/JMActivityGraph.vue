@@ -25,7 +25,11 @@ export default {
       tabindex="0"
     >
       <div class="jm-activity-graph__months" aria-hidden="true">
-        <span v-for="month in calendar.months" :key="month.label" :style="{ gridColumn: month.column }">
+        <span
+          v-for="month in calendar.months"
+          :key="month.label"
+          :style="{ gridColumn: month.column }"
+        >
           {{ month.label }}
         </span>
       </div>
@@ -38,7 +42,10 @@ export default {
 
       <div class="jm-activity-graph__days">
         <template v-for="day in calendar.days" :key="day.date">
-          <span v-if="day.count === undefined" class="jm-activity-graph__cell jm-activity-graph__cell--outside" />
+          <span
+            v-if="day.count === undefined"
+            class="jm-activity-graph__cell jm-activity-graph__cell--outside"
+          />
           <a
             v-else-if="day.count > 0"
             class="jm-activity-graph__cell"

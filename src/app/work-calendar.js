@@ -1,10 +1,19 @@
-import { calendarDate, shiftCalendarDays, isIsoDate, toIsoDate as isoDate } from "./date.js";
+import {
+  calendarDate,
+  shiftCalendarDays,
+  isIsoDate,
+  toIsoDate as isoDate,
+} from "./date.js";
 export { calendarDate, isIsoDate, isoDate };
 
 const PAST_DAY_LIMIT = 3;
 const FUTURE_DAY_LIMIT = 14;
 const WEEKDAY_FORMATTER = new Intl.DateTimeFormat("en", { weekday: "short" });
-const DATE_FORMATTER = new Intl.DateTimeFormat("en", { day: "numeric", month: "long", year: "numeric" });
+const DATE_FORMATTER = new Intl.DateTimeFormat("en", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+});
 
 export function requestedDate(value, fallback = new Date(), bounds) {
   let date = isIsoDate(value) ? calendarDate(value) : calendarDate(fallback);
@@ -28,7 +37,8 @@ export function getWorkDateBounds(today, tasks = []) {
   const firstAssignableDate = shiftCalendarDays(today, -PAST_DAY_LIMIT);
   let firstDateIso = isoDate(firstAssignableDate);
   for (const task of tasks) {
-    if (task.completedAt && task.date && task.date < firstDateIso) firstDateIso = task.date;
+    if (task.completedAt && task.date && task.date < firstDateIso)
+      firstDateIso = task.date;
   }
   return {
     firstDate: calendarDate(firstDateIso),

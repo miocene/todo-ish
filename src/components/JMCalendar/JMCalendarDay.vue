@@ -3,7 +3,15 @@ import { WORK_STATUSES } from "../../app/work-status.js";
 import JMIcon from "../JMIcon/JMIcon.vue";
 import JMSelect from "../JMSelect/JMSelect.vue";
 
-const OPTIONS = ["conference", "work", "sick-leave", "pto", "business-trip", "holiday", "weekend"].map((value) => {
+const OPTIONS = [
+  "conference",
+  "work",
+  "sick-leave",
+  "pto",
+  "business-trip",
+  "holiday",
+  "weekend",
+].map((value) => {
   const status = WORK_STATUSES.find((status) => status.value === value);
   return { value, text: status.label, iconName: status.icon };
 });
@@ -80,7 +88,9 @@ export default {
       :aria-label="`Change day type for ${day.label}. Current type: ${selectedOption.label}. ${activityDescription}`"
       :model-value="day.dayType"
       :options="options"
-      @update:model-value="$emit('update:day-type', { date: day.value, value: $event })"
+      @update:model-value="
+        $emit('update:day-type', { date: day.value, value: $event })
+      "
     />
   </label>
 </template>

@@ -11,7 +11,10 @@ function appBasePath(value = "/") {
 
 export default defineConfig(({ mode }) => {
   const environment = loadEnv(mode, process.cwd(), "");
-  const apiTarget = environment.API_PROXY_TARGET || environment.CATALOG_API_PROXY_TARGET || "http://127.0.0.1:3000";
+  const apiTarget =
+    environment.API_PROXY_TARGET ||
+    environment.CATALOG_API_PROXY_TARGET ||
+    "http://127.0.0.1:3000";
   const proxy = {
     "/api": {
       changeOrigin: true,

@@ -19,7 +19,9 @@ const cleanExpired = () => {
   if (cleanupRunning) return;
   cleanupRunning = authRepository
     .cleanExpired()
-    .catch((error) => console.error("Authentication expiry cleanup failed", error))
+    .catch((error) =>
+      console.error("Authentication expiry cleanup failed", error),
+    )
     .finally(() => {
       cleanupRunning = null;
     });
@@ -27,7 +29,9 @@ const cleanExpired = () => {
 const cleanupTimer = setInterval(cleanExpired, 60_000);
 cleanupTimer.unref();
 cleanExpired();
-const server = createHttpServer(repository, authService, { allowedOrigin: config.auth.origin });
+const server = createHttpServer(repository, authService, {
+  allowedOrigin: config.auth.origin,
+});
 const developmentServer = config.developmentPort
   ? createHttpServer(repository, authService, { authenticationBypass: true })
   : null;
@@ -40,11 +44,15 @@ server.listen(config.port, config.host, () => {
   console.log(`Done-ish API listening on http://${config.host}:${config.port}`);
 });
 developmentServer?.listen(config.developmentPort, config.host, () => {
-  console.log(`Done-ish development API listening on http://${config.host}:${config.developmentPort}`);
+  console.log(
+    `Done-ish development API listening on http://${config.host}:${config.developmentPort}`,
+  );
 });
 
 function closeServer(target) {
-  return new Promise((resolve, reject) => target.close((error) => (error ? reject(error) : resolve())));
+  return new Promise((resolve, reject) =>
+    target.close((error) => (error ? reject(error) : resolve())),
+  );
 }
 
 async function shutdown(signal) {
@@ -52,7 +60,10 @@ async function shutdown(signal) {
   try {
     clearInterval(cleanupTimer);
     await cleanupRunning;
-    await Promise.all([closeServer(server), ...(developmentServer ? [closeServer(developmentServer)] : [])]);
+    await Promise.all([
+      closeServer(server),
+      ...(developmentServer ? [closeServer(developmentServer)] : []),
+    ]);
     await pool.end();
   } catch (error) {
     console.error("HTTP server shutdown failed", error);

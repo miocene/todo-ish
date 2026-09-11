@@ -6,7 +6,10 @@ import { randomUUID } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import test from "node:test";
 import pg from "pg";
-import { createAppDataRepository, AppDataRevisionConflictError } from "../src/app-data-repository.mjs";
+import {
+  createAppDataRepository,
+  AppDataRevisionConflictError,
+} from "../src/app-data-repository.mjs";
 import { createAuthRepository } from "../src/auth-repository.mjs";
 import { verifyAtomicPurchases } from "./purchase-cases.mjs";
 import { verifySetupCodes } from "./setup-code-cases.mjs";
@@ -22,7 +25,12 @@ if (!connectionString)
 const completedAt = "2026-09-05T22:30:00.000Z";
 const values = {
   "work-tasks": [
-    { id: "work-1", title: "Completed work", date: "2026-09-05", checkedAt: completedAt },
+    {
+      id: "work-1",
+      title: "Completed work",
+      date: "2026-09-05",
+      checkedAt: completedAt,
+    },
     { id: "work-2", title: "Backlog", date: null },
   ],
   "work-statuses": { "2026-09-05": "pto" },
@@ -36,9 +44,22 @@ const values = {
         details: "Weekly",
         nextDue: "2026-09-05",
         completed: false,
-        schedule: { frequency: "week", interval: 2, startDate: "2026-09-05", weekdays: [0, 5], monthDays: [5] },
+        schedule: {
+          frequency: "week",
+          interval: 2,
+          startDate: "2026-09-05",
+          weekdays: [0, 5],
+          monthDays: [5],
+        },
       },
-      { id: "chore-2", title: "Kitchen", details: "Daily", nextDue: "2026-09-04", completed: true, completedAt },
+      {
+        id: "chore-2",
+        title: "Kitchen",
+        details: "Daily",
+        nextDue: "2026-09-04",
+        completed: true,
+        completedAt,
+      },
     ],
   },
   todos: {
@@ -57,8 +78,19 @@ const values = {
   shopping: {
     tasks: [
       { id: "shop-1", title: "Milk", completed: false },
-      { id: "shop-2", title: "Soap", productLink: "https://example.com/product", completed: true, completedAt },
-      { id: "derived", title: "Derived shortage", source: "filament-shortage", completed: false },
+      {
+        id: "shop-2",
+        title: "Soap",
+        productLink: "https://example.com/product",
+        completed: true,
+        completedAt,
+      },
+      {
+        id: "derived",
+        title: "Derived shortage",
+        source: "filament-shortage",
+        completed: false,
+      },
     ],
   },
   printing: {
@@ -75,7 +107,12 @@ const values = {
             completed: true,
             completedAt,
             filaments: [
-              { id: "usage-1", catalogId: "retired-filament", label: "Fallback filament", weightGrams: 12.5 },
+              {
+                id: "usage-1",
+                catalogId: "retired-filament",
+                label: "Fallback filament",
+                weightGrams: 12.5,
+              },
               { id: "usage-2", catalogId: "", label: "", weightGrams: "" },
             ],
           },
@@ -137,7 +174,8 @@ test("PostgreSQL application-data contract", async (t) => {
     await pool?.end();
     await installer?.end();
     try {
-      if (createdDatabase) await admin.query(`DROP DATABASE "${database}" WITH (FORCE)`);
+      if (createdDatabase)
+        await admin.query(`DROP DATABASE "${database}" WITH (FORCE)`);
       if (createdRole) await admin.query(`DROP ROLE "${role}"`);
     } finally {
       await admin.end();
@@ -155,14 +193,20 @@ test("PostgreSQL application-data contract", async (t) => {
     `ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO "${role}"`,
   );
   const migrationRoot = new URL("../../database/migrations/", import.meta.url);
-  for (const filename of (await readdir(migrationRoot)).filter((name) => name.endsWith(".sql")).sort()) {
+  for (const filename of (await readdir(migrationRoot))
+    .filter((name) => name.endsWith(".sql"))
+    .sort()) {
     if (filename.startsWith("0008_")) {
-      await installer.query("INSERT INTO auth_users (id, username, display_name) VALUES ('first', 'first', 'First')");
+      await installer.query(
+        "INSERT INTO auth_users (id, username, display_name) VALUES ('first', 'first', 'First')",
+      );
       await installer.query(
         "INSERT INTO work_tasks (id, title, position) VALUES ('migrated', 'Existing personal work', 0)",
       );
     }
-    const sql = (await readFile(new URL(filename, migrationRoot), "utf8")).replaceAll('"todo_runtime"', `"${role}"`);
+    const sql = (
+      await readFile(new URL(filename, migrationRoot), "utf8")
+    ).replaceAll('"todo_runtime"', `"${role}"`);
     await installer.query("BEGIN");
     try {
       await installer.query(sql);
@@ -200,235 +244,373 @@ test("PostgreSQL application-data contract", async (t) => {
     read: () => rawRepository.read("first"),
     replace: (...args) => rawRepository.replace(...args, "first"),
   };
-  await installer.query("INSERT INTO auth_users (id, username, display_name) VALUES ('second', 'second', 'Second')");
-  assert.equal((await repository.read()).workTasks[0].title, "Existing personal work");
+  await installer.query(
+    "INSERT INTO auth_users (id, username, display_name) VALUES ('second', 'second', 'Second')",
+  );
+  assert.equal(
+    (await repository.read()).workTasks[0].title,
+    "Existing personal work",
+  );
   assert.deepEqual((await rawRepository.read("second")).workTasks, []);
 
-  await t.test("every resource survives validation, storage, and reconstruction", async () => {
-    for (const [resource, value] of Object.entries(values)) {
-      assert.equal(await repository.replace(resource, validateAppDataResource(resource, value), 0), 1);
-    }
-    const state = await repository.read();
-    const stored = select(state);
-    for (const [resource, value] of Object.entries(values)) {
-      assert.deepEqual(
-        validateAppDataResource(resource, stored[resource]),
-        validateAppDataResource(resource, value),
-        resource,
+  await t.test(
+    "every resource survives validation, storage, and reconstruction",
+    async () => {
+      for (const [resource, value] of Object.entries(values)) {
+        assert.equal(
+          await repository.replace(
+            resource,
+            validateAppDataResource(resource, value),
+            0,
+          ),
+          1,
+        );
+      }
+      const state = await repository.read();
+      const stored = select(state);
+      for (const [resource, value] of Object.entries(values)) {
+        assert.deepEqual(
+          validateAppDataResource(resource, stored[resource]),
+          validateAppDataResource(resource, value),
+          resource,
+        );
+        assert.equal(state.revisions[resource], 1);
+      }
+      assert.equal(state.workTasks[0].date, "2026-09-05");
+      assert.equal(state.pages.chores.tasks[0].nextDue, "2026-09-05");
+      assert.equal(
+        state.pages.shopping.tasks.some((task) => task.id === "derived"),
+        false,
       );
-      assert.equal(state.revisions[resource], 1);
-    }
-    assert.equal(state.workTasks[0].date, "2026-09-05");
-    assert.equal(state.pages.chores.tasks[0].nextDue, "2026-09-05");
-    assert.equal(
-      state.pages.shopping.tasks.some((task) => task.id === "derived"),
-      false,
-    );
-    assert.equal(state.pages.crossStitch.projects[0].totalCrosses, 20);
-  });
+      assert.equal(state.pages.crossStitch.projects[0].totalCrosses, 20);
+    },
+  );
 
-  await t.test("chore schedules can move earlier and retain completed occurrences", async () => {
-    const updated = structuredClone(values.chores);
-    updated.tasks[0].nextDue = "2026-10-05";
-    updated.tasks[0].completed = true;
-    updated.tasks[0].completedAt = completedAt;
-    await repository.replace("chores", validateAppDataResource("chores", updated), 1);
-    updated.tasks[0].nextDue = "2026-09-07";
-    updated.tasks[0].completed = false;
-    delete updated.tasks[0].completedAt;
-    updated.tasks[0].schedule.weekdays = [0];
-    await repository.replace("chores", validateAppDataResource("chores", updated), 2);
-    const state = await repository.read();
-    assert.equal(state.pages.chores.tasks[0].nextDue, "2026-09-07");
-    assert.deepEqual(state.pages.chores.tasks[0].schedule, updated.tasks[0].schedule);
-    const history = await pool.query("SELECT completed_at FROM chore_occurrences WHERE chore_id = $1 AND due_on = $2", [
-      "chore-1",
-      "2026-10-05",
-    ]);
-    assert.equal(history.rows[0].completed_at.toISOString(), completedAt);
-  });
+  await t.test(
+    "chore schedules can move earlier and retain completed occurrences",
+    async () => {
+      const updated = structuredClone(values.chores);
+      updated.tasks[0].nextDue = "2026-10-05";
+      updated.tasks[0].completed = true;
+      updated.tasks[0].completedAt = completedAt;
+      await repository.replace(
+        "chores",
+        validateAppDataResource("chores", updated),
+        1,
+      );
+      updated.tasks[0].nextDue = "2026-09-07";
+      updated.tasks[0].completed = false;
+      delete updated.tasks[0].completedAt;
+      updated.tasks[0].schedule.weekdays = [0];
+      await repository.replace(
+        "chores",
+        validateAppDataResource("chores", updated),
+        2,
+      );
+      const state = await repository.read();
+      assert.equal(state.pages.chores.tasks[0].nextDue, "2026-09-07");
+      assert.deepEqual(
+        state.pages.chores.tasks[0].schedule,
+        updated.tasks[0].schedule,
+      );
+      const history = await pool.query(
+        "SELECT completed_at FROM chore_occurrences WHERE chore_id = $1 AND due_on = $2",
+        ["chore-1", "2026-10-05"],
+      );
+      assert.equal(history.rows[0].completed_at.toISOString(), completedAt);
+    },
+  );
 
-  await t.test("deleting chores archives definitions and preserves completed history", async () => {
-    const before = await repository.read();
-    assert.equal(before.pages.chores.history.length, 1);
-    await repository.replace("chores", { tasks: [], occurrenceOrder: [] }, before.revisions.chores);
-    const after = await repository.read();
-    assert.equal(after.pages.chores.tasks.length, 0);
-    assert.equal(after.pages.chores.history.length, 2);
-    const archived = await pool.query("SELECT enabled FROM chores ORDER BY id");
-    assert.ok(archived.rows.every((row) => row.enabled === false));
-    const offline = {
-      id: "offline",
-      title: "Offline chore",
-      details: "Daily",
-      nextDue: "2026-09-05",
-      completed: true,
-      completedAt,
-    };
-    await repository.replace(
-      "chores",
-      validateAppDataResource("chores", { tasks: [], occurrenceOrder: [], history: [offline] }),
-      after.revisions.chores,
-    );
-    const restored = await repository.read();
-    assert.equal(restored.pages.chores.history.length, 3);
-    await repository.replace("chores", { tasks: [], occurrenceOrder: [] }, restored.revisions.chores);
-    assert.equal((await repository.read()).pages.chores.history.length, 3);
-  });
+  await t.test(
+    "deleting chores archives definitions and preserves completed history",
+    async () => {
+      const before = await repository.read();
+      assert.equal(before.pages.chores.history.length, 1);
+      await repository.replace(
+        "chores",
+        { tasks: [], occurrenceOrder: [] },
+        before.revisions.chores,
+      );
+      const after = await repository.read();
+      assert.equal(after.pages.chores.tasks.length, 0);
+      assert.equal(after.pages.chores.history.length, 2);
+      const archived = await pool.query(
+        "SELECT enabled FROM chores ORDER BY id",
+      );
+      assert.ok(archived.rows.every((row) => row.enabled === false));
+      const offline = {
+        id: "offline",
+        title: "Offline chore",
+        details: "Daily",
+        nextDue: "2026-09-05",
+        completed: true,
+        completedAt,
+      };
+      await repository.replace(
+        "chores",
+        validateAppDataResource("chores", {
+          tasks: [],
+          occurrenceOrder: [],
+          history: [offline],
+        }),
+        after.revisions.chores,
+      );
+      const restored = await repository.read();
+      assert.equal(restored.pages.chores.history.length, 3);
+      await repository.replace(
+        "chores",
+        { tasks: [], occurrenceOrder: [] },
+        restored.revisions.chores,
+      );
+      assert.equal((await repository.read()).pages.chores.history.length, 3);
+    },
+  );
 
   await t.test("only one simultaneous write can win a revision", async () => {
     const results = await Promise.allSettled(
       ["First", "Second"].map((title) =>
         repository.replace(
           "work-tasks",
-          validateAppDataResource("work-tasks", [{ id: "winner", title, date: null }]),
+          validateAppDataResource("work-tasks", [
+            { id: "winner", title, date: null },
+          ]),
           1,
         ),
       ),
     );
-    assert.equal(results.filter((result) => result.status === "fulfilled").length, 1);
-    assert.ok(results.find((result) => result.status === "rejected").reason instanceof AppDataRevisionConflictError);
+    assert.equal(
+      results.filter((result) => result.status === "fulfilled").length,
+      1,
+    );
+    assert.ok(
+      results.find((result) => result.status === "rejected").reason instanceof
+        AppDataRevisionConflictError,
+    );
     const state = await repository.read();
     assert.equal(state.revisions["work-tasks"], 2);
     assert.equal(state.workTasks.length, 1);
   });
 
-  await t.test("a failed child batch rolls back parent changes and its revision", async () => {
-    const before = await repository.read();
-    const data = validateAppDataResource("printing", values.printing);
-    data.projects[0].title = "Must roll back";
-    data.projects[0].tasks[0].title = ""; // Intentionally bypass validation to exercise the database constraint.
-    await assert.rejects(repository.replace("printing", data, 1), /constraint/);
-    const after = await repository.read();
-    assert.deepEqual(after.pages.printing, before.pages.printing);
-    assert.equal(after.revisions.printing, 1);
-  });
+  await t.test(
+    "a failed child batch rolls back parent changes and its revision",
+    async () => {
+      const before = await repository.read();
+      const data = validateAppDataResource("printing", values.printing);
+      data.projects[0].title = "Must roll back";
+      data.projects[0].tasks[0].title = ""; // Intentionally bypass validation to exercise the database constraint.
+      await assert.rejects(
+        repository.replace("printing", data, 1),
+        /constraint/,
+      );
+      const after = await repository.read();
+      assert.deepEqual(after.pages.printing, before.pages.printing);
+      assert.equal(after.revisions.printing, 1);
+    },
+  );
 
-  await t.test("batched updates move children between parents and remove deleted data", async () => {
-    const todos = {
-      lists: [{ id: "list-2", title: "New list", color: 34, tasks: [...values.todos.lists[0].tasks].reverse() }],
-    };
-    await repository.replace("todos", validateAppDataResource("todos", todos), 1);
-    assert.deepEqual((await repository.read()).pages.todos, todos);
-    await repository.replace("todos", { lists: [] }, 2);
-    await repository.replace("printing", { projects: [] }, 1);
-    const state = await repository.read();
-    assert.deepEqual(state.pages.todos.lists, []);
-    assert.equal(state.pages.todos.history.length, 1);
-    assert.equal(state.pages.todos.history[0].title, "Done");
-    assert.deepEqual(state.pages.printing, { projects: [] });
-  });
-  await t.test("General survives omission and offline deleted-list completions survive later writes", async () => {
-    let state = await repository.read();
-    await repository.replace(
-      "todos",
-      validateAppDataResource("todos", {
-        lists: [{ id: "general", title: "General", tasks: [{ id: "keep", title: "Keep", completed: false }] }],
-      }),
-      state.revisions.todos,
-    );
-    state = await repository.read();
-    await repository.replace(
-      "todos",
-      validateAppDataResource("todos", {
-        lists: [],
-        history: [{ id: "offline-todo", title: "Offline completion", completed: true, completedAt }],
-      }),
-      state.revisions.todos,
-    );
-    state = await repository.read();
-    assert.equal(state.pages.todos.lists[0].id, "general");
-    assert.equal(state.pages.todos.lists[0].tasks[0].title, "Keep");
-    assert.equal(state.pages.todos.history.length, 2);
-    await repository.replace("todos", { lists: [] }, state.revisions.todos);
-    assert.equal((await repository.read()).pages.todos.history.length, 2);
-  });
-  await t.test("explicit snapshots preserve checked deletions and remove undone completions atomically", async () => {
-    const write = async (value) => {
-      const state = await repository.read();
-      await repository.replace("todos", validateAppDataResource("todos", value), state.revisions.todos);
-    };
-    for (const removeList of [false, true]) {
-      await write({
+  await t.test(
+    "batched updates move children between parents and remove deleted data",
+    async () => {
+      const todos = {
         lists: [
           {
-            id: "history-test",
-            title: "History",
-            tasks: [
-              { id: "undone", title: "Undo me", completedAt },
-              { id: "retained", title: "Old title", completedAt },
-            ],
+            id: "list-2",
+            title: "New list",
+            color: 34,
+            tasks: [...values.todos.lists[0].tasks].reverse(),
           },
         ],
-        history: [],
-        replaceHistory: true,
-      });
-      // The intermediate uncheck is intentionally never written.
-      await write({
-        lists: removeList ? [] : [{ id: "history-test", title: "History", tasks: [] }],
-        history: [{ id: "retained", title: "Latest title", completedAt }],
-        replaceHistory: true,
-      });
-      const state = await repository.read();
-      assert.deepEqual(
-        state.pages.todos.history.map(({ id, title }) => ({ id, title })),
-        [{ id: "retained", title: "Latest title" }],
+      };
+      await repository.replace(
+        "todos",
+        validateAppDataResource("todos", todos),
+        1,
       );
-      assert.ok(state.pages.todos.lists.some((list) => list.id === "general"));
-    }
-  });
-  await t.test("shopping purchase quantity, archived Work and project activity survive reads", async () => {
-    const write = async (resource, value) => {
+      assert.deepEqual((await repository.read()).pages.todos, todos);
+      await repository.replace("todos", { lists: [] }, 2);
+      await repository.replace("printing", { projects: [] }, 1);
       const state = await repository.read();
-      await repository.replace(resource, validateAppDataResource(resource, value), state.revisions[resource]);
-    };
-    await write("shopping", {
-      tasks: [
+      assert.deepEqual(state.pages.todos.lists, []);
+      assert.equal(state.pages.todos.history.length, 1);
+      assert.equal(state.pages.todos.history[0].title, "Done");
+      assert.deepEqual(state.pages.printing, { projects: [] });
+    },
+  );
+  await t.test(
+    "General survives omission and offline deleted-list completions survive later writes",
+    async () => {
+      let state = await repository.read();
+      await repository.replace(
+        "todos",
+        validateAppDataResource("todos", {
+          lists: [
+            {
+              id: "general",
+              title: "General",
+              tasks: [{ id: "keep", title: "Keep", completed: false }],
+            },
+          ],
+        }),
+        state.revisions.todos,
+      );
+      state = await repository.read();
+      await repository.replace(
+        "todos",
+        validateAppDataResource("todos", {
+          lists: [],
+          history: [
+            {
+              id: "offline-todo",
+              title: "Offline completion",
+              completed: true,
+              completedAt,
+            },
+          ],
+        }),
+        state.revisions.todos,
+      );
+      state = await repository.read();
+      assert.equal(state.pages.todos.lists[0].id, "general");
+      assert.equal(state.pages.todos.lists[0].tasks[0].title, "Keep");
+      assert.equal(state.pages.todos.history.length, 2);
+      await repository.replace("todos", { lists: [] }, state.revisions.todos);
+      assert.equal((await repository.read()).pages.todos.history.length, 2);
+    },
+  );
+  await t.test(
+    "explicit snapshots preserve checked deletions and remove undone completions atomically",
+    async () => {
+      const write = async (value) => {
+        const state = await repository.read();
+        await repository.replace(
+          "todos",
+          validateAppDataResource("todos", value),
+          state.revisions.todos,
+        );
+      };
+      for (const removeList of [false, true]) {
+        await write({
+          lists: [
+            {
+              id: "history-test",
+              title: "History",
+              tasks: [
+                { id: "undone", title: "Undo me", completedAt },
+                { id: "retained", title: "Old title", completedAt },
+              ],
+            },
+          ],
+          history: [],
+          replaceHistory: true,
+        });
+        // The intermediate uncheck is intentionally never written.
+        await write({
+          lists: removeList
+            ? []
+            : [{ id: "history-test", title: "History", tasks: [] }],
+          history: [{ id: "retained", title: "Latest title", completedAt }],
+          replaceHistory: true,
+        });
+        const state = await repository.read();
+        assert.deepEqual(
+          state.pages.todos.history.map(({ id, title }) => ({ id, title })),
+          [{ id: "retained", title: "Latest title" }],
+        );
+        assert.ok(
+          state.pages.todos.lists.some((list) => list.id === "general"),
+        );
+      }
+    },
+  );
+  await t.test(
+    "shopping purchase quantity, archived Work and project activity survive reads",
+    async () => {
+      const write = async (resource, value) => {
+        const state = await repository.read();
+        await repository.replace(
+          resource,
+          validateAppDataResource(resource, value),
+          state.revisions[resource],
+        );
+      };
+      await write("shopping", {
+        tasks: [
+          {
+            id: "purchase",
+            title: "Two spools",
+            source: "filament-shortage",
+            filamentId: "pla",
+            quantity: 2,
+            completedAt,
+          },
+        ],
+        history: [{ id: "milk", title: "Milk", completedAt }],
+      });
+      let state = await repository.read();
+      assert.equal(state.pages.shopping.tasks[0].quantity, 2);
+      assert.equal(state.pages.shopping.history[0].title, "Milk");
+      await write("shopping", {
+        tasks: [],
+        history: [
+          state.pages.shopping.tasks[0],
+          ...state.pages.shopping.history,
+        ],
+      });
+      state = await repository.read();
+      assert.equal(state.pages.shopping.tasks.length, 0);
+      assert.equal(state.pages.shopping.history.length, 2);
+      await write("shopping", { tasks: [], history: [] });
+      assert.equal((await repository.read()).pages.shopping.history, undefined);
+      await write("work-tasks", [
         {
-          id: "purchase",
-          title: "Two spools",
-          source: "filament-shortage",
-          filamentId: "pla",
-          quantity: 2,
-          completedAt,
+          id: "archived",
+          title: "Completed work",
+          date: "2026-09-05",
+          checkedAt: completedAt,
+          archived: true,
         },
-      ],
-      history: [{ id: "milk", title: "Milk", completedAt }],
-    });
-    let state = await repository.read();
-    assert.equal(state.pages.shopping.tasks[0].quantity, 2);
-    assert.equal(state.pages.shopping.history[0].title, "Milk");
-    await write("shopping", { tasks: [], history: [state.pages.shopping.tasks[0], ...state.pages.shopping.history] });
-    state = await repository.read();
-    assert.equal(state.pages.shopping.tasks.length, 0);
-    assert.equal(state.pages.shopping.history.length, 2);
-    await write("shopping", { tasks: [], history: [] });
-    assert.equal((await repository.read()).pages.shopping.history, undefined);
-    await write("work-tasks", [
-      { id: "archived", title: "Completed work", date: "2026-09-05", checkedAt: completedAt, archived: true },
-    ]);
-    assert.equal((await repository.read()).workTasks[0].archived, true);
-    await write("printing", {
-      projects: [],
-      history: [{ id: "part", title: "Finished part", context: "Old project", completedAt }],
-    });
-    assert.equal((await repository.read()).pages.printing.history[0].context, "Old project");
-  });
-  await t.test("shared household data and private accounts remain isolated", () =>
-    verifyMultiUserData(rawRepository, "first", "second"),
+      ]);
+      assert.equal((await repository.read()).workTasks[0].archived, true);
+      await write("printing", {
+        projects: [],
+        history: [
+          {
+            id: "part",
+            title: "Finished part",
+            context: "Old project",
+            completedAt,
+          },
+        ],
+      });
+      assert.equal(
+        (await repository.read()).pages.printing.history[0].context,
+        "Old project",
+      );
+    },
+  );
+  await t.test(
+    "shared household data and private accounts remain isolated",
+    () => verifyMultiUserData(rawRepository, "first", "second"),
   );
 
   await t.test("atomic purchases, reversals and retries", () =>
     verifyAtomicPurchases(rawRepository, "first", "second"),
   );
 
-  await t.test("bounded history reads and patches", () => verifyHistoryTransport(rawRepository, "first"));
+  await t.test("bounded history reads and patches", () =>
+    verifyHistoryTransport(rawRepository, "first"),
+  );
 
-  await t.test("bounded authentication expiry cleanup", () => verifyAuthCleanup(runtimePool, "first"));
+  await t.test("bounded authentication expiry cleanup", () =>
+    verifyAuthCleanup(runtimePool, "first"),
+  );
 
-  await t.test("revision polling measurement and query plan", () => measurePolling(runtimePool, "first", "second"));
+  await t.test("revision polling measurement and query plan", () =>
+    measurePolling(runtimePool, "first", "second"),
+  );
 
-  await t.test("pre-created accounts use expiring, single-use setup codes", () =>
-    verifySetupCodes(createAuthRepository(runtimePool), "second"),
+  await t.test(
+    "pre-created accounts use expiring, single-use setup codes",
+    () => verifySetupCodes(createAuthRepository(runtimePool), "second"),
   );
 });

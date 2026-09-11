@@ -7,7 +7,10 @@ test("Enter respects composition and focuses the next task or creates one", () =
   const tasks = [{ id: "a" }, { id: "b" }];
   const actions = [];
   const event = { preventDefault: () => actions.push("prevent") };
-  const callbacks = { focus: (task) => actions.push(task.id), create: () => actions.push("new") };
+  const callbacks = {
+    focus: (task) => actions.push(task.id),
+    create: () => actions.push("new"),
+  };
   editor.enter(tasks, tasks[0], { ...event, isComposing: true }, callbacks);
   assert.deepEqual(actions, []);
   editor.enter(tasks, tasks[0], event, callbacks);
@@ -19,7 +22,9 @@ test("discarding a blank draft removes its related ordering before saving", () =
   const tasks = [];
   const order = ["draft"];
   const snapshots = [];
-  const editor = createTaskEditor({ save: () => snapshots.push({ tasks: [...tasks], order: [...order] }) });
+  const editor = createTaskEditor({
+    save: () => snapshots.push({ tasks: [...tasks], order: [...order] }),
+  });
   const draft = editor.add(tasks, { id: "draft", title: "" });
   editor.finish(tasks, draft, () => order.splice(0, 1));
   assert.deepEqual(snapshots.at(-1), { tasks: [], order: [] });
@@ -129,7 +134,9 @@ test("title editing retains valid text, omits blank drafts and enforces the shar
   const titles = createTitleEditor([task]);
   const drafts = new Set([draft.id]);
   assert.equal(titles.update(task, "  "), false);
-  assert.deepEqual(titles.serialize([task, draft], drafts), [{ id: task.id, title: "Original" }]);
+  assert.deepEqual(titles.serialize([task, draft], drafts), [
+    { id: task.id, title: "Original" },
+  ]);
   titles.restore(task);
   assert.equal(task.title, "Original");
   assert.equal(titles.update(task, "x".repeat(501)), true);

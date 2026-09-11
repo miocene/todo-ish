@@ -55,10 +55,18 @@ function expiry(seconds) {
 }
 
 function publicUser(user) {
-  return { id: user.id, username: user.username, displayName: user.displayName };
+  return {
+    id: user.id,
+    username: user.username,
+    displayName: user.displayName,
+  };
 }
 
-export function createAuthService(repository, config, webAuthn = defaultWebAuthn) {
+export function createAuthService(
+  repository,
+  config,
+  webAuthn = defaultWebAuthn,
+) {
   const cookiePrefix = config.secureCookies ? "__Host-" : "";
   const challengeCookieName = `${cookiePrefix}doneish_challenge`;
   const sessionCookieName = `${cookiePrefix}doneish_session`;
@@ -72,7 +80,12 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
     return cookie(name, "", 0);
   }
 
-  async function storeChallenge({ challenge, ceremony, userHandle, setupCodeHash }) {
+  async function storeChallenge({
+    challenge,
+    ceremony,
+    userHandle,
+    setupCodeHash,
+  }) {
     const token = randomToken();
     await repository.storeChallenge({
       tokenHash: tokenHash(token),
@@ -87,9 +100,22 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
 
   async function consumeChallenge(cookieHeader, ceremony) {
     const token = cookieValue(cookieHeader, challengeCookieName);
-    if (!token) throw new AuthError("The passkey request has expired. Try again.", 400, "challenge_missing");
-    const challenge = await repository.consumeChallenge(tokenHash(token), ceremony);
-    if (!challenge) throw new AuthError("The passkey request has expired. Try again.", 400, "challenge_expired");
+    if (!token)
+      throw new AuthError(
+        "The passkey request has expired. Try again.",
+        400,
+        "challenge_missing",
+      );
+    const challenge = await repository.consumeChallenge(
+      tokenHash(token),
+      ceremony,
+    );
+    if (!challenge)
+      throw new AuthError(
+        "The passkey request has expired. Try again.",
+        400,
+        "challenge_expired",
+      );
     return challenge;
   }
 
@@ -112,10 +138,19 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
     if (authenticationBypass) {
       const user = await repository.firstUser();
       if (user) return user;
-      throw new AuthError("Complete account setup first", 401, "bootstrap_required");
+      throw new AuthError(
+        "Complete account setup first",
+        401,
+        "bootstrap_required",
+      );
     }
     const user = await authenticatedUser(cookieHeader);
-    if (!user) throw new AuthError("Authentication required", 401, "authentication_required");
+    if (!user)
+      throw new AuthError(
+        "Authentication required",
+        401,
+        "authentication_required",
+      );
     return user;
   }
 
@@ -141,8 +176,15 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
     },
 
     async registrationOptions({ bootstrapToken, cookieHeader }) {
-      if (bootstrapToken !== undefined && (typeof bootstrapToken !== "string" || bootstrapToken.length > 256))
-        throw new AuthError("The setup code must be a string of at most 256 characters", 400, "invalid_setup_code");
+      if (
+        bootstrapToken !== undefined &&
+        (typeof bootstrapToken !== "string" || bootstrapToken.length > 256)
+      )
+        throw new AuthError(
+          "The setup code must be a string of at most 256 characters",
+          400,
+          "invalid_setup_code",
+        );
       const ownerExists = await repository.hasOwner();
       let user;
       let setupCodeHash;
@@ -150,12 +192,20 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
         setupCodeHash = tokenHash(bootstrapToken);
         user = await repository.userForSetupCode(setupCodeHash);
         if (!user)
-          throw new AuthError("The setup code is invalid, expired, or already used", 401, "invalid_setup_code");
+          throw new AuthError(
+            "The setup code is invalid, expired, or already used",
+            401,
+            "invalid_setup_code",
+          );
       } else if (ownerExists) {
         user = await requireUser(cookieHeader);
       } else {
         if (!bootstrapTokenMatches(bootstrapToken, config.bootstrapToken)) {
-          throw new AuthError("The setup code is invalid", 401, "invalid_bootstrap_token");
+          throw new AuthError(
+            "The setup code is invalid",
+            401,
+            "invalid_bootstrap_token",
+          );
         }
         user = {
           id: randomToken(),
@@ -164,7 +214,9 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
         };
       }
 
-      const credentials = ownerExists ? await repository.credentialsForUser(user.id) : [];
+      const credentials = ownerExists
+        ? await repository.credentialsForUser(user.id)
+        : [];
       const options = await webAuthn.generateRegistrationOptions({
         rpName: config.rpName,
         rpID: config.rpID,
@@ -193,7 +245,10 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
     },
 
     async verifyRegistration({ cookieHeader, response }) {
-      const challenge = await consumeChallenge(cookieHeader, REGISTRATION_CEREMONY);
+      const challenge = await consumeChallenge(
+        cookieHeader,
+        REGISTRATION_CEREMONY,
+      );
       let verification;
       try {
         verification = await webAuthn.verifyRegistrationResponse({
@@ -204,17 +259,29 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
           requireUserVerification: true,
         });
       } catch {
-        throw new AuthError("The passkey could not be verified", 400, "registration_failed");
+        throw new AuthError(
+          "The passkey could not be verified",
+          400,
+          "registration_failed",
+        );
       }
       if (!verification.verified) {
-        throw new AuthError("The passkey could not be verified", 400, "registration_failed");
+        throw new AuthError(
+          "The passkey could not be verified",
+          400,
+          "registration_failed",
+        );
       }
 
       const existingUser = await repository.userById(challenge.userHandle);
       if (existingUser && !challenge.setupCodeHash) {
         const currentUser = await requireUser(cookieHeader);
         if (currentUser.id !== existingUser.id)
-          throw new AuthError("Sign in to the account that requested this passkey", 401, "account_changed");
+          throw new AuthError(
+            "Sign in to the account that requested this passkey",
+            401,
+            "account_changed",
+          );
       }
       const user = existingUser ?? {
         id: challenge.userHandle,
@@ -229,7 +296,9 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
           setupCodeHash: challenge.setupCodeHash,
           credential: {
             id: registrationInfo.credential.id,
-            publicKey: Buffer.from(registrationInfo.credential.publicKey).toString("base64url"),
+            publicKey: Buffer.from(
+              registrationInfo.credential.publicKey,
+            ).toString("base64url"),
             counter: registrationInfo.credential.counter,
             transports: response.response?.transports ?? [],
             deviceType: registrationInfo.credentialDeviceType,
@@ -243,19 +312,30 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
           throw new AuthError(error.message, 409, "registration_conflict");
         }
         if (error?.code === "23505") {
-          throw new AuthError("This passkey is already registered", 409, "credential_exists");
+          throw new AuthError(
+            "This passkey is already registered",
+            409,
+            "credential_exists",
+          );
         }
         throw error;
       }
       return {
         body: { authenticated: true, user: publicUser(user) },
-        cookies: [clearCookie(challengeCookieName), cookie(sessionCookieName, session.token, config.sessionTtlSeconds)],
+        cookies: [
+          clearCookie(challengeCookieName),
+          cookie(sessionCookieName, session.token, config.sessionTtlSeconds),
+        ],
       };
     },
 
     async authenticationOptions() {
       if (!(await repository.hasOwner())) {
-        throw new AuthError("Complete passkey setup first", 409, "bootstrap_required");
+        throw new AuthError(
+          "Complete passkey setup first",
+          409,
+          "bootstrap_required",
+        );
       }
       const options = await webAuthn.generateAuthenticationOptions({
         rpID: config.rpID,
@@ -272,9 +352,16 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
     },
 
     async verifyAuthentication({ cookieHeader, response }) {
-      const challenge = await consumeChallenge(cookieHeader, AUTHENTICATION_CEREMONY);
-      const credential = typeof response?.id === "string" ? await repository.credentialById(response.id) : null;
-      if (!credential) throw new AuthError("Passkey not found", 404, "credential_not_found");
+      const challenge = await consumeChallenge(
+        cookieHeader,
+        AUTHENTICATION_CEREMONY,
+      );
+      const credential =
+        typeof response?.id === "string"
+          ? await repository.credentialById(response.id)
+          : null;
+      if (!credential)
+        throw new AuthError("Passkey not found", 404, "credential_not_found");
 
       let verification;
       try {
@@ -292,10 +379,18 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
           },
         });
       } catch {
-        throw new AuthError("The passkey could not be verified", 401, "authentication_failed");
+        throw new AuthError(
+          "The passkey could not be verified",
+          401,
+          "authentication_failed",
+        );
       }
       if (!verification.verified) {
-        throw new AuthError("The passkey could not be verified", 401, "authentication_failed");
+        throw new AuthError(
+          "The passkey could not be verified",
+          401,
+          "authentication_failed",
+        );
       }
 
       const session = createSession();
@@ -309,7 +404,10 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
       });
       return {
         body: { authenticated: true, user: publicUser(credential.user) },
-        cookies: [clearCookie(challengeCookieName), cookie(sessionCookieName, session.token, config.sessionTtlSeconds)],
+        cookies: [
+          clearCookie(challengeCookieName),
+          cookie(sessionCookieName, session.token, config.sessionTtlSeconds),
+        ],
       };
     },
 
@@ -318,7 +416,10 @@ export function createAuthService(repository, config, webAuthn = defaultWebAuthn
       await repository.deleteSession(token ? tokenHash(token) : "");
       return {
         body: { authenticated: false },
-        cookies: [clearCookie(challengeCookieName), clearCookie(sessionCookieName)],
+        cookies: [
+          clearCookie(challengeCookieName),
+          clearCookie(sessionCookieName),
+        ],
       };
     },
   };

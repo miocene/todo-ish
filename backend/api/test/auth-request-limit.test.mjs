@@ -3,7 +3,13 @@ import test from "node:test";
 import { createAuthRequestLimit } from "../src/auth-request-limit.mjs";
 test("authentication concurrency, throughput and client cardinality are bounded; retries recover", () => {
   let time = 0;
-  const limiter = createAuthRequestLimit({ now: () => time, burst: 3, concurrent: 2, perMinute: 60, maxClients: 2 });
+  const limiter = createAuthRequestLimit({
+    now: () => time,
+    burst: 3,
+    concurrent: 2,
+    perMinute: 60,
+    maxClients: 2,
+  });
   const first = limiter.acquire("one");
   const second = limiter.acquire("one");
   assert.throws(

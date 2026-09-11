@@ -19,7 +19,8 @@ function readSnapshot(name) {
 
 function jsonRecordset(rows) {
   const json = JSON.stringify(rows);
-  if (json.includes(dollarTag)) throw new Error(`Catalog data contains reserved SQL tag ${dollarTag}`);
+  if (json.includes(dollarTag))
+    throw new Error(`Catalog data contains reserved SQL tag ${dollarTag}`);
   return `${dollarTag}${json}${dollarTag}::jsonb`;
 }
 
@@ -34,7 +35,9 @@ function catalogImport({
   updateColumns,
 }) {
   const entryCount = rows.length;
-  const updateSet = updateColumns.map((column) => `  ${column} = EXCLUDED.${column}`).join(",\n");
+  const updateSet = updateColumns
+    .map((column) => `  ${column} = EXCLUDED.${column}`)
+    .join(",\n");
 
   return `WITH target_snapshot AS (
   INSERT INTO ${snapshotTable} (source, content_sha256, entry_count)
@@ -108,8 +111,20 @@ export function buildFlossCatalogImport(floss = catalogSeedData().floss) {
     source: "DMC solid floss: Threadcolors, 01-35 supplement and Breibrink",
     sha256: floss.sha256,
     rows: floss.rows,
-    recordColumns: ["catalog_id text", "number text", "color_name text", "color_hex char(7)", "purchase_url text"],
-    selectColumns: ["catalog_id", "number", "color_name", "color_hex", "purchase_url"],
+    recordColumns: [
+      "catalog_id text",
+      "number text",
+      "color_name text",
+      "color_hex char(7)",
+      "purchase_url text",
+    ],
+    selectColumns: [
+      "catalog_id",
+      "number",
+      "color_name",
+      "color_hex",
+      "purchase_url",
+    ],
     updateColumns: ["number", "color_name", "color_hex", "purchase_url"],
   });
   return `${flossImport}\n\n${countCheck({
@@ -130,8 +145,20 @@ export function buildCatalogSeed() {
     source: "Bambu Lab EU catalog snapshot",
     sha256: filament.sha256,
     rows: filament.rows,
-    recordColumns: ["catalog_id text", "family text", "color_name text", "product_code text", "swatch text"],
-    selectColumns: ["catalog_id", "family", "color_name", "product_code", "swatch"],
+    recordColumns: [
+      "catalog_id text",
+      "family text",
+      "color_name text",
+      "product_code text",
+      "swatch text",
+    ],
+    selectColumns: [
+      "catalog_id",
+      "family",
+      "color_name",
+      "product_code",
+      "swatch",
+    ],
     updateColumns: ["family", "color_name", "product_code", "swatch"],
   });
 
@@ -170,10 +197,15 @@ ORDER BY catalog;
 
 export function writeCatalogSeed(outputPath) {
   const destination = resolve(outputPath);
-  if (existsSync(destination)) throw new Error(`Refusing to overwrite existing file: ${destination}`);
+  if (existsSync(destination))
+    throw new Error(`Refusing to overwrite existing file: ${destination}`);
 
   const sql = buildCatalogSeed();
-  writeFileSync(destination, sql, { encoding: "utf8", flag: "wx", mode: 0o600 });
+  writeFileSync(destination, sql, {
+    encoding: "utf8",
+    flag: "wx",
+    mode: 0o600,
+  });
 
   return {
     bytes: Buffer.byteLength(sql),
@@ -185,7 +217,9 @@ export function writeCatalogSeed(outputPath) {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const outputPath = process.argv[2];
   if (!outputPath) {
-    console.error("Usage: node backend/scripts/build_catalog_seed.mjs <output.sql>");
+    console.error(
+      "Usage: node backend/scripts/build_catalog_seed.mjs <output.sql>",
+    );
     process.exitCode = 2;
   } else {
     const result = writeCatalogSeed(outputPath);

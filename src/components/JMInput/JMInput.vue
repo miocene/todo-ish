@@ -20,7 +20,8 @@ export default {
     type: {
       type: String,
       default: "text",
-      validator: (value) => ["text", "number", "search", "password"].includes(value),
+      validator: (value) =>
+        ["text", "number", "search", "password"].includes(value),
     },
     view: {
       type: String,
@@ -41,8 +42,14 @@ export default {
 </script>
 
 <template>
-  <div class="jm-input" :class="[`jm-input--${view}`, `jm-input--${size}`, $attrs.class]" :style="$attrs.style">
-    <label v-if="label" class="jm-input__label" :for="controlId">{{ label }}</label>
+  <div
+    class="jm-input"
+    :class="[`jm-input--${view}`, `jm-input--${size}`, $attrs.class]"
+    :style="$attrs.style"
+  >
+    <label v-if="label" class="jm-input__label" :for="controlId">{{
+      label
+    }}</label>
     <component
       :is="multiline ? 'textarea' : 'input'"
       v-bind="{ ...$attrs, class: undefined, style: undefined }"

@@ -12,7 +12,9 @@ export async function adjustShoppingStock(client, data, userId, patch) {
     )
   ).rows;
   const next = new Map(
-    [...data.tasks, ...(data.history ?? [])].filter((item) => item.source).map((item) => [item.id, item]),
+    [...data.tasks, ...(data.history ?? [])]
+      .filter((item) => item.source)
+      .map((item) => [item.id, item]),
   );
   const receipts = new Map(
     (
@@ -42,7 +44,12 @@ export async function adjustShoppingStock(client, data, userId, patch) {
       "INSERT INTO supply_purchase_receipts (user_id, id, source, catalog_id, quantity) VALUES ($1,$2,$3,$4,$5)",
       [userId, item.id, item.source, catalogId, item.quantity],
     );
-    changes.push({ id: item.id, source: item.source, catalogId, quantity: item.quantity });
+    changes.push({
+      id: item.id,
+      source: item.source,
+      catalogId,
+      quantity: item.quantity,
+    });
   }
   for (const item of previous) {
     if (next.has(item.id)) continue;
@@ -51,32 +58,47 @@ export async function adjustShoppingStock(client, data, userId, patch) {
       [item.id],
     );
     if (result.rows.length)
-      changes.push({ id: item.id, source: item.source, catalogId: item.catalog_id, quantity: -item.quantity });
+      changes.push({
+        id: item.id,
+        source: item.source,
+        catalogId: item.catalog_id,
+        quantity: -item.quantity,
+      });
   }
   for (const change of changes.sort((a, b) => a.quantity - b.quantity)) {
     const filament = change.source === "filament-shortage";
     const table = filament ? "filament_inventory" : "floss_inventory";
     const column = filament ? "spool_count" : "skein_count";
     const owned =
-      (await query(`SELECT ${column} AS count FROM ${table} WHERE catalog_id = $1`, [change.catalogId])).rows[0]
-        ?.count ?? 0;
+      (
+        await query(
+          `SELECT ${column} AS count FROM ${table} WHERE catalog_id = $1`,
+          [change.catalogId],
+        )
+      ).rows[0]?.count ?? 0;
     const count = Math.max(0, owned + change.quantity);
     if (count > APP_DATA_LIMITS.quantity)
-      throw new AppDataValidationError("This purchase exceeds the inventory limit.");
+      throw new AppDataValidationError(
+        "This purchase exceeds the inventory limit.",
+      );
     await query(
       `INSERT INTO ${table} (catalog_id, ${column}) VALUES ($1,$2) ON CONFLICT (catalog_id) DO UPDATE SET ${column} = EXCLUDED.${column}, updated_at = now()`,
       [change.catalogId, count],
     );
     if (change.quantity < 0)
-      await query("UPDATE supply_purchase_receipts SET reversed_quantity = $2 WHERE id = $1", [
-        change.id,
-        owned - count,
-      ]);
+      await query(
+        "UPDATE supply_purchase_receipts SET reversed_quantity = $2 WHERE id = $1",
+        [change.id, owned - count],
+      );
   }
   for (const source of new Set(changes.map((item) => item.source))) {
     await query(
       "UPDATE app_data_revisions SET revision = revision + 1, updated_at = now() WHERE scope = '' AND resource = $1",
-      [source === "filament-shortage" ? "filament-inventory" : "floss-inventory"],
+      [
+        source === "filament-shortage"
+          ? "filament-inventory"
+          : "floss-inventory",
+      ],
     );
   }
 }

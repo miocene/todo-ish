@@ -15,8 +15,15 @@ export function createDayClock({
     state.today = toIsoDate(date);
     timers.clearTimeout(timeout);
     if (!started) return;
-    const midnight = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
-    timeout = timers.setTimeout(refresh, midnight.getTime() - date.getTime() + 100);
+    const midnight = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate() + 1,
+    );
+    timeout = timers.setTimeout(
+      refresh,
+      midnight.getTime() - date.getTime() + 100,
+    );
   }
   return {
     state: readonly(state),

@@ -34,8 +34,15 @@ export async function measurePolling(pool, first, second) {
     let bytes = 0;
     const started = performance.now();
     for (let i = 0; i < 5; i++)
-      for (const user of [first, second]) bytes += Buffer.byteLength(JSON.stringify(await repository[method](user)));
-    return { bytes: Math.round(bytes / 10), queries: queries / 10, milliseconds: (performance.now() - started) / 10 };
+      for (const user of [first, second])
+        bytes += Buffer.byteLength(
+          JSON.stringify(await repository[method](user)),
+        );
+    return {
+      bytes: Math.round(bytes / 10),
+      queries: queries / 10,
+      milliseconds: (performance.now() - started) / 10,
+    };
   };
   const full = await measure("read");
   const revision = await measure("revisions");

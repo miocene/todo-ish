@@ -11,7 +11,8 @@ import { createAppDataRepository } from "../src/app-data-repository.mjs";
 import { createCatalogRepository } from "../src/catalog-repository.mjs";
 import { createHttpServer } from "../src/http-server.mjs";
 const connectionString = process.env.TEST_DATABASE_URL;
-if (!connectionString) throw new Error("Set TEST_DATABASE_URL to a disposable PostgreSQL instance");
+if (!connectionString)
+  throw new Error("Set TEST_DATABASE_URL to a disposable PostgreSQL instance");
 test("real browser legacy storage imports into PostgreSQL and retains its originals", async (t) => {
   const suffix = randomUUID().replaceAll("-", "");
   const database = `todo_legacy_${suffix}`;
@@ -38,16 +39,23 @@ test("real browser legacy storage imports into PostgreSQL and retains its origin
   await installer.query(
     `ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO "${role}"`,
   );
-  await runMigrations(installer, new URL("../../database/migrations/", import.meta.url), {
-    runtimeRole: role,
-    log: () => {},
-  });
-  const user = { id: "legacy-owner", username: "legacy-owner", displayName: "Legacy Owner" };
-  await installer.query("INSERT INTO auth_users(id,username,display_name) VALUES ($1,$2,$3)", [
-    user.id,
-    user.username,
-    user.displayName,
-  ]);
+  await runMigrations(
+    installer,
+    new URL("../../database/migrations/", import.meta.url),
+    {
+      runtimeRole: role,
+      log: () => {},
+    },
+  );
+  const user = {
+    id: "legacy-owner",
+    username: "legacy-owner",
+    displayName: "Legacy Owner",
+  };
+  await installer.query(
+    "INSERT INTO auth_users(id,username,display_name) VALUES ($1,$2,$3)",
+    [user.id, user.username, user.displayName],
+  );
   pool = new Pool({ connectionString: url.toString(), max: 4 });
   const scoped = {
     connect: async () => {
@@ -67,7 +75,10 @@ test("real browser legacy storage imports into PostgreSQL and retains its origin
   const repository = createAppDataRepository(scoped);
   api = createHttpServer(
     { ...repository, ...createCatalogRepository(scoped) },
-    { session: async () => ({ authenticated: true, user }), requireUser: async () => user },
+    {
+      session: async () => ({ authenticated: true, user }),
+      requireUser: async () => user,
+    },
     { authenticationBypass: true },
   );
   await new Promise((resolve) => api.listen(0, "127.0.0.1", resolve));
@@ -77,7 +88,10 @@ test("real browser legacy storage imports into PostgreSQL and retains its origin
     envFile: false,
     logLevel: "error",
     plugins: [vue()],
-    define: { "import.meta.env.VITE_API_ORIGIN": '""', "import.meta.env.VITE_DEMO_DATA": '"false"' },
+    define: {
+      "import.meta.env.VITE_API_ORIGIN": '""',
+      "import.meta.env.VITE_DEMO_DATA": '"false"',
+    },
     server: {
       host: "127.0.0.1",
       port: 0,
@@ -90,19 +104,24 @@ test("real browser legacy storage imports into PostgreSQL and retains its origin
   const page = await browser.newPage();
   page.on("pageerror", (error) => t.diagnostic(error.message));
   page.on("response", (response) => {
-    if (response.status() >= 400) t.diagnostic(`${response.status()} ${response.url()}`);
+    if (response.status() >= 400)
+      t.diagnostic(`${response.status()} ${response.url()}`);
   });
   const legacy = {
     "done-ish.filament-inventory.v1": { "old-filament": 2 },
     "done-ish.floss-inventory.v1": { "old-floss": 3 },
-    "done-ish.work-tasks.v1": [{ id: "legacy-work", title: "Legacy work", date: null }],
+    "done-ish.work-tasks.v1": [
+      { id: "legacy-work", title: "Legacy work", date: null },
+    ],
     "done-ish.page-tasks.v1.todos": {
       lists: [
         {
           id: "legacy-list",
           title: "Legacy list",
           color: "#8FB7B0",
-          tasks: [{ id: "legacy-todo", title: "Legacy todo", completed: false }],
+          tasks: [
+            { id: "legacy-todo", title: "Legacy todo", completed: false },
+          ],
         },
       ],
     },
@@ -128,21 +147,39 @@ test("real browser legacy storage imports into PostgreSQL and retains its origin
     },
     "done-ish.page-tasks.v1.chores": {
       tasks: [
-        { id: "legacy-chore", title: "Legacy chore", details: "Every day", nextDue: "2026-09-10", completed: false },
+        {
+          id: "legacy-chore",
+          title: "Legacy chore",
+          details: "Every day",
+          nextDue: "2026-09-10",
+          completed: false,
+        },
       ],
     },
   };
   await page.addInitScript((data) => {
     for (const [key, value] of Object.entries(data))
-      if (localStorage.getItem(key) === null) localStorage.setItem(key, JSON.stringify(value));
+      if (localStorage.getItem(key) === null)
+        localStorage.setItem(key, JSON.stringify(value));
   }, legacy);
   const origin = `http://127.0.0.1:${vite.httpServer.address().port}`;
   for (const route of ["work", "todos", "printing", "chores"]) {
     await page.goto(`${origin}/${route}`);
-    const resource = { work: "work-tasks", todos: "todos", printing: "printing", chores: "chores" }[route];
+    const resource = {
+      work: "work-tasks",
+      todos: "todos",
+      printing: "printing",
+      chores: "chores",
+    }[route];
     try {
       await expect
-        .poll(async () => (await repository.read(user.id)).initializedResources.includes(resource), { message: route })
+        .poll(
+          async () =>
+            (await repository.read(user.id)).initializedResources.includes(
+              resource,
+            ),
+          { message: route },
+        )
         .toBe(true);
     } catch (error) {
       t.diagnostic(await page.locator("body").innerText());
@@ -151,13 +188,25 @@ test("real browser legacy storage imports into PostgreSQL and retains its origin
   }
   const state = await repository.read(user.id);
   assert.equal(state.workTasks[0].title, "Legacy work");
-  assert.equal(state.pages.todos.lists.find((list) => list.id === "legacy-list").tasks[0].title, "Legacy todo");
-  assert.equal(state.pages.printing.projects[0].tasks[0].filaments[0].catalogId, "old-filament");
+  assert.equal(
+    state.pages.todos.lists.find((list) => list.id === "legacy-list").tasks[0]
+      .title,
+    "Legacy todo",
+  );
+  assert.equal(
+    state.pages.printing.projects[0].tasks[0].filaments[0].catalogId,
+    "old-filament",
+  );
   assert.equal(state.pages.chores.tasks[0].schedule.frequency, "day");
   assert.deepEqual(state.inventories.filament, { "old-filament": 2 });
   assert.deepEqual(state.inventories.floss, { "old-floss": 3 });
   for (const [key, value] of Object.entries(legacy))
-    assert.equal(await page.evaluate((key) => localStorage.getItem(key), key), JSON.stringify(value));
+    assert.equal(
+      await page.evaluate((key) => localStorage.getItem(key), key),
+      JSON.stringify(value),
+    );
   await page.goto(`${origin}/profile`);
-  await expect(page.getByRole("button", { name: /Download .*data/ })).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: /Download .*data/ }),
+  ).toHaveCount(0);
 });

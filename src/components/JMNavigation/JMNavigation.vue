@@ -26,8 +26,16 @@ export default {
 <template>
   <nav class="jm-navigation" aria-label="Primary">
     <ul class="list" role="list">
-      <li v-for="item in visibleNavigationItems" :key="item.to.name" class="item">
-        <RouterLink class="link" exact-active-class="link--active" :to="item.to">
+      <li
+        v-for="item in visibleNavigationItems"
+        :key="item.to.name"
+        class="item"
+      >
+        <RouterLink
+          class="link"
+          exact-active-class="link--active"
+          :to="item.to"
+        >
           <JMIcon :name="item.to.name === 'work' ? workIcon : item.icon" />
           <span class="sr-only">{{ item.label }}</span>
         </RouterLink>

@@ -19,13 +19,17 @@ export function createAuthRequestLimit({
   const global = { tokens: burst, at: now() };
   let active = 0;
   function refill(bucket, at) {
-    bucket.tokens = Math.min(burst, bucket.tokens + (Math.max(0, at - bucket.at) * perMinute) / 60_000);
+    bucket.tokens = Math.min(
+      burst,
+      bucket.tokens + (Math.max(0, at - bucket.at) * perMinute) / 60_000,
+    );
     bucket.at = at;
   }
   return {
     acquire(address) {
       const at = now();
-      for (const [key, value] of clients) if (at - value.at > 120_000) clients.delete(key);
+      for (const [key, value] of clients)
+        if (at - value.at > 120_000) clients.delete(key);
       let client = clients.get(address);
       if (!client) {
         if (clients.size >= maxClients) throw new AuthRequestLimitError(60);
@@ -36,7 +40,12 @@ export function createAuthRequestLimit({
       refill(client, at);
       if (active >= concurrent || global.tokens < 1 || client.tokens < 1)
         throw new AuthRequestLimitError(
-          Math.max(1, Math.ceil(((1 - Math.min(global.tokens, client.tokens)) * 60) / perMinute)),
+          Math.max(
+            1,
+            Math.ceil(
+              ((1 - Math.min(global.tokens, client.tokens)) * 60) / perMinute,
+            ),
+          ),
         );
       global.tokens--;
       client.tokens--;

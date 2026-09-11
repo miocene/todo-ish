@@ -6,7 +6,14 @@ import "./jm-task-item.css";
 export default {
   name: "JMTaskItem",
   components: { JMButton, JMInput },
-  emits: ["enter", "pin", "remove", "title-blur", "update:completed", "update:title"],
+  emits: [
+    "enter",
+    "pin",
+    "remove",
+    "title-blur",
+    "update:completed",
+    "update:title",
+  ],
   props: {
     completable: { type: Boolean, default: true },
     completionDisabled: { type: Boolean, default: false },
@@ -58,7 +65,13 @@ export default {
     />
 
     <div class="content">
-      <a v-if="titleHref" class="title title-link" :href="titleHref" target="_blank" rel="noopener noreferrer">
+      <a
+        v-if="titleHref"
+        class="title title-link"
+        :href="titleHref"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
         {{ title }}
         <span class="sr-only"> (opens in a new tab)</span>
       </a>

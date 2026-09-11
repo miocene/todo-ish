@@ -37,7 +37,9 @@ export default {
       this.editor.clear();
       const todos = loadPageTasks("todos");
       this.todos = { ...todos, history: todos.history ?? [] };
-      this.titles = createTitleEditor(todos.lists.flatMap((list) => list.tasks));
+      this.titles = createTitleEditor(
+        todos.lists.flatMap((list) => list.tasks),
+      );
     });
     if (this.ensureGeneral()) this.save();
   },
@@ -45,15 +47,22 @@ export default {
     ensureGeneral() {
       if (this.todos.lists.some((list) => list.id === "general")) return false;
       if (this.todos.lists.length >= APP_DATA_LIMITS.lists) {
-        this.limitMessage = "Delete a list to make room for General. You can have up to 100 lists.";
+        this.limitMessage =
+          "Delete a list to make room for General. You can have up to 100 lists.";
         return false;
       }
-      this.todos.lists.unshift({ id: "general", title: "General", color: randomCardColor(), tasks: [] });
+      this.todos.lists.unshift({
+        id: "general",
+        title: "General",
+        color: randomCardColor(),
+        tasks: [],
+      });
       return true;
     },
     openNewList() {
       if (this.todos.lists.length >= APP_DATA_LIMITS.lists) {
-        this.limitMessage = "You can have up to 100 lists. Delete a list before adding another.";
+        this.limitMessage =
+          "You can have up to 100 lists. Delete a list before adding another.";
         return;
       }
       this.limitMessage = "";
@@ -62,8 +71,18 @@ export default {
     },
     addList() {
       const title = this.listName.trim();
-      if (!title || title.length > APP_DATA_LIMITS.title || this.todos.lists.length >= APP_DATA_LIMITS.lists) return;
-      const list = { id: `list-${crypto.randomUUID()}`, title, color: randomCardColor(), tasks: [] };
+      if (
+        !title ||
+        title.length > APP_DATA_LIMITS.title ||
+        this.todos.lists.length >= APP_DATA_LIMITS.lists
+      )
+        return;
+      const list = {
+        id: `list-${crypto.randomUUID()}`,
+        title,
+        color: randomCardColor(),
+        tasks: [],
+      };
       this.todos.lists.push(list);
       this.save();
       this.$refs.newListModal.close();
@@ -71,8 +90,21 @@ export default {
     },
     listActions(list) {
       return [
-        { id: "add", buttonId: `todo-add-${list.id}`, label: `Add task to ${list.title}`, icon: "plus" },
-        ...(list.id === "general" ? [] : [{ id: "remove", label: `Delete ${list.title} list`, icon: "remove" }]),
+        {
+          id: "add",
+          buttonId: `todo-add-${list.id}`,
+          label: `Add task to ${list.title}`,
+          icon: "plus",
+        },
+        ...(list.id === "general"
+          ? []
+          : [
+              {
+                id: "remove",
+                label: `Delete ${list.title} list`,
+                icon: "remove",
+              },
+            ]),
       ];
     },
     listAction(list, action) {
@@ -104,12 +136,16 @@ export default {
     focusListActions(list) {
       this.$nextTick(() => {
         const card = document.getElementById(`todo-list-${list.id}`);
-        const action = card?.querySelector("button[popovertarget]") || document.getElementById(`todo-add-${list.id}`);
+        const action =
+          card?.querySelector("button[popovertarget]") ||
+          document.getElementById(`todo-add-${list.id}`);
         action?.focus();
       });
     },
     retainRemovedTasks(tasks) {
-      const history = new Map(this.todos.history.map((item) => [item.id, item]));
+      const history = new Map(
+        this.todos.history.map((item) => [item.id, item]),
+      );
       for (const task of tasks) {
         this.editor.moves.cancel(task.id);
         this.editor.drafts.delete(task.id);
@@ -135,13 +171,17 @@ export default {
     updateCompleted(list, task, completed) {
       if (!task.title.trim() || task.completed === completed) return;
       setTaskCompletion(task, completed);
-      if (!completed) this.todos.history = this.todos.history.filter((item) => item.id !== task.id);
+      if (!completed)
+        this.todos.history = this.todos.history.filter(
+          (item) => item.id !== task.id,
+        );
       this.save();
       this.editor.scheduleMove(task, completed, list.tasks);
     },
     addTask(list) {
       if (list.tasks.length >= APP_DATA_LIMITS.tasks) {
-        this.limitMessage = "A list can contain up to 2,000 tasks. Delete a task before adding another.";
+        this.limitMessage =
+          "A list can contain up to 2,000 tasks. Delete a task before adding another.";
         return;
       }
       this.limitMessage = "";
@@ -151,7 +191,9 @@ export default {
         completed: false,
       };
       const completedIndex = list.tasks.findIndex((item) => item.completed);
-      this.editor.add(list.tasks, task, { index: completedIndex < 0 ? list.tasks.length : completedIndex });
+      this.editor.add(list.tasks, task, {
+        index: completedIndex < 0 ? list.tasks.length : completedIndex,
+      });
       this.focusTask(task);
       return task;
     },
@@ -177,7 +219,12 @@ export default {
 <template>
   <header class="page-header">
     <h1>Todo lists</h1>
-    <JMButton ref="newListButton" text="New list" view="secondary" @click="openNewList" />
+    <JMButton
+      ref="newListButton"
+      text="New list"
+      view="secondary"
+      @click="openNewList"
+    />
   </header>
 
   <p v-if="limitMessage" role="status">{{ limitMessage }}</p>
@@ -218,10 +265,24 @@ export default {
   <JMModal ref="newListModal" class="todo-list-modal" aria-label="New list">
     <form class="jm-modal__form" @submit.prevent="addList">
       <h2>New list</h2>
-      <JMInput v-model="listName" label="List name" required :maxlength="limits.title" autofocus />
+      <JMInput
+        v-model="listName"
+        label="List name"
+        required
+        :maxlength="limits.title"
+        autofocus
+      />
       <div class="jm-modal__actions">
-        <JMButton text="Cancel" view="ghost" @click="$refs.newListModal.close()" />
-        <JMButton text="Create list" type="submit" :disabled="!listName.trim()" />
+        <JMButton
+          text="Cancel"
+          view="ghost"
+          @click="$refs.newListModal.close()"
+        />
+        <JMButton
+          text="Create list"
+          type="submit"
+          :disabled="!listName.trim()"
+        />
       </div>
     </form>
   </JMModal>

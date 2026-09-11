@@ -9,7 +9,10 @@ import { setStateResource } from "../../backend/api/src/app-data-contract.mjs";
 import { createPendingStorage } from "./pending-storage.js";
 import { reactive } from "vue";
 import { apiFetch, setApiAccount } from "./api.js";
-import { APP_DATA_RESOURCES, validateAppDataResource } from "../../backend/api/src/app-data-validation.mjs";
+import {
+  APP_DATA_RESOURCES,
+  validateAppDataResource,
+} from "../../backend/api/src/app-data-validation.mjs";
 import {
   NAVIGATION_IDS,
   RESOURCE_METADATA,
@@ -22,7 +25,10 @@ import { mergeSharedData } from "./shared-data-merge.js";
 const RESOURCES = APP_DATA_RESOURCES;
 
 const LEGACY_STORAGE_KEYS = Object.fromEntries(
-  Object.entries(RESOURCE_METADATA).map(([resource, meta]) => [resource, meta.legacyKey]),
+  Object.entries(RESOURCE_METADATA).map(([resource, meta]) => [
+    resource,
+    meta.legacyKey,
+  ]),
 );
 let demoData = {};
 export async function initializeDemoData() {
@@ -38,7 +44,11 @@ const cache = new Map();
 const initializedResources = new Set();
 const clone = (value) => JSON.parse(JSON.stringify(value));
 const MOCK_COLORS_STORAGE_KEY = "done-ish.mock-colors.v1";
-const COLOR_COLLECTIONS = Object.freeze({ todos: "lists", printing: "projects", "cross-stitch": "projects" });
+const COLOR_COLLECTIONS = Object.freeze({
+  todos: "lists",
+  printing: "projects",
+  "cross-stitch": "projects",
+});
 let historyTransport = false;
 let revisionTransport = false;
 let refreshNow;
@@ -58,20 +68,24 @@ export function subscribeAppData(resource, callback) {
 function receiveAppData(resource, value) {
   value = projectPendingStock(resource, value);
   cache.set(resource, clone(value));
-  for (const callback of subscribers.get(resource) ?? []) callback(clone(value));
+  for (const callback of subscribers.get(resource) ?? [])
+    callback(clone(value));
 }
 
 function readMockColors() {
   try {
     const value = JSON.parse(localStorage.getItem(MOCK_COLORS_STORAGE_KEY));
-    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+    return value && typeof value === "object" && !Array.isArray(value)
+      ? value
+      : {};
   } catch {
     return {};
   }
 }
 
 function saveMockColors(resource, value) {
-  const colors = resource === "colors" ? clone(value) : clone(cache.get("colors") ?? {});
+  const colors =
+    resource === "colors" ? clone(value) : clone(cache.get("colors") ?? {});
   for (const item of value[COLOR_COLLECTIONS[resource]] ?? []) {
     colors[`${resource}:${item.id}`] = item.color;
   }
@@ -87,7 +101,8 @@ function withMockColors(resource, value) {
   if (!mockColors || !value || !COLOR_COLLECTIONS[resource]) return value;
   const colors = cache.get("colors") ?? {};
   for (const item of value[COLOR_COLLECTIONS[resource]] ?? []) {
-    if (colors[`${resource}:${item.id}`]) item.color = colors[`${resource}:${item.id}`];
+    if (colors[`${resource}:${item.id}`])
+      item.color = colors[`${resource}:${item.id}`];
   }
   return value;
 }
@@ -118,27 +133,41 @@ export const syncState = reactive({
 const occurrenceKey = (item) => `${item.id}:${item.nextDue}`;
 
 async function fetchJson(path) {
-  const response = await apiFetch(path, { headers: { accept: "application/json" } });
+  const response = await apiFetch(path, {
+    headers: { accept: "application/json" },
+  });
   if (!response.ok)
-    throw Object.assign(new Error(`Could not load saved data (${response.status}).`), { status: response.status });
+    throw Object.assign(
+      new Error(`Could not load saved data (${response.status}).`),
+      { status: response.status },
+    );
   const state = await response.json();
   if (state.userId !== accountId)
-    throw Object.assign(new Error("Your account changed. Reload before saving."), { status: 401 });
+    throw Object.assign(
+      new Error("Your account changed. Reload before saving."),
+      { status: 401 },
+    );
   return state;
 }
 
 async function fetchRemoteState(resources = RESOURCES) {
   for (let attempt = 0; attempt < 3; attempt++) {
-    const state = await fetchJson(`/data?history=omit&resources=${resources.join(",")}`);
+    const state = await fetchJson(
+      `/data?history=omit&resources=${resources.join(",")}`,
+    );
     historyTransport = state.historyTransport === 1;
     revisionTransport = state.revisionTransport === 1;
     if (!historyTransport) return state;
     let changed = false;
-    for (const resource of resources.filter((resource) => HISTORY_RESOURCES.includes(resource))) {
+    for (const resource of resources.filter((resource) =>
+      HISTORY_RESOURCES.includes(resource),
+    )) {
       const history = [];
       let offset = 0;
       do {
-        const page = await fetchJson(`/data/history/${resource}?offset=${offset}`);
+        const page = await fetchJson(
+          `/data/history/${resource}?offset=${offset}`,
+        );
         if (page.revision !== state.revisions[resource]) {
           changed = true;
           break;
@@ -150,7 +179,11 @@ async function fetchRemoteState(resources = RESOURCES) {
       setStateResource(
         state,
         resource,
-        joinHistory(resource, splitHistory(resource, remoteValue(state, resource)).active, history),
+        joinHistory(
+          resource,
+          splitHistory(resource, remoteValue(state, resource)).active,
+          history,
+        ),
       );
     }
     if (!changed) return state;
@@ -173,7 +206,8 @@ const sync = createResourceSync({
     const normalized = validateAppDataResource(resource, value);
     // The older development API discards these mock-only fields. Exclude them from revision comparisons.
     if (mockColors && COLOR_COLLECTIONS[resource]) {
-      for (const item of normalized[COLOR_COLLECTIONS[resource]]) delete item.color;
+      for (const item of normalized[COLOR_COLLECTIONS[resource]])
+        delete item.color;
     }
     if (resource === "chores" && normalized.history) {
       // Labels are derived from archived definitions; compare occurrence identity and completion only.
@@ -181,8 +215,14 @@ const sync = createResourceSync({
         .map(({ id, nextDue, completedAt }) => ({ id, nextDue, completedAt }))
         .sort((a, b) => occurrenceKey(a).localeCompare(occurrenceKey(b)));
     }
-    if (["chores", "todos", "shopping", "printing", "cross-stitch"].includes(resource) && normalized.history) {
-      if (normalized.history.length) normalized.history.sort((a, b) => a.id.localeCompare(b.id));
+    if (
+      ["chores", "todos", "shopping", "printing", "cross-stitch"].includes(
+        resource,
+      ) &&
+      normalized.history
+    ) {
+      if (normalized.history.length)
+        normalized.history.sort((a, b) => a.id.localeCompare(b.id));
       else delete normalized.history; // Reads omit empty history; compare equivalent snapshots.
     }
     return normalized;
@@ -194,13 +234,22 @@ const sync = createResourceSync({
       resource === "chores" && value.history !== undefined
         ? { ...value, replaceHistory: true }
         : resource === "shopping"
-          ? { ...value, tasks: value.tasks.filter((task) => !task.source || task.completedAt) }
+          ? {
+              ...value,
+              tasks: value.tasks.filter(
+                (task) => !task.source || task.completedAt,
+              ),
+            }
           : resource === "todos" && value.history !== undefined
             ? { ...value, replaceHistory: true }
             : value;
     const patch = historyTransport && HISTORY_RESOURCES.includes(resource);
     const payload = patch
-      ? historyDelta(resource, sync.savedValue(resource) ?? emptyResource(resource), submitted)
+      ? historyDelta(
+          resource,
+          sync.savedValue(resource) ?? emptyResource(resource),
+          submitted,
+        )
       : submitted;
     const body = serializeWrite(payload);
     const response = await apiFetch(`/data/${resource}`, {
@@ -215,8 +264,12 @@ const sync = createResourceSync({
     });
     const result = await response.json().catch(() => ({}));
     if (!response.ok)
-      throw Object.assign(new Error(result.error || "Changes could not be saved."), { status: response.status });
-    if (!Number.isInteger(result.revision)) throw new Error("The save response did not include a revision.");
+      throw Object.assign(
+        new Error(result.error || "Changes could not be saved."),
+        { status: response.status },
+      );
+    if (!Number.isInteger(result.revision))
+      throw new Error("The save response did not include a revision.");
     if (resource === "shopping") {
       const state = await fetchRemoteState();
       result.stockState = state;
@@ -227,16 +280,23 @@ const sync = createResourceSync({
   onUpdate: receiveAppData,
   // Keep the editor and its revision together until the user finishes a field/modal.
   canRefresh: () =>
-    !document.querySelector('dialog[open], main textarea:focus, main input:not([type="checkbox"]):focus'),
+    !document.querySelector(
+      'dialog[open], main textarea:focus, main input:not([type="checkbox"]):focus',
+    ),
   merge: mergeSharedData,
   onSaved(resource, _snapshot, result) {
-    if (result?.stockState) sync.refresh(result.stockState, ["filament-inventory", "floss-inventory"]);
+    if (result?.stockState)
+      sync.refresh(result.stockState, [
+        "filament-inventory",
+        "floss-inventory",
+      ]);
     initializedResources.add(resource);
   },
 });
 
 function projectPendingStock(resource, value) {
-  if (!["filament-inventory", "floss-inventory"].includes(resource)) return value;
+  if (!["filament-inventory", "floss-inventory"].includes(resource))
+    return value;
   const pending = sync.value("shopping");
   if (!pending) return value;
   const purchases = (data) =>
@@ -249,9 +309,17 @@ function projectPendingStock(resource, value) {
   const after = purchases(pending);
   const inventory = { ...value };
   const apply = (item, direction) => {
-    if ((item.source === "filament-shortage" ? "filament-inventory" : "floss-inventory") !== resource) return;
+    if (
+      (item.source === "filament-shortage"
+        ? "filament-inventory"
+        : "floss-inventory") !== resource
+    )
+      return;
     const id = item.filamentId ?? item.flossId;
-    inventory[id] = Math.max(0, (inventory[id] ?? 0) + direction * item.quantity);
+    inventory[id] = Math.max(
+      0,
+      (inventory[id] ?? 0) + direction * item.quantity,
+    );
   };
   for (const item of before.values()) if (!after.has(item.id)) apply(item, -1);
   for (const item of after.values()) if (!before.has(item.id)) apply(item, 1);
@@ -270,10 +338,15 @@ function queueWrite(resource, value) {
 export const retryPendingWrites = () => sync.retry();
 export const discardPendingWrites = () => sync.discard();
 export function downloadPendingWrites() {
-  downloadJson([...sync.pending(), ...syncState.corrupt], "done-ish-local-edits.json");
+  downloadJson(
+    [...sync.pending(), ...syncState.corrupt],
+    "done-ish-local-edits.json",
+  );
 }
 function downloadJson(data, filename) {
-  const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+  const url = URL.createObjectURL(
+    new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }),
+  );
   const link = document.createElement("a");
   link.href = url;
   link.download = filename;
@@ -286,21 +359,27 @@ export async function initializeAppData(user) {
   accountId = user.id;
   setApiAccount(accountId);
   const state = await fetchRemoteState();
-  if (!state || typeof state !== "object") throw new Error("App data response is invalid");
+  if (!state || typeof state !== "object")
+    throw new Error("App data response is invalid");
   legacyOwner = state.legacyOwner === true;
 
-  mockColors = Boolean(import.meta.env.DEV && !Object.hasOwn(state.revisions ?? {}, "colors"));
+  mockColors = Boolean(
+    import.meta.env.DEV && !Object.hasOwn(state.revisions ?? {}, "colors"),
+  );
   if (mockColors) cache.set("colors", readMockColors());
 
   for (const resource of state.initializedResources ?? []) {
     if (!RESOURCES.includes(resource)) continue;
     if (mockColors && resource === "colors") continue;
     const value = remoteValue(state, resource);
-    if (value === undefined) throw new Error(`App data response is missing ${resource}`);
+    if (value === undefined)
+      throw new Error(`App data response is missing ${resource}`);
     initializedResources.add(resource);
     cache.set(resource, value);
   }
-  const resources = RESOURCES.filter((resource) => !mockColors || resource !== "colors");
+  const resources = RESOURCES.filter(
+    (resource) => !mockColors || resource !== "colors",
+  );
   sync.hydrate(state, resources);
   for (const resource of resources) {
     const pending = sync.value(resource);
@@ -308,14 +387,27 @@ export async function initializeAppData(user) {
   }
   for (const resource of ["filament-inventory", "floss-inventory"]) {
     if (initializedResources.has(resource) && !sync.value(resource))
-      cache.set(resource, projectPendingStock(resource, remoteValue(state, resource) ?? {}));
+      cache.set(
+        resource,
+        projectPendingStock(resource, remoteValue(state, resource) ?? {}),
+      );
   }
   hydrated = true;
-  if (legacyOwner && !initializedResources.has("preferences") && !sync.value("preferences")) {
+  if (
+    legacyOwner &&
+    !initializedResources.has("preferences") &&
+    !sync.value("preferences")
+  ) {
     try {
-      const hiddenNavigation = JSON.parse(localStorage.getItem("done-ish.hidden-navigation.v1"));
+      const hiddenNavigation = JSON.parse(
+        localStorage.getItem("done-ish.hidden-navigation.v1"),
+      );
       if (Array.isArray(hiddenNavigation))
-        writeAppData("preferences", { hiddenNavigation: hiddenNavigation.filter((id) => NAVIGATION_IDS.includes(id)) });
+        writeAppData("preferences", {
+          hiddenNavigation: hiddenNavigation.filter((id) =>
+            NAVIGATION_IDS.includes(id),
+          ),
+        });
     } catch {
       // Unavailable legacy preferences leave the account defaults intact.
     }
@@ -330,10 +422,14 @@ export function startAppDataRefresh() {
     if (busy || stopped || document.visibilityState === "hidden") return;
     busy = true;
     try {
-      let resources = RESOURCES.filter((resource) => !mockColors || resource !== "colors");
+      let resources = RESOURCES.filter(
+        (resource) => !mockColors || resource !== "colors",
+      );
       if (revisionTransport) {
         const state = await fetchJson("/data/revisions");
-        resources = resources.filter((resource) => state.revisions[resource] !== sync.revision(resource));
+        resources = resources.filter(
+          (resource) => state.revisions[resource] !== sync.revision(resource),
+        );
       }
       if (resources.length) {
         const state = await fetchRemoteState(resources);
@@ -343,9 +439,11 @@ export function startAppDataRefresh() {
       syncState.refreshMessage = "";
     } catch (error) {
       failures++;
-      if (error.status === 401) Object.assign(syncState, { state: "auth", message: error.message });
+      if (error.status === 401)
+        Object.assign(syncState, { state: "auth", message: error.message });
       else if (failures >= 3)
-        syncState.refreshMessage = "Saved data could not be refreshed. Other users’ changes may be missing.";
+        syncState.refreshMessage =
+          "Saved data could not be refreshed. Other users’ changes may be missing.";
     } finally {
       busy = false;
     }
@@ -369,30 +467,41 @@ export function startAppDataRefresh() {
  * @returns {import("../../backend/api/src/app-data-contract.mjs").ResourceValues[K] | undefined}
  */
 export function readAppData(resource) {
-  if (!RESOURCES.includes(resource)) throw new Error(`Unknown app-data resource: ${resource}`);
-  if (cache.has(resource)) return withMockColors(resource, clone(cache.get(resource)));
+  if (!RESOURCES.includes(resource))
+    throw new Error(`Unknown app-data resource: ${resource}`);
+  if (cache.has(resource))
+    return withMockColors(resource, clone(cache.get(resource)));
   const savedValue = legacyValue(resource);
-  return savedValue === undefined ? undefined : withMockColors(resource, clone(savedValue));
+  return savedValue === undefined
+    ? undefined
+    : withMockColors(resource, clone(savedValue));
 }
 
-export function initializeAppDataResource(resource, value, { migrate = false } = {}) {
+export function initializeAppDataResource(
+  resource,
+  value,
+  { migrate = false } = {},
+) {
   if (cache.has(resource) && !migrate) return readAppData(resource);
   cache.set(resource, clone(value));
   if (mockColors && migrate && COLOR_COLLECTIONS[resource]) {
     saveMockColors(resource, value);
     return clone(value);
   }
-  if (hydrated && (migrate || !initializedResources.has(resource))) queueWrite(resource, value);
+  if (hydrated && (migrate || !initializedResources.has(resource)))
+    queueWrite(resource, value);
   return clone(value);
 }
 
 export function writeAppData(resource, value) {
-  if (!RESOURCES.includes(resource)) throw new Error(`Unknown app-data resource: ${resource}`);
+  if (!RESOURCES.includes(resource))
+    throw new Error(`Unknown app-data resource: ${resource}`);
   queueWrite(resource, value);
   return true;
 }
 
 export function cacheAppData(resource, value) {
-  if (!RESOURCES.includes(resource)) throw new Error(`Unknown app-data resource: ${resource}`);
+  if (!RESOURCES.includes(resource))
+    throw new Error(`Unknown app-data resource: ${resource}`);
   cache.set(resource, clone(value));
 }

@@ -1,7 +1,10 @@
 <script>
 import "./catalog-page.css";
 import { subscribeAppData } from "../app/app-data.js";
-import { filamentCatalog, filamentSearchIndex } from "../app/filament-catalog.js";
+import {
+  filamentCatalog,
+  filamentSearchIndex,
+} from "../app/filament-catalog.js";
 import { flossCatalog, flossSearchIndex } from "../app/floss-catalog.js";
 import {
   loadFilamentInventory,
@@ -10,8 +13,14 @@ import {
   saveFilamentInventory,
   saveFlossInventory,
 } from "../app/page-tasks.js";
-import { filamentSupplyStatus, syncFilamentShoppingList } from "../app/printing-supplies.js";
-import { flossSupplyStatus, syncFlossShoppingList } from "../app/stitching-supplies.js";
+import {
+  filamentSupplyStatus,
+  syncFilamentShoppingList,
+} from "../app/printing-supplies.js";
+import {
+  flossSupplyStatus,
+  syncFlossShoppingList,
+} from "../app/stitching-supplies.js";
 import JMCatalogLoader from "../components/JMCatalogLoader/JMCatalogLoader.vue";
 import JMCatalogItem from "../components/JMCatalogItem/JMCatalogItem.vue";
 import JMInput from "../components/JMInput/JMInput.vue";
@@ -24,11 +33,22 @@ export default {
   data() {
     return {
       catalogTabs: [
-        { value: "filament", text: "3D printing filament", to: { name: "catalog" } },
-        { value: "floss", text: "DMC embroidery floss", to: { name: "catalog", query: { catalog: "floss" } } },
+        {
+          value: "filament",
+          text: "3D printing filament",
+          to: { name: "catalog" },
+        },
+        {
+          value: "floss",
+          text: "DMC embroidery floss",
+          to: { name: "catalog", query: { catalog: "floss" } },
+        },
       ],
       catalogKind: this.$route.query.catalog === "floss" ? "floss" : "filament",
-      family: typeof this.$route.query.family === "string" ? this.$route.query.family : "",
+      family:
+        typeof this.$route.query.family === "string"
+          ? this.$route.query.family
+          : "",
       filamentInventory: loadFilamentInventory(),
       flossInventory: loadFlossInventory(),
       printingProjects: loadPageTasks("printing").projects,
@@ -44,15 +64,23 @@ export default {
       return this.catalogKind === "floss";
     },
     families() {
-      return [...new Set(filamentSearchIndex.value.map((filament) => filament.family))].sort((first, second) =>
-        first.localeCompare(second),
-      );
+      return [
+        ...new Set(
+          filamentSearchIndex.value.map((filament) => filament.family),
+        ),
+      ].sort((first, second) => first.localeCompare(second));
     },
     familyOptions() {
-      return [{ value: "", text: "All types" }, ...this.families.map((family) => ({ value: family, text: family }))];
+      return [
+        { value: "", text: "All types" },
+        ...this.families.map((family) => ({ value: family, text: family })),
+      ];
     },
     supplyById() {
-      return filamentSupplyStatus(this.printingProjects, this.filamentInventory);
+      return filamentSupplyStatus(
+        this.printingProjects,
+        this.filamentInventory,
+      );
     },
     flossSupplyById() {
       return flossSupplyStatus(this.stitchingProjects, this.flossInventory);
@@ -62,7 +90,9 @@ export default {
     },
     orderedItems() {
       const groups = [[], [], []];
-      const rows = this.isFlossCatalog ? flossSearchIndex.value : filamentSearchIndex.value;
+      const rows = this.isFlossCatalog
+        ? flossSearchIndex.value
+        : filamentSearchIndex.value;
       for (const item of rows) groups[this.catalogPriority(item)].push(item);
       return groups.flat();
     },
@@ -71,7 +101,10 @@ export default {
       return this.orderedItems
         .filter(
           (item) =>
-            (this.isFlossCatalog || !this.family || item.family === this.family) && item.searchText.includes(query),
+            (this.isFlossCatalog ||
+              !this.family ||
+              item.family === this.family) &&
+            item.searchText.includes(query),
         )
         .map((item) => ({
           id: item.id,
@@ -156,7 +189,12 @@ export default {
 
     <JMCatalogLoader :catalog="catalog" />
 
-    <form class="catalog-search" action="/catalog" method="get" @submit.prevent="search">
+    <form
+      class="catalog-search"
+      action="/catalog"
+      method="get"
+      @submit.prevent="search"
+    >
       <JMInput
         id="catalog-query"
         v-model="query"
@@ -166,7 +204,9 @@ export default {
         autocomplete="off"
         :aria-label="isFlossCatalog ? 'Search floss' : 'Search filaments'"
         :placeholder="
-          isFlossCatalog ? 'DMC number, color, or catalog ID' : 'Family, color, product code, or catalog ID'
+          isFlossCatalog
+            ? 'DMC number, color, or catalog ID'
+            : 'Family, color, product code, or catalog ID'
         "
       />
       <div v-if="!isFlossCatalog" class="catalog-search__field">
@@ -181,8 +221,15 @@ export default {
       <button type="submit">Search</button>
     </form>
 
-    <p v-if="catalog.state.status === 'ready' && items.length === 0" class="catalog-page__empty">
-      {{ isFlossCatalog ? "No DMC colors match this search." : "No catalog filaments match this search." }}
+    <p
+      v-if="catalog.state.status === 'ready' && items.length === 0"
+      class="catalog-page__empty"
+    >
+      {{
+        isFlossCatalog
+          ? "No DMC colors match this search."
+          : "No catalog filaments match this search."
+      }}
     </p>
     <ul v-else class="catalog-list" role="list">
       <JMCatalogItem

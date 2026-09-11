@@ -3,12 +3,31 @@ import { APP_DATA_LIMITS } from "../../backend/api/src/app-data-contract.mjs";
 import { subscribeAppData } from "../app/app-data.js";
 import { createTaskEditor } from "../app/task-editor.js";
 import { randomCardColor } from "../app/card-colors.js";
-import { filamentCatalog, filamentLabel, filamentsById } from "../app/filament-catalog.js";
+import {
+  filamentCatalog,
+  filamentLabel,
+  filamentsById,
+} from "../app/filament-catalog.js";
 import { flossCatalog, flossById, flossLabel } from "../app/floss-catalog.js";
-import { loadFilamentInventory, loadFlossInventory, loadPageTasks, savePageTasks } from "../app/page-tasks.js";
-import { filamentSupplyStatus, syncFilamentShoppingList } from "../app/printing-supplies.js";
-import { flossSupplyStatus, syncFlossShoppingList } from "../app/stitching-supplies.js";
-import { completedTasksLast, nextEntityId, setTaskCompletion } from "../app/task-list.js";
+import {
+  loadFilamentInventory,
+  loadFlossInventory,
+  loadPageTasks,
+  savePageTasks,
+} from "../app/page-tasks.js";
+import {
+  filamentSupplyStatus,
+  syncFilamentShoppingList,
+} from "../app/printing-supplies.js";
+import {
+  flossSupplyStatus,
+  syncFlossShoppingList,
+} from "../app/stitching-supplies.js";
+import {
+  completedTasksLast,
+  nextEntityId,
+  setTaskCompletion,
+} from "../app/task-list.js";
 import JMModal from "../components/JMModal/JMModal.vue";
 import JMInput from "../components/JMInput/JMInput.vue";
 import JMButton from "../components/JMButton/JMButton.vue";
@@ -19,12 +38,15 @@ import JMStitchTaskDetails from "../components/JMProjectTaskDetails/JMStitchTask
 import JMTaskItem from "../components/JMTaskItem/JMTaskItem.vue";
 
 function projectCompleted(project) {
-  return project.tasks.length > 0 && project.tasks.every((task) => task.completed);
+  return (
+    project.tasks.length > 0 && project.tasks.every((task) => task.completed)
+  );
 }
 
 function loadProjectTasks(pageKey) {
   const pageData = loadPageTasks(pageKey);
-  for (const project of pageData.projects) project.tasks = completedTasksLast(project.tasks);
+  for (const project of pageData.projects)
+    project.tasks = completedTasksLast(project.tasks);
   pageData.projects = [
     ...pageData.projects.filter((project) => !projectCompleted(project)),
     ...pageData.projects.filter(projectCompleted),
@@ -66,15 +88,21 @@ export default {
       filamentInventory: loadFilamentInventory(),
       flossInventory: loadFlossInventory(),
       pageData,
-      completedProjects: new Set(pageData.projects.filter(projectCompleted).map((project) => project.id)),
+      completedProjects: new Set(
+        pageData.projects.filter(projectCompleted).map((project) => project.id),
+      ),
     };
   },
   computed: {
     editingProject() {
-      return this.pageData.projects.some((project) => project.id === this.projectDraft?.id);
+      return this.pageData.projects.some(
+        (project) => project.id === this.projectDraft?.id,
+      );
     },
     draftSupplyById() {
-      const projects = this.pageData.projects.filter((project) => project.id !== this.projectDraft?.id);
+      const projects = this.pageData.projects.filter(
+        (project) => project.id !== this.projectDraft?.id,
+      );
       if (this.projectDraft) projects.push(this.projectDraft);
       return this.isPrinting
         ? filamentSupplyStatus(projects, this.filamentInventory)
@@ -82,11 +110,18 @@ export default {
     },
     projectIssue() {
       if (!this.projectDraft) return "";
-      if (!this.editingProject && this.pageData.projects.length >= APP_DATA_LIMITS.projects)
+      if (
+        !this.editingProject &&
+        this.pageData.projects.length >= APP_DATA_LIMITS.projects
+      )
         return "You can have up to 500 projects. Remove a project before adding another.";
-      if (this.projectDraft.tasks.length > APP_DATA_LIMITS.tasks) return "A project can contain up to 2,000 items.";
+      if (this.projectDraft.tasks.length > APP_DATA_LIMITS.tasks)
+        return "A project can contain up to 2,000 items.";
       for (const task of this.projectDraft.tasks) {
-        if (this.isPrinting && task.filaments.length > APP_DATA_LIMITS.filaments)
+        if (
+          this.isPrinting &&
+          task.filaments.length > APP_DATA_LIMITS.filaments
+        )
           return "An item can use up to 100 filaments.";
         if (
           this.isCrossStitch &&
@@ -114,7 +149,9 @@ export default {
                     Number(usage.weightGrams) >= 0 &&
                     Number(usage.weightGrams) <= APP_DATA_LIMITS.quantity),
               )
-            : Boolean(task.flossId) && Number(task.crosses) > 0 && Number(task.crosses) <= APP_DATA_LIMITS.quantity,
+            : Boolean(task.flossId) &&
+              Number(task.crosses) > 0 &&
+              Number(task.crosses) <= APP_DATA_LIMITS.quantity,
         ),
       );
     },
@@ -131,14 +168,22 @@ export default {
       return [
         { id: "edit", label: "Edit", icon: "edit" },
         { id: "remove", label: "Remove", icon: "remove" },
-        { id: "add", label: this.isCrossStitch ? "Add color" : "Add item", icon: "plus" },
+        {
+          id: "add",
+          label: this.isCrossStitch ? "Add color" : "Add item",
+          icon: "plus",
+        },
       ];
     },
     supplyById() {
-      return this.isPrinting ? filamentSupplyStatus(this.pageData.projects, this.filamentInventory) : new Map();
+      return this.isPrinting
+        ? filamentSupplyStatus(this.pageData.projects, this.filamentInventory)
+        : new Map();
     },
     flossSupplyById() {
-      return this.isCrossStitch ? flossSupplyStatus(this.pageData.projects, this.flossInventory) : new Map();
+      return this.isCrossStitch
+        ? flossSupplyStatus(this.pageData.projects, this.flossInventory)
+        : new Map();
     },
   },
   watch: {
@@ -149,7 +194,11 @@ export default {
       this.filamentInventory = loadFilamentInventory();
       this.flossInventory = loadFlossInventory();
       this.pageData = loadProjectTasks(value);
-      this.completedProjects = new Set(this.pageData.projects.filter(projectCompleted).map((project) => project.id));
+      this.completedProjects = new Set(
+        this.pageData.projects
+          .filter(projectCompleted)
+          .map((project) => project.id),
+      );
       this.syncShoppingList();
     },
   },
@@ -157,12 +206,17 @@ export default {
     const receive = () => {
       this.editor.clear();
       this.pageData = loadProjectTasks(this.pageKey);
-      this.completedProjects = new Set(this.pageData.projects.filter(projectCompleted).map((project) => project.id));
+      this.completedProjects = new Set(
+        this.pageData.projects
+          .filter(projectCompleted)
+          .map((project) => project.id),
+      );
       this.syncShoppingList();
     };
     this.subscriptions = ["printing", "cross-stitch"].map((resource) =>
       subscribeAppData(resource, () => {
-        if (resource === (this.isPrinting ? "printing" : "cross-stitch")) receive();
+        if (resource === (this.isPrinting ? "printing" : "cross-stitch"))
+          receive();
       }),
     );
     this.subscriptions.push(
@@ -184,7 +238,9 @@ export default {
   methods: {
     updateProjectPosition(project) {
       this.editor.moves.schedule(`project:${project.id}`, () => {
-        const index = this.pageData.projects.findIndex((item) => item.id === project.id);
+        const index = this.pageData.projects.findIndex(
+          (item) => item.id === project.id,
+        );
         if (index < 0) return;
         const current = this.pageData.projects[index];
         const completed = projectCompleted(current);
@@ -193,7 +249,11 @@ export default {
         else this.completedProjects.delete(current.id);
         this.pageData.projects.splice(index, 1);
         const boundary = this.pageData.projects.findIndex(projectCompleted);
-        this.pageData.projects.splice(boundary < 0 ? this.pageData.projects.length : boundary, 0, current);
+        this.pageData.projects.splice(
+          boundary < 0 ? this.pageData.projects.length : boundary,
+          0,
+          current,
+        );
         this.save();
       });
     },
@@ -201,17 +261,28 @@ export default {
       this.editor.clear();
     },
     syncShoppingList() {
-      if (this.isPrinting) syncFilamentShoppingList(this.pageData.projects, this.filamentInventory);
-      if (this.isCrossStitch) syncFlossShoppingList(this.pageData.projects, this.flossInventory);
+      if (this.isPrinting)
+        syncFilamentShoppingList(
+          this.pageData.projects,
+          this.filamentInventory,
+        );
+      if (this.isCrossStitch)
+        syncFlossShoppingList(this.pageData.projects, this.flossInventory);
     },
     projectCrossesDone(project) {
       return Math.min(
         this.projectTotalCrosses(project),
-        project.tasks.reduce((total, task) => total + (Number(task.crossesDone) || 0), 0),
+        project.tasks.reduce(
+          (total, task) => total + (Number(task.crossesDone) || 0),
+          0,
+        ),
       );
     },
     projectTotalCrosses(project) {
-      return project.tasks.reduce((total, task) => total + (Number(task.crosses) || 0), 0);
+      return project.tasks.reduce(
+        (total, task) => total + (Number(task.crosses) || 0),
+        0,
+      );
     },
     projectProgress(project) {
       if (this.isCrossStitch) {
@@ -224,14 +295,17 @@ export default {
       return { value, max: tasks.length };
     },
     handleProjectAction(project, action) {
-      if (action === "edit" || action === "add") this.openProject(project, action === "add");
+      if (action === "edit" || action === "add")
+        this.openProject(project, action === "add");
       if (action === "remove") {
         this.retainHistory(project, project.tasks);
         for (const task of project.tasks) {
           this.editor.moves.cancel(task.id);
           this.editor.drafts.delete(task.id);
         }
-        this.pageData.projects = this.pageData.projects.filter((item) => item.id !== project.id);
+        this.pageData.projects = this.pageData.projects.filter(
+          (item) => item.id !== project.id,
+        );
         this.save();
         this.$nextTick(() => this.$refs.addProject.$el.focus());
       }
@@ -263,7 +337,9 @@ export default {
       this.editor.focus(`printing-filament-${task.id}-${usage.id}`);
     },
     removeFilament(task, usage) {
-      const usageIndex = task.filaments.findIndex((filament) => filament.id === usage.id);
+      const usageIndex = task.filaments.findIndex(
+        (filament) => filament.id === usage.id,
+      );
       if (usageIndex === -1) return;
       task.filaments.splice(usageIndex, 1);
     },
@@ -284,12 +360,17 @@ export default {
     },
     updateCrossesDone(task, value) {
       const wasCompleted = task.completed;
-      task.crossesDone = Math.min(task.crosses, Math.max(0, Math.floor(Number(value) || 0)));
+      task.crossesDone = Math.min(
+        task.crosses,
+        Math.max(0, Math.floor(Number(value) || 0)),
+      );
       const completed = task.crosses > 0 && task.crossesDone >= task.crosses;
       if (completed !== wasCompleted) setTaskCompletion(task, completed);
     },
     retainHistory(project, tasks) {
-      const history = new Map(this.pageData.history.map((item) => [item.id, item]));
+      const history = new Map(
+        this.pageData.history.map((item) => [item.id, item]),
+      );
       for (const task of tasks)
         if (task.completedAt && task.title.trim())
           history.set(task.id, {
@@ -316,9 +397,20 @@ export default {
       this.updateProjectPosition(project);
     },
     makeTask() {
-      const task = { id: `project-task-${crypto.randomUUID()}`, title: "", completed: false };
+      const task = {
+        id: `project-task-${crypto.randomUUID()}`,
+        title: "",
+        completed: false,
+      };
       if (this.isPrinting) {
-        task.filaments = [{ id: `${task.id}-filament-1`, catalogId: "", label: "", weightGrams: "" }];
+        task.filaments = [
+          {
+            id: `${task.id}-filament-1`,
+            catalogId: "",
+            label: "",
+            weightGrams: "",
+          },
+        ];
       } else if (this.isCrossStitch) {
         Object.assign(task, {
           title: "Choose a thread color",
@@ -353,15 +445,22 @@ export default {
       });
     },
     focusDraftTask(task) {
-      this.editor.focus(this.isPrinting ? `project-draft-${task.id}` : `stitch-floss-${task.id}`);
+      this.editor.focus(
+        this.isPrinting
+          ? `project-draft-${task.id}`
+          : `stitch-floss-${task.id}`,
+      );
     },
     removeDraftTask(task) {
       this.removedDraftTasks.push(task);
-      this.projectDraft.tasks = this.projectDraft.tasks.filter((item) => item.id !== task.id);
+      this.projectDraft.tasks = this.projectDraft.tasks.filter(
+        (item) => item.id !== task.id,
+      );
     },
     addProject() {
       if (this.pageData.projects.length >= APP_DATA_LIMITS.projects) {
-        this.editMessage = "You can have up to 500 projects. Remove a project before adding another.";
+        this.editMessage =
+          "You can have up to 500 projects. Remove a project before adding another.";
         return;
       }
       this.projectOriginal = null;
@@ -388,8 +487,13 @@ export default {
     createProject() {
       if (!this.canCreateProject) return;
       const project = this.projectDraft;
-      const current = this.pageData.projects.find((item) => item.id === project.id);
-      if (this.projectOriginal !== null && JSON.stringify(current) !== this.projectOriginal) {
+      const current = this.pageData.projects.find(
+        (item) => item.id === project.id,
+      );
+      if (
+        this.projectOriginal !== null &&
+        JSON.stringify(current) !== this.projectOriginal
+      ) {
         this.editMessage =
           "This project changed while you were editing. Cancel and reopen it to review the saved version.";
         return;
@@ -398,20 +502,33 @@ export default {
       for (const task of project.tasks) {
         if (this.isPrinting) task.title = task.title.trim();
         else {
-          task.title = flossById.has(task.flossId) ? flossLabel(flossById.get(task.flossId)) : task.title;
+          task.title = flossById.has(task.flossId)
+            ? flossLabel(flossById.get(task.flossId))
+            : task.title;
           task.crosses = Math.floor(Number(task.crosses));
         }
       }
-      if (this.isCrossStitch) project.totalCrosses = this.projectTotalCrosses(project);
-      const index = this.pageData.projects.findIndex((item) => item.id === project.id);
+      if (this.isCrossStitch)
+        project.totalCrosses = this.projectTotalCrosses(project);
+      const index = this.pageData.projects.findIndex(
+        (item) => item.id === project.id,
+      );
       if (index >= 0) {
-        for (const task of this.pageData.projects[index].tasks) this.editor.moves.cancel(task.id);
-        this.retainHistory(this.pageData.projects[index], this.removedDraftTasks);
+        for (const task of this.pageData.projects[index].tasks)
+          this.editor.moves.cancel(task.id);
+        this.retainHistory(
+          this.pageData.projects[index],
+          this.removedDraftTasks,
+        );
         project.tasks = completedTasksLast(project.tasks);
         this.pageData.projects.splice(index, 1, project);
       } else {
         const boundary = this.pageData.projects.findIndex(projectCompleted);
-        this.pageData.projects.splice(boundary < 0 ? this.pageData.projects.length : boundary, 0, project);
+        this.pageData.projects.splice(
+          boundary < 0 ? this.pageData.projects.length : boundary,
+          0,
+          project,
+        );
       }
       this.updateProjectPosition(project);
       this.save();
@@ -425,7 +542,12 @@ export default {
 <template>
   <header class="page-header">
     <h1>{{ title }}</h1>
-    <JMButton ref="addProject" text="Add project" view="secondary" @click="addProject" />
+    <JMButton
+      ref="addProject"
+      text="Add project"
+      view="secondary"
+      @click="addProject"
+    />
   </header>
 
   <p v-if="editMessage && !projectDraft" role="status">{{ editMessage }}</p>
@@ -439,8 +561,16 @@ export default {
   >
     <form v-if="projectDraft" novalidate @submit.prevent="createProject">
       <h2>{{ editingProject ? "Edit project" : "New project" }}</h2>
-      <p v-if="projectIssue || editMessage" role="alert">{{ projectIssue || editMessage }}</p>
-      <JMInput v-model="projectDraft.title" label="Project name" required :maxlength="limits.title" autofocus />
+      <p v-if="projectIssue || editMessage" role="alert">
+        {{ projectIssue || editMessage }}
+      </p>
+      <JMInput
+        v-model="projectDraft.title"
+        label="Project name"
+        required
+        :maxlength="limits.title"
+        autofocus
+      />
       <fieldset v-for="(task, index) in projectDraft.tasks" :key="task.id">
         <legend>{{ isPrinting ? "Item" : "Color" }} {{ index + 1 }}</legend>
         <JMInput
@@ -483,9 +613,21 @@ export default {
           @click="removeDraftTask(task)"
         />
       </fieldset>
-      <p v-if="!projectDraft.tasks.length">Add at least one {{ isPrinting ? "item" : "color" }} to create a project.</p>
-      <JMButton :text="isPrinting ? 'Add item' : 'Add color'" icon-name="plus" view="ghost" @click="addDraftTask" />
-      <JMButton text="Cancel" view="ghost" @click="$refs.projectModal.close()" />
+      <p v-if="!projectDraft.tasks.length">
+        Add at least one {{ isPrinting ? "item" : "color" }} to create a
+        project.
+      </p>
+      <JMButton
+        :text="isPrinting ? 'Add item' : 'Add color'"
+        icon-name="plus"
+        view="ghost"
+        @click="addDraftTask"
+      />
+      <JMButton
+        text="Cancel"
+        view="ghost"
+        @click="$refs.projectModal.close()"
+      />
       <JMButton
         :text="editingProject ? 'Save project' : 'Create project'"
         type="submit"
@@ -500,8 +642,14 @@ export default {
       :key="`${pageKey}-${project.id}`"
       tag="li"
       class="project-card"
-      :class="{ 'project-card--printing': isPrinting, 'project-card--stitching': isCrossStitch }"
-      :title="project.title || (isPrinting ? 'Untitled 3D project' : 'Untitled cross stitch project')"
+      :class="{
+        'project-card--printing': isPrinting,
+        'project-card--stitching': isCrossStitch,
+      }"
+      :title="
+        project.title ||
+        (isPrinting ? 'Untitled 3D project' : 'Untitled cross stitch project')
+      "
       :color="project.color"
       :progress="projectProgress(project)"
       :actions="cardActions"
@@ -522,8 +670,18 @@ export default {
           @update:completed="updateCompleted(project, task, $event)"
         >
           <template #details>
-            <JMPrintingTaskDetails v-if="isPrinting" readonly :task="task" :supply-by-id="supplyById" />
-            <JMStitchTaskDetails v-else readonly :task="task" :supply-by-id="flossSupplyById" />
+            <JMPrintingTaskDetails
+              v-if="isPrinting"
+              readonly
+              :task="task"
+              :supply-by-id="supplyById"
+            />
+            <JMStitchTaskDetails
+              v-else
+              readonly
+              :task="task"
+              :supply-by-id="flossSupplyById"
+            />
           </template>
         </JMTaskItem>
       </template>

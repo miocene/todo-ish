@@ -15,8 +15,12 @@
     color: contrast-color(var(--color, var(--color-bg-secondary)));
 
     & > .jm-button {
-      --control-ghost-text: contrast-color(var(--color, var(--color-bg-secondary)));
-      --control-ghost-text-hover: contrast-color(var(--color, var(--color-bg-secondary)));
+      --control-ghost-text: contrast-color(
+        var(--color, var(--color-bg-secondary))
+      );
+      --control-ghost-text-hover: contrast-color(
+        var(--color, var(--color-bg-secondary))
+      );
 
       flex-shrink: 0;
     }

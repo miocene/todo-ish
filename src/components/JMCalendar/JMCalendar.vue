@@ -76,34 +76,58 @@ export default {
     },
   },
   mounted() {
-    this.mediaQueries = [window.matchMedia("(width <= 460px)"), window.matchMedia("(width <= 720px)")];
-    for (const query of this.mediaQueries) query.addEventListener("change", this.updateVisibleDayCount);
+    this.mediaQueries = [
+      window.matchMedia("(width <= 460px)"),
+      window.matchMedia("(width <= 720px)"),
+    ];
+    for (const query of this.mediaQueries)
+      query.addEventListener("change", this.updateVisibleDayCount);
     this.updateVisibleDayCount();
   },
   beforeUnmount() {
-    for (const query of this.mediaQueries) query.removeEventListener("change", this.updateVisibleDayCount);
+    for (const query of this.mediaQueries)
+      query.removeEventListener("change", this.updateVisibleDayCount);
   },
   methods: {
     canNavigate(date) {
-      return (!this.minDate || date >= this.minDate) && (!this.maxDate || date <= this.maxDate);
+      return (
+        (!this.minDate || date >= this.minDate) &&
+        (!this.maxDate || date <= this.maxDate)
+      );
     },
     shift(amount) {
       if (amount < 0 ? !this.canGoPrevious : !this.canGoNext) return;
-      this.rangeDate = shiftIsoDate(this.rangeDate, amount * this.visibleDayCount);
+      this.rangeDate = shiftIsoDate(
+        this.rangeDate,
+        amount * this.visibleDayCount,
+      );
     },
     showDate(date) {
       this.rangeDate = date;
     },
     updateVisibleDayCount() {
-      const count = this.mediaQueries[0]?.matches ? 3 : this.mediaQueries[1]?.matches ? 5 : 7;
+      const count = this.mediaQueries[0]?.matches
+        ? 3
+        : this.mediaQueries[1]?.matches
+          ? 5
+          : 7;
       if (count === this.visibleDayCount) return;
-      const selectionWasVisible = this.days.some((day) => day.value === this.date);
+      const selectionWasVisible = this.days.some(
+        (day) => day.value === this.date,
+      );
       this.visibleDayCount = count;
-      if (selectionWasVisible && !this.days.some((day) => day.value === this.date)) this.rangeDate = this.date;
+      if (
+        selectionWasVisible &&
+        !this.days.some((day) => day.value === this.date)
+      )
+        this.rangeDate = this.date;
     },
     async navigate(date) {
       if (date === this.date || !this.canNavigate(date)) return;
-      await this.$router.push({ name: this.routeName, query: { ...this.$route.query, date } });
+      await this.$router.push({
+        name: this.routeName,
+        query: { ...this.$route.query, date },
+      });
       await this.$nextTick();
       document.getElementById(`calendar-day-type-${date}`)?.focus();
     },

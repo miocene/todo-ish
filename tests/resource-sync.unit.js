@@ -24,7 +24,8 @@ function fixture({
       remove: (id) => records.delete(id),
     },
     normalize: (_resource, value) => {
-      if (value.some((task) => !task.title.trim())) throw new Error("title must not be blank");
+      if (value.some((task) => !task.title.trim()))
+        throw new Error("title must not be blank");
       return value;
     },
     remoteValue: (state, resource) => state[resource],
@@ -103,7 +104,8 @@ test("a lost response reconciles the acknowledged version before saving newer ed
         remote.revisions.tasks = 1;
         throw new Error("response lost");
       }
-      if (revision !== remote.revisions.tasks) throw Object.assign(new Error("conflict"), { status: 409 });
+      if (revision !== remote.revisions.tasks)
+        throw Object.assign(new Error("conflict"), { status: 409 });
       remote.tasks = value;
       return { revision: ++remote.revisions.tasks };
     },
@@ -154,8 +156,26 @@ test("authentication and permanent API errors do not retry in a loop", async () 
 
 test("multiple local drafts are preserved without choosing one to overwrite the server", async () => {
   const records = new Map([
-    ["a", { id: "a", resource: "tasks", revision: 0, base: "[]", value: task("First tab") }],
-    ["b", { id: "b", resource: "tasks", revision: 0, base: "[]", value: task("Second tab") }],
+    [
+      "a",
+      {
+        id: "a",
+        resource: "tasks",
+        revision: 0,
+        base: "[]",
+        value: task("First tab"),
+      },
+    ],
+    [
+      "b",
+      {
+        id: "b",
+        resource: "tasks",
+        revision: 0,
+        base: "[]",
+        value: task("Second tab"),
+      },
+    ],
   ]);
   const f = fixture({ records });
   await f.advance();
@@ -225,8 +245,16 @@ test("edits made during an in-flight save are sent with the acknowledged revisio
 
 test("duplicate drafts already saved remotely clear without another write", async () => {
   const value = task("Already saved");
-  const records = new Map(["a", "b"].map((id) => [id, { id, resource: "tasks", revision: 0, base: "[]", value }]));
-  const f = fixture({ records, remote: { revisions: { tasks: 1 }, tasks: value } });
+  const records = new Map(
+    ["a", "b"].map((id) => [
+      id,
+      { id, resource: "tasks", revision: 0, base: "[]", value },
+    ]),
+  );
+  const f = fixture({
+    records,
+    remote: { revisions: { tasks: 1 }, tasks: value },
+  });
   await f.advance();
   assert.equal(f.records.size, 0);
   assert.equal(f.writes.length, 0);
@@ -235,7 +263,16 @@ test("duplicate drafts already saved remotely clear without another write", asyn
 
 test("identical unsaved drafts consolidate and save once", async () => {
   const records = new Map(
-    ["a", "b"].map((id) => [id, { id, resource: "tasks", revision: 0, base: "[]", value: task("Same edit") }]),
+    ["a", "b"].map((id) => [
+      id,
+      {
+        id,
+        resource: "tasks",
+        revision: 0,
+        base: "[]",
+        value: task("Same edit"),
+      },
+    ]),
   );
   const f = fixture({ records });
   assert.equal(f.sync.pending().length, 1);
@@ -249,9 +286,21 @@ test("saved copies do not block the remaining newer draft", async () => {
   const old = task("Old");
   const records = new Map([
     ["a", { id: "a", resource: "tasks", revision: 0, base: "[]", value: old }],
-    ["b", { id: "b", resource: "tasks", revision: 1, base: JSON.stringify(old), value: task("New") }],
+    [
+      "b",
+      {
+        id: "b",
+        resource: "tasks",
+        revision: 1,
+        base: JSON.stringify(old),
+        value: task("New"),
+      },
+    ],
   ]);
-  const f = fixture({ records, remote: { revisions: { tasks: 1 }, tasks: old } });
+  const f = fixture({
+    records,
+    remote: { revisions: { tasks: 1 }, tasks: old },
+  });
   await f.advance();
   assert.deepEqual(f.writes[0][1], task("New"));
   assert.equal(f.records.size, 0);
@@ -261,8 +310,14 @@ test("Retry rechecks multiple drafts after the server acknowledges one", async (
   const first = task("First");
   const second = task("Second");
   const records = new Map([
-    ["a", { id: "a", resource: "tasks", revision: 0, base: "[]", value: first }],
-    ["b", { id: "b", resource: "tasks", revision: 0, base: "[]", value: second }],
+    [
+      "a",
+      { id: "a", resource: "tasks", revision: 0, base: "[]", value: first },
+    ],
+    [
+      "b",
+      { id: "b", resource: "tasks", revision: 0, base: "[]", value: second },
+    ],
   ]);
   const f = fixture({ records });
   assert.equal(f.states.at(-1).state, "conflict");
@@ -278,7 +333,9 @@ test("Retry rechecks multiple drafts after the server acknowledges one", async (
 });
 
 test("unchanged initialized data does not create a local draft", () => {
-  const f = fixture({ remote: { revisions: { tasks: 1 }, tasks: task("Saved") } });
+  const f = fixture({
+    remote: { revisions: { tasks: 1 }, tasks: task("Saved") },
+  });
   f.sync.write("tasks", task("Saved"));
   assert.equal(f.records.size, 0);
   assert.equal(f.timers.size, 0);
@@ -286,8 +343,26 @@ test("unchanged initialized data does not create a local draft", () => {
 
 test("Retry removes all pending entries when both drafts become acknowledged", async () => {
   const records = new Map([
-    ["a", { id: "a", resource: "tasks", revision: 0, base: "[]", value: task("First") }],
-    ["b", { id: "b", resource: "tasks", revision: 0, base: "[]", value: task("Second") }],
+    [
+      "a",
+      {
+        id: "a",
+        resource: "tasks",
+        revision: 0,
+        base: "[]",
+        value: task("First"),
+      },
+    ],
+    [
+      "b",
+      {
+        id: "b",
+        resource: "tasks",
+        revision: 0,
+        base: "[]",
+        value: task("Second"),
+      },
+    ],
   ]);
   const f = fixture({ records });
   f.remote.tasks = task("First");
@@ -300,10 +375,18 @@ test("Retry removes all pending entries when both drafts become acknowledged", a
 });
 
 const mergeLists = (_resource, base, local, remote) =>
-  mergeSharedData("shopping", { tasks: base }, { tasks: local }, { tasks: remote })?.tasks;
+  mergeSharedData(
+    "shopping",
+    { tasks: base },
+    { tasks: local },
+    { tasks: remote },
+  )?.tasks;
 
 test("a revision conflict merges independent shared edits before retrying", async () => {
-  const remote = { revisions: { tasks: 0 }, tasks: [{ id: "milk", title: "Milk" }] };
+  const remote = {
+    revisions: { tasks: 0 },
+    tasks: [{ id: "milk", title: "Milk" }],
+  };
   let attempts = 0;
   const updates = [];
   const f = fixture({
@@ -332,9 +415,16 @@ test("a revision conflict merges independent shared edits before retrying", asyn
 });
 
 test("background refresh updates saved lists and rebases pending edits", async () => {
-  const remote = { revisions: { tasks: 0 }, tasks: [{ id: "milk", title: "Milk" }] };
+  const remote = {
+    revisions: { tasks: 0 },
+    tasks: [{ id: "milk", title: "Milk" }],
+  };
   const updates = [];
-  const f = fixture({ remote, merge: mergeLists, onUpdate: (_resource, value) => updates.push(value) });
+  const f = fixture({
+    remote,
+    merge: mergeLists,
+    onUpdate: (_resource, value) => updates.push(value),
+  });
   f.sync.write("tasks", [...remote.tasks, { id: "bread", title: "Bread" }]);
   remote.tasks.push({ id: "eggs", title: "Eggs" });
   remote.revisions.tasks++;

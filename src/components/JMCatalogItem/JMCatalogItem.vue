@@ -18,7 +18,11 @@ export default {
   },
   emits: ["update:modelValue"],
   data() {
-    return { quantityInput: null, quantityError: "", maxQuantity: APP_DATA_LIMITS.quantity };
+    return {
+      quantityInput: null,
+      quantityError: "",
+      maxQuantity: APP_DATA_LIMITS.quantity,
+    };
   },
   watch: {
     modelValue() {
@@ -29,7 +33,11 @@ export default {
     updateQuantity(value) {
       this.quantityInput = value;
       const count = Number(value);
-      if (!Number.isInteger(count) || count < 0 || count > APP_DATA_LIMITS.quantity) {
+      if (
+        !Number.isInteger(count) ||
+        count < 0 ||
+        count > APP_DATA_LIMITS.quantity
+      ) {
         this.quantityError = "Enter a whole number between 0 and 10,000,000.";
         return;
       }
@@ -46,7 +54,11 @@ export default {
     :class="{ 'jm-catalog-item--missing': item.group === 'needed' }"
     :data-catalog-group="item.group"
   >
-    <JMSwatch v-if="item.swatch" class="jm-catalog-item__swatch" :value="item.swatch" />
+    <JMSwatch
+      v-if="item.swatch"
+      class="jm-catalog-item__swatch"
+      :value="item.swatch"
+    />
     <span v-else class="jm-catalog-item__swatch" aria-hidden="true" />
     <h2>
       <a :href="item.href" target="_blank" rel="noopener noreferrer">
@@ -58,7 +70,9 @@ export default {
       <JMInput
         class="jm-catalog-item__quantity"
         :aria-label="`${unit === 'skeins' ? 'Skeins' : 'Spools'} owned for ${item.title}`"
-        :aria-describedby="item.required > 0 ? `catalog-required-${item.id}` : undefined"
+        :aria-describedby="
+          item.required > 0 ? `catalog-required-${item.id}` : undefined
+        "
         :name="`${unit}-owned`"
         type="number"
         size="s"
@@ -71,8 +85,12 @@ export default {
       />
       <p v-if="quantityError" role="alert">{{ quantityError }}</p>
       <template v-if="item.required > 0">
-        <span class="jm-catalog-item__required" aria-hidden="true">/ {{ item.required }}</span>
-        <span :id="`catalog-required-${item.id}`" class="sr-only"> Required {{ unit }}: {{ item.required }} </span>
+        <span class="jm-catalog-item__required" aria-hidden="true"
+          >/ {{ item.required }}</span
+        >
+        <span :id="`catalog-required-${item.id}`" class="sr-only">
+          Required {{ unit }}: {{ item.required }}
+        </span>
       </template>
     </div>
   </li>

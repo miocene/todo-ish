@@ -13,6 +13,19 @@ export default {
 </script>
 
 <template>
-  <span v-if="isColor" class="jm-swatch" :style="{ backgroundColor: value }" aria-hidden="true" />
-  <img v-else class="jm-swatch" :src="value" alt="" width="16" height="16" loading="lazy" />
+  <span
+    v-if="isColor"
+    class="jm-swatch"
+    :style="{ backgroundColor: value }"
+    aria-hidden="true"
+  />
+  <img
+    v-else
+    class="jm-swatch"
+    :src="value"
+    alt=""
+    width="16"
+    height="16"
+    loading="lazy"
+  />
 </template>

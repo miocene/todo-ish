@@ -9,7 +9,12 @@ import {
 import { validateAppDataResource } from "../backend/api/src/app-data-validation.mjs";
 
 test("work tasks use the common UI completion fields while retaining the existing API format", () => {
-  const original = { id: "one", title: "Task", date: "2026-09-05", checkedAt: "2026-09-05T12:00:00.000Z" };
+  const original = {
+    id: "one",
+    title: "Task",
+    date: "2026-09-05",
+    checkedAt: "2026-09-05T12:00:00.000Z",
+  };
   const task = workTaskFromApi(original);
   assert.equal(task.completed, true);
   assert.equal(task.completedAt, original.checkedAt);

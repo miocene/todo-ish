@@ -10,7 +10,10 @@ async function testEnvironment(overrides = {}) {
   const passwordFile = join(directory, "postgres-password");
   const bootstrapTokenFile = join(directory, "bootstrap-token");
   await writeFile(passwordFile, "database-password\n");
-  await writeFile(bootstrapTokenFile, "bootstrap-token-that-is-at-least-32-characters\n");
+  await writeFile(
+    bootstrapTokenFile,
+    "bootstrap-token-that-is-at-least-32-characters\n",
+  );
   return {
     cleanup: () => rm(directory, { recursive: true }),
     environment: {
@@ -39,10 +42,17 @@ test("API config enables a separate private development port", async () => {
 });
 
 test("authentication config rejects invalid production origins", async () => {
-  for (const value of ["http://todo-ish.today", "https://todo-ish.today/path", "https://attacker.example"]) {
+  for (const value of [
+    "http://todo-ish.today",
+    "https://todo-ish.today/path",
+    "https://attacker.example",
+  ]) {
     const fixture = await testEnvironment({ AUTH_ORIGIN: value });
     try {
-      assert.throws(() => loadConfig(fixture.environment), /must contain an HTTPS origin|must belong to/);
+      assert.throws(
+        () => loadConfig(fixture.environment),
+        /must contain an HTTPS origin|must belong to/,
+      );
     } finally {
       await fixture.cleanup();
     }
@@ -52,7 +62,10 @@ test("authentication config rejects invalid production origins", async () => {
 test("API config rejects a development port that collides with the public port", async () => {
   const fixture = await testEnvironment({ DEVELOPMENT_PORT: "3000" });
   try {
-    assert.throws(() => loadConfig(fixture.environment), /DEVELOPMENT_PORT must differ from PORT/);
+    assert.throws(
+      () => loadConfig(fixture.environment),
+      /DEVELOPMENT_PORT must differ from PORT/,
+    );
   } finally {
     await fixture.cleanup();
   }
