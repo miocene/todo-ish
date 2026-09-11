@@ -1,30 +1,15 @@
 import { initializeAppDataResource, readAppData } from "./app-data.js";
 
-export const CARD_COLORS = Object.freeze([
-  "#2765EC",
-  "#FF8A34",
-  "#B9E532",
-  "#F65CC0",
-  "#18A76B",
-  "#FFD43B",
-  "#7C3AED",
-  "#FF5C70",
-  "#20C4E8",
-  "#008F95",
-  "#FFB184",
-  "#CD1D99",
-  "#E73535",
-  "#9592FF",
-  "#20CFB0",
-]);
+import { CARD_COLOR_COUNT, cardColorNumber } from "../../backend/api/src/card-colors.mjs";
+
+export const CARD_COLORS = Object.freeze(Array.from({ length: CARD_COLOR_COUNT }, (_, index) => index + 1));
 
 export function randomCardColor() {
   return CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)];
 }
 
 export function normalizeCardColor(value) {
-  const color = typeof value === "string" ? value.toUpperCase() : "";
-  return CARD_COLORS.includes(color) ? color : randomCardColor();
+  return cardColorNumber(value) ?? randomCardColor();
 }
 
 export function loadCardColors(keys) {

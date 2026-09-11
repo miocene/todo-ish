@@ -176,7 +176,7 @@ export function previewAccountImport(
             ...(before.lists.find((list) => list.id === "general") ?? {
               id: "general",
               title: "General",
-              color: "#2765EC",
+              color: 1,
             }),
             tasks: [],
           },

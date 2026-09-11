@@ -27,7 +27,7 @@ const values = {
     { id: "work-2", title: "Backlog", date: null },
   ],
   "work-statuses": { "2026-09-05": "pto" },
-  colors: { backlog: "#633533", "work-day:2026-09-05": "#E9B6B4" },
+  colors: { backlog: 42, "work-day:2026-09-05": 17 },
   chores: {
     occurrenceOrder: ["chore-2", "chore-1"],
     tasks: [
@@ -47,7 +47,7 @@ const values = {
       {
         id: "list-1",
         title: "Home",
-        color: "#8FB7B0",
+        color: 5,
         tasks: [
           { id: "todo-1", title: "Done", completed: true, completedAt },
           { id: "todo-2", title: "Next", completed: false },
@@ -68,7 +68,7 @@ const values = {
         id: "project-1",
         title: "Print",
         description: "A print",
-        color: "#597380",
+        color: 39,
         tasks: [
           {
             id: "print-1",
@@ -90,7 +90,7 @@ const values = {
         id: "stitch-1",
         title: "Sampler",
         description: "",
-        color: "#3E5168",
+        color: 35,
         totalCrosses: 20,
         tasks: [
           {
@@ -307,7 +307,7 @@ test("PostgreSQL application-data contract", async (t) => {
 
   await t.test("batched updates move children between parents and remove deleted data", async () => {
     const todos = {
-      lists: [{ id: "list-2", title: "New list", color: "#287271", tasks: [...values.todos.lists[0].tasks].reverse() }],
+      lists: [{ id: "list-2", title: "New list", color: 34, tasks: [...values.todos.lists[0].tasks].reverse() }],
     };
     await repository.replace("todos", validateAppDataResource("todos", todos), 1);
     assert.deepEqual((await repository.read()).pages.todos, todos);

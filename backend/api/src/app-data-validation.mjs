@@ -1,8 +1,9 @@
+import { CARD_COLOR_COUNT, cardColorNumber } from "./card-colors.mjs";
 import { APP_DATA_RESOURCES, NAVIGATION_IDS, APP_DATA_LIMITS } from "./app-data-contract.mjs";
 export { APP_DATA_RESOURCES };
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-const HEX_COLOR = /^#[\dA-F]{6}$/i;
+
 const RESOURCE_LIMIT = APP_DATA_LIMITS.tasks;
 const TEXT_LIMIT = APP_DATA_LIMITS.title;
 const DESCRIPTION_LIMIT = 5_000;
@@ -87,8 +88,8 @@ function timestamp(value, path) {
 }
 
 function color(value, path) {
-  const normalized = text(value, path);
-  if (!HEX_COLOR.test(normalized)) fail(path, "must be a six-digit hex color");
+  const normalized = cardColorNumber(value);
+  if (normalized === null) fail(path, `must be a color number between 1 and ${CARD_COLOR_COUNT}`);
   return normalized;
 }
 

@@ -131,7 +131,8 @@ test("development mocks colors locally when the API has no color storage", async
   page.on("request", (request) => {
     if (new URL(request.url()).pathname === "/api/data/colors") colorRequests.push(request.url());
   });
-  const colorOf = (locator) => locator.evaluate((element) => element.style.getPropertyValue("--color"));
+  const colorOf = (locator) =>
+    locator.evaluate((element) => Number(element.style.getPropertyValue("--color").match(/--color-(\d+)/)?.[1]) || "");
 
   await page.goto("/work");
   const todayColor = await colorOf(page.locator(".jm-card:not(.work-backlog)"));
@@ -163,32 +164,39 @@ test("development mocks colors locally when the API has no color storage", async
   await expect(page.locator(".jm-card")).toHaveCount(2);
   const choreColors = await page
     .locator(".jm-card")
-    .evaluateAll((cards) => cards.map((card) => card.style.getPropertyValue("--color")));
+    .evaluateAll((cards) =>
+      cards.map((card) => Number(card.style.getPropertyValue("--color").match(/--color-(\d+)/)?.[1]) || ""),
+    );
   expect(choreColors).toEqual(["", ""]);
   await page.reload();
   await expect(page.locator(".jm-card")).toHaveCount(2);
   expect(
-    await page.locator(".jm-card").evaluateAll((cards) => cards.map((card) => card.style.getPropertyValue("--color"))),
+    await page
+      .locator(".jm-card")
+      .evaluateAll((cards) =>
+        cards.map((card) => Number(card.style.getPropertyValue("--color").match(/--color-(\d+)/)?.[1]) || ""),
+      ),
   ).toEqual(choreColors);
   expect(colorRequests).toEqual([]);
 });
 
-test("card colors migrate into the palette and persist without visible color controls", async ({ page }) => {
+test("card color numbers persist and missing colors initialize without visible controls", async ({ page }) => {
   const data = appDataByPage.get(page);
   const savedWorkColor = CARD_COLORS[0];
   const savedListColor = CARD_COLORS[7];
   data.set("todos", {
     lists: [
       { id: "general", title: "General", tasks: [] },
-      { id: "home", title: "Home", color: savedListColor.toLowerCase(), tasks: [] },
+      { id: "home", title: "Home", color: savedListColor, tasks: [] },
     ],
   });
   data.set("printing", {
-    projects: [{ id: "legacy-project", title: "Existing project", color: "#633533", description: "", tasks: [] }],
+    projects: [{ id: "legacy-project", title: "Existing project", color: 42, description: "", tasks: [] }],
   });
   data.set("colors", { [`work-day:${localIsoDate(-1)}`]: savedWorkColor });
 
-  const colorOf = (locator) => locator.evaluate((element) => element.style.getPropertyValue("--color"));
+  const colorOf = (locator) =>
+    locator.evaluate((element) => Number(element.style.getPropertyValue("--color").match(/--color-(\d+)/)?.[1]) || "");
   await page.goto("/work");
   const todayColor = await colorOf(page.locator(".jm-card:not(.work-backlog)"));
   const backlogColor = await colorOf(page.locator(".work-backlog"));
@@ -244,7 +252,12 @@ test("card colors migrate into the palette and persist without visible color con
   expect(CARD_COLORS).toContain(projectColor);
   await expect.poll(() => data.get("printing").projects[0].color).toBe(projectColor);
   await expect(page.locator('input[type="color"]')).toHaveCount(0);
-  const projectRgb = projectColor
+  const projectHex = await page.evaluate(
+    (number) =>
+      globalThis.getComputedStyle(globalThis.document.documentElement).getPropertyValue(`--color-${number}`).trim(),
+    projectColor,
+  );
+  const projectRgb = projectHex
     .slice(1)
     .match(/../g)
     .map((channel) => parseInt(channel, 16))
@@ -457,7 +470,11 @@ test("task pages save inline changes and project dialogs save on submit", async 
   await expect(projects.getByRole("heading", { level: 2 })).toHaveText(["Desk cable clips", "Miniature planter"]);
   await expect(page.locator(".task-item__drag-handle, .task-item__pin, .task-item__remove")).toHaveCount(0);
   await expect(projects.first().getByLabel("Project color")).toHaveCount(0);
-  expect(CARD_COLORS).toContain(await projects.first().evaluate((card) => card.style.getPropertyValue("--color")));
+  expect(CARD_COLORS).toContain(
+    await projects
+      .first()
+      .evaluate((card) => Number(card.style.getPropertyValue("--color").match(/--color-(\d+)/)?.[1]) || ""),
+  );
   await expect(projects.first().locator("textarea, select")).toHaveCount(0);
   await expect(projects.first().locator(".filament > span")).toHaveText(["12 g", "1002 g", "2 g", "8 g"]);
   await expect(projects.first().locator(".missing")).toHaveCount(2);
@@ -488,12 +505,18 @@ test("task pages save inline changes and project dialogs save on submit", async 
   await expect(projects).toHaveCount(3);
   const newProject = projects.filter({ has: page.getByRole("heading", { name: "New 3D project" }) });
   await expect(newProject.getByRole("heading", { name: "New 3D project" })).toBeVisible();
-  const projectColor = await newProject.evaluate((card) => card.style.getPropertyValue("--color"));
+  const projectColor = await newProject.evaluate(
+    (card) => Number(card.style.getPropertyValue("--color").match(/--color-(\d+)/)?.[1]) || "",
+  );
   expect(CARD_COLORS).toContain(projectColor);
   await page.reload();
   const savedProject = newProject;
   await expect(savedProject.getByRole("heading", { name: "New 3D project" })).toBeVisible();
-  expect(await savedProject.evaluate((card) => card.style.getPropertyValue("--color"))).toBe(projectColor);
+  expect(
+    await savedProject.evaluate(
+      (card) => Number(card.style.getPropertyValue("--color").match(/--color-(\d+)/)?.[1]) || "",
+    ),
+  ).toBe(projectColor);
   await expect(savedProject.locator(".task-item .title")).toHaveText("Weighted base");
   await savedProject.getByLabel(/^Actions for/).click();
   await savedProject.getByRole("button", { name: "Edit", exact: true }).click();
@@ -515,7 +538,11 @@ test("task pages save inline changes and project dialogs save on submit", async 
   const stitchProject = page.locator(".project-card").first();
   await expect(stitchProject.getByRole("heading", { name: "Botanical sampler" })).toBeVisible();
   await expect(stitchProject.getByLabel("Project color")).toHaveCount(0);
-  expect(CARD_COLORS).toContain(await stitchProject.evaluate((card) => card.style.getPropertyValue("--color")));
+  expect(CARD_COLORS).toContain(
+    await stitchProject.evaluate(
+      (card) => Number(card.style.getPropertyValue("--color").match(/--color-(\d+)/)?.[1]) || "",
+    ),
+  );
   await expect(stitchProject.getByRole("checkbox")).toHaveCount(3);
   await expect(stitchProject.locator("select")).toHaveCount(0);
   await expect(stitchProject.locator(".stitch-color__missing")).toHaveCount(2);
@@ -634,7 +661,9 @@ test("work and chore cards expose only their supported actions", async ({ page }
   await expect(all.getByRole("button", { name: "Add chore", exact: true })).toBeVisible();
   const colors = await page
     .locator(".jm-card")
-    .evaluateAll((cards) => cards.map((card) => card.style.getPropertyValue("--color")));
+    .evaluateAll((cards) =>
+      cards.map((card) => Number(card.style.getPropertyValue("--color").match(/--color-(\d+)/)?.[1]) || ""),
+    );
   expect(colors).toEqual(["", ""]);
   expect(appDataByPage.get(page).get("colors") ?? {}).not.toHaveProperty("chores-today");
   expect(appDataByPage.get(page).get("colors") ?? {}).not.toHaveProperty("chores-all");

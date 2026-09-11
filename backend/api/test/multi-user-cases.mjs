@@ -11,7 +11,7 @@ export async function verifyMultiUserData(repository, first, second) {
   for (const user of [first, second]) {
     await write(user, "work-tasks", [{ id: "same-work", title: user, date: null }]);
     await write(user, "work-statuses", { "2026-09-09": user === first ? "pto" : "work" });
-    await write(user, "colors", { backlog: user === first ? "#123456" : "#654321" });
+    await write(user, "colors", { backlog: user === first ? 37 : 28 });
     await write(user, "todos", {
       lists: [{ id: "general", title: "General", tasks: [{ id: "same-todo", title: user }] }],
       history: [],
@@ -19,12 +19,12 @@ export async function verifyMultiUserData(repository, first, second) {
     });
     await write(user, "printing", {
       projects: [
-        { id: "same-project", title: user, color: "#123456", tasks: [{ id: "same-part", title: user, filaments: [] }] },
+        { id: "same-project", title: user, color: 37, tasks: [{ id: "same-part", title: user, filaments: [] }] },
       ],
       history: [],
     });
     await write(user, "cross-stitch", {
-      projects: [{ id: "same-stitch", title: user, color: "#123456", tasks: [] }],
+      projects: [{ id: "same-stitch", title: user, color: 37, tasks: [] }],
       history: [],
     });
     await write(user, "preferences", { hiddenNavigation: user === first ? ["printing"] : ["work", "catalog"] });
@@ -36,7 +36,7 @@ export async function verifyMultiUserData(repository, first, second) {
     assert.equal(state.pages.printing.projects[0].title, user);
     assert.equal(state.pages.crossStitch.projects[0].title, user);
     assert.equal(state.workStatuses["2026-09-09"], user === first ? "pto" : "work");
-    assert.equal(state.colors.backlog, user === first ? "#123456" : "#654321");
+    assert.equal(state.colors.backlog, user === first ? 37 : 28);
     assert.deepEqual(state.preferences.hiddenNavigation, user === first ? ["printing"] : ["work", "catalog"]);
   }
   await write(second, "printing", { projects: [], history: [] });

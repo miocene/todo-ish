@@ -38,7 +38,26 @@ test("actual migration runner: fresh, rerun, upgrade, concurrent, rollback and c
   const client = await connect();
   await cp(new URL("../../database/migrations/", import.meta.url), directory, { recursive: true });
   const options = { runtimeRole, log: () => {} };
+  const paletteMigration = join(directory, "0013_numbered_card_colors.sql");
+  const paletteSql = await readFile(paletteMigration, "utf8");
+  await rm(paletteMigration);
+  await runMigrations(client, directory, options);
+  await client.query("INSERT INTO auth_users(id, username, display_name) VALUES ('palette', 'palette', 'Palette')");
+  await client.query("INSERT INTO colors(user_id,id,color) VALUES ('palette','backlog','#2765EC')");
+  for (const table of ["todo_lists", "printing_projects", "stitch_projects"])
+    await client.query(
+      `INSERT INTO ${table}(user_id,id,title,color,position) VALUES ('palette','kept','Kept','#2765EC',0)`,
+    );
+  await client.query("INSERT INTO todo_lists(user_id,id,title,position) VALUES ('palette','uncolored','Uncolored',1)");
+  await writeFile(paletteMigration, paletteSql);
   const first = await runMigrations(client, directory, options);
+  for (const table of ["colors", "todo_lists", "printing_projects", "stitch_projects"]) {
+    const result = await client.query(`SELECT color FROM ${table} WHERE color IS NOT NULL`);
+    assert.equal(result.rows[0].color, (parseInt("2765EC", 16) % 42) + 1);
+    await assert.rejects(client.query(`UPDATE ${table} SET color=43`), /check constraint/);
+  }
+  assert.equal((await client.query("SELECT color FROM todo_lists WHERE id='uncolored'")).rows[0].color, null);
+
   assert.ok(first.length >= 11);
   assert.deepEqual(await runMigrations(client, directory, options), first);
   await client.query(`SET ROLE "${runtimeRole}"`);

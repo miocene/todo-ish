@@ -1,3 +1,4 @@
+import { CARD_COLORS } from "../src/app/card-colors.js";
 import { advisory, test, expect, appDataByPage } from "./app-fixture.js";
 
 const TODAY = "2026-09-14"; // Monday: Friday is exactly three calendar days ago.
@@ -230,7 +231,7 @@ test("Work: colors are created only for displayed cards and persist", async ({ p
   await expect.poll(() => Object.keys(data.get("colors") ?? {}).sort()).toEqual([`work-day:${TODAY}`]);
   const color = await selectedCard(page).evaluate((element) => element.style.getPropertyValue("--color"));
   await selectDay(page, FRIDAY);
-  await expect.poll(() => data.get("colors")?.[`work-day:${FRIDAY}`]).toMatch(/^#[0-9A-F]{6}$/);
+  await expect.poll(() => CARD_COLORS.includes(data.get("colors")?.[`work-day:${FRIDAY}`])).toBe(true);
   await page.getByRole("button", { name: "Today", exact: true }).click();
   expect(await selectedCard(page).evaluate((element) => element.style.getPropertyValue("--color"))).toBe(color);
   await page.reload();

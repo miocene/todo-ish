@@ -44,3 +44,9 @@ These checks cover all resource round trips, date/timezone preservation, revisio
 ## CI and deployment
 
 Pull requests run the reusable quality workflow: linting, formatting, unit/API/browser tests, production build, PostgreSQL integration tests, and the web container build. The Pages deployment calls the same workflow and waits for it to pass before building or publishing an artifact. See `.github/workflows/quality.yml` and the Pages workflow for triggers; inspect the corresponding GitHub run for the status of a particular revision. A local passing suite does not establish deployment or CI success.
+
+## Card color palette
+
+`styles/card-colors.css`, imported by `styles/style.css`, owns the 42 card background colors from Figma frame `410:4136`. Their order was shuffled once; keep the numbered tokens stable when editing the palette. A saved `color: 7` renders as `--color: var(--color-7)` on `JMCard`.
+
+Work-day colors, todo lists, and projects store integer color IDs. Migration `0013_numbered_card_colors.sql` converts existing hex values deterministically on the next `yarn deploy:pi`. Old exports and open clients can still submit hex colors; the API converts them before saving. To extend the palette, update `CARD_COLOR_COUNT`, the database range constraints, and add a migration.

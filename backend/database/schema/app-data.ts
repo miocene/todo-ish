@@ -59,13 +59,13 @@ export const colors = pgTable(
   {
     userId: userColumn(),
     id: text("id").notNull(),
-    color: text("color").notNull(),
+    color: integer("color").notNull(),
   },
   (table) => [
     primaryKey({ columns: [table.userId, table.id] }),
     userPolicy("colors", table.userId),
     check("colors_id_not_blank", sql`length(trim(${table.id})) > 0`),
-    check("colors_color_format", sql`${table.color} ~ '^#[0-9A-Fa-f]{6}$'`),
+    check("colors_color_format", sql`${table.color} BETWEEN 1 AND 42`),
   ],
 ).enableRLS();
 
@@ -219,7 +219,7 @@ export const todoLists = pgTable(
     userId: userColumn(),
     id: text("id").notNull(),
     title: text("title").notNull(),
-    color: text("color"),
+    color: integer("color"),
     ...orderedEntityColumns(),
   },
   (table) => [
@@ -227,7 +227,7 @@ export const todoLists = pgTable(
     userPolicy("todo_lists", table.userId),
     check("todo_lists_id_not_blank", sql`length(trim(${table.id})) > 0`),
     check("todo_lists_title_not_blank", sql`length(trim(${table.title})) > 0`),
-    check("todo_lists_color_format", sql`${table.color} ~ '^#[0-9A-Fa-f]{6}$'`),
+    check("todo_lists_color_format", sql`${table.color} BETWEEN 1 AND 42`),
     check("todo_lists_position_non_negative", sql`${table.position} >= 0`),
   ],
 ).enableRLS();
@@ -332,7 +332,7 @@ export const printingProjects = pgTable(
     userId: userColumn(),
     id: text("id").notNull(),
     title: text("title").notNull(),
-    color: text("color").notNull(),
+    color: integer("color").notNull(),
     description: text("description").default("").notNull(),
     ...orderedEntityColumns(),
   },
@@ -341,7 +341,7 @@ export const printingProjects = pgTable(
     userPolicy("printing_projects", table.userId),
     check("printing_projects_id_not_blank", sql`length(trim(${table.id})) > 0`),
     check("printing_projects_title_not_blank", sql`length(trim(${table.title})) > 0`),
-    check("printing_projects_color_format", sql`${table.color} ~ '^#[0-9A-Fa-f]{6}$'`),
+    check("printing_projects_color_format", sql`${table.color} BETWEEN 1 AND 42`),
     check("printing_projects_position_non_negative", sql`${table.position} >= 0`),
   ],
 ).enableRLS();
@@ -410,7 +410,7 @@ export const stitchProjects = pgTable(
     userId: userColumn(),
     id: text("id").notNull(),
     title: text("title").notNull(),
-    color: text("color").notNull(),
+    color: integer("color").notNull(),
     description: text("description").default("").notNull(),
     ...orderedEntityColumns(),
   },
@@ -419,7 +419,7 @@ export const stitchProjects = pgTable(
     userPolicy("stitch_projects", table.userId),
     check("stitch_projects_id_not_blank", sql`length(trim(${table.id})) > 0`),
     check("stitch_projects_title_not_blank", sql`length(trim(${table.title})) > 0`),
-    check("stitch_projects_color_format", sql`${table.color} ~ '^#[0-9A-Fa-f]{6}$'`),
+    check("stitch_projects_color_format", sql`${table.color} BETWEEN 1 AND 42`),
     check("stitch_projects_position_non_negative", sql`${table.position} >= 0`),
   ],
 ).enableRLS();

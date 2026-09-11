@@ -10,7 +10,7 @@ export default {
   props: {
     title: { type: String, required: true },
     emptyText: { type: String, default: "No items yet." },
-    color: { type: String, default: null },
+    color: { type: Number, default: null },
     actions: { type: Array, default: () => [] },
     progress: { type: Object, default: null },
     collapsible: { type: Boolean, default: false },
@@ -45,7 +45,12 @@ export default {
 </script>
 
 <template>
-  <component :is="tag" class="jm-card" :style="{ '--color': color }" :aria-labelledby="`${id}-title`">
+  <component
+    :is="tag"
+    class="jm-card"
+    :style="{ '--color': color ? `var(--color-${color})` : null }"
+    :aria-labelledby="`${id}-title`"
+  >
     <header class="header">
       <h2 :id="`${id}-title`" class="title">
         <slot name="title">{{ title }}</slot>

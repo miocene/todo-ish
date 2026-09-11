@@ -283,22 +283,26 @@ test("app-data API preserves card colors and validates their format", async () =
         body: JSON.stringify(value),
       });
     const colors = {
-      "work-day:2026-09-04": "#633533",
-      "work-day:2026-09-05": "#8FB7B0",
-      backlog: "#E9B6B4",
-      "chores-today": "#287271",
-      "chores-all": "#E9C46A",
+      "work-day:2026-09-04": 42,
+      "work-day:2026-09-05": 5,
+      backlog: 17,
+      "chores-today": 34,
+      "chores-all": 41,
     };
     assert.equal((await write("colors", colors)).status, 200);
-    const todos = { lists: [{ id: "general", title: "General", color: "#8FB7B0", tasks: [] }] };
+    const todos = { lists: [{ id: "general", title: "General", color: 5, tasks: [] }] };
     assert.equal((await write("todos", todos)).status, 200);
     assert.deepEqual(calls, [
       { resource: "colors", value: colors },
       { resource: "todos", value: todos },
     ]);
+    for (const color of [0, 43, -1, 1.5, "1", null])
+      assert.equal((await write("colors", { backlog: color })).status, 400);
+    assert.equal((await write("colors", { backlog: "#2765EC" })).status, 200);
+    assert.deepEqual(calls.at(-1), { resource: "colors", value: { backlog: (parseInt("2765EC", 16) % 42) + 1 } });
     assert.equal((await write("colors", { ...colors, "work-day:2026-09-05": "red" })).status, 400);
-    assert.equal((await write("colors", { ...colors, "work-day:2026-02-30": "#633533" })).status, 400);
-    assert.equal((await write("colors", { today: "#633533" })).status, 400);
+    assert.equal((await write("colors", { ...colors, "work-day:2026-02-30": 42 })).status, 400);
+    assert.equal((await write("colors", { today: 42 })).status, 400);
     assert.equal((await write("todos", { lists: [{ ...todos.lists[0], color: "red" }] })).status, 400);
   });
 });

@@ -8,7 +8,7 @@
  * @typedef {{ id: string, title: string, date: string | null, checkedAt?: string, archived?: boolean }} WorkTaskPayload
  * @typedef {{ frequency: "day" | "week" | "month", interval: number, startDate: string, weekdays: number[], monthDays: number[] }} ChoreSchedule
  * @typedef {Task & { details: string, nextDue: string, schedule?: ChoreSchedule | null }} Chore
- * @typedef {{ id: string, title: string, color?: string, tasks: Task[] }} TodoList
+ * @typedef {{ id: string, title: string, color?: number, tasks: Task[] }} TodoList
  * @typedef {{ id: string, catalogId: string, label: string, weightGrams: number | "" }} FilamentUsage
  * @typedef {Task & { filaments: FilamentUsage[] }} PrintingTask
  * @typedef {Task & { flossId: string, requiredSkeins: number, crosses: number, crossesDone: number }} StitchTask
@@ -16,14 +16,14 @@
  */
 
 /** @template T
- * @typedef {{ id: string, title: string, color: string, description: string, tasks: T[] }} Project
+ * @typedef {{ id: string, title: string, color: number, description: string, tasks: T[] }} Project
  */
 
 /**
  * @typedef {Object} ResourceValues
  * @property {WorkTaskPayload[]} work-tasks
  * @property {Record<string, string>} work-statuses
- * @property {Record<string, string>} colors
+ * @property {Record<string, number>} colors
  * @property {{ tasks: Chore[], occurrenceOrder: string[], history?: Chore[] }} chores
  * @property {{ lists: TodoList[], history?: Task[], replaceHistory?: boolean }} todos
  * @property {{ tasks: ShoppingTask[], history?: ShoppingTask[] }} shopping
