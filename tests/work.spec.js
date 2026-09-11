@@ -84,16 +84,17 @@ test("Work: rolled-over tasks can be corrected to Friday and persist as complete
     page.getByRole("combobox", { name: /^Change day type/ }),
   ).toHaveAttribute("data-level", "1");
   await page.goto("/profile");
-  await expect(page.locator(`#activity-${FRIDAY}`)).toContainText(
-    "Friday work",
-  );
-  await expect(page.locator(`#activity-${TODAY}`)).toHaveCount(0);
-  await expect(page.locator(`a[href="#activity-${FRIDAY}"]`)).toHaveAttribute(
-    "data-level",
-    "1",
-  );
+  await expect(
+    page.locator(`.activity-day:has(h3 time[datetime="${FRIDAY}"])`),
+  ).toContainText("Friday work");
+  await expect(
+    page.locator(`.activity-day:has(h3 time[datetime="${TODAY}"])`),
+  ).toHaveCount(0);
+  await expect(
+    page.locator(`.jm-activity-graph time[datetime="${FRIDAY}"]`),
+  ).toHaveAttribute("data-level", "1");
   await page
-    .locator(`#activity-${FRIDAY}`)
+    .locator(`.activity-day:has(h3 time[datetime="${FRIDAY}"])`)
     .getByRole("link", { name: "Work", exact: true })
     .click();
   await expect(page).toHaveURL(/date=2026-09-11$/);

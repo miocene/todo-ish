@@ -114,7 +114,7 @@ test("deleting a list retains only completed activity without its list name", as
   ]);
   await page.reload();
   await page.goto("/profile");
-  const day = page.locator("#activity-2026-02-02");
+  const day = page.locator('.activity-day:has(h3 time[datetime="2026-02-02"])');
   await expect(day.getByText("Finished task", { exact: true })).toHaveCount(1);
   await expect(day.getByText("Home", { exact: true })).toHaveCount(0);
   await expect(day.getByText("Unfinished task", { exact: true })).toHaveCount(
@@ -142,7 +142,7 @@ test("completion followed by list deletion survives a failed save and reload", a
   await page.goto("/profile");
   await expect(
     page
-      .locator("#activity-2026-02-02")
+      .locator('.activity-day:has(h3 time[datetime="2026-02-02"])')
       .getByText("Unfinished task", { exact: true }),
   ).toHaveCount(1);
   expect(appData.validationErrors).toEqual([]);
@@ -211,7 +211,7 @@ test("individual task deletion persists, restores focus, and preserves only comp
   await page.goto("/profile");
   await expect(
     page
-      .locator("#activity-2026-02-02")
+      .locator('.activity-day:has(h3 time[datetime="2026-02-02"])')
       .getByText("Finished task", { exact: true }),
   ).toHaveCount(1);
   expect(appData.validationErrors).toEqual([]);

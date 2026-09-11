@@ -4,6 +4,9 @@ test.beforeEach(async ({ page, appData }) => {
   appData.set("chores", { tasks: [], occurrenceOrder: [] });
   await page.clock.install({ time: new Date("2026-02-02T12:00:00") });
   await page.goto("/chores");
+  await expect(
+    page.getByRole("button", { name: "Add chore", exact: true }),
+  ).toBeVisible();
 });
 
 async function add(page, title) {
@@ -167,7 +170,9 @@ test("daily completion repeats after midnight and deletion removes both cards", 
   expect(appData.get("chores").history).toHaveLength(1);
   await page.goto("/profile");
   await expect(
-    page.locator("#activity-2026-02-02").getByText("Sweep", { exact: true }),
+    page
+      .locator('.activity-day:has(h3 time[datetime="2026-02-02"])')
+      .getByText("Sweep", { exact: true }),
   ).toHaveCount(1);
   await page.goto("/chores");
   await expect(checkbox).toHaveCount(0);
@@ -341,7 +346,7 @@ test("failed chore saves recover after reload and deletion cancels a pending reo
   await page.goto("/profile");
   await expect(
     page
-      .locator("#activity-2026-02-02")
+      .locator('.activity-day:has(h3 time[datetime="2026-02-02"])')
       .getByText("Recover chore", { exact: true }),
   ).toHaveCount(1);
   expect(appData.validationErrors).toEqual([]);
@@ -387,7 +392,7 @@ test("multiple completions survive reload without resending unchanged history", 
   for (const date of ["2026-02-02", "2026-02-03"]) {
     await expect(
       page
-        .locator(`#activity-${date}`)
+        .locator(`.activity-day:has(h3 time[datetime="${date}"])`)
         .getByText("Sweep twice", { exact: true }),
     ).toHaveCount(1);
   }

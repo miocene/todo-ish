@@ -267,19 +267,16 @@ test("Work and project deletion keep completed activity after reload", async ({
   await expect(page.getByText("Finished part", { exact: true })).toHaveCount(1);
 });
 
-test("cross-stitch item deletion retains completed activity", async ({
+test("cross-stitch item deletion retains recorded stitches after reload", async ({
   page,
   appData,
 }) => {
-  const project = appData.get("cross-stitch").projects[0];
-  project.tasks[0] = {
-    ...project.tasks[0],
-    completed: true,
-    completedAt: "2026-09-09T10:00:00Z",
-    crossesDone: 100,
-  };
-  appData.set("cross-stitch", { projects: [project] });
   await page.goto("/cross-stitch");
+  await page.getByRole("checkbox", { name: "Complete Black thread" }).check();
+  await expect
+    .poll(() => appData.get("cross-stitch").history?.[0]?.event?.stitches)
+    .toBe(100);
+  await page.reload();
   await page
     .getByRole("button", { name: "Expand Stitch project", exact: true })
     .click();
@@ -289,9 +286,16 @@ test("cross-stitch item deletion retains completed activity", async ({
       exact: true,
     })
     .click();
-  await expect.poll(() => appData.get("cross-stitch").history?.length).toBe(1);
+  await expect
+    .poll(() => appData.get("cross-stitch").projects[0].tasks.length)
+    .toBe(0);
+  expect(appData.get("cross-stitch").history).toHaveLength(1);
   await page.goto("/profile");
-  await expect(page.getByText("Black thread", { exact: true })).toHaveCount(1);
+  await page.reload();
+  await expect(
+    page.getByText("Stitch project - 100 stitches", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("Black thread", { exact: true })).toHaveCount(0);
 });
 
 test("shopping is usable with unavailable catalogs and unknown material links are readonly", async ({
