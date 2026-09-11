@@ -2,6 +2,7 @@
 @import url("./variables.css");
 @import url("./card-colors.css");
 @import url("./typography.css");
+@import url("./popover.css");
 
 html {
   background: var(--color-bg-default);
