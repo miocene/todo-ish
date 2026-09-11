@@ -403,6 +403,7 @@ test("project removal retains the completed snapshot within the transaction", as
     "Part",
     "Deleted project",
     "2026-09-09T10:00:00Z",
+    null,
   ]);
   assert.equal(f.queries.at(-1).text, "COMMIT");
 });
@@ -419,4 +420,49 @@ test("explicit chore history removes a completion undone before deleting the cho
   );
   assert.deepEqual(cleanup.values, [[]]);
   assert.equal(f.queries.at(-1).text, "COMMIT");
+});
+
+test("project activity metadata is persisted with retained history", async () => {
+  const f = fixture();
+  const event = { type: "stitches", projectId: "p", stitches: 25 };
+  await f.repository.replace(
+    "cross-stitch",
+    {
+      projects: [],
+      history: [
+        {
+          id: "event-1",
+          title: "Flowers",
+          completedAt: "2026-09-09T10:00:00Z",
+          event,
+        },
+      ],
+    },
+    0,
+  );
+  const insert = f.queries.find(({ text }) =>
+    text.startsWith("INSERT INTO completed_project_tasks"),
+  );
+  assert.deepEqual(JSON.parse(insert.values.at(-1)), event);
+});
+
+test("project activity metadata is restored on reads", async () => {
+  const event = { type: "stitches", projectId: "p", stitches: 25 };
+  const f = fixture({
+    rows: ({ text }) =>
+      text.includes("FROM completed_project_tasks")
+        ? [
+            {
+              resource: "cross-stitch",
+              id: "event-1",
+              title: "Flowers",
+              context: "",
+              completedAt: "2026-09-09T10:00:00Z",
+              event,
+            },
+          ]
+        : undefined,
+  });
+  const state = await f.repository.read();
+  assert.deepEqual(state.pages.crossStitch.history[0].event, event);
 });

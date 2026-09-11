@@ -35,6 +35,15 @@ function activityItem(task, source, context, route) {
     id: `${source}-${task.id}`,
     title: task.title.trim(),
     source,
+    icon: {
+      work: "work",
+      chores: "chores",
+      todos: "todo",
+      shopping: "shopping",
+      printing: "printer",
+      "cross-stitch": "yarn",
+    }[route.name],
+    ...(task.event && { event: task.event }),
     context,
     route,
     completedAt,
@@ -101,23 +110,34 @@ export function collectCompletedActivity(
   }
 
   const crossStitch = read("cross-stitch");
-  for (const task of crossStitch.history ?? [])
-    add(
-      activityItem(task, "Cross stitch", task.context || "", {
-        name: "cross-stitch",
-      }),
-    );
-  for (const project of crossStitch.projects) {
-    for (const task of project.tasks) {
-      add(
-        activityItem(task, "Cross stitch", project.title, {
-          name: "cross-stitch",
-        }),
-      );
-    }
+  for (const task of crossStitch.history ?? []) {
+    if (task.event)
+      add(activityItem(task, "Cross stitch", "", { name: "cross-stitch" }));
   }
 
-  return items.sort((first, second) =>
+  const stitchDays = new Map();
+  const activity = [];
+  for (const item of items) {
+    if (item.event?.type === "created") {
+      item.title = `Created project: ${item.title}`;
+    }
+    if (item.event?.type !== "stitches") {
+      activity.push(item);
+      continue;
+    }
+    const key = `${item.event.projectId}:${item.date}`;
+    const group = stitchDays.get(key);
+    if (group) group.stitches += item.event.stitches;
+    else
+      stitchDays.set(key, { ...item, id: key, stitches: item.event.stitches });
+  }
+  for (const item of stitchDays.values()) {
+    if (!item.stitches) continue;
+    item.title = `${item.title} - ${item.stitches} ${item.stitches === 1 ? "stitch" : "stitches"}`;
+    activity.push(item);
+  }
+
+  return activity.sort((first, second) =>
     second.completedAt.localeCompare(first.completedAt),
   );
 }
@@ -136,6 +156,10 @@ export function groupActivityByDay(items, year) {
       date,
       label: DAY_FORMATTER.format(new Date(`${date}T12:00:00`)),
       items: dayItems,
+      stitches: dayItems.reduce(
+        (total, item) => total + (item.stitches ?? 0),
+        0,
+      ),
     }));
 }
 
@@ -155,7 +179,15 @@ export function activityYears(
 
 export function buildActivityCalendar(year, groups) {
   const countByDate = new Map(
-    groups.map((group) => [group.date, group.items.length]),
+    groups.map((group) => [
+      group.date,
+      group.items.reduce(
+        (total, item) =>
+          total +
+          (item.stitches === undefined ? 1 : Math.max(0, item.stitches)),
+        0,
+      ),
+    ]),
   );
   const firstDay = new Date(year, 0, 1, 12);
   const lastDay = new Date(year, 11, 31, 12);
@@ -179,8 +211,8 @@ export function buildActivityCalendar(year, groups) {
       count,
       description:
         count > 0
-          ? `${count} checked ${count === 1 ? "item" : "items"} on ${label}`
-          : `No checked items on ${label}`,
+          ? `${count} activity ${count === 1 ? "contribution" : "contributions"} on ${label}`
+          : `No activity on ${label}`,
       level: activityLevel(count),
     });
   }

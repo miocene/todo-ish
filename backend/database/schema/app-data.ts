@@ -637,6 +637,7 @@ export const completedProjectTasks = pgTable(
     id: text("id").notNull(),
     title: text("title").notNull(),
     context: text("context").default("").notNull(),
+    event: jsonb("event"),
     completedAt: timestamp("completed_at", { withTimezone: true }).notNull(),
   },
   (table) => [

@@ -9,6 +9,7 @@
   );
   --color-bg-selection: light-dark(#fff, #fff);
   --color-bg-backdrop: light-dark(rgb(51 51 51 / 25%), rgb(51 51 51 / 25%));
+  --color-bg-accent: light-dark(#1f6ce5, #1f6ce5);
 
   --color-activity-0: #eef0f2;
   --color-activity-1: #d1e7dd;

@@ -335,9 +335,25 @@ function retainedHistory(value, path) {
     array(value ?? [], path, 100_000).map((entry, index) => {
       const item = task(entry, `${path}[${index}]`);
       if (!item.completedAt) fail(path, "must contain completed tasks");
+      let event;
+      if (entry.event !== undefined) {
+        const value = object(entry.event, `${path}.event`);
+        if (!["created", "stitches"].includes(value.type))
+          fail(path, "unknown project activity type");
+        event = { type: value.type, projectId: id(value.projectId, path) };
+        if (value.type === "stitches") {
+          if (
+            !Number.isSafeInteger(value.stitches) ||
+            Math.abs(value.stitches) > APP_DATA_LIMITS.quantity
+          )
+            fail(path, "invalid stitch count");
+          event.stitches = value.stitches;
+        }
+      }
       return {
         ...item,
         ...(entry.context && { context: text(entry.context, path) }),
+        ...(event && { event }),
       };
     }),
     path,

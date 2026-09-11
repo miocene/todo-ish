@@ -183,7 +183,7 @@ async function readAppData(
           ? []
           : await queryRows(
               client,
-              `SELECT resource, id, title, context, completed_at AS "completedAt" FROM completed_project_tasks WHERE resource = ANY($1::text[]) ORDER BY resource, id${page}`,
+              `SELECT resource, id, title, context, event, completed_at AS "completedAt" FROM completed_project_tasks WHERE resource = ANY($1::text[]) ORDER BY resource, id${page}`,
               [
                 resources.filter((resource) =>
                   ["printing", "cross-stitch"].includes(resource),
@@ -193,8 +193,9 @@ async function readAppData(
       const historyFor = (resource) =>
         projectHistory
           .filter((row) => row.resource === resource)
-          .map(({ resource: _resource, ...row }) => ({
+          .map(({ resource: _resource, event, ...row }) => ({
             ...row,
+            ...(event && { event }),
             ...completion(row.completedAt),
           }));
       const shoppingTask = (item) => ({
@@ -733,15 +734,16 @@ async function replaceProjectHistory(client, resource, data, patch) {
   await insertRows(
     client,
     "completed_project_tasks",
-    ["resource", "id", "title", "context", "completed_at"],
+    ["resource", "id", "title", "context", "completed_at", "event"],
     data.history.map((item) => [
       resource,
       item.id,
       item.title,
       item.context ?? "",
       item.completedAt,
+      item.event ? JSON.stringify(item.event) : null,
     ]),
-    "ON CONFLICT (user_id, resource, id) DO UPDATE SET title = EXCLUDED.title, context = EXCLUDED.context, completed_at = EXCLUDED.completed_at",
+    "ON CONFLICT (user_id, resource, id) DO UPDATE SET title = EXCLUDED.title, context = EXCLUDED.context, completed_at = EXCLUDED.completed_at, event = EXCLUDED.event",
   );
 }
 

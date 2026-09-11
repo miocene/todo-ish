@@ -1,0 +1,1 @@
+ALTER TABLE "completed_project_tasks" ADD COLUMN "event" jsonb;

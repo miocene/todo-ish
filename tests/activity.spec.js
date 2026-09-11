@@ -24,9 +24,6 @@ test("Activity renders a full year of history without initializing resources", a
     if (request.method() === "PUT") writes.push(request.url());
   });
   await page.goto("/profile");
-  await expect(
-    page.getByRole("heading", { name: "Checked activity" }),
-  ).toBeVisible();
   await expect(page.locator(".activity-day li")).toHaveCount(2000);
   expect(writes).toEqual([]);
 });
@@ -62,7 +59,61 @@ test("profile shows yearly task activity and newly checked items", async ({
   await expect
     .poll(() => new URL(page.url()).searchParams.get("year"))
     .toBe(String(previousYear));
+  await expect(page.getByText(`No activity in ${previousYear}.`)).toBeVisible();
+});
+
+test("saved partial stitching appears as daily project totals after reload", async ({
+  page,
+  appData,
+}) => {
+  appData.set("cross-stitch", {
+    projects: [
+      {
+        id: "p",
+        title: "Flowers",
+        color: 1,
+        description: "",
+        tasks: [
+          {
+            id: "red",
+            title: "Black",
+            flossId: "dmc310",
+            requiredSkeins: 1,
+            crosses: 100,
+            crossesDone: 0,
+            completed: false,
+          },
+        ],
+      },
+    ],
+    history: [],
+  });
+  await page.goto("/cross-stitch");
+  for (const amount of [20, 35]) {
+    const card = page.locator(".project-card").first();
+    await card.getByLabel(/^Actions for/).click();
+    await card.getByRole("button", { name: "Edit", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "Edit project" });
+    await dialog
+      .getByRole("spinbutton", { name: "Crosses done", exact: true })
+      .fill(String(amount));
+    await dialog.getByRole("button", { name: "Save project" }).click();
+    await expect
+      .poll(() => appData.get("cross-stitch").projects[0].tasks[0].crossesDone)
+      .toBe(amount);
+  }
+  await page.goto("/profile");
+  await page.reload();
   await expect(
-    page.getByText(`No checked items in ${previousYear}.`),
+    page.getByText("Flowers - 35 stitches", { exact: true }),
   ).toBeVisible();
+  await expect(
+    page.locator(".activity-day h3").filter({ hasText: "35 stitches" }),
+  ).toHaveCount(1);
+  await expect(
+    page.locator('.activity-day use[href$="#icon-yarn"]'),
+  ).toHaveCount(1);
+  await expect(
+    page.locator(".activity-day li").filter({ hasText: "Black" }),
+  ).toHaveCount(0);
 });

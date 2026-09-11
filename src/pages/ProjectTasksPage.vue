@@ -1,4 +1,5 @@
 <script>
+import { recordProjectActivity } from "../app/project-activity.js";
 import { APP_DATA_LIMITS } from "../../backend/api/src/app-data-contract.mjs";
 import { subscribeAppData } from "../app/app-data.js";
 import { createTaskEditor } from "../app/task-editor.js";
@@ -367,6 +368,7 @@ export default {
       if (completed !== wasCompleted) setTaskCompletion(task, completed);
     },
     retainHistory(project, tasks) {
+      if (this.isCrossStitch) return;
       const history = new Map(
         this.pageData.history.map((item) => [item.id, item]),
       );
@@ -389,7 +391,16 @@ export default {
       this.updateProjectPosition(project);
     },
     updateCompleted(project, task, completed) {
-      if (this.isCrossStitch) task.crossesDone = completed ? task.crosses : 0;
+      if (this.isCrossStitch) {
+        const previous = {
+          tasks: project.tasks.map((item) => ({
+            id: item.id,
+            crossesDone: item.crossesDone,
+          })),
+        };
+        task.crossesDone = completed ? task.crosses : 0;
+        recordProjectActivity(this.pageData.history, project, previous, true);
+      }
       setTaskCompletion(task, completed);
       this.save();
       this.editor.scheduleMove(task, completed, project.tasks);
@@ -497,6 +508,12 @@ export default {
         project.totalCrosses = this.projectTotalCrosses(project);
       const index = this.pageData.projects.findIndex(
         (item) => item.id === project.id,
+      );
+      recordProjectActivity(
+        this.pageData.history,
+        project,
+        this.pageData.projects[index],
+        this.isCrossStitch,
       );
       if (index >= 0) {
         for (const task of this.pageData.projects[index].tasks)

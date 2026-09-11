@@ -66,6 +66,13 @@ for (const [path, resource] of [
       dialog.getByRole("textbox", { name: "Project name" }),
     ).toHaveValue("");
     await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+    await page.goto("/profile");
+    await expect(
+      page.getByText("Created project: New build", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Created project: Discard this", { exact: true }),
+    ).toHaveCount(0);
     expect(appData.validationErrors).toEqual([]);
   });
 }
@@ -171,7 +178,20 @@ for (const [path, resource] of [
       .getByRole("button", { name: /^Remove .* from Renamed$/ })
       .first()
       .click();
-    await expect.poll(() => appData.get(resource).history?.length).toBe(1);
+    if (path === "cross-stitch") {
+      await expect
+        .poll(() =>
+          appData
+            .get(resource)
+            .history?.reduce(
+              (total, item) => total + (item.event?.stitches ?? 0),
+              0,
+            ),
+        )
+        .toBe(100);
+    } else {
+      await expect.poll(() => appData.get(resource).history?.length).toBe(1);
+    }
     expect(appData.validationErrors).toEqual([]);
   });
 }

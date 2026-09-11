@@ -10,6 +10,7 @@
  * @typedef {Task & { details: string, nextDue: string, schedule?: ChoreSchedule | null }} Chore
  * @typedef {{ id: string, title: string, color?: number, tasks: Task[] }} TodoList
  * @typedef {{ id: string, catalogId: string, label: string, weightGrams: number | "" }} FilamentUsage
+ * @typedef {Task & { context?: string, event?: { type: "created" | "stitches", projectId: string, stitches?: number } }} ProjectActivity
  * @typedef {Task & { filaments: FilamentUsage[] }} PrintingTask
  * @typedef {Task & { flossId: string, requiredSkeins: number, crosses: number, crossesDone: number }} StitchTask
  * @typedef {Task & { productLink?: string, source?: string, filamentId?: string, flossId?: string, quantity?: number }} ShoppingTask
@@ -27,8 +28,8 @@
  * @property {{ tasks: Chore[], occurrenceOrder: string[], history?: Chore[] }} chores
  * @property {{ lists: TodoList[], history?: Task[], replaceHistory?: boolean }} todos
  * @property {{ tasks: ShoppingTask[], history?: ShoppingTask[] }} shopping
- * @property {{ projects: Project<PrintingTask>[], history?: (Task & { context?: string })[] }} printing
- * @property {{ projects: (Project<StitchTask> & { totalCrosses?: number })[], history?: (Task & { context?: string })[] }} cross-stitch
+ * @property {{ projects: Project<PrintingTask>[], history?: ProjectActivity[] }} printing
+ * @property {{ projects: (Project<StitchTask> & { totalCrosses?: number })[], history?: ProjectActivity[] }} cross-stitch
  * @property {Record<string, number>} filament-inventory
  * @property {Record<string, number>} floss-inventory
  * @property {{ hiddenNavigation: string[] }} preferences

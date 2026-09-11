@@ -60,12 +60,6 @@ export default {
     activityDays() {
       return groupActivityByDay(this.activity, this.selectedYear);
     },
-    checkedItemCount() {
-      return this.activityDays.reduce(
-        (total, day) => total + day.items.length,
-        0,
-      );
-    },
   },
   methods: {
     yearRoute(year) {
@@ -92,36 +86,33 @@ export default {
 
     <JMActivityGraph :year="selectedYear" :days="activityDays" />
 
-    <section class="activity-list" aria-labelledby="activity-list-title">
-      <h2 id="activity-list-title">Checked activity</h2>
+    <p v-if="activityDays.length === 0" class="empty">
+      No activity in {{ selectedYear }}.
+    </p>
 
-      <p v-if="activityDays.length === 0" class="activity-list__empty">
-        No checked items in {{ selectedYear }}.
-      </p>
-
-      <article
-        v-for="day in activityDays"
-        v-else
-        :key="day.date"
-        class="activity-day"
-      >
-        <h3>
-          <time :datetime="day.date">{{ day.label }}</time>
-        </h3>
-        <ul role="list">
-          <li v-for="item in day.items" :key="item.id">
-            <span class="activity-day__check" aria-hidden="true"
-              ><JMIcon name="check"
-            /></span>
-            <div>
-              <p>{{ item.title }}</p>
-              <RouterLink :to="item.route">{{ item.source }}</RouterLink>
-              <span aria-hidden="true"> · </span>
-              <span v-if="item.context">{{ item.context }}</span>
-            </div>
-          </li>
-        </ul>
-      </article>
-    </section>
+    <article
+      v-for="day in activityDays"
+      v-else
+      :key="day.date"
+      class="activity-day"
+    >
+      <h3>
+        <time :datetime="day.date">{{ day.label }}</time>
+        <span v-if="day.stitches"> · {{ day.stitches }} stitches</span>
+      </h3>
+      <ul role="list">
+        <li v-for="item in day.items" :key="item.id">
+          <span class="check" aria-hidden="true"
+            ><JMIcon :name="item.icon"
+          /></span>
+          <div>
+            <p>{{ item.title }}</p>
+            <RouterLink :to="item.route">{{ item.source }}</RouterLink>
+            <span v-if="item.context" aria-hidden="true"> · </span>
+            <span v-if="item.context">{{ item.context }}</span>
+          </div>
+        </li>
+      </ul>
+    </article>
   </section>
 </template>
