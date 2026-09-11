@@ -1,4 +1,5 @@
 import { test, expect } from "./app-fixture.js";
+import flossSnapshot from "../backend/catalogs/dmc-floss.snapshot.json" with { type: "json" };
 test("catalog typing and a ten-task project editor retain catalog choices", async ({ page, appData }) => {
   appData.set("printing", {
     projects: [
@@ -25,7 +26,7 @@ test("catalog typing and a ten-task project editor retain catalog choices", asyn
   await expect(dialog.locator("select").first().locator("option")).toHaveCount(266);
   const modalMilliseconds = performance.now() - started;
   await page.goto("/catalog?catalog=floss");
-  await expect(page.locator(".catalog-list > li")).toHaveCount(454);
+  await expect(page.locator(".catalog-list > li")).toHaveCount(flossSnapshot.entries.length);
   const typingMilliseconds = await page.evaluate(async () => {
     const input = globalThis.document.querySelector("#catalog-query");
     const started = performance.now();

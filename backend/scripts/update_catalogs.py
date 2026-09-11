@@ -6,6 +6,7 @@ Run with: yarn update:catalogs
 
 from __future__ import annotations
 
+import argparse
 import html
 import json
 import re
@@ -23,6 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CATALOG_DIR = ROOT / "catalogs"
 BAMBU_SNAPSHOT_PATH = CATALOG_DIR / "bambu-filaments.snapshot.json"
 DMC_SNAPSHOT_PATH = CATALOG_DIR / "dmc-floss.snapshot.json"
+DMC_ADDITIONS_PATH = CATALOG_DIR / "dmc-floss-additions.json"
 BREIBRINK_DMC_URL = "https://www.breibrink.nl/borduren/borduurgarens/dmc-splijtzijde/"
 BREIBRINK_DMC_AJAX = f"{BREIBRINK_DMC_URL}page{{page}}.ajax"
 THREADCOLORS_URL = "https://threadcolors.com/"
@@ -181,6 +183,11 @@ def bambu_listing(handle: str, family: str) -> dict:
     }
 
 
+def dmc_key(number: str) -> str:
+    number = str(number).strip().upper()
+    return str(int(number)).zfill(2) if number.isdigit() else BREIBRINK_DMC_ALIASES.get(number, number)
+
+
 class ThreadcolorsParser(HTMLParser):
     """Read the canonical DMC number, name, and hex value table."""
 
@@ -210,8 +217,8 @@ class ThreadcolorsParser(HTMLParser):
             self.cell = None
         elif tag == "tr" and self.row is not None:
             if len(self.row) >= 7 and re.fullmatch(r"[0-9a-fA-F]{6}", self.row[6]):
-                number = self.row[1]
-                self.threads[number.upper()] = {
+                number = dmc_key(self.row[1]) if self.row[1].isdigit() else self.row[1]
+                self.threads[dmc_key(number)] = {
                     "number": number,
                     "colorName": self.row[2],
                     "color": f"#{self.row[6].upper()}",
@@ -311,7 +318,7 @@ def parse_breibrink_links() -> dict:
         title = product.get("title", "").strip()
         match = re.match(r"DMC splijtzijde\s+([A-Za-z0-9]+)(?:\s|/|$)", title, re.IGNORECASE)
         if match:
-            number = BREIBRINK_DMC_ALIASES.get(match.group(1).upper(), match.group(1).upper())
+            number = dmc_key(match.group(1))
             links[number] = product.get("url", BREIBRINK_DMC_URL)
     return links
 
@@ -319,7 +326,7 @@ def parse_breibrink_links() -> dict:
 def parse_dmc() -> dict:
     previous_entries = read_entries(DMC_SNAPSHOT_PATH)
     previous_links = {
-        str(entry.get("number", "")).upper(): entry["link"] for entry in previous_entries if entry.get("link")
+        dmc_key(entry.get("number", "")): entry["link"] for entry in previous_entries if entry.get("link")
     }
 
     try:
@@ -329,8 +336,15 @@ def parse_dmc() -> dict:
     except (urllib.error.URLError, TimeoutError, ValueError) as error:
         if not previous_entries:
             raise RuntimeError("Threadcolors failed and no previous DMC snapshot exists") from error
-        warn(f"Threadcolors could not be refreshed; preserving the previous DMC snapshot ({error})")
-        return {"entries": previous_entries}
+        warn(f"Threadcolors could not be refreshed; preserving previous DMC colors ({error})")
+        threads = {}
+
+    # An older upstream table must not remove newer shades or existing project references.
+    threads = {
+        **{dmc_key(entry["number"]): entry for entry in previous_entries},
+        **{dmc_key(entry["number"]): entry for entry in read_entries(DMC_ADDITIONS_PATH)},
+        **threads,
+    }
 
     try:
         breibrink_links = parse_breibrink_links()
@@ -350,12 +364,14 @@ def parse_dmc() -> dict:
     return {"entries": entries}
 
 
-def write_snapshots(bambu: dict, dmc: dict) -> None:
+def write_snapshots(bambu: dict | None = None, dmc: dict | None = None) -> None:
     CATALOG_DIR.mkdir(parents=True, exist_ok=True)
     snapshots = ((BAMBU_SNAPSHOT_PATH, bambu), (DMC_SNAPSHOT_PATH, dmc))
     temporary_paths = []
     try:
         for path, payload in snapshots:
+            if payload is None:
+                continue
             temporary_path = path.with_suffix(f"{path.suffix}.tmp")
             temporary_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
             temporary_paths.append((temporary_path, path))
@@ -367,12 +383,19 @@ def write_snapshots(bambu: dict, dmc: dict) -> None:
 
 
 def main() -> None:
-    bambu = parse_bambu()
-    dmc = parse_dmc()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--catalog", choices=("all", "bambu", "floss"), default="all")
+    catalog = parser.parse_args().catalog
+    bambu = parse_bambu() if catalog in ("all", "bambu") else None
+    dmc = parse_dmc() if catalog in ("all", "floss") else None
     write_snapshots(bambu, dmc)
     print(
         f"Updated {CATALOG_DIR.relative_to(ROOT)}: "
-        f"Bambu {len(bambu['entries'])} entries; DMC {len(dmc['entries'])} entries"
+        + "; ".join(
+            f"{name} {len(data['entries'])} entries"
+            for name, data in (("Bambu", bambu), ("DMC", dmc))
+            if data is not None
+        )
     )
 
 

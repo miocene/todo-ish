@@ -47,6 +47,35 @@ class CatalogUpdaterTests(unittest.TestCase):
 
         self.assertIs(result, previous)
 
+    def test_dmc_refresh_keeps_new_shades_and_previous_colors(self):
+        previous = [{"number": "9999", "colorName": "Existing", "color": "#123456"}]
+        with TemporaryDirectory() as directory:
+            snapshot = Path(directory) / "dmc.json"
+            snapshot.write_text(json.dumps({"entries": previous}))
+            with (
+                patch.object(update_catalogs, "DMC_SNAPSHOT_PATH", snapshot),
+                patch.object(update_catalogs, "MIN_DMC_COLORS", 1),
+                patch.object(update_catalogs, "MIN_BREIBRINK_LINKS", 1),
+                patch.object(
+                    update_catalogs,
+                    "fetch",
+                    return_value=b'<table id="closest-colors"><tr><td></td><td>3</td><td>Medium Tin</td><td>184</td><td>184</td><td>187</td><td>b8b8bb</td></tr></table>',
+                ),
+                patch.object(
+                    update_catalogs,
+                    "parse_breibrink_links",
+                    return_value={"03": "https://www.breibrink.nl/dmc-03.html"},
+                ),
+            ):
+                entries = update_catalogs.parse_dmc()["entries"]
+        by_number = {entry["number"]: entry for entry in entries}
+        self.assertEqual(len(entries), 36)
+        self.assertEqual(len(by_number), len(entries))
+        self.assertTrue({str(n).zfill(2) for n in range(1, 36)} <= by_number.keys())
+        self.assertEqual(by_number["03"]["colorName"], "Medium Tin")
+        self.assertEqual(by_number["03"]["link"], "https://www.breibrink.nl/dmc-03.html")
+        self.assertEqual(by_number["9999"], previous[0])
+
     def test_dmc_source_failure_without_snapshot_is_fatal(self):
         with TemporaryDirectory() as directory:
             missing_snapshot = Path(directory) / "missing.json"
@@ -68,9 +97,10 @@ class CatalogUpdaterTests(unittest.TestCase):
                 patch.object(update_catalogs, "DMC_SNAPSHOT_PATH", dmc_path),
             ):
                 update_catalogs.write_snapshots({"entries": [{"id": "b"}]}, {"entries": [{"number": "310"}]})
+                update_catalogs.write_snapshots(dmc={"entries": [{"number": "03"}]})
 
             self.assertEqual(json.loads(bambu_path.read_text())["entries"], [{"id": "b"}])
-            self.assertEqual(json.loads(dmc_path.read_text())["entries"], [{"number": "310"}])
+            self.assertEqual(json.loads(dmc_path.read_text())["entries"], [{"number": "03"}])
             self.assertEqual(list(catalog_dir.glob("*.tmp")), [])
 
 

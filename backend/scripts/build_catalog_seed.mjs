@@ -101,11 +101,29 @@ export function catalogSeedData() {
   };
 }
 
+export function buildFlossCatalogImport(floss = catalogSeedData().floss) {
+  const flossImport = catalogImport({
+    snapshotTable: "floss_catalog_snapshots",
+    entryTable: "floss_catalog_entries",
+    source: "DMC solid floss: Threadcolors, 01-35 supplement and Breibrink",
+    sha256: floss.sha256,
+    rows: floss.rows,
+    recordColumns: ["catalog_id text", "number text", "color_name text", "color_hex char(7)", "purchase_url text"],
+    selectColumns: ["catalog_id", "number", "color_name", "color_hex", "purchase_url"],
+    updateColumns: ["number", "color_name", "color_hex", "purchase_url"],
+  });
+  return `${flossImport}\n\n${countCheck({
+    label: "Floss",
+    snapshotTable: "floss_catalog_snapshots",
+    entryTable: "floss_catalog_entries",
+    sha256: floss.sha256,
+    expected: floss.rows.length,
+  })}`;
+}
+
 export function buildCatalogSeed() {
   const { filament, floss } = catalogSeedData();
   const filamentCount = filament.rows.length;
-  const flossCount = floss.rows.length;
-
   const filamentImport = catalogImport({
     snapshotTable: "filament_catalog_snapshots",
     entryTable: "filament_catalog_entries",
@@ -117,24 +135,13 @@ export function buildCatalogSeed() {
     updateColumns: ["family", "color_name", "product_code", "swatch"],
   });
 
-  const flossImport = catalogImport({
-    snapshotTable: "floss_catalog_snapshots",
-    entryTable: "floss_catalog_entries",
-    source: "Threadcolors and Breibrink DMC snapshot",
-    sha256: floss.sha256,
-    rows: floss.rows,
-    recordColumns: ["catalog_id text", "number text", "color_name text", "color_hex char(7)", "purchase_url text"],
-    selectColumns: ["catalog_id", "number", "color_name", "color_hex", "purchase_url"],
-    updateColumns: ["number", "color_name", "color_hex", "purchase_url"],
-  });
-
   return `\\set ON_ERROR_STOP on
 BEGIN;
 SET ROLE todo_owner;
 
 ${filamentImport}
 
-${flossImport}
+${buildFlossCatalogImport(floss)}
 
 ${countCheck({
   label: "Filament",
@@ -142,14 +149,6 @@ ${countCheck({
   entryTable: "filament_catalog_entries",
   sha256: filament.sha256,
   expected: filamentCount,
-})}
-
-${countCheck({
-  label: "Floss",
-  snapshotTable: "floss_catalog_snapshots",
-  entryTable: "floss_catalog_entries",
-  sha256: floss.sha256,
-  expected: flossCount,
 })}
 
 COMMIT;

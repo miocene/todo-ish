@@ -48,6 +48,11 @@ test("Bambu catalogue is complete, unique, and renderable", () => {
 test("DMC catalogue keeps canonical Threadcolors data and Breibrink links", () => {
   assert.ok(dmcFlossCatalog.length >= 440, "Expected the complete Threadcolors DMC table");
   assert.deepEqual(duplicates(dmcFlossCatalog.map((item) => item.number)), []);
+  for (let number = 1; number <= 35; number++) {
+    const thread = dmcFlossCatalog.find((item) => item.number === String(number).padStart(2, "0"));
+    assert.ok(thread, `Missing newer DMC shade ${number}`);
+    assert.match(thread.link, /^https:\/\/www\.breibrink\.nl\/dmc-/);
+  }
 
   for (const item of dmcFlossCatalog) {
     assert.ok(item.colorName, `Missing DMC colour name: ${item.number}`);

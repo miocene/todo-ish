@@ -1,0 +1,220 @@
+{
+  "sources": {
+    "numbers": "https://www.dmc.com/media/color_charts/DMC_Embroidery_Floss_Numerical_List_2021.pdf",
+    "displayColors": "https://www.jessyandmelissa.com/wp-content/uploads/dmc-colors-table3.csv",
+    "purchaseLinks": "https://www.breibrink.nl/borduren/borduurgarens/dmc-splijtzijde/"
+  },
+  "note": "Verified 2026-09-11. Screen swatches are approximate. Supplements the older Threadcolors table with solid shades 01–35.",
+  "entries": [
+    {
+      "number": "01",
+      "colorName": "White Tin",
+      "color": "#E3E3E6",
+      "link": "https://www.breibrink.nl/dmc-01.html"
+    },
+    {
+      "number": "02",
+      "colorName": "Tin",
+      "color": "#D7D7D8",
+      "link": "https://www.breibrink.nl/dmc-02.html"
+    },
+    {
+      "number": "03",
+      "colorName": "Tin Medium",
+      "color": "#B8B8BB",
+      "link": "https://www.breibrink.nl/dmc-03.html"
+    },
+    {
+      "number": "04",
+      "colorName": "Tin Dark",
+      "color": "#AEAEB1",
+      "link": "https://www.breibrink.nl/dmc-04.html"
+    },
+    {
+      "number": "05",
+      "colorName": "Driftwood Light",
+      "color": "#E3CCBE",
+      "link": "https://www.breibrink.nl/dmc-05.html"
+    },
+    {
+      "number": "06",
+      "colorName": "Driftwood Medium Light",
+      "color": "#DCC6B8",
+      "link": "https://www.breibrink.nl/dmc-06.html"
+    },
+    {
+      "number": "07",
+      "colorName": "Driftwood",
+      "color": "#8F7B6E",
+      "link": "https://www.breibrink.nl/dmc-07.html"
+    },
+    {
+      "number": "08",
+      "colorName": "Driftwood Dark",
+      "color": "#6A5046",
+      "link": "https://www.breibrink.nl/dmc-08.html"
+    },
+    {
+      "number": "09",
+      "colorName": "Cocoa Very Dark",
+      "color": "#55200E",
+      "link": "https://www.breibrink.nl/dmc-09.html"
+    },
+    {
+      "number": "10",
+      "colorName": "Tender Green Very Light",
+      "color": "#EDFED9",
+      "link": "https://www.breibrink.nl/dmc-10.html"
+    },
+    {
+      "number": "11",
+      "colorName": "Tender Green Light",
+      "color": "#E2EDB5",
+      "link": "https://www.breibrink.nl/dmc-11.html"
+    },
+    {
+      "number": "12",
+      "colorName": "Tender Green",
+      "color": "#CDD99A",
+      "link": "https://www.breibrink.nl/dmc-12.html"
+    },
+    {
+      "number": "13",
+      "colorName": "Nile Green Medium Light",
+      "color": "#BFF6E0",
+      "link": "https://www.breibrink.nl/dmc-13.html"
+    },
+    {
+      "number": "14",
+      "colorName": "Apple Green Pale",
+      "color": "#D0FBB2",
+      "link": "https://www.breibrink.nl/dmc-14.html"
+    },
+    {
+      "number": "15",
+      "colorName": "Apple Green",
+      "color": "#D1EDA4",
+      "link": "https://www.breibrink.nl/dmc-15.html"
+    },
+    {
+      "number": "16",
+      "colorName": "Chartreuse Light",
+      "color": "#C9C258",
+      "link": "https://www.breibrink.nl/dmc-16.html"
+    },
+    {
+      "number": "17",
+      "colorName": "Yellow Plum Light",
+      "color": "#E5E272",
+      "link": "https://www.breibrink.nl/dmc-17.html"
+    },
+    {
+      "number": "18",
+      "colorName": "Yellow Plum",
+      "color": "#D9D56D",
+      "link": "https://www.breibrink.nl/dmc-18.html"
+    },
+    {
+      "number": "19",
+      "colorName": "Autumn Gold Medium Light",
+      "color": "#F7C95F",
+      "link": "https://www.breibrink.nl/dmc-19.html"
+    },
+    {
+      "number": "20",
+      "colorName": "Shrimp",
+      "color": "#F7AF93",
+      "link": "https://www.breibrink.nl/dmc-20-57587423.html"
+    },
+    {
+      "number": "21",
+      "colorName": "Alizarin Light",
+      "color": "#D79982",
+      "link": "https://www.breibrink.nl/dmc-21.html"
+    },
+    {
+      "number": "22",
+      "colorName": "Alizarin",
+      "color": "#BC604E",
+      "link": "https://www.breibrink.nl/dmc-22.html"
+    },
+    {
+      "number": "23",
+      "colorName": "Apple Blossom",
+      "color": "#EDE2ED",
+      "link": "https://www.breibrink.nl/dmc-23.html"
+    },
+    {
+      "number": "24",
+      "colorName": "White Lavender",
+      "color": "#E0D7EE",
+      "link": "https://www.breibrink.nl/dmc-24.html"
+    },
+    {
+      "number": "25",
+      "colorName": "Lavender Ultra Light",
+      "color": "#DAD2E9",
+      "link": "https://www.breibrink.nl/dmc-25.html"
+    },
+    {
+      "number": "26",
+      "colorName": "Lavender Pale",
+      "color": "#D7CAE6",
+      "link": "https://www.breibrink.nl/dmc-26.html"
+    },
+    {
+      "number": "27",
+      "colorName": "White Violet",
+      "color": "#F0EEF9",
+      "link": "https://www.breibrink.nl/dmc-27.html"
+    },
+    {
+      "number": "28",
+      "colorName": "Eggplant Medium Light",
+      "color": "#9086A9",
+      "link": "https://www.breibrink.nl/dmc-28.html"
+    },
+    {
+      "number": "29",
+      "colorName": "Eggplant",
+      "color": "#674076",
+      "link": "https://www.breibrink.nl/dmc-29.html"
+    },
+    {
+      "number": "30",
+      "colorName": "Blueberry Medium Light",
+      "color": "#7D77A5",
+      "link": "https://www.breibrink.nl/dmc-30.html"
+    },
+    {
+      "number": "31",
+      "colorName": "Blueberry",
+      "color": "#50518D",
+      "link": "https://www.breibrink.nl/dmc-31.html"
+    },
+    {
+      "number": "32",
+      "colorName": "Blueberry Dark",
+      "color": "#4D2E8A",
+      "link": "https://www.breibrink.nl/dmc-32.html"
+    },
+    {
+      "number": "33",
+      "colorName": "Fuchsia",
+      "color": "#9C599E",
+      "link": "https://www.breibrink.nl/dmc-33.html"
+    },
+    {
+      "number": "34",
+      "colorName": "Fuchsia Dark",
+      "color": "#7D3064",
+      "link": "https://www.breibrink.nl/dmc-34.html"
+    },
+    {
+      "number": "35",
+      "colorName": "Fuchsia Very Dark",
+      "color": "#46052D",
+      "link": "https://www.breibrink.nl/dmc-35.html"
+    }
+  ]
+}

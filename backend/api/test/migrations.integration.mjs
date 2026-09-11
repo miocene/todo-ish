@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Client } from "pg";
 import { runMigrations } from "../src/migrations.mjs";
+import { createCatalogRepository } from "../src/catalog-repository.mjs";
 
 const connectionString = process.env.TEST_DATABASE_URL;
 if (!connectionString) throw new Error("Set TEST_DATABASE_URL to a disposable PostgreSQL instance");
@@ -40,6 +41,21 @@ test("actual migration runner: fresh, rerun, upgrade, concurrent, rollback and c
   const first = await runMigrations(client, directory, options);
   assert.ok(first.length >= 11);
   assert.deepEqual(await runMigrations(client, directory, options), first);
+  await client.query(`SET ROLE "${runtimeRole}"`);
+  const catalog = await createCatalogRepository(client).floss({ query: "", limit: 500, offset: 0 });
+  assert.equal(catalog.total, 489);
+  for (let number = 1; number <= 35; number++) {
+    const id = `dmc${String(number).padStart(2, "0")}`;
+    assert.ok(
+      catalog.items.some((item) => item.id === id && item.link),
+      `Missing purchasable ${id}`,
+    );
+  }
+  assert.ok(
+    catalog.items.some((item) => item.id === "dmc310"),
+    "existing project references remain valid",
+  );
+  await client.query("RESET ROLE");
   const extra = join(directory, "9998_upgrade.sql");
   await writeFile(extra, "CREATE TABLE runner_upgrade(id integer); SELECT pg_sleep(0.1);");
   await Promise.all([runMigrations(client, directory, options), runMigrations(await connect(), directory, options)]);

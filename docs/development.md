@@ -29,6 +29,12 @@ Failed advisory assertions appear as `[quality warning]` messages and Playwright
 
 The same policy applies to future implementation and review work through the root `AGENTS.md`. There is currently no dedicated accessibility or browser-compatibility lint plugin enabled.
 
+## Floss catalog updates
+
+Run `python3 backend/scripts/update_catalogs.py --catalog floss` to refresh only floss. The Threadcolors table is supplemented by `backend/catalogs/dmc-floss-additions.json` for DMC 01–35; source links are recorded there and screen swatches are approximate. Refreshes retain existing colors when an upstream table omits them. Numbers 1–9 use DMC's padded spelling (01–09) consistently in catalog IDs and purchase links.
+
+The deployed API reads its catalog from PostgreSQL. Migration `0012_complete_floss_catalog.sql` publishes the 489-shade snapshot on the next `yarn deploy:pi`; changing the JSON file alone does not update the running app. It keeps existing catalog IDs, inventories and project references. Later catalog changes can be imported using the existing `build_catalog_seed.mjs` tool; never edit an applied migration.
+
 ## PostgreSQL integration tests
 
 `TEST_DATABASE_URL=postgres://… yarn test:integration` runs the real migrations and repository against a **disposable PostgreSQL instance**. The account must be able to create databases and roles. The suite creates a uniquely named database and runtime role, tests with the migration's runtime grants, and removes both afterwards. It never migrates the database named in the connection URL.
