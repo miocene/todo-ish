@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { mergeSharedData } from "../src/app/shared-data-merge.js";
+import { mergeSharedData } from "./shared-data-merge.js";
 const item = (id, title = id) => ({ id, title });
 const list = (...tasks) => ({ tasks });
 

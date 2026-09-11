@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { initialAppData } from "../src/app/app-data.js";
+import { initialAppData } from "./app-data.js";
 import {
   APP_DATA_RESOURCES,
   validateAppDataResource,
-} from "../backend/api/src/app-data-validation.mjs";
+} from "../../backend/api/src/app-data-validation.mjs";
 
 test("default resources are valid empty data and each caller receives its own copy", () => {
   for (const resource of APP_DATA_RESOURCES) {

@@ -42,10 +42,10 @@ CI runs [the reusable quality workflow](.github/workflows/quality.yml) before pu
 ## Frontend structure
 
 - `src/pages/`: application pages.
-- `src/components/`: reusable Vue components and their CSS.
-- `src/app/`: application state, API access, and shared utilities.
+- `src/components/`: reusable Vue components, their CSS, and component-focused `ComponentName.spec.js` browser tests.
+- `src/app/`: application state, API access, shared utilities, and adjacent `utility.unit.js` tests.
 - `styles/`: global styles and design tokens.
-- `tests/`: browser and frontend unit coverage.
+- `tests/`: page flows, cross-component browser tests, shared fixtures, and repository/data-contract checks.
 
 ## Card colors
 
@@ -54,6 +54,8 @@ CI runs [the reusable quality workflow](.github/workflows/quality.yml) before pu
 ## Browser checks and coverage
 
 `yarn test:e2e` runs the functional suite on Chromium (Chrome engine), desktop WebKit (Safari engine), and WebKit with iPhone emulation. Run one project with `yarn test:e2e --project=webkit`. Emulation does not replace checking a real iPhone, particularly native passkey prompts.
+
+Component-focused browser tests use the shared app fixture; they run through the same Playwright command as page flows. Utility unit tests run through `yarn test:unit` and are excluded from coverage measurements.
 
 `test-results/` contains disposable failure traces and runner state; it is ignored by Git. Tests do not generate routine screenshots without assertions.
 

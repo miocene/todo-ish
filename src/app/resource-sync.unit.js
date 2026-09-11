@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { mergeSharedData } from "../src/app/shared-data-merge.js";
-import { createResourceSync } from "../src/app/resource-sync.js";
+import { mergeSharedData } from "./shared-data-merge.js";
+import { createResourceSync } from "./resource-sync.js";
 
 const tick = () => new Promise((resolve) => setImmediate(resolve));
 function fixture({

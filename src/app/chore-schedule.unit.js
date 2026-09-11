@@ -5,8 +5,8 @@ import {
   scheduleFromChore,
   nextChoreDate,
   advanceCompletedChore,
-} from "../src/app/chore-schedule.js";
-import { validateAppDataResource } from "../backend/api/src/app-data-validation.mjs";
+} from "./chore-schedule.js";
+import { validateAppDataResource } from "../../backend/api/src/app-data-validation.mjs";
 
 const schedule = (changes = {}) => ({
   ...defaultChoreSchedule("2026-01-05"),
@@ -140,7 +140,7 @@ test("legacy conversion handles fortnightly weekdays and leaves unknown rules un
 });
 
 test("schedule equality ignores inactive selections but detects active recurrence changes", async () => {
-  const { sameChoreSchedule } = await import("../src/app/chore-schedule.js");
+  const { sameChoreSchedule } = await import("./chore-schedule.js");
   const daily = schedule({ frequency: "day" });
   assert.equal(
     sameChoreSchedule(daily, { ...daily, monthDays: [31], weekdays: [6] }),
@@ -162,7 +162,7 @@ test("schedule equality ignores inactive selections but detects active recurrenc
 
 test("retained occurrences are unique, survive deletion, and current unchecking takes precedence", async () => {
   const { retainChoreCompletion, completedChoreOccurrences } =
-    await import("../src/app/chore-schedule.js");
+    await import("./chore-schedule.js");
   const task = {
     id: "one",
     title: "Sweep",

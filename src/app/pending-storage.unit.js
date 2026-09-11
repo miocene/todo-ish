@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createPendingStorage } from "../src/app/pending-storage.js";
+import { createPendingStorage } from "./pending-storage.js";
 
 test("corrupt records remain exportable without hiding valid drafts or another account", () => {
   const draft = { id: "good", resource: "todos", value: { lists: [] } };

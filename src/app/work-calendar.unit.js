@@ -5,7 +5,7 @@ import {
   getWorkDateBounds,
   isoDate,
   requestedDate,
-} from "../src/app/work-calendar.js";
+} from "./work-calendar.js";
 
 test("work history always includes the backdating window, even with only future completions", () => {
   const bounds = getWorkDateBounds(calendarDate("2026-09-14"), [

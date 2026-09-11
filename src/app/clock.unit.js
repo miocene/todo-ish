@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createDayClock } from "../src/app/clock.js";
-import { isIsoDate, shiftIsoDate } from "../src/app/date.js";
+import { createDayClock } from "./clock.js";
+import { isIsoDate, shiftIsoDate } from "./date.js";
 
 test("the shared day clock rolls over, catches up after sleep, and cleans up", () => {
   let date = new Date(2026, 11, 31, 23, 59, 50);

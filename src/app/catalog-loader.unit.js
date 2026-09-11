@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createCatalog } from "../src/app/catalog-loader.js";
+import { createCatalog } from "./catalog-loader.js";
 const page = (items, total = items.length) => ({
   ok: true,
   json: async () => ({ items, total }),

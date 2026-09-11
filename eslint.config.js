@@ -37,6 +37,8 @@ export default [
       "backend/**/*.{js,mjs}",
       "tools/**/*.{js,mjs}",
       "tests/**/*.js",
+      "src/**/*.unit.js",
+      "src/**/*.spec.js",
     ],
     languageOptions: {
       ecmaVersion: "latest",

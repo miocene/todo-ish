@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createTaskEditor, createTitleEditor } from "../src/app/task-editor.js";
+import { createTaskEditor, createTitleEditor } from "./task-editor.js";
 
 test("Enter respects composition and focuses the next task or creates one", () => {
   const editor = createTaskEditor({ save() {} });
