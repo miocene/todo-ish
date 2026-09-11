@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+
+cd "$(git rev-parse --show-toplevel)"
+exec </dev/null
+echo "Running lint, formatting checks, and tests before push…"
+yarn lint
+yarn format:check
+exec yarn test

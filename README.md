@@ -17,6 +17,8 @@ yarn setup
 
 Setup installs frontend/API dependencies, Python tools, and Chromium. On Linux, use `yarn setup --with-deps` for Chromium's system dependencies.
 
+Setup also enables `.githooks/pre-push`: every push runs `yarn lint`, `yarn format:check`, and `yarn test` (unit, API, and browser tests), stopping at the first failure. Formatting is checked without modifying files. PostgreSQL integration tests remain in CI. The hook checks the current working tree; commit the changes you intend to push before running it.
+
 `yarn dev` uses the project's local backend connection. Before running it, follow `local-notes/DEPLOYMENT.md` if available; it explains which database receives edits. Browser tests use an isolated API mock.
 
 ## Checks and configuration
