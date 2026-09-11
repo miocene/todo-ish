@@ -278,13 +278,11 @@ async function readAppData(
         todoListRows.map((list) => [list.id, []]),
       );
       for (const item of todoItemRows) {
-        todoItemsByList
-          .get(item.listId)
-          ?.push({
-            id: item.id,
-            title: item.title,
-            ...completion(item.completedAt),
-          });
+        todoItemsByList.get(item.listId)?.push({
+          id: item.id,
+          title: item.title,
+          ...completion(item.completedAt),
+        });
       }
 
       const filamentUsagesByItem = new Map(

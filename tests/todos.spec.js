@@ -76,11 +76,9 @@ test("new list and per-card task entry persist and Enter stays in its list", asy
   await dialog
     .getByRole("button", { name: "Create list", exact: true })
     .click();
-  const travel = page
-    .locator(".todo-list-card")
-    .filter({
-      has: page.getByRole("heading", { name: "Travel", exact: true }),
-    });
+  const travel = page.locator(".todo-list-card").filter({
+    has: page.getByRole("heading", { name: "Travel", exact: true }),
+  });
   await listAction(page, "Travel", "Add task to Travel");
   await travel.getByRole("textbox").last().fill("Pack bag");
   await travel.getByRole("textbox").last().press("Enter");
