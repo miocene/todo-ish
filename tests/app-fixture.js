@@ -36,9 +36,8 @@ function emptyAppData(values, revisions, userId = "owner") {
 }
 
 const test = base.extend({
-  expectedValidationErrors: [[], { option: true }],
   appData: [
-    async ({ page, expectedValidationErrors }, use) => {
+    async ({ page }, use) => {
       const values = {};
       const revisions = Object.fromEntries(
         APP_DATA_RESOURCES.map((resource) => [resource, 0]),
@@ -336,7 +335,7 @@ const test = base.extend({
       });
       await use(controller);
       expect(validationErrors, "Unexpected API validation failures").toEqual(
-        expectedValidationErrors,
+        [],
       );
     },
     { auto: true },

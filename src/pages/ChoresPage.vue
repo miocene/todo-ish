@@ -47,8 +47,7 @@ export default {
       limits: APP_DATA_LIMITS,
       chores: { ...chores, history: chores.history ?? [] },
       draft: null,
-      draftOriginal: null,
-      scheduleValid: true,
+      intervalValid: true,
       editMessage: "",
       moves: createCompletionMoveScheduler(),
     };
@@ -73,7 +72,7 @@ export default {
   },
   computed: {
     occurrencePreview() {
-      if (!this.draft || !this.scheduleValid) return null;
+      if (!this.draft || !this.intervalValid) return null;
       const task = this.chores.tasks.find((item) => item.id === this.draft.id);
       const schedule = this.draft.schedule;
       if (task?.completed) {
@@ -159,8 +158,7 @@ export default {
       this.openEditor();
     },
     openEditor(task) {
-      this.scheduleValid = true;
-      this.draftOriginal = task ? JSON.stringify(task) : null;
+      this.intervalValid = true;
       this.editMessage = "";
       this.draft = {
         id: task?.id ?? null,
@@ -177,20 +175,12 @@ export default {
       this.$nextTick(() => this.$refs.choreModal.open());
     },
     saveDraft() {
-      if (!this.scheduleValid) return;
       const { id, schedule } = this.draft;
       const title = this.draft.title.trim();
-      if (!title || title.length > APP_DATA_LIMITS.title) return;
       let task = this.chores.tasks.find((item) => item.id === id);
-      if (id && JSON.stringify(task) !== this.draftOriginal) {
-        this.editMessage =
-          "This chore changed while you were editing. Cancel and reopen it to review the saved version.";
-        return;
-      }
       if (task) {
         const scheduleChanged = !sameChoreSchedule(task.schedule, schedule);
         if (task.title === title && !scheduleChanged) {
-          this.$refs.choreModal.close();
           return;
         }
         if (
@@ -218,7 +208,6 @@ export default {
         details: choreScheduleLabel(schedule),
       });
       this.save();
-      this.$refs.choreModal.close();
     },
     removeTask(task) {
       const index = this.chores.tasks.indexOf(task);
@@ -313,12 +302,13 @@ export default {
   <JMModal
     ref="choreModal"
     class="chore-modal"
-    :aria-label="draft?.id ? 'Edit chore' : 'Add chore'"
+    :title="draft?.id ? 'Edit chore' : 'Add chore'"
+    :submit-text="draft?.id ? 'Save' : 'Add chore'"
+    :submit-disabled="!draft?.title.trim() || !intervalValid"
+    @submit="saveDraft"
     @close="draft = null"
   >
-    <form v-if="draft" class="jm-modal__form" @submit.prevent="saveDraft">
-      <h2>{{ draft.id ? "Edit chore" : "Add chore" }}</h2>
-      <p v-if="editMessage" role="alert">{{ editMessage }}</p>
+    <template v-if="draft">
       <JMInput
         v-model="draft.title"
         label="Title"
@@ -333,7 +323,7 @@ export default {
       </p>
       <JMChoreSchedule
         v-model="draft.schedule"
-        v-model:valid="scheduleValid"
+        v-model:valid="intervalValid"
         :title="draft.title"
       />
       <p v-if="occurrencePreview" class="chore-preview" role="status">
@@ -343,18 +333,6 @@ export default {
         }}</time
         >.
       </p>
-      <div class="jm-modal__actions">
-        <JMButton
-          text="Cancel"
-          view="ghost"
-          @click="$refs.choreModal.close()"
-        />
-        <JMButton
-          type="submit"
-          :text="draft.id ? 'Save' : 'Add chore'"
-          :disabled="!draft.title.trim() || !scheduleValid"
-        />
-      </div>
-    </form>
+    </template>
   </JMModal>
 </template>

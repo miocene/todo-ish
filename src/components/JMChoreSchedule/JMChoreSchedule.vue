@@ -50,13 +50,10 @@ export default {
     },
     updateInterval(value) {
       this.intervalInput = value;
-      const interval = Number(value);
-      if (Number.isInteger(interval) && interval >= 1 && interval <= 999)
-        this.update({ interval });
+      if (this.intervalValid) this.update({ interval: Number(value) });
     },
     toggle(field, value) {
       const selected = this.modelValue[field];
-      if (selected.includes(value) && selected.length === 1) return;
       this.update({
         [field]: selected.includes(value)
           ? selected.filter((day) => day !== value)

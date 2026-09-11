@@ -58,7 +58,6 @@ export default {
     v-if="!selected"
     :class="dayClasses"
     type="button"
-    :aria-current="selected ? 'date' : undefined"
     :aria-label="dateLabel"
     :disabled="day.disabled"
     @click="$emit('activate', day.value)"
@@ -73,7 +72,7 @@ export default {
     v-else
     :class="dayClasses"
     :for="inputId"
-    :aria-current="selected ? 'date' : undefined"
+    aria-current="date"
     :aria-label="dateLabel"
   >
     <small class="weekday" aria-hidden="true">{{ day.day }}</small>

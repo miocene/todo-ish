@@ -71,12 +71,6 @@ export default {
     },
     addList() {
       const title = this.listName.trim();
-      if (
-        !title ||
-        title.length > APP_DATA_LIMITS.title ||
-        this.todos.lists.length >= APP_DATA_LIMITS.lists
-      )
-        return;
       const list = {
         id: `list-${crypto.randomUUID()}`,
         title,
@@ -85,7 +79,6 @@ export default {
       };
       this.todos.lists.push(list);
       this.save();
-      this.$refs.newListModal.close();
       this.focusListActions(list);
     },
     listActions(list) {
@@ -262,28 +255,20 @@ export default {
     </template>
   </JMCard>
 
-  <JMModal ref="newListModal" class="todo-list-modal" aria-label="New list">
-    <form class="jm-modal__form" @submit.prevent="addList">
-      <h2>New list</h2>
-      <JMInput
-        v-model="listName"
-        label="List name"
-        required
-        :maxlength="limits.title"
-        autofocus
-      />
-      <div class="jm-modal__actions">
-        <JMButton
-          text="Cancel"
-          view="ghost"
-          @click="$refs.newListModal.close()"
-        />
-        <JMButton
-          text="Create list"
-          type="submit"
-          :disabled="!listName.trim()"
-        />
-      </div>
-    </form>
+  <JMModal
+    ref="newListModal"
+    class="todo-list-modal"
+    title="New list"
+    submit-text="Create list"
+    :submit-disabled="!listName.trim()"
+    @submit="addList"
+  >
+    <JMInput
+      v-model="listName"
+      label="List name"
+      required
+      :maxlength="limits.title"
+      autofocus
+    />
   </JMModal>
 </template>

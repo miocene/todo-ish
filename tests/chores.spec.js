@@ -444,3 +444,24 @@ test("unchecking and immediately deleting a chore undoes its completion", async 
   await page.goto("/profile");
   await expect(page.getByText("Sweep", { exact: true })).toHaveCount(0);
 });
+
+test("blank chore titles disable submission and Cancel bypasses validation", async ({
+  page,
+  appData,
+}) => {
+  const dialog = await add(page, "   ");
+  await expect(
+    dialog.getByRole("button", { name: "Add chore", exact: true }),
+  ).toBeDisabled();
+  await dialog
+    .getByRole("textbox", { name: "Title", exact: true })
+    .press("Enter");
+  await expect(dialog).toBeVisible();
+  await expect(
+    dialog.getByRole("textbox", { name: "Title", exact: true }),
+  ).toHaveValue("   ");
+  expect(appData.get("chores").tasks).toEqual([]);
+  await dialog.getByRole("textbox", { name: "Title", exact: true }).fill("");
+  await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(dialog).toBeHidden();
+});

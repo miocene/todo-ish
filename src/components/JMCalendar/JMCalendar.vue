@@ -96,7 +96,6 @@ export default {
       );
     },
     shift(amount) {
-      if (amount < 0 ? !this.canGoPrevious : !this.canGoNext) return;
       this.rangeDate = shiftIsoDate(
         this.rangeDate,
         amount * this.visibleDayCount,

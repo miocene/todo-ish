@@ -82,7 +82,6 @@ export default {
         save: () => this.save(),
       }),
       projectDraft: null,
-      projectOriginal: null,
       editMessage: "",
       removedDraftTasks: [],
       filamentInventory: loadFilamentInventory(),
@@ -427,14 +426,13 @@ export default {
         this.editMessage = "A project can contain up to 2,000 items.";
         return;
       }
-      // Settle our own delayed moves before taking the conflict-detection snapshot.
+      // Keep the displayed order stable while editing a copy of the project.
       for (const task of project.tasks) this.editor.moves.cancel(task.id);
       const ordered = completedTasksLast(project.tasks);
       if (ordered.some((task, index) => task !== project.tasks[index])) {
         project.tasks = ordered;
         this.save();
       }
-      this.projectOriginal = JSON.stringify(project);
       this.editMessage = "";
       this.projectDraft = JSON.parse(JSON.stringify(project));
       this.removedDraftTasks = [];
@@ -463,7 +461,6 @@ export default {
           "You can have up to 500 projects. Remove a project before adding another.";
         return;
       }
-      this.projectOriginal = null;
       this.editMessage = "";
       this.removedDraftTasks = [];
       this.projectDraft = {
@@ -485,19 +482,7 @@ export default {
       this.focusDraftTask(task);
     },
     createProject() {
-      if (!this.canCreateProject) return;
       const project = this.projectDraft;
-      const current = this.pageData.projects.find(
-        (item) => item.id === project.id,
-      );
-      if (
-        this.projectOriginal !== null &&
-        JSON.stringify(current) !== this.projectOriginal
-      ) {
-        this.editMessage =
-          "This project changed while you were editing. Cancel and reopen it to review the saved version.";
-        return;
-      }
       project.title = project.title.trim();
       for (const task of project.tasks) {
         if (this.isPrinting) task.title = task.title.trim();
@@ -532,8 +517,6 @@ export default {
       }
       this.updateProjectPosition(project);
       this.save();
-      this.$refs.projectModal.close();
-      this.projectDraft = null;
     },
   },
 };
@@ -556,11 +539,14 @@ export default {
 
   <JMModal
     ref="projectModal"
-    :aria-label="editingProject ? 'Edit project' : 'New project'"
+    :title="editingProject ? 'Edit project' : 'New project'"
+    :submit-text="editingProject ? 'Save project' : 'Create project'"
+    :submit-disabled="!canCreateProject"
+    novalidate
+    @submit="createProject"
     @close="projectDraft = null"
   >
-    <form v-if="projectDraft" novalidate @submit.prevent="createProject">
-      <h2>{{ editingProject ? "Edit project" : "New project" }}</h2>
+    <template v-if="projectDraft">
       <p v-if="projectIssue || editMessage" role="alert">
         {{ projectIssue || editMessage }}
       </p>
@@ -623,17 +609,7 @@ export default {
         view="ghost"
         @click="addDraftTask"
       />
-      <JMButton
-        text="Cancel"
-        view="ghost"
-        @click="$refs.projectModal.close()"
-      />
-      <JMButton
-        :text="editingProject ? 'Save project' : 'Create project'"
-        type="submit"
-        :disabled="!canCreateProject"
-      />
-    </form>
+    </template>
   </JMModal>
 
   <ul class="project-list" role="list">

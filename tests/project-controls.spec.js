@@ -111,7 +111,7 @@ test("filament selects show catalog swatches in options and selected values", as
   await expect(select.locator(".button .selection img.swatch")).toHaveCount(0);
 });
 
-test("opening an editor settles pending completion moves without creating a conflict", async ({
+test("opening an editor settles pending completion moves and preserves task order", async ({
   page,
   appData,
 }) => {
@@ -140,4 +140,28 @@ test("opening an editor settles pending completion moves without creating a conf
     .get("printing")
     .projects[0].tasks.find((task) => task.title === "Large cable clip");
   expect(completed.completed).toBe(true);
+});
+
+test("incomplete projects disable submission and preserve the draft until Cancel", async ({
+  page,
+  appData,
+}) => {
+  appData.set("printing", { projects: [] });
+  await page.goto("/printing");
+  await page.getByRole("button", { name: "Add project", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "New project", exact: true });
+  await dialog
+    .getByRole("textbox", { name: "Project name" })
+    .fill("Incomplete project");
+  await expect(
+    dialog.getByRole("button", { name: "Create project", exact: true }),
+  ).toBeDisabled();
+  await dialog.getByRole("textbox", { name: "Project name" }).press("Enter");
+  await expect(dialog).toBeVisible();
+  await expect(
+    dialog.getByRole("textbox", { name: "Project name" }),
+  ).toHaveValue("Incomplete project");
+  expect(appData.get("printing").projects).toEqual([]);
+  await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(dialog).toBeHidden();
 });

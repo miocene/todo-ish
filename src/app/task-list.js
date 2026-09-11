@@ -30,10 +30,10 @@ export function finishTaskDraft(
 }
 
 export function completedTasksLast(tasks) {
-  return [
-    ...tasks.filter((task) => !task.completed),
-    ...tasks.filter((task) => task.completed),
-  ];
+  const pending = [];
+  const completed = [];
+  for (const task of tasks) (task.completed ? completed : pending).push(task);
+  return pending.concat(completed);
 }
 
 export function nextEntityId(items, prefix) {

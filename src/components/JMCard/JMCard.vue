@@ -35,7 +35,6 @@ export default {
       this.$refs.menuButton?.$el.focus();
     },
     runAction(action) {
-      if (action.disabled) return;
       this.closeMenu();
       if (action.id === "add") this.expanded = true;
       this.$emit("action", action.id);

@@ -1,27 +1,44 @@
 .jm-modal {
   inline-size: min(28rem, calc(100% - var(--space-9)));
-  min-block-size: 12rem;
   max-block-size: calc(100dvh - var(--space-9));
-  padding: var(--space-5);
   color: var(--color-text-default);
-  background: var(--color-bg-surface);
+  padding: 0;
   border: 0;
   border-radius: var(--radius-card);
-}
 
-.jm-modal::backdrop {
-  background: #f0f;
-  opacity: 0.3;
-}
+  &::backdrop {
+    background: var(--color-bg-backdrop);
+    backdrop-filter: blur(var(--blur-s));
+  }
 
-.jm-modal__form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
+  header {
+    position: sticky;
+    top: 0;
+    padding: var(--space-7) var(--space-7) var(--space-5);
+    backdrop-filter: blur(var(--blur-s));
+    z-index: 1;
+  }
 
-.jm-modal__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-3);
+  .content {
+    padding: var(--space-5) var(--space-7);
+  }
+
+  footer {
+    --radius-control: calc(var(--radius-card) - var(--space-5));
+
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    padding: var(--space-5);
+    backdrop-filter: blur(var(--blur-s));
+    z-index: 1;
+  }
+
+  header,
+  .content,
+  footer {
+    background: var(--color-bg-surface);
+  }
 }
