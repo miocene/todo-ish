@@ -51,4 +51,4 @@ CI runs [the reusable quality workflow](.github/workflows/quality.yml) before pu
 
 ## Performance checks
 
-Use `node tools/benchmark-edits.mjs` for draft serialization and `node tools/benchmark-catalog.mjs` for catalog projections. `tests/catalog-performance.spec.js` measures browser behavior. Re-run the relevant check when changing those paths; local timings are not production guarantees.
+`tests/catalog-performance.spec.js` measures browser behavior. Re-run the relevant check when changing those paths; local timings are not production guarantees.

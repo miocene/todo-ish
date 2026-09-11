@@ -3,11 +3,22 @@
 set -eu
 
 repository_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-ssh_target=${PI_SSH_TARGET:-}
-if [ -z "$ssh_target" ] && [ -r "$repository_root/.env.local" ]; then
-  ssh_target=$(sed -n 's/^PI_SSH_TARGET=//p' "$repository_root/.env.local" | tail -n 1)
-fi
-tunnel_port=${PI_DEVELOPMENT_API_PORT:-3001}
+cd "$repository_root"
+for tool in node yarn ssh curl; do
+  command -v "$tool" >/dev/null 2>&1 || { echo "Missing development tool: $tool" >&2; exit 2; }
+done
+
+setting() {
+  node --input-type=module -e '
+    import { existsSync, readFileSync } from "node:fs";
+    import { parseEnv } from "node:util";
+    const [key, fallback] = process.argv.slice(1);
+    const local = existsSync(".env.local") ? parseEnv(readFileSync(".env.local", "utf8")) : {};
+    process.stdout.write(process.env[key] ?? local[key] ?? fallback);
+  ' "$1" "$2"
+}
+ssh_target=$(setting PI_SSH_TARGET '')
+tunnel_port=$(setting PI_DEVELOPMENT_API_PORT 3001)
 
 case "$ssh_target" in
   "")
@@ -20,12 +31,11 @@ case "$ssh_target" in
     ;;
 esac
 
-case "$tunnel_port" in
-  "" | *[!0-9]* | 0)
-    echo "PI_DEVELOPMENT_API_PORT must be a positive port number" >&2
-    exit 2
-    ;;
-esac
+node --input-type=module -e '
+  const port = process.argv[1];
+  if (!/^\d+$/.test(port) || Number(port) < 1 || Number(port) > 65535)
+    throw new Error("PI_DEVELOPMENT_API_PORT must be an integer between 1 and 65535");
+' "$tunnel_port"
 
 ssh \
   -o ExitOnForwardFailure=yes \
@@ -39,7 +49,9 @@ cleanup() {
   kill "$tunnel_pid" 2>/dev/null || true
   wait "$tunnel_pid" 2>/dev/null || true
 }
-trap cleanup EXIT INT TERM
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 attempt=0
 until curl --fail --silent --show-error "http://127.0.0.1:$tunnel_port/healthz" >/dev/null 2>&1; do
