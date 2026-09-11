@@ -18,18 +18,6 @@
   justify-content: space-between;
 }
 
-.activity-summary,
-.activity-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.activity-summary > h2,
-.activity-list > h2 {
-  font-size: 1rem;
-}
-
 .activity-list {
   content-visibility: auto;
   contain-intrinsic-block-size: 480px;
@@ -41,10 +29,6 @@
   text-align: center;
   border: 1px dashed #f0f;
   border-radius: var(--radius-control);
-}
-
-.activity-day {
-  scroll-margin-block-start: calc(var(--size-header) + var(--space-5));
 }
 
 .activity-day h3 {

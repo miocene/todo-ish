@@ -90,14 +90,7 @@ export default {
       aria-label="Activity years"
     />
 
-    <section class="activity-summary" aria-labelledby="activity-summary-title">
-      <h2 id="activity-summary-title">
-        {{ checkedItemCount }} checked
-        {{ checkedItemCount === 1 ? "item" : "items" }} in {{ selectedYear }}
-      </h2>
-
-      <JMActivityGraph :year="selectedYear" :days="activityDays" />
-    </section>
+    <JMActivityGraph :year="selectedYear" :days="activityDays" />
 
     <section class="activity-list" aria-labelledby="activity-list-title">
       <h2 id="activity-list-title">Checked activity</h2>
@@ -109,7 +102,6 @@ export default {
       <article
         v-for="day in activityDays"
         v-else
-        :id="`activity-${day.date}`"
         :key="day.date"
         class="activity-day"
       >

@@ -19,12 +19,12 @@ export default {
 <template>
   <div class="jm-activity-graph">
     <div
-      class="jm-activity-graph__scroll"
+      class="scroll"
       role="region"
       aria-label="Year activity graph, scroll horizontally"
       tabindex="0"
     >
-      <div class="jm-activity-graph__months" aria-hidden="true">
+      <div class="months" aria-hidden="true">
         <span
           v-for="month in calendar.months"
           :key="month.label"
@@ -34,30 +34,19 @@ export default {
         </span>
       </div>
 
-      <div class="jm-activity-graph__weekdays" aria-hidden="true">
+      <div class="weekdays" aria-hidden="true">
         <span>Mon</span>
         <span>Wed</span>
         <span>Fri</span>
       </div>
 
-      <div class="jm-activity-graph__days">
+      <div class="days">
         <template v-for="day in calendar.days" :key="day.date">
-          <span
-            v-if="day.count === undefined"
-            class="jm-activity-graph__cell jm-activity-graph__cell--outside"
-          />
-          <a
-            v-else-if="day.count > 0"
-            class="jm-activity-graph__cell"
-            :data-level="day.level"
-            :href="`#activity-${day.date}`"
-            :aria-label="day.description"
-            :title="day.description"
-          />
+          <span v-if="day.count === undefined" class="cell cell--outside" />
           <time
             v-else
-            class="jm-activity-graph__cell"
-            data-level="0"
+            class="cell"
+            :data-level="day.level"
             :datetime="day.date"
             :aria-label="day.description"
             :title="day.description"
@@ -66,12 +55,12 @@ export default {
       </div>
     </div>
 
-    <div class="jm-activity-graph__legend">
+    <div class="legend">
       <span>Less</span>
       <span
         v-for="level in [0, 1, 2, 3, 4]"
         :key="level"
-        class="jm-activity-graph__cell"
+        class="cell"
         :data-level="level"
         aria-hidden="true"
       />

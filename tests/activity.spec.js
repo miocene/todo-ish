@@ -25,7 +25,7 @@ test("Activity renders a full year of history without initializing resources", a
   });
   await page.goto("/profile");
   await expect(
-    page.getByRole("heading", { name: `2000 checked items in ${year}` }),
+    page.getByRole("heading", { name: "Checked activity" }),
   ).toBeVisible();
   await expect(page.locator(".activity-day li")).toHaveCount(2000);
   expect(writes).toEqual([]);
@@ -50,14 +50,10 @@ test("profile shows yearly task activity and newly checked items", async ({
       page.getByRole("link", { name: String(currentYear), exact: true }),
     ).toHaveAttribute("aria-current", "page"),
   );
-  await expect(
-    page.locator(
-      ".jm-activity-graph__days > :not(.jm-activity-graph__cell--outside)",
-    ),
-  ).toHaveCount(currentYear % 4 === 0 ? 366 : 365);
-  await expect(
-    page.getByRole("heading", { level: 2, name: /checked items? in/ }),
-  ).toContainText(String(currentYear));
+  await expect(page.locator(".jm-activity-graph .days > time")).toHaveCount(
+    currentYear % 4 === 0 ? 366 : 365,
+  );
+  await expect(page.locator(".jm-activity-graph a")).toHaveCount(0);
   await expect(page.getByText("Renew passport", { exact: true })).toBeVisible();
 
   await page
