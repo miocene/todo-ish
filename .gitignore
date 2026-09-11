@@ -13,7 +13,6 @@ local-notes/
 # Local configuration and credentials
 .env
 .env.*
-!.env.example
 .npmrc
 *.pem
 *.key
