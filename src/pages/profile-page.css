@@ -37,6 +37,7 @@
     border-radius: 50%;
   }
 }
+
 .activity-day h3 {
   display: flex;
   gap: var(--space-3);
