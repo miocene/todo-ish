@@ -180,10 +180,6 @@ test("empty data gets General and cards fit mobile", async ({
       ),
     ).toBe(true),
   );
-  await page.screenshot({
-    path: "test-results/todos-mobile.png",
-    fullPage: true,
-  });
 });
 
 test("individual task deletion persists, restores focus, and preserves only completed activity", async ({
@@ -499,8 +495,4 @@ test("populated mobile cards wrap long names and retain checkbox focus after reo
       ),
     ).toBe(true),
   );
-  await page.screenshot({
-    path: "test-results/todos-populated-mobile.png",
-    fullPage: true,
-  });
 });

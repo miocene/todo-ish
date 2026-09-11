@@ -56,7 +56,15 @@ jobs:
         run: yarn setup --with-deps
 
       - name: Lint, format, test, and build
-        run: yarn quality
+        run: yarn lint && yarn format:check && yarn test:unit && yarn test:api && yarn build
+
+      - name: Test Chrome, Safari, and mobile Safari engines
+        if: matrix.node == '24.19.0'
+        run: yarn test:e2e
+
+      - name: Measure JavaScript coverage
+        if: matrix.node == '24.19.0'
+        run: yarn test:coverage
 
       - name: Verify PostgreSQL round trips and backup restore
         run: yarn test:integration
@@ -75,6 +83,14 @@ jobs:
           node backend/api/test/container-smoke.mjs
         env:
           TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/postgres
+
+      - name: Save JavaScript coverage
+        if: always() && matrix.node == '24.19.0'
+        uses: actions/upload-artifact@v7
+        with:
+          name: javascript-coverage
+          path: coverage/lcov.info
+          if-no-files-found: ignore
 
       - name: Save browser failure traces
         if: failure()

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { Client, Pool } from "pg";
 import { chromium, expect } from "@playwright/test";
@@ -10,10 +10,12 @@ import { runMigrations } from "../src/migrations.mjs";
 import { createAppDataRepository } from "../src/app-data-repository.mjs";
 import { createCatalogRepository } from "../src/catalog-repository.mjs";
 import { createHttpServer } from "../src/http-server.mjs";
+import { createAuthRepository } from "../src/auth-repository.mjs";
+import { createAuthService } from "../src/auth-service.mjs";
 const connectionString = process.env.TEST_DATABASE_URL;
 if (!connectionString)
   throw new Error("Set TEST_DATABASE_URL to a disposable PostgreSQL instance");
-test("real browser legacy storage imports into PostgreSQL and retains its originals", async (t) => {
+async function browserDatabase(t, { authenticated = true } = {}) {
   const suffix = randomUUID().replaceAll("-", "");
   const database = `todo_legacy_${suffix}`;
   const role = `todo_legacy_runtime_${suffix}`;
@@ -73,13 +75,31 @@ test("real browser legacy storage imports into PostgreSQL and retains its origin
     }
   };
   const repository = createAppDataRepository(scoped);
+  const authRepository = createAuthRepository(scoped);
+  const setupCode = randomUUID();
+  await authRepository.provisionUser({
+    user,
+    setupCode: {
+      tokenHash: createHash("sha256").update(setupCode).digest("base64url"),
+      expiresAt: new Date(Date.now() + 600_000),
+    },
+  });
+  const authConfig = {
+    rpID: "localhost",
+    rpName: "Done-ish test",
+    secureCookies: false,
+    challengeTtlSeconds: 300,
+    sessionTtlSeconds: 3600,
+  };
   api = createHttpServer(
     { ...repository, ...createCatalogRepository(scoped) },
-    {
-      session: async () => ({ authenticated: true, user }),
-      requireUser: async () => user,
-    },
-    { authenticationBypass: true },
+    authenticated
+      ? {
+          session: async () => ({ authenticated: true, user }),
+          requireUser: async () => user,
+        }
+      : createAuthService(authRepository, authConfig),
+    { authenticationBypass: authenticated },
   );
   await new Promise((resolve) => api.listen(0, "127.0.0.1", resolve));
   vite = await createViteServer({
@@ -102,11 +122,20 @@ test("real browser legacy storage imports into PostgreSQL and retains its origin
   await vite.listen();
   browser = await chromium.launch();
   const page = await browser.newPage();
+  page.setDefaultTimeout(10_000);
+  page.setDefaultNavigationTimeout(15_000);
   page.on("pageerror", (error) => t.diagnostic(error.message));
   page.on("response", (response) => {
     if (response.status() >= 400)
       t.diagnostic(`${response.status()} ${response.url()}`);
   });
+  const origin = `http://localhost:${vite.httpServer.address().port}`;
+  authConfig.origin = origin;
+  return { page, repository, user, setupCode, origin };
+}
+
+test("real browser legacy storage imports into PostgreSQL and retains its originals", async (t) => {
+  const { page, repository, user, origin } = await browserDatabase(t);
   const legacy = {
     "done-ish.filament-inventory.v1": { "old-filament": 2 },
     "done-ish.floss-inventory.v1": { "old-floss": 3 },
@@ -162,7 +191,6 @@ test("real browser legacy storage imports into PostgreSQL and retains its origin
       if (localStorage.getItem(key) === null)
         localStorage.setItem(key, JSON.stringify(value));
   }, legacy);
-  const origin = `http://127.0.0.1:${vite.httpServer.address().port}`;
   for (const route of ["work", "todos", "printing", "chores"]) {
     await page.goto(`${origin}/${route}`);
     const resource = {
@@ -209,4 +237,71 @@ test("real browser legacy storage imports into PostgreSQL and retains its origin
   await expect(
     page.getByRole("button", { name: /Download .*data/ }),
   ).toHaveCount(0);
+});
+
+test("native passkey setup and sign-in persist a browser edit in PostgreSQL", async (t) => {
+  const { page, repository, user, setupCode, origin } = await browserDatabase(
+    t,
+    { authenticated: false },
+  );
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("WebAuthn.enable");
+  await cdp.send("WebAuthn.addVirtualAuthenticator", {
+    options: {
+      protocol: "ctap2",
+      transport: "internal",
+      hasResidentKey: true,
+      hasUserVerification: true,
+      isUserVerified: true,
+      automaticPresenceSimulation: true,
+    },
+  });
+  const anonymous = await page.request.get(`${origin}/api/data`);
+  assert.equal(anonymous.status(), 401);
+  await page.goto(`${origin}/todos`);
+  await page.getByRole("button", { name: "I have a setup code" }).click();
+  await page.getByLabel("One-time setup code").fill(setupCode);
+  await page
+    .getByRole("button", { name: "Create passkey", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "New list", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Add task to General", exact: true })
+    .click();
+  const title = page
+    .locator("#todo-list-general")
+    .getByRole("textbox", { name: "Task title", exact: true })
+    .last();
+  await title.fill("Persist through real authentication");
+  await title.press("Tab");
+  await expect
+    .poll(
+      async () =>
+        (await repository.read(user.id)).pages.todos.lists
+          .find((list) => list.id === "general")
+          ?.tasks.at(-1)?.title,
+    )
+    .toBe("Persist through real authentication");
+  await page.reload();
+  await expect(
+    page
+      .locator("#todo-list-general")
+      .getByRole("textbox", { name: "Task title", exact: true })
+      .last(),
+  ).toHaveValue("Persist through real authentication");
+  await page.context().clearCookies();
+  await page.reload();
+  await page
+    .getByRole("button", { name: "Sign in with passkey", exact: true })
+    .click();
+  await expect(
+    page
+      .locator("#todo-list-general")
+      .getByRole("textbox", { name: "Task title", exact: true })
+      .last(),
+  ).toHaveValue("Persist through real authentication");
+  const session = await page.request.get(`${origin}/api/auth/session`);
+  assert.equal((await session.json()).user.id, user.id);
 });

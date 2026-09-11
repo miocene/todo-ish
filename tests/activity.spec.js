@@ -1,4 +1,4 @@
-import { test, expect } from "./app-fixture.js";
+import { advisory, test, expect } from "./app-fixture.js";
 
 test("Activity renders a full year of history without initializing resources", async ({
   page,
@@ -23,14 +23,50 @@ test("Activity renders a full year of history without initializing resources", a
   page.on("request", (request) => {
     if (request.method() === "PUT") writes.push(request.url());
   });
-  const started = Date.now();
   await page.goto("/profile");
   await expect(
     page.getByRole("heading", { name: `2000 checked items in ${year}` }),
   ).toBeVisible();
   await expect(page.locator(".activity-day li")).toHaveCount(2000);
-  console.log(
-    `Activity: 2000 rows across one year ready in ${Date.now() - started} ms (including navigation).`,
-  );
   expect(writes).toEqual([]);
+});
+
+test("profile shows yearly task activity and newly checked items", async ({
+  page,
+}) => {
+  const currentYear = new Date().getFullYear();
+  const previousYear = currentYear - 1;
+
+  await page.goto("/todos");
+  await page.getByRole("checkbox", { name: "Complete Renew passport" }).check();
+  await page.getByRole("button", { name: "Profile" }).click();
+  await page.getByRole("link", { name: "Activity", exact: true }).click();
+
+  await expect(
+    page.getByRole("navigation", { name: "Activity years" }).getByRole("link"),
+  ).toHaveCount(5);
+  await advisory((expect) =>
+    expect(
+      page.getByRole("link", { name: String(currentYear), exact: true }),
+    ).toHaveAttribute("aria-current", "page"),
+  );
+  await expect(
+    page.locator(
+      ".jm-activity-graph__days > :not(.jm-activity-graph__cell--outside)",
+    ),
+  ).toHaveCount(currentYear % 4 === 0 ? 366 : 365);
+  await expect(
+    page.getByRole("heading", { level: 2, name: /checked items? in/ }),
+  ).toContainText(String(currentYear));
+  await expect(page.getByText("Renew passport", { exact: true })).toBeVisible();
+
+  await page
+    .getByRole("link", { name: String(previousYear), exact: true })
+    .click();
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get("year"))
+    .toBe(String(previousYear));
+  await expect(
+    page.getByText(`No checked items in ${previousYear}.`),
+  ).toBeVisible();
 });

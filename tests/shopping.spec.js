@@ -328,10 +328,6 @@ test("long manual titles persist and fit mobile", async ({ page }) => {
       ),
     ).toBe(true),
   );
-  await page.screenshot({
-    path: "test-results/shopping-mobile.png",
-    fullPage: true,
-  });
 });
 
 test("manual item limit leaves the existing list intact", async ({

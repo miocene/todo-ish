@@ -34,7 +34,16 @@ async function selectDay(page, day) {
     month: "long",
     year: "numeric",
   }).format(new Date(`${day}T12:00:00`));
-  await page.getByRole("button", { name: new RegExp(`^${label}\\.`) }).click();
+  const target = page.getByRole("button", { name: new RegExp(`^${label}\\.`) });
+  const selectedDate = await selectedCard(page)
+    .locator("time")
+    .getAttribute("datetime");
+  const direction = day < selectedDate ? "Previous" : "Next";
+  for (let row = 0; row < 3 && !(await target.count()); row += 1)
+    await page
+      .getByRole("button", { name: new RegExp(`^${direction} \\d+ days$`) })
+      .click();
+  await target.click();
   await expect(selectedCard(page).locator("time")).toHaveAttribute(
     "datetime",
     day,
@@ -287,16 +296,17 @@ test("Work: row navigation preserves selection and Today restores the visible ra
 }) => {
   await openWork(page);
   await expect(page.locator(".app-sync-status")).toHaveText("");
-  await page.screenshot({ path: "test-results/work-desktop.png" });
   const calendar = page.getByRole("navigation", { name: "Work dates" });
-  await calendar.getByRole("button", { name: "Next 7 days" }).focus();
+  await calendar.getByRole("button", { name: /^Next \d+ days$/ }).focus();
   await advisory((expect) =>
-    expect(calendar.getByRole("button", { name: "Next 7 days" })).toHaveCSS(
+    expect(calendar.getByRole("button", { name: /^Next \d+ days$/ })).toHaveCSS(
       "opacity",
       "1",
     ),
   );
-  await calendar.getByRole("button", { name: "Next 7 days" }).press("Enter");
+  await calendar
+    .getByRole("button", { name: /^Next \d+ days$/ })
+    .press("Enter");
   await expect(page).toHaveURL(/\/work$/);
   await expect(selectedCard(page).locator("time")).toHaveAttribute(
     "datetime",
@@ -322,7 +332,6 @@ test("Work: row navigation preserves selection and Today restores the visible ra
     expect(bounds.x + bounds.width).toBeLessThanOrEqual(360),
   );
   await expect(page.locator(".app-sync-status")).toHaveText("");
-  await page.screenshot({ path: "test-results/work-mobile.png" });
   await page.setViewportSize({ width: 600, height: 800 });
   await expect(
     calendar.getByRole("button", { name: "Next 5 days" }),
@@ -452,7 +461,6 @@ test.describe("Work touch and local dates", () => {
       ).toBeLessThanOrEqual(390),
     );
     await expect(page.locator(".app-sync-status")).toHaveText("");
-    await page.screenshot({ path: "test-results/work-touch.png" });
   });
 
   test("Work: local midnight preserves backdated completions and rolls only unfinished work", async ({

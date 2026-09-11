@@ -13,16 +13,17 @@
     "format": "prettier --write . && backend/.venv/bin/ruff format backend/scripts",
     "format:check": "prettier --check . && backend/.venv/bin/ruff format --check backend/scripts",
     "quality": "yarn lint && yarn format:check && yarn test && yarn build",
-    "test": "yarn test:unit && yarn test:api && yarn test:e2e",
+    "test": "yarn test:unit && yarn test:api && yarn test:e2e && yarn test:coverage",
     "test:api": "yarn --cwd backend/api test",
     "test:unit": "python3 -m unittest backend.scripts.test_update_catalogs && node --test backend/scripts/test_catalogs.mjs backend/scripts/test_catalog_seed.mjs tests/*.unit.js && yarn run audit",
     "test:e2e": "playwright test",
+    "test:integration": "yarn --cwd backend/api test:integration",
+    "test:coverage": "mkdir -p coverage && node --experimental-test-coverage --test-coverage-include=src/app/** --test-coverage-include=backend/api/src/** --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=coverage/lcov.info tests/*.unit.js backend/api/test/*.test.mjs",
     "audit": "node tools/audit_repo.mjs",
     "db:catalogs:seed": "node backend/scripts/build_catalog_seed.mjs",
     "db:generate": "drizzle-kit generate --config=backend/drizzle.config.ts",
     "deploy:pi": "sh backend/scripts/deploy_raspberry_pi.sh",
-    "update:catalogs": "python3 backend/scripts/update_catalogs.py",
-    "test:integration": "yarn --cwd backend/api test:integration"
+    "update:catalogs": "python3 backend/scripts/update_catalogs.py"
   },
   "dependencies": {
     "vue": "^3.5.41",

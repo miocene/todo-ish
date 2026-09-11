@@ -12,9 +12,13 @@ for (const status of [0, 400, 503]) {
     });
     await page.addInitScript(() => {
       globalThis.unknownCredentials = [];
-      Object.defineProperty(navigator.credentials, "create", {
-        value: async () => ({ toJSON: () => ({ id: "new-passkey" }) }),
-      });
+      Object.defineProperty(
+        Object.getPrototypeOf(navigator.credentials),
+        "create",
+        {
+          value: async () => ({ toJSON: () => ({ id: "new-passkey" }) }),
+        },
+      );
       globalThis.PublicKeyCredential.parseCreationOptionsFromJSON = (value) =>
         value;
       globalThis.PublicKeyCredential.signalUnknownCredential = async (value) =>
@@ -56,7 +60,7 @@ test("unknown sign-in credentials use the ceremony RP ID", async ({
   });
   await page.addInitScript(() => {
     globalThis.unknownCredentials = [];
-    Object.defineProperty(navigator.credentials, "get", {
+    Object.defineProperty(Object.getPrototypeOf(navigator.credentials), "get", {
       value: async () => ({ toJSON: () => ({ id: "missing" }) }),
     });
     globalThis.PublicKeyCredential.parseRequestOptionsFromJSON = (value) =>

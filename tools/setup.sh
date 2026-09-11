@@ -9,5 +9,5 @@ yarn install --frozen-lockfile
 yarn --cwd backend/api install --frozen-lockfile
 python3 -m venv backend/.venv
 backend/.venv/bin/python -m pip install -r backend/requirements-dev.txt
-yarn playwright install "$@" chromium
+yarn playwright install "$@" chromium webkit
 git config --local core.hooksPath .githooks

@@ -129,7 +129,6 @@ test("monthly picker fits mobile and clamps dates to month-end", async ({
     "datetime",
     "2026-02-28",
   );
-  await page.screenshot({ path: "test-results/chore-modal-mobile.png" });
   await dialog.getByRole("button", { name: "Add chore", exact: true }).click();
   await expect
     .poll(() => appData.get("chores").tasks[0]?.nextDue)
@@ -424,10 +423,6 @@ test("long chore titles keep mobile actions reachable", async ({
     );
     await expect(button).toBeVisible();
   }
-  await page.screenshot({
-    path: "test-results/chores-long-title.png",
-    fullPage: true,
-  });
 });
 
 test("unchecking and immediately deleting a chore undoes its completion", async ({
