@@ -54,4 +54,4 @@ docker exec todo-postgres psql -U todo_app -d "$restore_db" \
 docker exec todo-postgres dropdb -U todo_app "$restore_db"
 ```
 
-This check does not replace the live database. The integration test verifies an actual dump/restore, replacement with newer data, file permissions, and preservation of the last good dump after a failure. No recurring restore drill or SSD upgrade is required to use this setup. Account JSON export/import in `docs/data-recovery.md` remains an optional manual tool.
+This check does not replace the live database. The integration test verifies an actual dump/restore, replacement with newer data, file permissions, and preservation of the last good dump after a failure. No recurring restore drill or SSD upgrade is required to use this setup.

@@ -1,5 +1,3 @@
-import { validateImportPlan } from "./data-transfer.mjs";
-import { validateAppDataResource } from "./app-data-validation.mjs";
 import { AppDataValidationError } from "./app-data-validation.mjs";
 import { splitHistory } from "./history-transport.mjs";
 import { resourceFromState, setStateResource } from "./app-data-contract.mjs";
@@ -767,9 +765,7 @@ async function replaceResource(pool, resource, data, expectedRevision, userId, h
         `SELECT count(*)::integer AS count FROM ${table} WHERE ${resource === "work-tasks" ? "true" : predicate}`,
       );
       if (count[0].count > 100_000)
-        throw new AppDataValidationError(
-          "This resource has reached its 100,000-entry history limit. Export history before removing entries.",
-        );
+        throw new AppDataValidationError("This resource has reached its 100,000-entry history limit.");
     }
     const updatedRows = await queryRows(
       client,
@@ -783,86 +779,8 @@ async function replaceResource(pool, resource, data, expectedRevision, userId, h
   });
 }
 
-async function restoreAccountData(pool, input) {
-  const plan = validateImportPlan(input);
-  const userId = plan.account.id;
-  const resources = Object.keys(plan.resources);
-  const values = Object.fromEntries(
-    resources.map((resource) => [resource, validateAppDataResource(resource, plan.resources[resource])]),
-  );
-  return transaction(pool, "", userId, async (client) => {
-    const account = await queryRows(client, "SELECT id FROM auth_users WHERE id = $1", [userId]);
-    if (!account.length) throw new AppDataValidationError("The import account no longer exists");
-    // Same inventory-first ordering as purchases, followed by all remaining resources.
-    const order = [
-      "filament-inventory",
-      "floss-inventory",
-      ...APP_DATA_RESOURCES.filter((resource) => !resource.endsWith("-inventory")),
-    ];
-    for (const resource of order.filter(
-      (resource) => resources.includes(resource) || resource.endsWith("-inventory"),
-    )) {
-      const scope = SHARED_APP_DATA_RESOURCES.includes(resource) ? "" : userId;
-      await client.query({
-        text: "INSERT INTO app_data_revisions(scope,resource,revision) VALUES ($1,$2,0) ON CONFLICT DO NOTHING",
-        values: [scope, resource],
-      });
-      const row = (
-        await queryRows(client, "SELECT revision FROM app_data_revisions WHERE scope=$1 AND resource=$2 FOR UPDATE", [
-          scope,
-          resource,
-        ])
-      )[0];
-      if (resources.includes(resource) && row.revision !== plan.revisions[resource])
-        throw new AppDataRevisionConflictError(resource, plan.revisions[resource], row.revision);
-    }
-    // Plans contain complete, validated snapshots. RLS restricts every private table.
-    for (const resource of resources) {
-      if (resource === "colors") await client.query("DELETE FROM colors");
-      if (resource === "chores") {
-        await client.query("DELETE FROM chore_occurrences");
-        await client.query("DELETE FROM chores");
-      }
-      if (resource === "todos") {
-        await client.query("DELETE FROM todo_items");
-        await client.query("DELETE FROM todo_lists");
-      }
-      await WRITERS[resource](client, values[resource], userId);
-      const scope = SHARED_APP_DATA_RESOURCES.includes(resource) ? "" : userId;
-      await client.query({
-        text: "UPDATE app_data_revisions SET revision=revision+1,updated_at=now() WHERE scope=$1 AND resource=$2",
-        values: [scope, resource],
-      });
-    }
-    // Restored purchase history is historical evidence, not a fresh stock purchase.
-    const shopping = values.shopping;
-    const purchases = [...shopping.tasks, ...(shopping.history ?? [])].filter((item) => item.source);
-    await client.query({
-      text: "UPDATE supply_purchase_receipts SET reversed=true WHERE NOT(id=ANY($1::text[]))",
-      values: [purchases.map((item) => item.id)],
-    });
-    await upsertRows(
-      client,
-      "supply_purchase_receipts",
-      ["user_id", "id", "source", "catalog_id", "quantity", "reversed", "reversed_quantity"],
-      purchases.map((item) => [
-        userId,
-        item.id,
-        item.source,
-        item.filamentId ?? item.flossId,
-        item.quantity,
-        false,
-        null,
-      ]),
-      { keys: ["user_id", "id"], updatedAt: false },
-    );
-    return { userId, resources };
-  });
-}
-
 export function createAppDataRepository(pool) {
   return {
-    restore: (plan) => restoreAccountData(pool, plan),
     revisions: (userId) =>
       transaction(pool, "READ ONLY", userId, async (client) => {
         const rows = await queryRows(client, "SELECT resource, revision FROM app_data_revisions ORDER BY resource");
