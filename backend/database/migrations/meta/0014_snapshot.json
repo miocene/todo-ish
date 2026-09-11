@@ -40,10 +40,7 @@
       "compositePrimaryKeys": {
         "app_data_revisions_scope_resource_pk": {
           "name": "app_data_revisions_scope_resource_pk",
-          "columns": [
-            "scope",
-            "resource"
-          ]
+          "columns": ["scope", "resource"]
         }
       },
       "uniqueConstraints": {},
@@ -52,9 +49,7 @@
           "name": "revisions_access",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"app_data_revisions\".\"scope\" = '' OR \"app_data_revisions\".\"scope\" = nullif(current_setting('app.user_id', true), '')",
           "withCheck": "\"app_data_revisions\".\"scope\" = '' OR \"app_data_revisions\".\"scope\" = nullif(current_setting('app.user_id', true), '')"
         }
@@ -234,12 +229,8 @@
           "name": "auth_sessions_user_id_auth_users_id_fk",
           "tableFrom": "auth_sessions",
           "tableTo": "auth_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -291,12 +282,8 @@
           "name": "auth_setup_codes_user_id_auth_users_id_fk",
           "tableFrom": "auth_setup_codes",
           "tableTo": "auth_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -453,12 +440,8 @@
           "name": "chore_occurrences_chore_id_chores_id_fk",
           "tableFrom": "chore_occurrences",
           "tableTo": "chores",
-          "columnsFrom": [
-            "chore_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["chore_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -466,10 +449,7 @@
       "compositePrimaryKeys": {
         "chore_occurrences_chore_id_due_on_pk": {
           "name": "chore_occurrences_chore_id_due_on_pk",
-          "columns": [
-            "chore_id",
-            "due_on"
-          ]
+          "columns": ["chore_id", "due_on"]
         }
       },
       "uniqueConstraints": {},
@@ -599,12 +579,8 @@
           "name": "colors_user_id_auth_users_id_fk",
           "tableFrom": "colors",
           "tableTo": "auth_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -612,10 +588,7 @@
       "compositePrimaryKeys": {
         "colors_user_id_id_pk": {
           "name": "colors_user_id_id_pk",
-          "columns": [
-            "user_id",
-            "id"
-          ]
+          "columns": ["user_id", "id"]
         }
       },
       "uniqueConstraints": {},
@@ -624,9 +597,7 @@
           "name": "colors_user_access",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"colors\".\"user_id\" = nullif(current_setting('app.user_id', true), '')",
           "withCheck": "\"colors\".\"user_id\" = nullif(current_setting('app.user_id', true), '')"
         }
@@ -698,12 +669,8 @@
           "name": "completed_project_tasks_user_id_auth_users_id_fk",
           "tableFrom": "completed_project_tasks",
           "tableTo": "auth_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -711,11 +678,7 @@
       "compositePrimaryKeys": {
         "completed_project_tasks_user_id_resource_id_pk": {
           "name": "completed_project_tasks_user_id_resource_id_pk",
-          "columns": [
-            "user_id",
-            "resource",
-            "id"
-          ]
+          "columns": ["user_id", "resource", "id"]
         }
       },
       "uniqueConstraints": {},
@@ -724,9 +687,7 @@
           "name": "completed_project_tasks_user_access",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"completed_project_tasks\".\"user_id\" = nullif(current_setting('app.user_id', true), '')",
           "withCheck": "\"completed_project_tasks\".\"user_id\" = nullif(current_setting('app.user_id', true), '')"
         }
@@ -922,10 +883,7 @@
       "compositePrimaryKeys": {
         "manual_shopping_items_scope_id_pk": {
           "name": "manual_shopping_items_scope_id_pk",
-          "columns": [
-            "scope",
-            "id"
-          ]
+          "columns": ["scope", "id"]
         }
       },
       "uniqueConstraints": {},
@@ -934,9 +892,7 @@
           "name": "shopping_access",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"manual_shopping_items\".\"scope\" = '' OR \"manual_shopping_items\".\"scope\" = nullif(current_setting('app.user_id', true), '')",
           "withCheck": "\"manual_shopping_items\".\"scope\" = '' OR \"manual_shopping_items\".\"scope\" = nullif(current_setting('app.user_id', true), '')"
         }
@@ -1051,12 +1007,8 @@
           "name": "passkey_credentials_user_id_auth_users_id_fk",
           "tableFrom": "passkey_credentials",
           "tableTo": "auth_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1175,12 +1127,8 @@
           "name": "printing_item_filaments_user_id_auth_users_id_fk",
           "tableFrom": "printing_item_filaments",
           "tableTo": "auth_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1188,14 +1136,8 @@
           "name": "printing_item_filaments_user_id_printing_item_id_printing_items_user_id_id_fk",
           "tableFrom": "printing_item_filaments",
           "tableTo": "printing_items",
-          "columnsFrom": [
-            "user_id",
-            "printing_item_id"
-          ],
-          "columnsTo": [
-            "user_id",
-            "id"
-          ],
+          "columnsFrom": ["user_id", "printing_item_id"],
+          "columnsTo": ["user_id", "id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1203,10 +1145,7 @@
       "compositePrimaryKeys": {
         "printing_item_filaments_user_id_id_pk": {
           "name": "printing_item_filaments_user_id_id_pk",
-          "columns": [
-            "user_id",
-            "id"
-          ]
+          "columns": ["user_id", "id"]
         }
       },
       "uniqueConstraints": {},
@@ -1215,9 +1154,7 @@
           "name": "printing_item_filaments_user_access",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"printing_item_filaments\".\"user_id\" = nullif(current_setting('app.user_id', true), '')",
           "withCheck": "\"printing_item_filaments\".\"user_id\" = nullif(current_setting('app.user_id', true), '')"
         }
@@ -1341,12 +1278,8 @@
           "name": "printing_items_user_id_auth_users_id_fk",
           "tableFrom": "printing_items",
           "tableTo": "auth_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1354,14 +1287,8 @@
           "name": "printing_items_user_id_project_id_printing_projects_user_id_id_fk",
           "tableFrom": "printing_items",
           "tableTo": "printing_projects",
-          "columnsFrom": [
-            "user_id",
-            "project_id"
-          ],
-          "columnsTo": [
-            "user_id",
-            "id"
-          ],
+          "columnsFrom": ["user_id", "project_id"],
+          "columnsTo": ["user_id", "id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1369,10 +1296,7 @@
       "compositePrimaryKeys": {
         "printing_items_user_id_id_pk": {
           "name": "printing_items_user_id_id_pk",
-          "columns": [
-            "user_id",
-            "id"
-          ]
+          "columns": ["user_id", "id"]
         }
       },
       "uniqueConstraints": {},
@@ -1381,9 +1305,7 @@
           "name": "printing_items_user_access",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"printing_items\".\"user_id\" = nullif(current_setting('app.user_id', true), '')",
           "withCheck": "\"printing_items\".\"user_id\" = nullif(current_setting('app.user_id', true), '')"
         }
@@ -1467,12 +1389,8 @@
           "name": "printing_projects_user_id_auth_users_id_fk",
           "tableFrom": "printing_projects",
           "tableTo": "auth_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1480,10 +1398,7 @@
       "compositePrimaryKeys": {
         "printing_projects_user_id_id_pk": {
           "name": "printing_projects_user_id_id_pk",
-          "columns": [
-            "user_id",
-            "id"
-          ]
+          "columns": ["user_id", "id"]
         }
       },
       "uniqueConstraints": {},
@@ -1492,9 +1407,7 @@
           "name": "printing_projects_user_access",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"printing_projects\".\"user_id\" = nullif(current_setting('app.user_id', true), '')",
           "withCheck": "\"printing_projects\".\"user_id\" = nullif(current_setting('app.user_id', true), '')"
         }
@@ -1660,12 +1573,8 @@
           "name": "stitch_project_threads_user_id_auth_users_id_fk",
           "tableFrom": "stitch_project_threads",
           "tableTo": "auth_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1673,14 +1582,8 @@
           "name": "stitch_project_threads_user_id_project_id_stitch_projects_user_id_id_fk",
           "tableFrom": "stitch_project_threads",
           "tableTo": "stitch_projects",
-          "columnsFrom": [
-            "user_id",
-            "project_id"
-          ],
-          "columnsTo": [
-            "user_id",
-            "id"
-          ],
+          "columnsFrom": ["user_id", "project_id"],
+          "columnsTo": ["user_id", "id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1688,10 +1591,7 @@
       "compositePrimaryKeys": {
         "stitch_project_threads_user_id_id_pk": {
           "name": "stitch_project_threads_user_id_id_pk",
-          "columns": [
-            "user_id",
-            "id"
-          ]
+          "columns": ["user_id", "id"]
         }
       },
       "uniqueConstraints": {},
@@ -1700,9 +1600,7 @@
           "name": "stitch_project_threads_user_access",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"stitch_project_threads\".\"user_id\" = nullif(current_setting('app.user_id', true), '')",
           "withCheck": "\"stitch_project_threads\".\"user_id\" = nullif(current_setting('app.user_id', true), '')"
         }
@@ -1802,12 +1700,8 @@
           "name": "stitch_projects_user_id_auth_users_id_fk",
           "tableFrom": "stitch_projects",
           "tableTo": "auth_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1815,10 +1709,7 @@
       "compositePrimaryKeys": {
         "stitch_projects_user_id_id_pk": {
           "name": "stitch_projects_user_id_id_pk",
-          "columns": [
-            "user_id",
-            "id"
-          ]
+          "columns": ["user_id", "id"]
         }
       },
       "uniqueConstraints": {},
@@ -1827,9 +1718,7 @@
           "name": "stitch_projects_user_access",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"stitch_projects\".\"user_id\" = nullif(current_setting('app.user_id', true), '')",
           "withCheck": "\"stitch_projects\".\"user_id\" = nullif(current_setting('app.user_id', true), '')"
         }
@@ -1916,12 +1805,8 @@
           "name": "supply_purchase_receipts_user_id_auth_users_id_fk",
           "tableFrom": "supply_purchase_receipts",
           "tableTo": "auth_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1929,10 +1814,7 @@
       "compositePrimaryKeys": {
         "supply_purchase_receipts_user_id_id_pk": {
           "name": "supply_purchase_receipts_user_id_id_pk",
-          "columns": [
-            "user_id",
-            "id"
-          ]
+          "columns": ["user_id", "id"]
         }
       },
       "uniqueConstraints": {},
@@ -1941,9 +1823,7 @@
           "name": "supply_purchase_receipts_user_access",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"supply_purchase_receipts\".\"user_id\" = nullif(current_setting('app.user_id', true), '')",
           "withCheck": "\"supply_purchase_receipts\".\"user_id\" = nullif(current_setting('app.user_id', true), '')"
         }
@@ -2050,12 +1930,8 @@
           "name": "todo_items_user_id_auth_users_id_fk",
           "tableFrom": "todo_items",
           "tableTo": "auth_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2063,14 +1939,8 @@
           "name": "todo_items_user_id_list_id_todo_lists_user_id_id_fk",
           "tableFrom": "todo_items",
           "tableTo": "todo_lists",
-          "columnsFrom": [
-            "user_id",
-            "list_id"
-          ],
-          "columnsTo": [
-            "user_id",
-            "id"
-          ],
+          "columnsFrom": ["user_id", "list_id"],
+          "columnsTo": ["user_id", "id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2078,10 +1948,7 @@
       "compositePrimaryKeys": {
         "todo_items_user_id_id_pk": {
           "name": "todo_items_user_id_id_pk",
-          "columns": [
-            "user_id",
-            "id"
-          ]
+          "columns": ["user_id", "id"]
         }
       },
       "uniqueConstraints": {},
@@ -2090,9 +1957,7 @@
           "name": "todo_items_user_access",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"todo_items\".\"user_id\" = nullif(current_setting('app.user_id', true), '')",
           "withCheck": "\"todo_items\".\"user_id\" = nullif(current_setting('app.user_id', true), '')"
         }
@@ -2169,12 +2034,8 @@
           "name": "todo_lists_user_id_auth_users_id_fk",
           "tableFrom": "todo_lists",
           "tableTo": "auth_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2182,10 +2043,7 @@
       "compositePrimaryKeys": {
         "todo_lists_user_id_id_pk": {
           "name": "todo_lists_user_id_id_pk",
-          "columns": [
-            "user_id",
-            "id"
-          ]
+          "columns": ["user_id", "id"]
         }
       },
       "uniqueConstraints": {},
@@ -2194,9 +2052,7 @@
           "name": "todo_lists_user_access",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"todo_lists\".\"user_id\" = nullif(current_setting('app.user_id', true), '')",
           "withCheck": "\"todo_lists\".\"user_id\" = nullif(current_setting('app.user_id', true), '')"
         }
@@ -2246,12 +2102,8 @@
           "name": "user_preferences_user_id_auth_users_id_fk",
           "tableFrom": "user_preferences",
           "tableTo": "auth_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2263,9 +2115,7 @@
           "name": "user_preferences_user_access",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"user_preferences\".\"user_id\" = nullif(current_setting('app.user_id', true), '')",
           "withCheck": "\"user_preferences\".\"user_id\" = nullif(current_setting('app.user_id', true), '')"
         }
@@ -2310,12 +2160,8 @@
           "name": "work_day_statuses_user_id_auth_users_id_fk",
           "tableFrom": "work_day_statuses",
           "tableTo": "auth_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2323,10 +2169,7 @@
       "compositePrimaryKeys": {
         "work_day_statuses_user_id_work_date_pk": {
           "name": "work_day_statuses_user_id_work_date_pk",
-          "columns": [
-            "user_id",
-            "work_date"
-          ]
+          "columns": ["user_id", "work_date"]
         }
       },
       "uniqueConstraints": {},
@@ -2335,9 +2178,7 @@
           "name": "work_day_statuses_user_access",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"work_day_statuses\".\"user_id\" = nullif(current_setting('app.user_id', true), '')",
           "withCheck": "\"work_day_statuses\".\"user_id\" = nullif(current_setting('app.user_id', true), '')"
         }
@@ -2456,12 +2297,8 @@
           "name": "work_tasks_user_id_auth_users_id_fk",
           "tableFrom": "work_tasks",
           "tableTo": "auth_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2469,10 +2306,7 @@
       "compositePrimaryKeys": {
         "work_tasks_user_id_id_pk": {
           "name": "work_tasks_user_id_id_pk",
-          "columns": [
-            "user_id",
-            "id"
-          ]
+          "columns": ["user_id", "id"]
         }
       },
       "uniqueConstraints": {},
@@ -2481,9 +2315,7 @@
           "name": "work_tasks_user_access",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"work_tasks\".\"user_id\" = nullif(current_setting('app.user_id', true), '')",
           "withCheck": "\"work_tasks\".\"user_id\" = nullif(current_setting('app.user_id', true), '')"
         }
@@ -2582,12 +2414,8 @@
           "name": "filament_catalog_entries_snapshot_id_filament_catalog_snapshots_id_fk",
           "tableFrom": "filament_catalog_entries",
           "tableTo": "filament_catalog_snapshots",
-          "columnsFrom": [
-            "snapshot_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["snapshot_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2595,10 +2423,7 @@
       "compositePrimaryKeys": {
         "filament_catalog_entries_snapshot_id_catalog_id_pk": {
           "name": "filament_catalog_entries_snapshot_id_catalog_id_pk",
-          "columns": [
-            "snapshot_id",
-            "catalog_id"
-          ]
+          "columns": ["snapshot_id", "catalog_id"]
         }
       },
       "uniqueConstraints": {},
@@ -2683,9 +2508,7 @@
         "filament_catalog_snapshots_content_sha256_unique": {
           "name": "filament_catalog_snapshots_content_sha256_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "content_sha256"
-          ]
+          "columns": ["content_sha256"]
         }
       },
       "policies": {},
@@ -2783,12 +2606,8 @@
           "name": "floss_catalog_entries_snapshot_id_floss_catalog_snapshots_id_fk",
           "tableFrom": "floss_catalog_entries",
           "tableTo": "floss_catalog_snapshots",
-          "columnsFrom": [
-            "snapshot_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["snapshot_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2796,10 +2615,7 @@
       "compositePrimaryKeys": {
         "floss_catalog_entries_snapshot_id_catalog_id_pk": {
           "name": "floss_catalog_entries_snapshot_id_catalog_id_pk",
-          "columns": [
-            "snapshot_id",
-            "catalog_id"
-          ]
+          "columns": ["snapshot_id", "catalog_id"]
         }
       },
       "uniqueConstraints": {},
@@ -2884,9 +2700,7 @@
         "floss_catalog_snapshots_content_sha256_unique": {
           "name": "floss_catalog_snapshots_content_sha256_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "content_sha256"
-          ]
+          "columns": ["content_sha256"]
         }
       },
       "policies": {},

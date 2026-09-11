@@ -46,8 +46,9 @@
   color: var(--color-text-secondary);
   font-weight: normal;
 
-  &::before, &::after {
-    content: '';
+  &::before,
+  &::after {
+    content: "";
     flex-grow: 1;
     height: 1px;
     background-color: var(--control-default-border);
