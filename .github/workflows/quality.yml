@@ -62,6 +62,9 @@ jobs:
         if: matrix.node == '24.19.0'
         run: yarn test:coverage
 
+      - name: Install Chromium for database browser integration tests
+        run: yarn playwright install --with-deps chromium
+
       - name: Verify PostgreSQL round trips and backup restore
         run: yarn test:integration
         env:
