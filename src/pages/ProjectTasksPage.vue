@@ -390,17 +390,24 @@ export default {
       this.save();
       this.updateProjectPosition(project);
     },
-    updateCompleted(project, task, completed) {
-      if (this.isCrossStitch) {
-        const previous = {
-          tasks: project.tasks.map((item) => ({
-            id: item.id,
-            crossesDone: item.crossesDone,
-          })),
-        };
-        task.crossesDone = completed ? task.crosses : 0;
-        recordProjectActivity(this.pageData.history, project, previous, true);
+    saveCrossesDone(project, task, value) {
+      if (task.crossesDone === value) return;
+      const wasCompleted = task.completed;
+      const previous = {
+        tasks: project.tasks.map((item) => ({
+          id: item.id,
+          crossesDone: item.crossesDone,
+        })),
+      };
+      this.updateCrossesDone(task, value);
+      recordProjectActivity(this.pageData.history, project, previous, true);
+      this.save();
+      if (wasCompleted !== task.completed) {
+        this.editor.scheduleMove(task, task.completed, project.tasks);
+        this.updateProjectPosition(project);
       }
+    },
+    updateCompleted(project, task, completed) {
       setTaskCompletion(task, completed);
       this.save();
       this.editor.scheduleMove(task, completed, project.tasks);
@@ -657,7 +664,7 @@ export default {
           :completed="task.completed"
           :editable="false"
           removable
-          :completion-disabled="isCrossStitch && task.crosses <= 0"
+          :completable="isPrinting"
           :remove-label="`Remove ${task.title || 'item'} from ${project.title}`"
           @remove="removeTask(project, task)"
           @update:completed="updateCompleted(project, task, $event)"
@@ -671,9 +678,10 @@ export default {
             />
             <JMStitchTaskDetails
               v-else
-              readonly
+              inline
               :task="task"
               :supply-by-id="flossSupplyById"
+              @update:crosses-done="saveCrossesDone(project, task, $event)"
             />
           </template>
         </JMTaskItem>

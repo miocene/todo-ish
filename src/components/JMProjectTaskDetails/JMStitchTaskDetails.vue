@@ -4,13 +4,13 @@ import {
   flossById,
   flossOptions,
 } from "../../app/floss-catalog.js";
-import JMProgress from "../JMProgress/JMProgress.vue";
+import "./jm-stitch-task-details.css";
 import JMInput from "../JMInput/JMInput.vue";
 import JMSelect from "../JMSelect/JMSelect.vue";
 
 export default {
   name: "JMStitchTaskDetails",
-  components: { JMInput, JMSelect, JMProgress },
+  components: { JMInput, JMSelect },
   emits: [
     "update:crosses",
     "update:crosses-done",
@@ -18,7 +18,7 @@ export default {
     "update:skeins",
   ],
   props: {
-    readonly: { type: Boolean, default: false },
+    inline: { type: Boolean, default: false },
     supplyById: { type: Map, required: true },
     task: { type: Object, required: true },
   },
@@ -50,6 +50,10 @@ export default {
     },
   },
   methods: {
+    saveCrossesDone(event) {
+      if (event.target.reportValidity())
+        this.$emit("update:crosses-done", event.target.valueAsNumber);
+    },
     inputId(field) {
       return `stitch-${field}-${this.task.id}`;
     },
@@ -58,20 +62,28 @@ export default {
 </script>
 
 <template>
-  <template v-if="readonly">
-    <p>
-      {{ task.requiredSkeins }}
-      {{ task.requiredSkeins === 1 ? "skein" : "skeins" }} ·
-      {{ task.crossesDone }} / {{ task.crosses }} crosses
-    </p>
-    <span v-if="isMissing && !task.completed" class="stitch-color__missing">{{
-      missingStatus
-    }}</span>
-    <JMProgress
-      :value="task.crossesDone"
-      :max="task.crosses"
-      :label="`Crosses completed for ${task.title}`"
-    />
+  <template v-if="inline">
+    <p v-if="task.completed">{{ task.crosses }} stitches</p>
+    <div v-else class="stitch-count">
+      <JMInput
+        :id="inputId('inline-done')"
+        name="stitch-crosses-done"
+        type="number"
+        size="s"
+        view="ghost"
+        inputmode="numeric"
+        enterkeyhint="done"
+        required
+        min="0"
+        :max="task.crosses"
+        step="1"
+        :aria-label="`Stitches done for ${task.title}`"
+        :model-value="task.crossesDone"
+        @change="saveCrossesDone"
+        @keydown.enter.prevent="$event.target.blur()"
+      />
+      <span>/ {{ task.crosses }} stitches</span>
+    </div>
   </template>
   <fieldset
     v-else
@@ -134,12 +146,6 @@ export default {
       step="1"
       :model-value="task.crosses"
       @update:model-value="$emit('update:crosses', $event)"
-    />
-    <JMProgress
-      class="stitch-color__progress"
-      :value="task.crossesDone"
-      :max="task.crosses"
-      :label="`${task.crossesDone.toLocaleString()} / ${task.crosses.toLocaleString()} crosses for ${task.title}`"
     />
   </fieldset>
 </template>

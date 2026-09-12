@@ -1,5 +1,26 @@
 import { advisory, test, expect } from "./app-fixture.js";
 
+async function setCompleted(card, path, completed) {
+  if (path === "printing") {
+    await card.getByRole("checkbox").first().setChecked(completed);
+  } else if (completed) {
+    const input = card.getByRole("spinbutton").first();
+    await input.fill(await input.getAttribute("max"));
+    await input.blur();
+  } else {
+    await card.getByLabel(/^Actions for/).click();
+    await card.getByRole("button", { name: "Edit", exact: true }).click();
+    const dialog = card.page().getByRole("dialog", { name: "Edit project" });
+    await dialog
+      .getByRole("spinbutton", { name: "Crosses done", exact: true })
+      .last()
+      .fill("0");
+    await dialog
+      .getByRole("button", { name: "Save project", exact: true })
+      .click();
+  }
+}
+
 for (const [path, resource] of [
   ["printing", "printing"],
   ["cross-stitch", "cross-stitch"],
@@ -85,7 +106,7 @@ for (const [path, resource] of [
   ["printing", "printing"],
   ["cross-stitch", "cross-stitch"],
 ]) {
-  test(`${path}: page is readonly and edits and additions stay in the modal until saved`, async ({
+  test(`${path}: project details and additions stay in the modal until saved`, async ({
     page,
     appData,
   }) => {
@@ -115,9 +136,7 @@ for (const [path, resource] of [
     });
     await page.goto(`/${path}`);
     const card = page.locator(".project-card").first();
-    await expect(
-      card.locator('textarea, select, input:not([type="checkbox"])'),
-    ).toHaveCount(0);
+    await expect(card.locator("textarea, select")).toHaveCount(0);
     await card.getByLabel("Actions for Project", { exact: true }).click();
     await card.getByRole("button", { name: "Edit", exact: true }).click();
     const modal = page.getByRole("dialog", {
@@ -162,25 +181,27 @@ for (const [path, resource] of [
       .toBe(2);
     await page.reload();
     await expect(card.getByRole("heading", { name: /^Renamed/ })).toBeVisible();
-    const checkbox = card.getByRole("checkbox").first();
-    await checkbox.check();
+    await setCompleted(card, path, true);
     await expect
       .poll(() =>
         appData.get(resource).projects[0].tasks.some((task) => task.completed),
       )
       .toBe(true);
-    await checkbox.uncheck();
-    await expect
-      .poll(() =>
-        appData
-          .get(resource)
-          .projects[0].tasks.every((task) => !task.completed),
-      )
-      .toBe(true);
-    await card.getByRole("checkbox").first().check();
+    if (path === "printing") {
+      await setCompleted(card, path, false);
+      await expect
+        .poll(() =>
+          appData
+            .get(resource)
+            .projects[0].tasks.every((task) => !task.completed),
+        )
+        .toBe(true);
+      await setCompleted(card, path, true);
+    }
     await card
-      .getByRole("button", { name: /^Remove .* from Renamed$/ })
+      .locator(".task-item.completed")
       .first()
+      .getByRole("button", { name: /^Remove .* from Renamed$/ })
       .click();
     if (path === "cross-stitch") {
       await expect
@@ -240,9 +261,10 @@ for (const path of ["printing", "cross-stitch"]) {
     await expect(
       page.getByRole("button", { name: "Expand Old", exact: true }),
     ).toBeVisible();
-    await page
-      .getByRole("checkbox", { name: "Complete Target task", exact: true })
-      .check();
+    const target = page.locator(".project-card").filter({
+      has: page.getByRole("heading", { name: /^Target/ }),
+    });
+    await setCompleted(target, path, true);
     await page.clock.runFor(600);
     await expect(
       page.getByRole("button", { name: "Expand Target", exact: true }),
@@ -257,16 +279,15 @@ for (const path of ["printing", "cross-stitch"]) {
     await page
       .getByRole("button", { name: "Expand Target", exact: true })
       .click();
-    await page
-      .getByRole("checkbox", { name: "Complete Target task", exact: true })
-      .uncheck();
+    await setCompleted(target, path, false);
     await page.clock.runFor(600);
     await expect(
       page.getByRole("button", { name: "Collapse Target", exact: true }),
     ).toBeVisible();
-    await page
-      .getByRole("checkbox", { name: "Complete Active task", exact: true })
-      .check();
+    const active = page.locator(".project-card").filter({
+      has: page.getByRole("heading", { name: /^Active/ }),
+    });
+    await setCompleted(active, path, true);
     await page.clock.runFor(600);
     await expect
       .poll(() => appData.get(path).projects.map((item) => item.id))

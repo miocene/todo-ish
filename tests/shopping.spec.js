@@ -273,7 +273,12 @@ test("cross-stitch item deletion retains recorded stitches after reload", async 
   appData,
 }) => {
   await page.goto("/cross-stitch");
-  await page.getByRole("checkbox", { name: "Complete Black thread" }).check();
+  const input = page.getByRole("spinbutton", {
+    name: "Stitches done for Black thread",
+    exact: true,
+  });
+  await input.fill("100");
+  await input.blur();
   await expect
     .poll(() => appData.get("cross-stitch").history?.[0]?.event?.stitches)
     .toBe(100);

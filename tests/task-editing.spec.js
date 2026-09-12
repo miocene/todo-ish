@@ -110,13 +110,17 @@ test("items move down when checked and back up when unchecked after the completi
 
   await page.goto("/cross-stitch");
   const stitch = page.locator(".project-card").first();
-  const checkboxes = stitch.getByRole("checkbox");
-  const firstId = await checkboxes.first().getAttribute("id");
-  const checkbox = page.locator(`#${firstId}`);
-  await checkbox.check();
+  const item = stitch.locator(".task-item").first();
+  const title = await item.locator(".title").innerText();
+  const input = item.getByRole("spinbutton");
+  const total = await input.getAttribute("max");
+  await input.fill(total);
+  await input.blur();
   await page.clock.runFor(600);
-  await expect(checkboxes.last()).toHaveAttribute("id", firstId);
-  await checkbox.uncheck();
-  await page.clock.runFor(600);
-  await expect(checkboxes.first()).toHaveAttribute("id", firstId);
+  const completed = stitch.locator(".task-item").last();
+  await expect(completed.locator(".title")).toHaveText(title);
+  await expect(completed.getByRole("spinbutton")).toHaveCount(0);
+  await expect(
+    completed.getByText(`${total} stitches`, { exact: true }),
+  ).toBeVisible();
 });

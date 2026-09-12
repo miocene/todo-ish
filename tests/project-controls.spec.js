@@ -29,37 +29,88 @@ test("project weight edits persist after reload", async ({ page, appData }) => {
   await expect(weight).toHaveValue("10");
 });
 
-test("partial stitch edits update progress without completing the item", async ({
-  page,
-  appData,
-}) => {
-  await page.goto("/cross-stitch");
-  await editFirst(page);
-  const done = page
-    .getByRole("spinbutton", { name: "Crosses done", exact: true })
-    .first();
-  const total = page
-    .getByRole("spinbutton", { name: "Crosses total", exact: true })
-    .first();
-  await done.fill("0");
-  await total.fill("2");
-  await done.fill("1");
+test(
+  "inline stitch counts save, update project progress, and recover failed saves",
+  { tag: "@smoke" },
+  async ({ page, appData }) => {
+    appData.set("cross-stitch", {
+      projects: [
+        {
+          id: "p",
+          title: "Flowers",
+          description: "",
+          color: 1,
+          tasks: [
+            {
+              id: "t",
+              title: "Black",
+              flossId: "dmc310",
+              requiredSkeins: 1,
+              crosses: 100,
+              crossesDone: 0,
+              completed: false,
+            },
+          ],
+        },
+      ],
+      history: [],
+    });
+    await page.goto("/cross-stitch");
+    const card = page.locator(".project-card");
+    const done = card.getByRole("spinbutton", {
+      name: "Stitches done for Black",
+      exact: true,
+    });
+    await expect(card.getByRole("checkbox")).toHaveCount(0);
+    await expect(card.getByRole("progressbar")).toHaveCount(1);
+    await done.fill("35");
+    await done.press("Enter");
+    await expect
+      .poll(() => appData.get("cross-stitch").projects[0].tasks[0].crossesDone)
+      .toBe(35);
+    await expect(card.getByRole("progressbar")).toHaveAttribute("value", "35");
+    await page.reload();
+    await expect(done).toHaveValue("35");
 
-  await expect(
-    page.locator(".stitch-color__progress progress").first(),
-  ).toHaveAttribute("value", "1");
-  await expect(
-    page.locator(".stitch-color__progress progress").first(),
-  ).toHaveAttribute("max", "2");
-  await save(page);
-  await expect
-    .poll(() => appData.get("cross-stitch")?.projects[0].tasks[0].crossesDone)
-    .toBe(1);
-  expect(appData.get("cross-stitch").projects[0].tasks[0].completed).toBe(
-    false,
-  );
-  expect(appData.validationErrors).toEqual([]);
-});
+    // An invalid inline edit must never reach saved data or Activity.
+    await done.fill("101");
+    await done.blur();
+    expect(appData.get("cross-stitch").projects[0].tasks[0].crossesDone).toBe(
+      35,
+    );
+    expect(appData.get("cross-stitch").history).toHaveLength(1);
+
+    appData.setWriteFailure("cross-stitch", 503);
+    await done.fill("40");
+    await done.blur();
+    await expect(
+      page.getByRole("button", { name: "Download local edits" }),
+    ).toBeVisible();
+    appData.setWriteFailure("cross-stitch", 0);
+    await page.reload();
+    await expect(done).toHaveValue("40");
+    await expect
+      .poll(() => appData.get("cross-stitch").projects[0].tasks[0].crossesDone)
+      .toBe(40);
+    expect(
+      appData
+        .get("cross-stitch")
+        .history.reduce((total, item) => total + item.event.stitches, 0),
+    ).toBe(40);
+    await done.fill("100");
+    await done.blur();
+    await expect
+      .poll(() => appData.get("cross-stitch").projects[0].tasks[0].completed)
+      .toBe(true);
+    await expect(done).toHaveCount(0);
+    await page.reload();
+    await card
+      .getByRole("button", { name: "Expand Flowers", exact: true })
+      .click();
+    await expect(card.getByText("100 stitches", { exact: true })).toBeVisible();
+    await expect(done).toHaveCount(0);
+  },
+);
 
 test("filament selects show catalog swatches in options and selected values", async ({
   page,

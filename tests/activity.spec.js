@@ -121,14 +121,12 @@ test("saved partial stitching appears as daily project totals after reload", asy
   });
   await page.goto("/cross-stitch");
   for (const amount of [20, 35]) {
-    const card = page.locator(".project-card").first();
-    await card.getByLabel(/^Actions for/).click();
-    await card.getByRole("button", { name: "Edit", exact: true }).click();
-    const dialog = page.getByRole("dialog", { name: "Edit project" });
-    await dialog
-      .getByRole("spinbutton", { name: "Crosses done", exact: true })
-      .fill(String(amount));
-    await dialog.getByRole("button", { name: "Save project" }).click();
+    const input = page.getByRole("spinbutton", {
+      name: "Stitches done for Black",
+      exact: true,
+    });
+    await input.fill(String(amount));
+    await input.blur();
     await expect
       .poll(() => appData.get("cross-stitch").projects[0].tasks[0].crossesDone)
       .toBe(amount);
