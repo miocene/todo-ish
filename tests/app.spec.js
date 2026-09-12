@@ -123,6 +123,11 @@ test("passkey sign-in opens the requested page after loading data", async ({
   ).toBeVisible();
   expect(dataRequests).toBe(0);
 
+  const dataLoaded = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === "/api/data" &&
+      response.request().method() === "GET",
+  );
   await page
     .getByRole("button", { name: "Sign in with passkey", exact: true })
     .click();
@@ -133,7 +138,7 @@ test("passkey sign-in opens the requested page after loading data", async ({
     page.getByRole("heading", { name: "Welcome back", exact: true }),
   ).toHaveCount(0);
   await expect(page).toHaveURL(/\/shopping$/);
-  expect(dataRequests).toBe(1);
+  expect((await dataLoaded).status()).toBe(200);
 });
 
 test("navigation opens application pages", async ({ page }) => {
