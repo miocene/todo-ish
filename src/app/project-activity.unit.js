@@ -65,7 +65,7 @@ test("project activity records creation and saved stitch deltas, grouped per pro
     buildActivityCalendar(2026, days).days.find(
       (day) => day.date === days[0].date,
     ).count,
-    34,
+    3,
   );
 });
 

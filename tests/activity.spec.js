@@ -24,7 +24,12 @@ test("Activity renders a full year of history without initializing resources", a
     if (request.method() === "PUT") writes.push(request.url());
   });
   await page.goto("/profile");
-  await expect(page.locator(".activity-day li")).toHaveCount(2000);
+  const cards = page.locator("article.jm-card.activity-day");
+  await expect(cards).toHaveCount(365);
+  await expect(cards.locator("header time")).toHaveCount(365);
+  await expect(cards.locator("li")).toHaveCount(2000);
+  await expect(cards.locator('use[href$="#icon-todo"]')).toHaveCount(2000);
+  await expect(cards.getByRole("link")).toHaveCount(0);
   expect(writes).toEqual([]);
 });
 
@@ -51,6 +56,9 @@ test("profile shows yearly task activity and newly checked items", async ({
     currentYear % 4 === 0 ? 366 : 365,
   );
   await expect(page.locator(".jm-activity-graph a")).toHaveCount(0);
+  await expect(page.locator(".activity-day").getByRole("button")).toHaveCount(
+    0,
+  );
   await expect(page.getByText("Renew passport", { exact: true })).toBeVisible();
 
   await page
@@ -66,6 +74,11 @@ test("saved partial stitching appears as daily project totals after reload", asy
   page,
   appData,
 }) => {
+  appData.set("todos", { lists: [] });
+  appData.set("work-tasks", []);
+  appData.set("chores", { tasks: [], occurrenceOrder: [] });
+  appData.set("shopping", { tasks: [] });
+  appData.set("printing", { projects: [] });
   appData.set("cross-stitch", {
     projects: [
       {
@@ -108,7 +121,7 @@ test("saved partial stitching appears as daily project totals after reload", asy
     page.getByText("Flowers - 35 stitches", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.locator(".activity-day h3").filter({ hasText: "35 stitches" }),
+    page.locator(".activity-day .title").filter({ hasText: "35 stitches" }),
   ).toHaveCount(1);
   await expect(
     page.locator('.activity-day use[href$="#icon-yarn"]'),
@@ -116,4 +129,34 @@ test("saved partial stitching appears as daily project totals after reload", asy
   await expect(
     page.locator(".activity-day li").filter({ hasText: "Black" }),
   ).toHaveCount(0);
+  const day = await page
+    .locator(".activity-day header time")
+    .getAttribute("datetime");
+  await expect(
+    page.locator(`.jm-activity-graph time[datetime="${day}"]`),
+  ).toHaveAttribute("data-level", "1");
+});
+
+test("activity cards keep long titles inside the card", async ({
+  page,
+  appData,
+}) => {
+  const title = "x".repeat(500);
+  appData.set("todos", {
+    lists: [],
+    history: [
+      { id: "long-title", title, completedAt: new Date().toISOString() },
+    ],
+  });
+  await page.goto("/profile");
+  const text = page.getByText(title, { exact: true });
+  await expect(text).toBeVisible();
+  await advisory(async (expect) => {
+    const bounds = await text.evaluate((element) => {
+      const card = element.closest(".jm-card").getBoundingClientRect();
+      const text = element.getBoundingClientRect();
+      return { right: text.right, cardRight: card.right };
+    });
+    expect(bounds.right).toBeLessThanOrEqual(bounds.cardRight);
+  });
 });

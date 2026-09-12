@@ -24,28 +24,27 @@ function localDateFromTimestamp(timestamp) {
   return Number.isNaN(date.getTime()) ? undefined : isoDate(date);
 }
 
-function activityItem(task, source, context, route) {
+const ACTIVITY_ICONS = {
+  work: "work",
+  chores: "chores",
+  todos: "todo",
+  shopping: "shopping",
+  printing: "printer",
+  "cross-stitch": "yarn",
+};
+
+function activityItem(task, resource) {
   const completedAt = task.completedAt;
   const date =
-    completedAt && source === "Work" && task.date
+    completedAt && resource === "work" && task.date
       ? task.date
       : localDateFromTimestamp(completedAt);
   if (!date || !task.title?.trim()) return undefined;
   return {
-    id: `${source}-${task.id}`,
+    id: `${resource}-${task.id}`,
     title: task.title.trim(),
-    source,
-    icon: {
-      work: "work",
-      chores: "chores",
-      todos: "todo",
-      shopping: "shopping",
-      printing: "printer",
-      "cross-stitch": "yarn",
-    }[route.name],
+    icon: ACTIVITY_ICONS[resource],
     ...(task.event && { event: task.event }),
-    context,
-    route,
     completedAt,
     date,
   };
@@ -59,18 +58,12 @@ export function collectCompletedActivity(
     if (item) items.push(item);
   };
 
-  for (const task of read("work-tasks").map(workTaskFromApi)) {
-    add(
-      activityItem(task, "Work", task.date ? "Scheduled work" : "Backlog", {
-        name: "work",
-        query: task.date ? { date: task.date } : {},
-      }),
-    );
-  }
+  for (const task of read("work-tasks").map(workTaskFromApi))
+    add(activityItem(task, "work"));
 
   const chores = read("chores");
   for (const task of completedChoreOccurrences(chores))
-    add(activityItem(task, "Chores", task.details, { name: "chores" }));
+    add(activityItem(task, "chores"));
 
   const todos = read("todos");
   const todoActivity = new Map(
@@ -82,37 +75,22 @@ export function collectCompletedActivity(
       else todoActivity.delete(task.id);
     }
   }
-  for (const task of todoActivity.values())
-    add(activityItem(task, "Todo lists", "", { name: "todos" }));
+  for (const task of todoActivity.values()) add(activityItem(task, "todos"));
 
   const shopping = read("shopping");
-  for (const task of [...shopping.tasks, ...(shopping.history ?? [])]) {
-    add(
-      activityItem(task, "Shopping cart", "Shopping cart", {
-        name: "shopping",
-      }),
-    );
-  }
+  for (const task of [...shopping.tasks, ...(shopping.history ?? [])])
+    add(activityItem(task, "shopping"));
 
   const printing = read("printing");
   for (const task of printing.history ?? [])
-    add(
-      activityItem(task, "3D printing", task.context || "", {
-        name: "printing",
-      }),
-    );
+    add(activityItem(task, "printing"));
   for (const project of printing.projects) {
-    for (const task of project.tasks) {
-      add(
-        activityItem(task, "3D printing", project.title, { name: "printing" }),
-      );
-    }
+    for (const task of project.tasks) add(activityItem(task, "printing"));
   }
 
   const crossStitch = read("cross-stitch");
   for (const task of crossStitch.history ?? []) {
-    if (task.event)
-      add(activityItem(task, "Cross stitch", "", { name: "cross-stitch" }));
+    if (task.event) add(activityItem(task, "cross-stitch"));
   }
 
   const stitchDays = new Map();
@@ -179,15 +157,15 @@ export function activityYears(
 
 export function buildActivityCalendar(year, groups) {
   const countByDate = new Map(
-    groups.map((group) => [
-      group.date,
-      group.items.reduce(
-        (total, item) =>
-          total +
-          (item.stitches === undefined ? 1 : Math.max(0, item.stitches)),
-        0,
-      ),
-    ]),
+    groups.map((group) => {
+      let items = 0;
+      let stitches = 0;
+      for (const item of group.items) {
+        if (item.stitches === undefined) items++;
+        else stitches += item.stitches;
+      }
+      return [group.date, items + Math.ceil(Math.max(0, stitches) / 100)];
+    }),
   );
   const firstDay = new Date(year, 0, 1, 12);
   const lastDay = new Date(year, 11, 31, 12);

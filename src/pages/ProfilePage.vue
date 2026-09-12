@@ -1,20 +1,19 @@
 <script>
-import "./profile-page.css";
 import { subscribeAppData } from "../app/app-data.js";
 import { appClock } from "../app/clock.js";
-import { RouterLink } from "vue-router";
 import {
   activityYears,
   collectCompletedActivity,
   groupActivityByDay,
 } from "../app/activity.js";
 import JMActivityGraph from "../components/JMActivityGraph/JMActivityGraph.vue";
+import JMCard from "../components/JMCard/JMCard.vue";
 import JMIcon from "../components/JMIcon/JMIcon.vue";
 import JMTabs from "../components/JMTabs/JMTabs.vue";
 
 export default {
   name: "ProfilePage",
-  components: { JMActivityGraph, JMIcon, JMTabs, RouterLink },
+  components: { JMActivityGraph, JMCard, JMIcon, JMTabs },
   data() {
     return {
       activity: collectCompletedActivity(),
@@ -73,46 +72,37 @@ export default {
 </script>
 
 <template>
-  <section class="profile-page" aria-labelledby="profile-title">
-    <header class="profile-page__header">
-      <h1 id="profile-title">Activity</h1>
-    </header>
+  <header class="page-header">
+    <h1>Activity</h1>
+  </header>
 
-    <JMTabs
-      :tabs="yearTabs"
-      :active="selectedYear"
-      aria-label="Activity years"
-    />
+  <JMTabs :tabs="yearTabs" :active="selectedYear" aria-label="Activity years" />
 
-    <JMActivityGraph :year="selectedYear" :days="activityDays" />
+  <JMActivityGraph :year="selectedYear" :days="activityDays" />
 
-    <p v-if="activityDays.length === 0" class="empty">
-      No activity in {{ selectedYear }}.
-    </p>
+  <p v-if="activityDays.length === 0" class="empty">
+    No activity in {{ selectedYear }}.
+  </p>
 
-    <article
-      v-for="day in activityDays"
-      v-else
-      :key="day.date"
-      class="activity-day"
-    >
-      <h3>
-        <time :datetime="day.date">{{ day.label }}</time>
-        <span v-if="day.stitches"> · {{ day.stitches }} stitches</span>
-      </h3>
-      <ul role="list">
-        <li v-for="item in day.items" :key="item.id">
-          <span class="check" aria-hidden="true"
-            ><JMIcon :name="item.icon"
-          /></span>
-          <div>
-            <p>{{ item.title }}</p>
-            <RouterLink :to="item.route">{{ item.source }}</RouterLink>
-            <span v-if="item.context" aria-hidden="true"> · </span>
-            <span v-if="item.context">{{ item.context }}</span>
-          </div>
-        </li>
-      </ul>
-    </article>
-  </section>
+  <JMCard
+    v-for="day in activityDays"
+    v-else
+    :key="day.date"
+    class="activity-day"
+    tag="article"
+    :title="day.label"
+  >
+    <template #title>
+      <time :datetime="day.date">{{ day.label }}</time>
+      <span v-if="day.stitches"> · {{ day.stitches }} stitches</span>
+    </template>
+    <template #list>
+      <li v-for="item in day.items" :key="item.id">
+        <span class="check" aria-hidden="true"
+          ><JMIcon :name="item.icon"
+        /></span>
+        <p>{{ item.title }}</p>
+      </li>
+    </template>
+  </JMCard>
 </template>

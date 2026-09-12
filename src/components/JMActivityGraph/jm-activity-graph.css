@@ -1,5 +1,6 @@
 .jm-activity-graph {
   padding: var(--space-5);
+  margin: var(--space-7) 0;
   background: var(--color-bg-surface);
   border-radius: var(--radius-card);
 

@@ -71,7 +71,26 @@ test("Activity reads completed records without changing its snapshot", () => {
     return data[resource];
   });
   assert.equal(items.length, 2);
-  assert.equal(items.find((item) => item.source === "Work").date, "2026-09-01");
+  assert.equal(
+    items.find((item) => item.id === "work-work").date,
+    "2026-09-01",
+  );
   assert.deepEqual(data, before);
   assert.deepEqual(reads, Object.keys(data));
+});
+
+test("calendar counts each hundred daily stitches as one point across projects", () => {
+  const count = (items) =>
+    buildActivityCalendar(2026, [{ date: "2026-09-12", items }]).days.find(
+      (day) => day.date === "2026-09-12",
+    ).count;
+  assert.deepEqual(
+    [0, 1, 99, 100, 101, 200, 400, 401].map((stitches) =>
+      count([{ stitches }]),
+    ),
+    [0, 1, 1, 1, 2, 2, 4, 5],
+  );
+  assert.equal(count([{ stitches: 40 }, { stitches: 60 }, {}]), 2);
+  assert.equal(count([{ stitches: 120 }, { stitches: -20 }]), 1);
+  assert.equal(count([{ stitches: -10 }, {}]), 1);
 });

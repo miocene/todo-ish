@@ -171,7 +171,7 @@ test("daily completion repeats after midnight and deletion removes both cards", 
   await page.goto("/profile");
   await expect(
     page
-      .locator('.activity-day:has(h3 time[datetime="2026-02-02"])')
+      .locator('.activity-day:has(header time[datetime="2026-02-02"])')
       .getByText("Sweep", { exact: true }),
   ).toHaveCount(1);
   await page.goto("/chores");
@@ -346,7 +346,7 @@ test("failed chore saves recover after reload and deletion cancels a pending reo
   await page.goto("/profile");
   await expect(
     page
-      .locator('.activity-day:has(h3 time[datetime="2026-02-02"])')
+      .locator('.activity-day:has(header time[datetime="2026-02-02"])')
       .getByText("Recover chore", { exact: true }),
   ).toHaveCount(1);
   expect(appData.validationErrors).toEqual([]);
@@ -392,7 +392,7 @@ test("multiple completions survive reload without resending unchanged history", 
   for (const date of ["2026-02-02", "2026-02-03"]) {
     await expect(
       page
-        .locator(`.activity-day:has(h3 time[datetime="${date}"])`)
+        .locator(`.activity-day:has(header time[datetime="${date}"])`)
         .getByText("Sweep twice", { exact: true }),
     ).toHaveCount(1);
   }

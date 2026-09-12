@@ -33,6 +33,48 @@ main {
   margin-block-end: var(--space-6);
 }
 
+/* activity page */
+.activity-day {
+  .check {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    inline-size: 24px;
+    block-size: 24px;
+    border-radius: 50%;
+    color: contrast-color(var(--color-activity-4));
+    background: var(--color-activity-4);
+  }
+
+  li {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    padding: var(--space-3);
+
+    p {
+      min-inline-size: 0;
+      overflow-wrap: anywhere;
+    }
+
+    &:nth-last-child(1) .check {
+      color: contrast-color(var(--color-activity-1));
+      background: var(--color-activity-1);
+    }
+
+    &:nth-last-child(2) .check {
+      color: contrast-color(var(--color-activity-2));
+      background: var(--color-activity-2);
+    }
+
+    &:nth-last-child(3) .check {
+      color: contrast-color(var(--color-activity-3));
+      background: var(--color-activity-3);
+    }
+  }
+}
+
 /* utils */
 .sr-only {
   position: absolute;
