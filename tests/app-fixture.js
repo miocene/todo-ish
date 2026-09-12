@@ -356,12 +356,14 @@ const test = base.extend({
             .locator("body")
             .innerText({ timeout: 1000 })
             .catch(() => "Page unavailable");
+          const report = JSON.stringify(
+            { url: page.url(), diagnostics, page: content.slice(0, 20_000) },
+            null,
+            2,
+          );
+          if (process.env.CI) console.error(`[browser-diagnostics] ${report}`);
           await testInfo.attach("browser-diagnostics", {
-            body: JSON.stringify(
-              { url: page.url(), diagnostics, page: content.slice(0, 20_000) },
-              null,
-              2,
-            ),
+            body: report,
             contentType: "application/json",
           });
         }
