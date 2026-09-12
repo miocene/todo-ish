@@ -4,7 +4,7 @@ GitHub Pages serves the built Vue frontend. The application API is hosted separa
 
 ## Publishing
 
-[The Pages workflow](../.github/workflows/deploy-pages.yml) runs on pushes to `main` and can also be started manually with `workflow_dispatch`. It first calls [the quality workflow](../.github/workflows/quality.yml). After that succeeds, it runs `yarn build:pages`, uploads `dist/`, and publishes the artifact to the `github-pages` environment.
+[The Pages workflow](../.github/workflows/deploy-pages.yml) runs on pushes to `main` and can also be started manually with `workflow_dispatch`. It first calls [the quality workflow](../.github/workflows/quality.yml). Browser tests run in three parallel jobs, separately from the Node.js and backend checks. Deployment waits for every quality job to pass. After that succeeds, it runs `yarn build:pages`, uploads `dist/`, and publishes the artifact to the `github-pages` environment.
 
 The build uses these public settings:
 

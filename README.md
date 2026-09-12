@@ -60,6 +60,6 @@ Component-focused browser tests use the shared app fixture; they run through the
 
 `test-results/` contains disposable failure traces and runner state; it is ignored by Git. Tests do not generate routine screenshots without assertions.
 
-`yarn test:coverage` reports coverage of JavaScript modules loaded by unit/API tests and writes `coverage/lcov.info`. It does not measure Vue templates, browser flows, or Python. Coverage is informational; there is no percentage gate. CI runs browser tests and coverage on Node 24, with unit/API/build checks on both supported Node versions.
+`yarn test:coverage` reports coverage of JavaScript modules loaded by unit/API tests and writes `coverage/lcov.info`. It does not measure Vue templates, browser flows, or Python. Coverage is informational; there is no percentage gate. CI runs each browser in a separate parallel job with two workers on Node 24. Coverage and unit/API/build checks run independently; both supported Node versions are checked.
 
 `tests/catalog-capacity.spec.js` verifies full catalogs and a ten-task project editor; `tests/activity.spec.js` covers a year with 2,000 history entries. These are functional capacity checks, not performance benchmarks.

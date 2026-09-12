@@ -52,15 +52,11 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements-dev.txt
 
-      - name: Install application, tooling, and browser dependencies
-        run: yarn setup --with-deps
+      - name: Install application and tooling dependencies
+        run: yarn setup --skip-browsers
 
       - name: Lint, format, test, and build
         run: yarn lint && yarn format:check && yarn test:unit && yarn test:api && yarn build
-
-      - name: Test Chrome, Safari, and mobile Safari engines
-        if: matrix.node == '24.19.0'
-        run: yarn test:e2e
 
       - name: Measure JavaScript coverage
         if: matrix.node == '24.19.0'
@@ -92,11 +88,52 @@ jobs:
           path: coverage/lcov.info
           if-no-files-found: ignore
 
+  browsers:
+    name: Browser tests (${{ matrix.project }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: chromium
+            engine: chromium
+          - project: webkit
+            engine: webkit
+          - project: mobile-safari
+            engine: webkit
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.19.0
+          cache: yarn
+          cache-dependency-path: |
+            yarn.lock
+            backend/api/yarn.lock
+
+      - name: Enable Yarn
+        run: corepack enable
+
+      - name: Install application dependencies
+        run: |
+          yarn install --frozen-lockfile
+          yarn --cwd backend/api install --frozen-lockfile
+
+      - name: Install browser and system dependencies
+        run: yarn playwright install --with-deps ${{ matrix.engine }}
+
+      - name: Run browser tests
+        run: yarn test:e2e --project=${{ matrix.project }} --workers=2
+
       - name: Save browser failure traces
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: browser-failure-traces-node-${{ matrix.node }}
+          name: browser-failure-traces-${{ matrix.project }}
           path: test-results/
           if-no-files-found: ignore
           retention-days: 7
