@@ -14,21 +14,13 @@ export default {
 
 <template>
   <nav class="jm-tabs">
-    <ul class="jm-tabs__list" role="list">
+    <ul role="list">
       <li v-for="tab in tabs" :key="tab.value">
         <RouterLink v-slot="{ href, navigate }" custom :to="tab.to">
           <a
-            class="jm-tabs__link"
-            :class="{ 'jm-tabs__link--active': tab.value === active }"
             :href="href"
             :aria-current="tab.value === active ? 'page' : undefined"
             @click="navigate"
-            @focus="
-              $event.currentTarget.scrollIntoView({
-                block: 'nearest',
-                inline: 'nearest',
-              })
-            "
           >
             {{ tab.text }}
           </a>

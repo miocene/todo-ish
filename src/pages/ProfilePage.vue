@@ -47,7 +47,10 @@ export default {
       return this.years.map((year) => ({
         value: year,
         text: String(year),
-        to: this.yearRoute(year),
+        to: {
+          name: "profile",
+          query: year === this.currentYear ? {} : { year: String(year) },
+        },
       }));
     },
     selectedYear() {
@@ -58,14 +61,6 @@ export default {
     },
     activityDays() {
       return groupActivityByDay(this.activity, this.selectedYear);
-    },
-  },
-  methods: {
-    yearRoute(year) {
-      return {
-        name: "profile",
-        query: year === this.currentYear ? {} : { year: String(year) },
-      };
     },
   },
 };

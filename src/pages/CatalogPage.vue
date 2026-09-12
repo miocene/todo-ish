@@ -44,7 +44,6 @@ export default {
           to: { name: "catalog", query: { catalog: "floss" } },
         },
       ],
-      catalogKind: this.$route.query.catalog === "floss" ? "floss" : "filament",
       family:
         typeof this.$route.query.family === "string"
           ? this.$route.query.family
@@ -57,6 +56,9 @@ export default {
     };
   },
   computed: {
+    catalogKind() {
+      return this.$route.query.catalog === "floss" ? "floss" : "filament";
+    },
     catalog() {
       return this.isFlossCatalog ? flossCatalog : filamentCatalog;
     },
@@ -120,7 +122,6 @@ export default {
   },
   watch: {
     "$route.query"(value) {
-      this.catalogKind = value.catalog === "floss" ? "floss" : "filament";
       this.family = typeof value.family === "string" ? value.family : "";
       this.query = typeof value.q === "string" ? value.q : "";
     },
