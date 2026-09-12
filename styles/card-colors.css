@@ -1,44 +1,38 @@
 :root {
   --color-1: #eea316;
   --color-2: #48b4a7;
-  --color-3: #fb6f7a; /* todo */
-  --color-4: #9ba9ea;
-  --color-5: #ffd577;
-  --color-6: #7386be;
-  --color-7: #ac2373; /* todo */
-  --color-8: #683496;
-  --color-9: #9a134b; /* todo */
-  --color-10: #5fa87b;
-  --color-11: #780759; /* todo */
-  --color-12: #f3a5bd;
-  --color-13: #9da363;
-  --color-14: #8f88e7;
-  --color-15: #7798e7;
-  --color-16: #c92e3e;
-  --color-17: #326b96;
-  --color-18: #c8b1ff;
-  --color-19: #d4df90;
-  --color-20: #87b91c;
-  --color-21: #e9423c; /* todo */
-  --color-22: #829c17;
-  --color-23: #d65710;
-  --color-24: #8fb890;
-  --color-25: #ff865e;
-  --color-26: #1a7645;
-  --color-27: #446463;
-  --color-28: #29518c;
-  --color-29: #bccf01;
-  --color-30: #ffc526;
-  --color-31: #8c5c1e;
-  --color-32: #018472;
-  --color-33: #356ac6;
-  --color-34: #57be6d;
-  --color-35: #f2b356;
-  --color-36: #049f99; /* todo */
-  --color-37: #8fc766;
-  --color-38: #046a55;
-  --color-39: #bd93d3;
-  --color-40: #37708b;
-  --color-41: #b2b6c1;
-  --color-42: #583657;
+  --color-3: #9ba9ea;
+  --color-4: #ffd577;
+  --color-5: #7386be;
+  --color-6: #683496;
+  --color-7: #5fa87b;
+  --color-8: #f3a5bd;
+  --color-9: #9da363;
+  --color-10: #8f88e7;
+  --color-11: #7798e7;
+  --color-12: #c92e3e;
+  --color-13: #326b96;
+  --color-14: #c8b1ff;
+  --color-15: #d4df90;
+  --color-16: #87b91c;
+  --color-17: #829c17;
+  --color-18: #d65710;
+  --color-19: #8fb890;
+  --color-20: #ff865e;
+  --color-21: #1a7645;
+  --color-22: #446463;
+  --color-23: #29518c;
+  --color-24: #bccf01;
+  --color-25: #ffc526;
+  --color-26: #8c5c1e;
+  --color-27: #018472;
+  --color-28: #356ac6;
+  --color-29: #57be6d;
+  --color-30: #f2b356;
+  --color-31: #8fc766;
+  --color-32: #046a55;
+  --color-33: #bd93d3;
+  --color-34: #37708b;
+  --color-35: #b2b6c1;
+  --color-36: #583657;
 }

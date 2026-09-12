@@ -49,7 +49,7 @@ CI runs [the reusable quality workflow](.github/workflows/quality.yml) before pu
 
 ## Card colors
 
-`styles/card-colors.css`, imported by `styles/style.css`, owns the 42 shuffled backgrounds. Keep their numbering stable: a card's `color: 7` becomes `--color: var(--color-7)` on `JMCard`. Palette data migration and catalog maintenance are documented in `local-notes/DEPLOYMENT.md`.
+`styles/card-colors.css`, imported by `styles/style.css`, owns the 36 backgrounds. Renumbering requires a database migration: a card's `color: 7` becomes `--color: var(--color-7)` on `JMCard`. Palette data migration and catalog maintenance are documented in `local-notes/DEPLOYMENT.md`.
 
 ## Browser checks and coverage
 

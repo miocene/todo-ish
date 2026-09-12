@@ -1,3 +1,4 @@
+import { CARD_COLOR_COUNT } from "../src/card-colors.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
@@ -365,11 +366,11 @@ test("app-data API preserves card colors and validates their format", async () =
         body: JSON.stringify(value),
       });
     const colors = {
-      "work-day:2026-09-04": 42,
+      "work-day:2026-09-04": CARD_COLOR_COUNT,
       "work-day:2026-09-05": 5,
       backlog: 17,
       "chores-today": 34,
-      "chores-all": 41,
+      "chores-all": CARD_COLOR_COUNT - 1,
     };
     assert.equal((await write("colors", colors)).status, 200);
     const todos = {
@@ -380,12 +381,12 @@ test("app-data API preserves card colors and validates their format", async () =
       { resource: "colors", value: colors },
       { resource: "todos", value: todos },
     ]);
-    for (const color of [0, 43, -1, 1.5, "1", null])
+    for (const color of [0, CARD_COLOR_COUNT + 1, -1, 1.5, "1", null])
       assert.equal((await write("colors", { backlog: color })).status, 400);
     assert.equal((await write("colors", { backlog: "#2765EC" })).status, 200);
     assert.deepEqual(calls.at(-1), {
       resource: "colors",
-      value: { backlog: (parseInt("2765EC", 16) % 42) + 1 },
+      value: { backlog: (parseInt("2765EC", 16) % CARD_COLOR_COUNT) + 1 },
     });
     assert.equal(
       (await write("colors", { ...colors, "work-day:2026-09-05": "red" }))
@@ -393,10 +394,18 @@ test("app-data API preserves card colors and validates their format", async () =
       400,
     );
     assert.equal(
-      (await write("colors", { ...colors, "work-day:2026-02-30": 42 })).status,
+      (
+        await write("colors", {
+          ...colors,
+          "work-day:2026-02-30": CARD_COLOR_COUNT,
+        })
+      ).status,
       400,
     );
-    assert.equal((await write("colors", { today: 42 })).status, 400);
+    assert.equal(
+      (await write("colors", { today: CARD_COLOR_COUNT })).status,
+      400,
+    );
     assert.equal(
       (await write("todos", { lists: [{ ...todos.lists[0], color: "red" }] }))
         .status,

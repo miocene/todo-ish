@@ -1,3 +1,4 @@
+import { CARD_COLOR_COUNT } from "../src/card-colors.mjs";
 import assert from "node:assert/strict";
 import { AppDataRevisionConflictError } from "../src/app-data-repository.mjs";
 import { validateAppDataResource } from "../src/app-data-validation.mjs";
@@ -20,7 +21,9 @@ export async function verifyMultiUserData(repository, first, second) {
     await write(user, "work-statuses", {
       "2026-09-09": user === first ? "pto" : "work",
     });
-    await write(user, "colors", { backlog: user === first ? 37 : 28 });
+    await write(user, "colors", {
+      backlog: user === first ? CARD_COLOR_COUNT : 28,
+    });
     await write(user, "todos", {
       lists: [
         {
@@ -37,14 +40,16 @@ export async function verifyMultiUserData(repository, first, second) {
         {
           id: "same-project",
           title: user,
-          color: 37,
+          color: CARD_COLOR_COUNT,
           tasks: [{ id: "same-part", title: user, filaments: [] }],
         },
       ],
       history: [],
     });
     await write(user, "cross-stitch", {
-      projects: [{ id: "same-stitch", title: user, color: 37, tasks: [] }],
+      projects: [
+        { id: "same-stitch", title: user, color: CARD_COLOR_COUNT, tasks: [] },
+      ],
       history: [],
     });
     await write(user, "preferences", {
@@ -65,7 +70,7 @@ export async function verifyMultiUserData(repository, first, second) {
       state.workStatuses["2026-09-09"],
       user === first ? "pto" : "work",
     );
-    assert.equal(state.colors.backlog, user === first ? 37 : 28);
+    assert.equal(state.colors.backlog, user === first ? CARD_COLOR_COUNT : 28);
     assert.deepEqual(
       state.preferences.hiddenNavigation,
       user === first ? ["printing"] : ["work", "catalog"],

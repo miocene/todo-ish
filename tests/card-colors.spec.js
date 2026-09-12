@@ -165,7 +165,7 @@ test("card color numbers persist and missing colors initialize without visible c
       {
         id: "legacy-project",
         title: "Existing project",
-        color: 42,
+        color: CARD_COLORS.at(-1),
         description: "",
         tasks: [],
       },

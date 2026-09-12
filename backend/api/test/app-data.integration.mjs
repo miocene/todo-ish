@@ -1,3 +1,4 @@
+import { CARD_COLOR_COUNT } from "../src/card-colors.mjs";
 import { measurePolling } from "./polling-cases.mjs";
 import { verifyAuthCleanup } from "./auth-cleanup-cases.mjs";
 import { verifyHistoryTransport } from "./history-cases.mjs";
@@ -34,7 +35,7 @@ const values = {
     { id: "work-2", title: "Backlog", date: null },
   ],
   "work-statuses": { "2026-09-05": "pto" },
-  colors: { backlog: 42, "work-day:2026-09-05": 17 },
+  colors: { backlog: CARD_COLOR_COUNT, "work-day:2026-09-05": 17 },
   chores: {
     occurrenceOrder: ["chore-2", "chore-1"],
     tasks: [
@@ -99,7 +100,7 @@ const values = {
         id: "project-1",
         title: "Print",
         description: "A print",
-        color: 39,
+        color: CARD_COLOR_COUNT - 1,
         tasks: [
           {
             id: "print-1",

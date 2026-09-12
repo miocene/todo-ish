@@ -41,6 +41,9 @@ test("actual migration runner: fresh, rerun, upgrade, concurrent, rollback and c
     recursive: true,
   });
   const options = { runtimeRole, log: () => {} };
+  const compactMigration = join(directory, "0015_compact_card_palette.sql");
+  const compactSql = await readFile(compactMigration, "utf8");
+  await rm(compactMigration);
   const paletteMigration = join(directory, "0013_numbered_card_colors.sql");
   const paletteSql = await readFile(paletteMigration, "utf8");
   await rm(paletteMigration);
@@ -59,7 +62,7 @@ test("actual migration runner: fresh, rerun, upgrade, concurrent, rollback and c
     "INSERT INTO todo_lists(user_id,id,title,position) VALUES ('palette','uncolored','Uncolored',1)",
   );
   await writeFile(paletteMigration, paletteSql);
-  const first = await runMigrations(client, directory, options);
+  await runMigrations(client, directory, options);
   for (const table of [
     "colors",
     "todo_lists",
@@ -72,6 +75,60 @@ test("actual migration runner: fresh, rerun, upgrade, concurrent, rollback and c
     assert.equal(result.rows[0].color, (parseInt("2765EC", 16) % 42) + 1);
     await assert.rejects(
       client.query(`UPDATE ${table} SET color=43`),
+      /check constraint/,
+    );
+  }
+  assert.equal(
+    (await client.query("SELECT color FROM todo_lists WHERE id='uncolored'"))
+      .rows[0].color,
+    null,
+  );
+
+  await client.query(
+    "INSERT INTO auth_users(id, username, display_name) VALUES ('palette2', 'palette2', 'Palette 2')",
+  );
+  for (const user of ["palette", "palette2"]) {
+    for (let color = 1; color <= 42; color++) {
+      await client.query(
+        "INSERT INTO colors(user_id,id,color) VALUES ($1,$2,$3)",
+        [user, `color-${color}`, color],
+      );
+      for (const table of [
+        "todo_lists",
+        "printing_projects",
+        "stitch_projects",
+      ])
+        await client.query(
+          `INSERT INTO ${table}(user_id,id,title,color,position) VALUES ($1,$2,'Palette test',$3,$3)`,
+          [user, `color-${color}`, color],
+        );
+    }
+  }
+  await writeFile(compactMigration, compactSql);
+  const first = await runMigrations(client, directory, options);
+  const expectedColors = [
+    1, 2, 8, 3, 4, 5, 36, 6, 12, 7, 36, 8, 9, 10, 11, 12, 13, 14, 15, 16, 12,
+    17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 2, 31, 32, 33, 34,
+    35, 36,
+  ];
+  for (const table of [
+    "colors",
+    "todo_lists",
+    "printing_projects",
+    "stitch_projects",
+  ]) {
+    for (const user of ["palette", "palette2"]) {
+      const result = await client.query(
+        `SELECT id, color FROM ${table} WHERE user_id=$1 AND id LIKE 'color-%' ORDER BY substring(id from 7)::integer`,
+        [user],
+      );
+      assert.deepEqual(
+        result.rows.map((row) => row.color),
+        expectedColors,
+      );
+    }
+    await assert.rejects(
+      client.query(`UPDATE ${table} SET color=37`),
       /check constraint/,
     );
   }

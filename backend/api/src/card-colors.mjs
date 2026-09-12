@@ -1,5 +1,5 @@
 // Values live in styles/card-colors.css. Numbers are the persisted palette IDs.
-export const CARD_COLOR_COUNT = 42;
+export const CARD_COLOR_COUNT = 36;
 
 export function cardColorNumber(value) {
   if (Number.isInteger(value) && value >= 1 && value <= CARD_COLOR_COUNT)

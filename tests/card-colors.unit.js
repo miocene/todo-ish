@@ -20,6 +20,16 @@ test("every persisted card color has one CSS token", () => {
   for (let number = 1; number <= CARD_COLOR_COUNT; number++)
     assert.equal(cardColorNumber(number), number);
   assert.equal(cardColorNumber("#2765ec"), cardColorNumber("#2765EC"));
-  for (const invalid of [0, 43, -1, 1.5, "1", "red", null, undefined])
+  for (const invalid of [
+    0,
+    CARD_COLOR_COUNT + 1,
+    42,
+    -1,
+    1.5,
+    "1",
+    "red",
+    null,
+    undefined,
+  ])
     assert.equal(cardColorNumber(invalid), null);
 });
