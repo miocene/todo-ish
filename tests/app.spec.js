@@ -1,29 +1,31 @@
 import { advisory, test, expect, appDataByPage } from "./app-fixture.js";
 
-test("anonymous visitors see passkey setup before application data", async ({
-  page,
-}) => {
-  appDataByPage.get(page).setSession({
-    authenticated: false,
-    bootstrapRequired: true,
-    user: null,
-  });
+test(
+  "anonymous visitors see passkey setup before application data",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    appDataByPage.get(page).setSession({
+      authenticated: false,
+      bootstrapRequired: true,
+      user: null,
+    });
 
-  await page.goto("/");
+    await page.goto("/");
 
-  await expect(
-    page.getByRole("heading", { level: 1, name: "Create your passkey" }),
-  ).toBeVisible();
-  await expect(page.getByLabel("One-time setup code")).toBeVisible();
-  await expect(page.getByLabel("One-time setup code")).toHaveAttribute(
-    "type",
-    "password",
-  );
-  await expect(
-    page.getByRole("button", { name: "Create passkey" }),
-  ).toBeVisible();
-  await expect(page.locator(".jm-header")).toHaveCount(0);
-});
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Create your passkey" }),
+    ).toBeVisible();
+    await expect(page.getByLabel("One-time setup code")).toBeVisible();
+    await expect(page.getByLabel("One-time setup code")).toHaveAttribute(
+      "type",
+      "password",
+    );
+    await expect(
+      page.getByRole("button", { name: "Create passkey" }),
+    ).toBeVisible();
+    await expect(page.locator(".jm-header")).toHaveCount(0);
+  },
+);
 
 test("startup waits for saved data before loading the application", async ({
   page,
@@ -88,95 +90,107 @@ for (const resource of ["auth/session", "data"]) {
   });
 }
 
-test("passkey sign-in opens the requested page after loading data", async ({
-  page,
-}) => {
-  appDataByPage
-    .get(page)
-    .setSession({ authenticated: false, bootstrapRequired: false, user: null });
-  let dataRequests = 0;
-  page.on("request", (request) => {
-    if (new URL(request.url()).pathname === "/api/data") dataRequests += 1;
-  });
-  await page.addInitScript(() => {
-    Object.defineProperty(Object.getPrototypeOf(navigator.credentials), "get", {
-      value: async () => ({ toJSON: () => ({ id: "test-passkey" }) }),
+test(
+  "passkey sign-in opens the requested page after loading data",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    appDataByPage.get(page).setSession({
+      authenticated: false,
+      bootstrapRequired: false,
+      user: null,
     });
-  });
-  await page.route("**/api/auth/authentication/*", (route) => {
-    const options = route.request().url().endsWith("/options");
-    const user = { id: "owner", username: "owner", displayName: "Owner" };
-    if (!options)
-      appDataByPage
-        .get(page)
-        .setSession({ authenticated: true, bootstrapRequired: false, user });
-    return route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify(
-        options ? { challenge: "dGVzdA", rpId: "todo-ish.today" } : { user },
-      ),
+    let dataRequests = 0;
+    page.on("request", (request) => {
+      if (new URL(request.url()).pathname === "/api/data") dataRequests += 1;
     });
-  });
-  await page.goto("/shopping");
-  await expect(
-    page.getByRole("heading", { name: "Welcome back", exact: true }),
-  ).toBeVisible();
-  expect(dataRequests).toBe(0);
-
-  const dataLoaded = page.waitForResponse(
-    (response) =>
-      new URL(response.url()).pathname === "/api/data" &&
-      response.request().method() === "GET",
-  );
-  await page
-    .getByRole("button", { name: "Sign in with passkey", exact: true })
-    .click();
-  await expect(
-    page.getByRole("heading", { name: "Shopping cart", exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Welcome back", exact: true }),
-  ).toHaveCount(0);
-  await expect(page).toHaveURL(/\/shopping$/);
-  expect((await dataLoaded).status()).toBe(200);
-});
-
-test("navigation opens application pages", async ({ page }) => {
-  const destinations = [
-    { label: "Chores", path: "/chores" },
-    { label: "Todo lists", path: "/todos" },
-    { label: "Shopping cart", path: "/shopping" },
-    { label: "3D printing", path: "/printing" },
-    { label: "Cross stitch", path: "/cross-stitch" },
-    { label: "Catalog", path: "/catalog" },
-  ];
-
-  await page.goto("/");
-
-  for (const { label, path } of destinations) {
-    const link = page.getByRole("link", { name: label, exact: true });
-    await link.click();
-    await expect.poll(() => new URL(page.url()).pathname).toBe(path);
-    await expect(page).toHaveTitle(`${label} — Done-ish`);
+    await page.addInitScript(() => {
+      Object.defineProperty(
+        Object.getPrototypeOf(navigator.credentials),
+        "get",
+        {
+          value: async () => ({ toJSON: () => ({ id: "test-passkey" }) }),
+        },
+      );
+    });
+    await page.route("**/api/auth/authentication/*", (route) => {
+      const options = route.request().url().endsWith("/options");
+      const user = { id: "owner", username: "owner", displayName: "Owner" };
+      if (!options)
+        appDataByPage
+          .get(page)
+          .setSession({ authenticated: true, bootstrapRequired: false, user });
+      return route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify(
+          options ? { challenge: "dGVzdA", rpId: "todo-ish.today" } : { user },
+        ),
+      });
+    });
+    await page.goto("/shopping");
     await expect(
-      page.getByRole("heading", {
-        level: path === "/shopping" ? 2 : 1,
-        name: label,
-      }),
+      page.getByRole("heading", { name: "Welcome back", exact: true }),
     ).toBeVisible();
-    await advisory((expect) =>
-      expect(link).toHaveAttribute("aria-current", "page"),
-    );
-  }
+    expect(dataRequests).toBe(0);
 
-  await page.getByRole("button", { name: "Profile" }).click();
-  await page.getByRole("link", { name: "Activity", exact: true }).click();
-  await expect.poll(() => new URL(page.url()).pathname).toBe("/profile");
-  await expect(page).toHaveTitle("Profile — Done-ish");
-  await expect(
-    page.getByRole("heading", { level: 1, name: "Activity" }),
-  ).toBeVisible();
-});
+    const dataLoaded = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === "/api/data" &&
+        response.request().method() === "GET",
+    );
+    await page
+      .getByRole("button", { name: "Sign in with passkey", exact: true })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: "Shopping cart", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Welcome back", exact: true }),
+    ).toHaveCount(0);
+    await expect(page).toHaveURL(/\/shopping$/);
+    expect((await dataLoaded).status()).toBe(200);
+  },
+);
+
+test(
+  "navigation opens application pages",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    const destinations = [
+      { label: "Chores", path: "/chores" },
+      { label: "Todo lists", path: "/todos" },
+      { label: "Shopping cart", path: "/shopping" },
+      { label: "3D printing", path: "/printing" },
+      { label: "Cross stitch", path: "/cross-stitch" },
+      { label: "Catalog", path: "/catalog" },
+    ];
+
+    await page.goto("/");
+
+    for (const { label, path } of destinations) {
+      const link = page.getByRole("link", { name: label, exact: true });
+      await link.click();
+      await expect.poll(() => new URL(page.url()).pathname).toBe(path);
+      await expect(page).toHaveTitle(`${label} — Done-ish`);
+      await expect(
+        page.getByRole("heading", {
+          level: path === "/shopping" ? 2 : 1,
+          name: label,
+        }),
+      ).toBeVisible();
+      await advisory((expect) =>
+        expect(link).toHaveAttribute("aria-current", "page"),
+      );
+    }
+
+    await page.getByRole("button", { name: "Profile" }).click();
+    await page.getByRole("link", { name: "Activity", exact: true }).click();
+    await expect.poll(() => new URL(page.url()).pathname).toBe("/profile");
+    await expect(page).toHaveTitle("Profile — Done-ish");
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Activity" }),
+    ).toBeVisible();
+  },
+);
 
 test("unknown application routes return to work", async ({ page }) => {
   await page.goto("/unknown-page");

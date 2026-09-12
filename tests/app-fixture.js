@@ -37,7 +37,22 @@ function emptyAppData(values, revisions, userId = "owner") {
 
 const test = base.extend({
   appData: [
-    async ({ page }, use) => {
+    async ({ page }, use, testInfo) => {
+      const diagnostics = [];
+      const record = (message) => {
+        diagnostics.push(message);
+        if (diagnostics.length > 50) diagnostics.shift();
+      };
+      page.on("pageerror", (error) => record(`Page error: ${error.message}`));
+      page.on("requestfailed", (request) =>
+        record(
+          `Request failed: ${request.url()} ${request.failure()?.errorText}`,
+        ),
+      );
+      page.on("console", (message) => {
+        if (message.type() === "error")
+          record(`Console error: ${message.text()}`);
+      });
       const values = {};
       const revisions = Object.fromEntries(
         APP_DATA_RESOURCES.map((resource) => [resource, 0]),
@@ -333,7 +348,24 @@ const test = base.extend({
 
         await json({ error: "Not found" }, 404);
       });
-      await use(controller);
+      try {
+        await use(controller);
+      } finally {
+        if (testInfo.status !== testInfo.expectedStatus) {
+          const content = await page
+            .locator("body")
+            .innerText({ timeout: 1000 })
+            .catch(() => "Page unavailable");
+          await testInfo.attach("browser-diagnostics", {
+            body: JSON.stringify(
+              { url: page.url(), diagnostics, page: content.slice(0, 20_000) },
+              null,
+              2,
+            ),
+            contentType: "application/json",
+          });
+        }
+      }
       expect(validationErrors, "Unexpected API validation failures").toEqual(
         [],
       );
@@ -349,7 +381,7 @@ async function advisory(check) {
     if (!error.matcherResult) throw error;
     const description = error.message;
     test.info().annotations.push({ type: "warning", description });
-    console.warn(`[quality warning] ${description}`);
+    console.warn(`[quality warning] ${description.split("\n")[0]}`);
   }
 }
 

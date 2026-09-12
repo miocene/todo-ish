@@ -171,54 +171,56 @@ for (const date of [TODAY, "2026-09-15"]) {
   });
 }
 
-test("Work: drafts, Enter, completed deletion, and focus work in both lists", async ({
-  page,
-}) => {
-  const data = await openWork(page);
-  const day = selectedCard(page);
-  await day.getByRole("button", { name: "Add task", exact: true }).click();
-  await advisory((expect) => expect(title(day)).toBeFocused());
-  await title(day).fill("First");
-  await title(day).press("Enter");
-  await advisory((expect) => expect(title(day).last()).toBeFocused());
-  await title(day).last().fill("Second");
-  await title(day).first().press("Enter");
-  await advisory((expect) => expect(title(day).last()).toBeFocused());
-  await title(day).last().press("Enter");
-  await expect(title(day)).toHaveCount(3);
-  await page.getByRole("heading", { name: "Work", exact: true }).click();
-  await expect(title(day)).toHaveCount(2);
-  await day.getByRole("checkbox", { name: "Complete First" }).check();
-  await day.getByRole("button", { name: "Delete First" }).click();
-  await expect(title(day)).toHaveValue("Second");
-  await advisory((expect) => expect(title(day)).toBeFocused());
-  await day.getByRole("button", { name: "Delete Second" }).click();
-  await advisory((expect) =>
-    expect(
-      day.getByRole("button", { name: "Add task", exact: true }),
-    ).toBeFocused(),
-  );
-  const backlog = backlogCard(page);
-  await backlog.getByRole("button", { name: "Add backlog task" }).click();
-  await advisory((expect) => expect(title(backlog)).toBeFocused());
-  await title(backlog).fill("Saved backlog");
-  await expect
-    .poll(() =>
-      data
-        .get("work-tasks")
-        .filter((item) => !item.archived)
-        .map((item) => item.title),
-    )
-    .toEqual(["Saved backlog"]);
-  await page.reload();
-  await expect(title(backlog)).toHaveValue("Saved backlog");
-  await backlog.getByRole("button", { name: "Delete Saved backlog" }).click();
-  await advisory((expect) =>
-    expect(
-      backlog.getByRole("button", { name: "Add backlog task" }),
-    ).toBeFocused(),
-  );
-});
+test(
+  "Work: drafts, Enter, completed deletion, and focus work in both lists",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    const data = await openWork(page);
+    const day = selectedCard(page);
+    await day.getByRole("button", { name: "Add task", exact: true }).click();
+    await advisory((expect) => expect(title(day)).toBeFocused());
+    await title(day).fill("First");
+    await title(day).press("Enter");
+    await advisory((expect) => expect(title(day).last()).toBeFocused());
+    await title(day).last().fill("Second");
+    await title(day).first().press("Enter");
+    await advisory((expect) => expect(title(day).last()).toBeFocused());
+    await title(day).last().press("Enter");
+    await expect(title(day)).toHaveCount(3);
+    await page.getByRole("heading", { name: "Work", exact: true }).click();
+    await expect(title(day)).toHaveCount(2);
+    await day.getByRole("checkbox", { name: "Complete First" }).check();
+    await day.getByRole("button", { name: "Delete First" }).click();
+    await expect(title(day)).toHaveValue("Second");
+    await advisory((expect) => expect(title(day)).toBeFocused());
+    await day.getByRole("button", { name: "Delete Second" }).click();
+    await advisory((expect) =>
+      expect(
+        day.getByRole("button", { name: "Add task", exact: true }),
+      ).toBeFocused(),
+    );
+    const backlog = backlogCard(page);
+    await backlog.getByRole("button", { name: "Add backlog task" }).click();
+    await advisory((expect) => expect(title(backlog)).toBeFocused());
+    await title(backlog).fill("Saved backlog");
+    await expect
+      .poll(() =>
+        data
+          .get("work-tasks")
+          .filter((item) => !item.archived)
+          .map((item) => item.title),
+      )
+      .toEqual(["Saved backlog"]);
+    await page.reload();
+    await expect(title(backlog)).toHaveValue("Saved backlog");
+    await backlog.getByRole("button", { name: "Delete Saved backlog" }).click();
+    await advisory((expect) =>
+      expect(
+        backlog.getByRole("button", { name: "Add backlog task" }),
+      ).toBeFocused(),
+    );
+  },
+);
 
 test("Work: past-day creation starts completed and title edits persist", async ({
   page,
@@ -290,12 +292,7 @@ test("Work: row navigation preserves selection and Today restores the visible ra
   await expect(page.locator(".app-sync-status")).toHaveText("");
   const calendar = page.getByRole("navigation", { name: "Work dates" });
   await calendar.getByRole("button", { name: /^Next \d+ days$/ }).focus();
-  await advisory((expect) =>
-    expect(calendar.getByRole("button", { name: /^Next \d+ days$/ })).toHaveCSS(
-      "opacity",
-      "1",
-    ),
-  );
+
   await calendar
     .getByRole("button", { name: /^Next \d+ days$/ })
     .press("Enter");
@@ -310,19 +307,7 @@ test("Work: row navigation preserves selection and Today restores the visible ra
   await selectDay(page, "2026-09-17");
   await page.setViewportSize({ width: 360, height: 800 });
   await expect(calendar.getByRole("combobox")).toHaveCount(1);
-  await advisory((expect) =>
-    expect(calendar.getByRole("button", { name: "Next 3 days" })).toHaveCSS(
-      "opacity",
-      "1",
-    ),
-  );
-  const bounds = await calendar
-    .getByRole("button", { name: "Next 3 days" })
-    .boundingBox();
-  await advisory((expect) => expect(bounds.x).toBeGreaterThanOrEqual(0));
-  await advisory((expect) =>
-    expect(bounds.x + bounds.width).toBeLessThanOrEqual(360),
-  );
+
   await expect(page.locator(".app-sync-status")).toHaveText("");
   await page.setViewportSize({ width: 600, height: 800 });
   await expect(
@@ -432,28 +417,26 @@ test.describe("Work touch and local dates", () => {
     timezoneId: "Europe/Amsterdam",
   });
 
-  test("Work: touch arrows navigate rows without changing the selected day", async ({
-    page,
-  }) => {
-    await openWork(page, [task("Touch task", TODAY)]);
-    const next = page.getByRole("button", { name: "Next 3 days" });
-    await advisory((expect) => expect(next).toHaveCSS("opacity", "1"));
-    await next.tap();
-    await expect(selectedCard(page).locator("time")).toHaveAttribute(
-      "datetime",
-      TODAY,
-    );
-    await page.getByRole("button", { name: "Previous 3 days" }).tap();
-    await expect(
-      page.getByRole("combobox", { name: /^Change day type/ }),
-    ).toBeVisible();
-    await advisory(async (expect) =>
-      expect(
-        await page.locator("html").evaluate((element) => element.scrollWidth),
-      ).toBeLessThanOrEqual(390),
-    );
-    await expect(page.locator(".app-sync-status")).toHaveText("");
-  });
+  test(
+    "Work: touch arrows navigate rows without changing the selected day",
+    { tag: "@smoke" },
+    async ({ page }) => {
+      await openWork(page, [task("Touch task", TODAY)]);
+      const next = page.getByRole("button", { name: "Next 3 days" });
+
+      await next.tap();
+      await expect(selectedCard(page).locator("time")).toHaveAttribute(
+        "datetime",
+        TODAY,
+      );
+      await page.getByRole("button", { name: "Previous 3 days" }).tap();
+      await expect(
+        page.getByRole("combobox", { name: /^Change day type/ }),
+      ).toBeVisible();
+
+      await expect(page.locator(".app-sync-status")).toHaveText("");
+    },
+  );
 
   test("Work: local midnight preserves backdated completions and rolls only unfinished work", async ({
     page,

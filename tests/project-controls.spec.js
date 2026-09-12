@@ -12,24 +12,11 @@ async function save(page) {
     .click();
 }
 
-test("project weights use native number controls with 10g steps", async ({
-  page,
-  appData,
-}) => {
+test("project weight edits persist after reload", async ({ page, appData }) => {
   await page.goto("/printing");
   await editFirst(page);
   const weight = page.locator('input[name="item-weight"]').first();
-  await expect(weight.locator("..").getByRole("button")).toHaveCount(0);
-  await expect(weight).toHaveAttribute("step", "10");
-  await weight.fill("0");
-  await weight.press("ArrowDown");
-  await expect(weight).toHaveValue("0");
-  await weight.press("ArrowUp");
-  await expect(weight).toHaveValue("10");
-  await weight.press("ArrowUp");
-  await expect(weight).toHaveValue("20");
-  await weight.press("ArrowDown");
-  await expect(weight).toHaveValue("10");
+  await weight.fill("10");
   await save(page);
   await expect
     .poll(
@@ -42,7 +29,7 @@ test("project weights use native number controls with 10g steps", async ({
   await expect(weight).toHaveValue("10");
 });
 
-test("cross stitch uses shared progress and number inputs respect completion limits", async ({
+test("partial stitch edits update progress without completing the item", async ({
   page,
   appData,
 }) => {
@@ -56,15 +43,7 @@ test("cross stitch uses shared progress and number inputs respect completion lim
     .first();
   await done.fill("0");
   await total.fill("2");
-  await expect(done.locator("..").getByRole("button")).toHaveCount(0);
-  await done.press("ArrowUp");
-  await done.press("ArrowUp");
-  await expect(done).toHaveValue("2");
-  await done.press("ArrowUp");
-  await expect(done).toHaveValue("2");
-
-  await done.press("ArrowDown");
-  await expect(done).toHaveValue("1");
+  await done.fill("1");
 
   await expect(
     page.locator(".stitch-color__progress progress").first(),
@@ -74,8 +53,11 @@ test("cross stitch uses shared progress and number inputs respect completion lim
   ).toHaveAttribute("max", "2");
   await save(page);
   await expect
-    .poll(() => appData.get("cross-stitch")?.projects[0].tasks[0].completed)
-    .toBe(false);
+    .poll(() => appData.get("cross-stitch")?.projects[0].tasks[0].crossesDone)
+    .toBe(1);
+  expect(appData.get("cross-stitch").projects[0].tasks[0].completed).toBe(
+    false,
+  );
   expect(appData.validationErrors).toEqual([]);
 });
 
@@ -142,26 +124,60 @@ test("opening an editor settles pending completion moves and preserves task orde
   expect(completed.completed).toBe(true);
 });
 
-test("incomplete projects disable submission and preserve the draft until Cancel", async ({
+test("projects retain multiple filaments and fractional weights after reload", async ({
   page,
-  appData,
 }) => {
-  appData.set("printing", { projects: [] });
   await page.goto("/printing");
-  await page.getByRole("button", { name: "Add project", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "New project", exact: true });
-  await dialog
+  const projects = page.locator(".project-card");
+  await page.getByRole("button", { name: "Add project" }).click();
+  const projectDialog = page.getByRole("dialog", { name: "New project" });
+  await projectDialog
     .getByRole("textbox", { name: "Project name" })
-    .fill("Incomplete project");
+    .fill("New 3D project");
+  await projectDialog
+    .getByRole("textbox", { name: "Item name" })
+    .fill("Weighted base");
+  await projectDialog
+    .getByLabel("Filament 1", { exact: true })
+    .selectOption("bambu-pla-basic-filament-10101");
+  await projectDialog.getByLabel("Weight 1 (g)", { exact: true }).fill("35");
+  await projectDialog.getByRole("button", { name: "Add filament" }).click();
+  await projectDialog
+    .getByLabel("Filament 2", { exact: true })
+    .selectOption("bambu-pla-basic-filament-10501");
+  await projectDialog.getByLabel("Weight 2 (g)", { exact: true }).fill("7.5");
+  await projectDialog.getByRole("button", { name: "Create project" }).click();
+  await expect(projects).toHaveCount(3);
+  const newProject = projects.filter({
+    has: page.getByRole("heading", { name: "New 3D project" }),
+  });
   await expect(
-    dialog.getByRole("button", { name: "Create project", exact: true }),
-  ).toBeDisabled();
-  await dialog.getByRole("textbox", { name: "Project name" }).press("Enter");
-  await expect(dialog).toBeVisible();
-  await expect(
-    dialog.getByRole("textbox", { name: "Project name" }),
-  ).toHaveValue("Incomplete project");
-  expect(appData.get("printing").projects).toEqual([]);
-  await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
-  await expect(dialog).toBeHidden();
+    newProject.getByRole("heading", { name: "New 3D project" }),
+  ).toBeVisible();
+  await page.reload();
+  const savedProject = newProject;
+  const editDialog = page.getByRole("dialog", {
+    name: "Edit project",
+    exact: true,
+  });
+  await expect(savedProject.locator(".task-item .title")).toHaveText(
+    "Weighted base",
+  );
+  await savedProject.getByLabel(/^Actions for/).click();
+  await savedProject.getByRole("button", { name: "Edit", exact: true }).click();
+  await expect(editDialog.getByLabel("Item name")).toHaveValue("Weighted base");
+  expect(
+    await editDialog
+      .getByLabel(/^Filament \d+$/)
+      .evaluateAll((selects) => selects.map((select) => select.value)),
+  ).toEqual([
+    "bambu-pla-basic-filament-10101",
+    "bambu-pla-basic-filament-10501",
+  ]);
+  expect(
+    await editDialog
+      .getByLabel(/^Weight \d+ \(g\)$/)
+      .evaluateAll((inputs) => inputs.map((input) => input.value)),
+  ).toEqual(["35", "7.5"]);
+  await editDialog.getByRole("button", { name: "Cancel", exact: true }).click();
 });

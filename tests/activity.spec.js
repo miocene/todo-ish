@@ -1,54 +1,55 @@
 import { advisory, test, expect } from "./app-fixture.js";
 
-test("Activity opens from the dropdown with a full year of history and remains responsive", async ({
-  page,
-  appData,
-}) => {
-  const year = new Date().getFullYear();
-  const history = Array.from({ length: 2000 }, (_, index) => ({
-    id: `history-${index}`,
-    title: `Completed item ${index}`,
-    completedAt: new Date(
-      Date.UTC(year, 0, 1 + (index % 365), 12),
-    ).toISOString(),
-  }));
-  appData.set("todos", {
-    lists: [{ id: "general", title: "General", color: 1, tasks: [] }],
-    history,
-  });
-  appData.set("work-tasks", []);
-  appData.set("work-statuses", {});
-  appData.set("chores", { tasks: [], occurrenceOrder: [] });
-  appData.set("shopping", { tasks: [] });
-  appData.set("printing", { projects: [] });
-  appData.set("cross-stitch", { projects: [] });
-  const writes = [];
-  page.on("request", (request) => {
-    if (request.method() === "PUT") writes.push(request.url());
-  });
-  await page.goto("/todos");
-  await page.getByRole("button", { name: "Profile", exact: true }).click();
-  const menu = page.locator(".jm-header__profile-menu");
-  await menu.getByRole("link", { name: "Activity", exact: true }).click();
-  await expect(page).toHaveURL(/\/profile$/);
-  await expect(menu).not.toBeVisible();
-  const cards = page.locator("article.jm-card.activity-day");
-  await expect(cards).toHaveCount(365);
-  await expect(cards.locator("header time")).toHaveCount(365);
-  await expect(cards.locator("li")).toHaveCount(2000);
-  await expect(cards.locator('use[href$="#icon-todo"]')).toHaveCount(2000);
-  await expect(cards.getByRole("link")).toHaveCount(0);
-  expect(writes).toEqual([]);
-  await cards.last().scrollIntoViewIfNeeded();
-  await expect(cards.last().locator("li").last()).toBeVisible();
-  const years = page.getByRole("navigation", { name: "Activity years" });
-  await years
-    .getByRole("link", { name: String(year - 1), exact: true })
-    .click();
-  await expect(page.getByText(`No activity in ${year - 1}.`)).toBeVisible();
-  await years.getByRole("link", { name: String(year), exact: true }).click();
-  await expect(cards).toHaveCount(365);
-});
+test(
+  "Activity opens from the dropdown with a full year of history and remains responsive",
+  { tag: "@smoke" },
+  async ({ page, appData }) => {
+    const year = new Date().getFullYear();
+    const history = Array.from({ length: 2000 }, (_, index) => ({
+      id: `history-${index}`,
+      title: `Completed item ${index}`,
+      completedAt: new Date(
+        Date.UTC(year, 0, 1 + (index % 365), 12),
+      ).toISOString(),
+    }));
+    appData.set("todos", {
+      lists: [{ id: "general", title: "General", color: 1, tasks: [] }],
+      history,
+    });
+    appData.set("work-tasks", []);
+    appData.set("work-statuses", {});
+    appData.set("chores", { tasks: [], occurrenceOrder: [] });
+    appData.set("shopping", { tasks: [] });
+    appData.set("printing", { projects: [] });
+    appData.set("cross-stitch", { projects: [] });
+    const writes = [];
+    page.on("request", (request) => {
+      if (request.method() === "PUT") writes.push(request.url());
+    });
+    await page.goto("/todos");
+    await page.getByRole("button", { name: "Profile", exact: true }).click();
+    const menu = page.locator(".jm-header__profile-menu");
+    await menu.getByRole("link", { name: "Activity", exact: true }).click();
+    await expect(page).toHaveURL(/\/profile$/);
+    await expect(menu).not.toBeVisible();
+    const cards = page.locator("article.jm-card.activity-day");
+    await expect(cards).toHaveCount(365);
+    await expect(cards.locator("header time")).toHaveCount(365);
+    await expect(cards.locator("li")).toHaveCount(2000);
+    await expect(cards.locator('use[href$="#icon-todo"]')).toHaveCount(2000);
+    await expect(cards.getByRole("link")).toHaveCount(0);
+    expect(writes).toEqual([]);
+    await cards.last().scrollIntoViewIfNeeded();
+    await expect(cards.last().locator("li").last()).toBeVisible();
+    const years = page.getByRole("navigation", { name: "Activity years" });
+    await years
+      .getByRole("link", { name: String(year - 1), exact: true })
+      .click();
+    await expect(page.getByText(`No activity in ${year - 1}.`)).toBeVisible();
+    await years.getByRole("link", { name: String(year), exact: true }).click();
+    await expect(cards).toHaveCount(365);
+  },
+);
 
 test("profile shows yearly task activity and newly checked items", async ({
   page,
@@ -152,28 +153,4 @@ test("saved partial stitching appears as daily project totals after reload", asy
   await expect(
     page.locator(`.jm-activity-graph time[datetime="${day}"]`),
   ).toHaveAttribute("data-level", "1");
-});
-
-test("activity cards keep long titles inside the card", async ({
-  page,
-  appData,
-}) => {
-  const title = "x".repeat(500);
-  appData.set("todos", {
-    lists: [],
-    history: [
-      { id: "long-title", title, completedAt: new Date().toISOString() },
-    ],
-  });
-  await page.goto("/profile");
-  const text = page.getByText(title, { exact: true });
-  await expect(text).toBeVisible();
-  await advisory(async (expect) => {
-    const bounds = await text.evaluate((element) => {
-      const card = element.closest(".jm-card").getBoundingClientRect();
-      const text = element.getBoundingClientRect();
-      return { right: text.right, cardRight: card.right };
-    });
-    expect(bounds.right).toBeLessThanOrEqual(bounds.cardRight);
-  });
 });

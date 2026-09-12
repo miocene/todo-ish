@@ -4,77 +4,81 @@ for (const [path, resource] of [
   ["printing", "printing"],
   ["cross-stitch", "cross-stitch"],
 ]) {
-  test(`${path}: project modal requires a nested item and saves only on creation`, async ({
-    page,
-    appData,
-  }) => {
-    appData.set(resource, { projects: [], history: [] });
-    await page.goto(`/${path}`);
-    const add = page.getByRole("button", { name: "Add project", exact: true });
-    await add.click();
-    const dialog = page.getByRole("dialog", {
-      name: "New project",
-      exact: true,
-    });
-    const create = dialog.getByRole("button", {
-      name: "Create project",
-      exact: true,
-    });
-    await advisory((expect) =>
-      expect(
+  test(
+    `${path}: project modal requires a nested item and saves only on creation`,
+    { tag: "@smoke" },
+    async ({ page, appData }) => {
+      appData.set(resource, { projects: [], history: [] });
+      await page.goto(`/${path}`);
+      const add = page.getByRole("button", {
+        name: "Add project",
+        exact: true,
+      });
+      await add.click();
+      const dialog = page.getByRole("dialog", {
+        name: "New project",
+        exact: true,
+      });
+      const create = dialog.getByRole("button", {
+        name: "Create project",
+        exact: true,
+      });
+      await advisory((expect) =>
+        expect(
+          dialog.getByRole("textbox", { name: "Project name" }),
+        ).toBeFocused(),
+      );
+      await dialog
+        .getByRole("textbox", { name: "Project name" })
+        .fill("New build");
+      await expect(create).toBeDisabled();
+      expect(appData.get(resource).projects).toEqual([]);
+      await dialog
+        .getByRole("button", { name: /^Remove (item|color) 1$/ })
+        .click();
+      await expect(create).toBeDisabled();
+      await dialog.getByRole("button", { name: /^Add (item|color)$/ }).click();
+      if (path === "printing")
+        await dialog.getByRole("textbox", { name: "Item name" }).fill("Base");
+      else {
+        await dialog
+          .getByRole("combobox", { name: "Thread color" })
+          .selectOption("dmc310");
+        await dialog
+          .getByRole("spinbutton", { name: "Crosses total" })
+          .fill("100");
+      }
+      await create.click();
+      await expect(dialog).not.toBeVisible();
+      await expect.poll(() => appData.get(resource).projects.length).toBe(1);
+      expect(appData.get(resource).projects[0].tasks).toHaveLength(1);
+      await page.reload();
+      await expect(
+        page.getByRole("heading", { name: /^New build/ }),
+      ).toBeVisible();
+      await add.click();
+      await dialog
+        .getByRole("textbox", { name: "Project name" })
+        .fill("Discard this");
+      await page.keyboard.press("Escape");
+      await expect(dialog).not.toBeVisible();
+      await advisory((expect) => expect(add).toBeFocused());
+      expect(appData.get(resource).projects).toHaveLength(1);
+      await add.click();
+      await expect(
         dialog.getByRole("textbox", { name: "Project name" }),
-      ).toBeFocused(),
-    );
-    await dialog
-      .getByRole("textbox", { name: "Project name" })
-      .fill("New build");
-    await expect(create).toBeDisabled();
-    expect(appData.get(resource).projects).toEqual([]);
-    await dialog
-      .getByRole("button", { name: /^Remove (item|color) 1$/ })
-      .click();
-    await expect(create).toBeDisabled();
-    await dialog.getByRole("button", { name: /^Add (item|color)$/ }).click();
-    if (path === "printing")
-      await dialog.getByRole("textbox", { name: "Item name" }).fill("Base");
-    else {
-      await dialog
-        .getByRole("combobox", { name: "Thread color" })
-        .selectOption("dmc310");
-      await dialog
-        .getByRole("spinbutton", { name: "Crosses total" })
-        .fill("100");
-    }
-    await create.click();
-    await expect(dialog).not.toBeVisible();
-    await expect.poll(() => appData.get(resource).projects.length).toBe(1);
-    expect(appData.get(resource).projects[0].tasks).toHaveLength(1);
-    await page.reload();
-    await expect(
-      page.getByRole("heading", { name: /^New build/ }),
-    ).toBeVisible();
-    await add.click();
-    await dialog
-      .getByRole("textbox", { name: "Project name" })
-      .fill("Discard this");
-    await page.keyboard.press("Escape");
-    await expect(dialog).not.toBeVisible();
-    await advisory((expect) => expect(add).toBeFocused());
-    expect(appData.get(resource).projects).toHaveLength(1);
-    await add.click();
-    await expect(
-      dialog.getByRole("textbox", { name: "Project name" }),
-    ).toHaveValue("");
-    await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
-    await page.goto("/profile");
-    await expect(
-      page.getByText("Created project: New build", { exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByText("Created project: Discard this", { exact: true }),
-    ).toHaveCount(0);
-    expect(appData.validationErrors).toEqual([]);
-  });
+      ).toHaveValue("");
+      await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+      await page.goto("/profile");
+      await expect(
+        page.getByText("Created project: New build", { exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.getByText("Created project: Discard this", { exact: true }),
+      ).toHaveCount(0);
+      expect(appData.validationErrors).toEqual([]);
+    },
+  );
 }
 
 for (const [path, resource] of [

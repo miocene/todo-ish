@@ -3,6 +3,11 @@ name: Quality checks
 on:
   pull_request:
   workflow_call:
+    inputs:
+      deployment:
+        description: Run the frontend deployment checks without infrastructure checks
+        type: boolean
+        default: false
   workflow_dispatch:
 
 permissions:
@@ -11,11 +16,11 @@ permissions:
 jobs:
   checks:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: ${{ inputs.deployment && 10 || 20 }}
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
-        node: [22.22.1, 24.19.0]
+        node: ${{ fromJSON(inputs.deployment && '["24.19.0"]' || '["22.22.1", "24.19.0"]') }}
     services:
       postgres:
         image: postgres:18.6-bookworm
@@ -59,24 +64,26 @@ jobs:
         run: yarn lint && yarn format:check && yarn test:unit && yarn test:api && yarn build
 
       - name: Measure JavaScript coverage
-        if: matrix.node == '24.19.0'
+        if: ${{ !inputs.deployment && matrix.node == '24.19.0' }}
         run: yarn test:coverage
 
       - name: Install Chromium for database browser integration tests
+        if: ${{ !inputs.deployment }}
         run: yarn playwright install --with-deps chromium
 
       - name: Verify PostgreSQL round trips and backup restore
+        if: ${{ !inputs.deployment }}
         run: yarn test:integration
         env:
           TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/postgres
           TEST_BACKUP_CONTAINER: ${{ job.services.postgres.id }}
 
       - name: Verify web container build
-        if: matrix.node == '24.19.0'
+        if: ${{ !inputs.deployment && matrix.node == '24.19.0' }}
         run: docker build --file backend/deploy/raspberry-pi/web/Dockerfile --tag done-ish-web:ci .
 
       - name: Verify deployed API image and health/auth boundaries
-        if: matrix.node == '24.19.0'
+        if: ${{ !inputs.deployment && matrix.node == '24.19.0' }}
         run: |
           docker build --tag done-ish-api:ci backend/api
           node backend/api/test/container-smoke.mjs
@@ -84,7 +91,7 @@ jobs:
           TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/postgres
 
       - name: Save JavaScript coverage
-        if: always() && matrix.node == '24.19.0'
+        if: ${{ !inputs.deployment && always() && matrix.node == '24.19.0' }}
         uses: actions/upload-artifact@v7
         with:
           name: javascript-coverage
@@ -92,11 +99,12 @@ jobs:
           if-no-files-found: ignore
 
   browsers:
+    needs: checks
     name: Browser tests (${{ matrix.project }})
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 12
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         include:
           - project: chromium
@@ -133,10 +141,12 @@ jobs:
         run: yarn test:e2e --project=${{ matrix.project }} --workers=2
 
       - name: Save browser failure traces
-        if: failure()
+        if: ${{ failure() || cancelled() }}
         uses: actions/upload-artifact@v7
         with:
           name: browser-failure-traces-${{ matrix.project }}
-          path: test-results/
+          path: |
+            test-results/
+            playwright-report/
           if-no-files-found: ignore
           retention-days: 7

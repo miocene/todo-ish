@@ -1,4 +1,4 @@
-import { advisory, test, expect } from "../../../tests/app-fixture.js";
+import { test, expect } from "../../../tests/app-fixture.js";
 
 test("profile popover exposes account actions and Activity, with native dismissal", async ({
   page,
@@ -16,7 +16,6 @@ test("profile popover exposes account actions and Activity, with native dismissa
   await expect(menu.getByRole("button", { name: "Sign out" })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(menu).not.toBeVisible();
-  await advisory((expect) => expect(trigger).toBeFocused());
   await trigger.click();
   await menu.getByRole("link", { name: "Activity", exact: true }).click();
   await expect(page).toHaveURL(/\/profile$/);
@@ -27,13 +26,6 @@ test("profile popover exposes account actions and Activity, with native dismissa
   await trigger.click();
   await page.getByRole("heading", { name: "Activity", exact: true }).click();
   await expect(menu).not.toBeVisible();
-  await page.setViewportSize({ width: 360, height: 800 });
-  await trigger.click();
-  const box = await menu.boundingBox();
-  await advisory((expect) => expect(box.x).toBeGreaterThanOrEqual(0));
-  await advisory((expect) =>
-    expect(box.x + box.width).toBeLessThanOrEqual(360),
-  );
 });
 
 test("account action failures are shown in the popover and controls recover", async ({

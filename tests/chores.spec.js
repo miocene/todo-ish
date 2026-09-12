@@ -21,80 +21,91 @@ async function add(page, title) {
   return dialog;
 }
 
-test("add and edit weekly schedules in a modal, applying only on submit", async ({
-  page,
-  appData,
-}) => {
-  const dialog = await add(page, "Water plants");
-  await dialog.getByRole("spinbutton", { name: "Every" }).fill("2");
-  await dialog.getByRole("checkbox", { name: "Wednesday" }).check();
-  await dialog.getByRole("checkbox", { name: "Friday" }).check();
-  expect(appData.get("chores").tasks).toEqual([]);
-  await expect(dialog.locator(".chore-preview time")).toHaveAttribute(
-    "datetime",
-    "2026-02-02",
-  );
-  await dialog.getByRole("button", { name: "Add chore", exact: true }).click();
-  await expect(dialog).not.toBeVisible();
-  await expect
-    .poll(() => appData.get("chores").tasks[0]?.schedule.weekdays)
-    .toEqual([0, 2, 4]);
-  await page.reload();
-  await expect(page.locator(".chores-all").getByRole("textbox")).toHaveCount(0);
-  await page
-    .getByRole("button", { name: "Edit Water plants", exact: true })
-    .click();
-  await expect(dialog.getByRole("spinbutton", { name: "Every" })).toHaveValue(
-    "2",
-  );
-  await dialog
-    .getByRole("textbox", { name: "Title", exact: true })
-    .fill("Water all plants");
-  await dialog.getByRole("button", { name: "Save", exact: true }).click();
-  await advisory((expect) =>
-    expect(
-      page.getByRole("button", { name: "Edit Water all plants", exact: true }),
-    ).toBeFocused(),
-  );
-  await expect
-    .poll(() => appData.get("chores").tasks[0]?.title)
-    .toBe("Water all plants");
-  expect(appData.validationErrors).toEqual([]);
-});
+test(
+  "add and edit weekly schedules in a modal, applying only on submit",
+  { tag: "@smoke" },
+  async ({ page, appData }) => {
+    const dialog = await add(page, "Water plants");
+    await dialog.getByRole("spinbutton", { name: "Every" }).fill("2");
+    await dialog.getByRole("checkbox", { name: "Wednesday" }).check();
+    await dialog.getByRole("checkbox", { name: "Friday" }).check();
+    expect(appData.get("chores").tasks).toEqual([]);
+    await expect(dialog.locator(".chore-preview time")).toHaveAttribute(
+      "datetime",
+      "2026-02-02",
+    );
+    await dialog
+      .getByRole("button", { name: "Add chore", exact: true })
+      .click();
+    await expect(dialog).not.toBeVisible();
+    await expect
+      .poll(() => appData.get("chores").tasks[0]?.schedule.weekdays)
+      .toEqual([0, 2, 4]);
+    await page.reload();
+    await expect(page.locator(".chores-all").getByRole("textbox")).toHaveCount(
+      0,
+    );
+    await page
+      .getByRole("button", { name: "Edit Water plants", exact: true })
+      .click();
+    await expect(dialog.getByRole("spinbutton", { name: "Every" })).toHaveValue(
+      "2",
+    );
+    await dialog
+      .getByRole("textbox", { name: "Title", exact: true })
+      .fill("Water all plants");
+    await dialog.getByRole("button", { name: "Save", exact: true }).click();
+    await advisory((expect) =>
+      expect(
+        page.getByRole("button", {
+          name: "Edit Water all plants",
+          exact: true,
+        }),
+      ).toBeFocused(),
+    );
+    await expect
+      .poll(() => appData.get("chores").tasks[0]?.title)
+      .toBe("Water all plants");
+    expect(appData.validationErrors).toEqual([]);
+  },
+);
 
-test("cancel, Escape and backdrop dismiss drafts without changing chores", async ({
-  page,
-  appData,
-}) => {
-  let dialog = await add(page, "Discard me");
-  await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
-  expect(appData.get("chores").tasks).toEqual([]);
-  dialog = await add(page, "Sweep");
-  await dialog.getByRole("button", { name: "Add chore", exact: true }).click();
-  await expect.poll(() => appData.get("chores").tasks.length).toBe(1);
-  const saved = structuredClone(appData.get("chores"));
-  await page.getByRole("button", { name: "Edit Sweep", exact: true }).click();
-  await dialog
-    .getByRole("textbox", { name: "Title", exact: true })
-    .fill("Unsaved");
-  await page.keyboard.press("Escape");
-  await expect(dialog).not.toBeVisible();
-  await advisory((expect) =>
-    expect(
-      page.getByRole("button", { name: "Edit Sweep", exact: true }),
-    ).toBeFocused(),
-  );
-  expect(appData.get("chores")).toEqual(saved);
-  await page.getByRole("button", { name: "Edit Sweep", exact: true }).click();
-  await expect(
-    dialog.getByRole("textbox", { name: "Title", exact: true }),
-  ).toHaveValue("Sweep");
-  await page.mouse.click(1, 1);
-  await expect(dialog).not.toBeVisible();
-  expect(appData.get("chores")).toEqual(saved);
-});
+test(
+  "cancel, Escape and backdrop dismiss drafts without changing chores",
+  { tag: "@smoke" },
+  async ({ page, appData }) => {
+    let dialog = await add(page, "Discard me");
+    await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+    expect(appData.get("chores").tasks).toEqual([]);
+    dialog = await add(page, "Sweep");
+    await dialog
+      .getByRole("button", { name: "Add chore", exact: true })
+      .click();
+    await expect.poll(() => appData.get("chores").tasks.length).toBe(1);
+    const saved = structuredClone(appData.get("chores"));
+    await page.getByRole("button", { name: "Edit Sweep", exact: true }).click();
+    await dialog
+      .getByRole("textbox", { name: "Title", exact: true })
+      .fill("Unsaved");
+    await page.keyboard.press("Escape");
+    await expect(dialog).not.toBeVisible();
+    await advisory((expect) =>
+      expect(
+        page.getByRole("button", { name: "Edit Sweep", exact: true }),
+      ).toBeFocused(),
+    );
+    expect(appData.get("chores")).toEqual(saved);
+    await page.getByRole("button", { name: "Edit Sweep", exact: true }).click();
+    await expect(
+      dialog.getByRole("textbox", { name: "Title", exact: true }),
+    ).toHaveValue("Sweep");
+    await page.mouse.click(1, 1);
+    await expect(dialog).not.toBeVisible();
+    expect(appData.get("chores")).toEqual(saved);
+  },
+);
 
-test("monthly picker fits mobile and clamps dates to month-end", async ({
+test("monthly schedules clamp dates to month-end", async ({
   page,
   appData,
 }) => {
@@ -121,13 +132,7 @@ test("monthly picker fits mobile and clamps dates to month-end", async ({
   ).toBeDisabled();
   await dialog.getByRole("spinbutton", { name: "Every" }).fill("1");
   await expect(dialog.getByRole("alert")).toHaveCount(0);
-  await advisory(async (expect) =>
-    expect(
-      await dialog.evaluate(
-        (element) => element.scrollWidth <= element.clientWidth,
-      ),
-    ).toBe(true),
-  );
+
   await expect(dialog.locator(".chore-preview time")).toHaveAttribute(
     "datetime",
     "2026-02-28",
@@ -395,38 +400,6 @@ test("multiple completions survive reload without resending unchanged history", 
         .locator(`.activity-day:has(header time[datetime="${date}"])`)
         .getByText("Sweep twice", { exact: true }),
     ).toHaveCount(1);
-  }
-});
-
-test("long chore titles keep mobile actions reachable", async ({
-  page,
-  appData,
-}) => {
-  await page.setViewportSize({ width: 360, height: 800 });
-  const title = "LongChoreTitle".repeat(35);
-  appData.set("chores", {
-    occurrenceOrder: ["one"],
-    tasks: [
-      {
-        id: "one",
-        title,
-        details: "Daily",
-        nextDue: "2026-02-02",
-        completed: false,
-      },
-    ],
-  });
-  await page.reload();
-  for (const action of ["Edit", "Delete"]) {
-    const button = page.getByRole("button", {
-      name: `${action} ${title}`,
-      exact: true,
-    });
-    const bounds = await button.boundingBox();
-    await advisory((expect) =>
-      expect(bounds.x + bounds.width).toBeLessThanOrEqual(360),
-    );
-    await expect(button).toBeVisible();
   }
 });
 

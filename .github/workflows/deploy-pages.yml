@@ -16,8 +16,11 @@ concurrency:
 jobs:
   quality:
     uses: ./.github/workflows/quality.yml
+    with:
+      deployment: true
 
   build:
+    timeout-minutes: 10
     needs: quality
     runs-on: ubuntu-latest
     steps:
@@ -51,6 +54,7 @@ jobs:
           path: dist
 
   deploy:
+    timeout-minutes: 5
     needs: build
     runs-on: ubuntu-latest
     permissions:

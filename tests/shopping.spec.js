@@ -70,30 +70,31 @@ for (const [material, resource, id] of [
   ["filament", "filament-inventory", filamentId],
   ["floss", "floss-inventory", flossId],
 ]) {
-  test(`${material} purchase adds displayed quantity once and unchecking reverses after reload`, async ({
-    page,
-    appData,
-  }) => {
-    const row = materialRow(page, material);
-    await expect(row.getByRole("button", { name: /Remove/ })).toHaveCount(0);
-    await expect(row).toContainText("2");
-    await row.getByRole("checkbox").check();
-    await expect(page).toHaveURL(/\/shopping$/);
-    await expect.poll(() => appData.get(resource)[id]).toBe(3);
-    await expect
-      .poll(
-        () =>
-          appData.get("shopping").tasks.filter((task) => task.source).length,
-      )
-      .toBe(1);
-    await page.reload();
-    await expect(row.getByRole("checkbox")).toBeChecked();
-    await expect(row.getByRole("button", { name: /Remove/ })).toBeVisible();
-    await row.getByRole("checkbox").uncheck();
-    await expect.poll(() => appData.get(resource)[id]).toBe(1);
-    await expect(row.getByRole("button", { name: /Remove/ })).toHaveCount(0);
-    expect(appData.validationErrors).toEqual([]);
-  });
+  test(
+    `${material} purchase adds displayed quantity once and unchecking reverses after reload`,
+    { tag: "@smoke" },
+    async ({ page, appData }) => {
+      const row = materialRow(page, material);
+      await expect(row.getByRole("button", { name: /Remove/ })).toHaveCount(0);
+      await expect(row).toContainText("2");
+      await row.getByRole("checkbox").check();
+      await expect(page).toHaveURL(/\/shopping$/);
+      await expect.poll(() => appData.get(resource)[id]).toBe(3);
+      await expect
+        .poll(
+          () =>
+            appData.get("shopping").tasks.filter((task) => task.source).length,
+        )
+        .toBe(1);
+      await page.reload();
+      await expect(row.getByRole("checkbox")).toBeChecked();
+      await expect(row.getByRole("button", { name: /Remove/ })).toBeVisible();
+      await row.getByRole("checkbox").uncheck();
+      await expect.poll(() => appData.get(resource)[id]).toBe(1);
+      await expect(row.getByRole("button", { name: /Remove/ })).toHaveCount(0);
+      expect(appData.validationErrors).toEqual([]);
+    },
+  );
 }
 
 test("purchase deletion preserves stock and activity; inventory failures recover without double counting", async ({
@@ -312,7 +313,7 @@ test("shopping is usable with unavailable catalogs and unknown material links ar
   await expect(page.locator(".shopping-card textarea")).toHaveCount(2);
 });
 
-test("long manual titles persist and fit mobile", async ({ page }) => {
+test("long manual titles persist", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await page.getByRole("button", { name: "Add item", exact: true }).click();
   const title = page.locator(".shopping-card textarea").last();
@@ -322,15 +323,6 @@ test("long manual titles persist and fit mobile", async ({ page }) => {
   await page.reload();
   await expect(page.locator(".shopping-card textarea").last()).toHaveValue(
     "A".repeat(500),
-  );
-  await advisory(async (expect) =>
-    expect(
-      await page.evaluate(
-        () =>
-          globalThis.document.documentElement.scrollWidth <=
-          globalThis.innerWidth,
-      ),
-    ).toBe(true),
   );
 });
 

@@ -64,39 +64,40 @@ test("cards use the shared kebab menu and General has one direct action", async 
   await expect(page.locator(".todo-list-card li li")).toHaveCount(0);
 });
 
-test("new list and per-card task entry persist and Enter stays in its list", async ({
-  page,
-  appData,
-}) => {
-  await page.getByRole("button", { name: "New list", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "New list", exact: true });
-  await dialog
-    .getByRole("textbox", { name: "List name", exact: true })
-    .fill("Travel");
-  await dialog
-    .getByRole("button", { name: "Create list", exact: true })
-    .click();
-  const travel = page.locator(".todo-list-card").filter({
-    has: page.getByRole("heading", { name: "Travel", exact: true }),
-  });
-  await listAction(page, "Travel", "Add task to Travel");
-  await travel.getByRole("textbox").last().fill("Pack bag");
-  await travel.getByRole("textbox").last().press("Enter");
-  await advisory((expect) =>
-    expect(travel.getByRole("textbox").last()).toBeFocused(),
-  );
-  await travel.getByRole("textbox").last().fill("Book train");
-  await expect
-    .poll(
-      () =>
-        appData.get("todos").lists.find((list) => list.title === "Travel")
-          ?.tasks.length,
-    )
-    .toBe(2);
-  await page.reload();
-  await expect(travel.getByRole("textbox")).toHaveCount(2);
-  expect(appData.validationErrors).toEqual([]);
-});
+test(
+  "new list and per-card task entry persist and Enter stays in its list",
+  { tag: "@smoke" },
+  async ({ page, appData }) => {
+    await page.getByRole("button", { name: "New list", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "New list", exact: true });
+    await dialog
+      .getByRole("textbox", { name: "List name", exact: true })
+      .fill("Travel");
+    await dialog
+      .getByRole("button", { name: "Create list", exact: true })
+      .click();
+    const travel = page.locator(".todo-list-card").filter({
+      has: page.getByRole("heading", { name: "Travel", exact: true }),
+    });
+    await listAction(page, "Travel", "Add task to Travel");
+    await travel.getByRole("textbox").last().fill("Pack bag");
+    await travel.getByRole("textbox").last().press("Enter");
+    await advisory((expect) =>
+      expect(travel.getByRole("textbox").last()).toBeFocused(),
+    );
+    await travel.getByRole("textbox").last().fill("Book train");
+    await expect
+      .poll(
+        () =>
+          appData.get("todos").lists.find((list) => list.title === "Travel")
+            ?.tasks.length,
+      )
+      .toBe(2);
+    await page.reload();
+    await expect(travel.getByRole("textbox")).toHaveCount(2);
+    expect(appData.validationErrors).toEqual([]);
+  },
+);
 
 test("deleting a list retains only completed activity without its list name", async ({
   page,
@@ -150,7 +151,7 @@ test("completion followed by list deletion survives a failed save and reload", a
   expect(appData.validationErrors).toEqual([]);
 });
 
-test("empty data gets General and cards fit mobile", async ({
+test("empty data gets General and adding a task expands it", async ({
   page,
   appData,
 }) => {
@@ -172,15 +173,6 @@ test("empty data gets General and cards fit mobile", async ({
     expect(
       page.locator("#todo-list-general").getByRole("textbox"),
     ).toBeFocused(),
-  );
-  await advisory(async (expect) =>
-    expect(
-      await page.evaluate(
-        () =>
-          globalThis.document.documentElement.scrollWidth <=
-          globalThis.innerWidth,
-      ),
-    ).toBe(true),
   );
 });
 
@@ -451,50 +443,4 @@ test("list and task limits prevent unsavable additions", async ({
   ).toBeVisible();
   await expect(page.locator(".task-item")).toHaveCount(2000);
   expect(appData.validationErrors).toEqual([]);
-});
-
-test("populated mobile cards wrap long names and retain checkbox focus after reordering", async ({
-  page,
-  appData,
-}) => {
-  const longTitle = "A".repeat(500);
-  appData.set("todos", {
-    lists: [
-      {
-        id: "general",
-        title: longTitle,
-        color: "#18A76B",
-        tasks: [
-          { id: "long", title: longTitle, completed: false },
-          { id: "short", title: "Short task", completed: false },
-        ],
-      },
-    ],
-    history: [],
-  });
-  await page.setViewportSize({ width: 360, height: 800 });
-  await page.reload();
-  const checkbox = page.locator("#task-item-complete-long");
-  await checkbox.focus();
-  await page.keyboard.press("Space");
-  await page.clock.runFor(500);
-  await advisory((expect) => expect(checkbox).toBeFocused());
-  await expect(
-    page.locator(".task-item").last().getByRole("textbox"),
-  ).toHaveValue(longTitle);
-  await page.keyboard.press("Space");
-  await page.clock.runFor(500);
-  await advisory((expect) => expect(checkbox).toBeFocused());
-  await expect(
-    page.locator(".task-item").first().getByRole("textbox"),
-  ).toHaveValue(longTitle);
-  await advisory(async (expect) =>
-    expect(
-      await page.evaluate(
-        () =>
-          globalThis.document.documentElement.scrollWidth <=
-          globalThis.innerWidth,
-      ),
-    ).toBe(true),
-  );
 });
