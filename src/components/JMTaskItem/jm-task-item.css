@@ -110,7 +110,7 @@
       line to 91.26% 2.01%,
       close
     );
-    background-color: contrast-color(currentcolor);
+    background-color: currentcolor;
     translate: -50% -50%;
   }
 

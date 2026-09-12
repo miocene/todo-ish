@@ -17,23 +17,24 @@ yarn setup
 
 Setup installs frontend/API dependencies, Python tools, and Chromium/WebKit. On Linux, use `yarn setup --with-deps` for browser system dependencies.
 
-Setup also enables `.githooks/pre-push`: every push runs `yarn lint`, `yarn format:check`, and `yarn test` (unit, API, and browser tests), stopping at the first failure. Formatting is checked without modifying files. PostgreSQL integration tests remain in CI. The hook checks the current working tree; commit the changes you intend to push before running it.
+Setup also enables `.githooks/pre-push`: every push runs `yarn lint`, `yarn format:check`, and `yarn test` (unit, API, and Chromium browser tests), stopping at the first failure. Formatting is checked without modifying files. Safari, mobile Safari, coverage, and PostgreSQL integration checks run in CI. The hook checks the current working tree; commit the changes you intend to push before running it.
 
 `yarn dev` uses the project's local backend connection. Before running it, follow `local-notes/DEPLOYMENT.md` if available; it explains which database receives edits. Browser tests use an isolated API mock.
 
 ## Checks and configuration
 
-| Command             | Purpose                                                    |
-| ------------------- | ---------------------------------------------------------- |
-| `yarn lint`         | JavaScript/Vue, CSS, and Python checks                     |
-| `yarn format`       | Format the repository                                      |
-| `yarn format:check` | Check formatting without changing files                    |
-| `yarn test:unit`    | Unit tests and repository audit                            |
-| `yarn test:api`     | API tests without a database                               |
-| `yarn test:e2e`     | Browser tests                                              |
-| `yarn build`        | Production frontend build                                  |
-| `yarn build:pages`  | Frontend build with Pages route handling                   |
-| `yarn quality`      | Lint, formatting checks, unit/API/browser tests, and build |
+| Command             | Purpose                                              |
+| ------------------- | ---------------------------------------------------- |
+| `yarn lint`         | JavaScript/Vue, CSS, and Python checks               |
+| `yarn format`       | Format the repository                                |
+| `yarn format:check` | Check formatting without changing files              |
+| `yarn test:unit`    | Unit tests and repository audit                      |
+| `yarn test:api`     | API tests without a database                         |
+| `yarn test`         | Unit, API, and Chromium tests                        |
+| `yarn test:e2e`     | Full Chrome, Safari, and mobile Safari browser suite |
+| `yarn build`        | Production frontend build                            |
+| `yarn build:pages`  | Frontend build with Pages route handling             |
+| `yarn quality`      | Lint, formatting, unit/API/Chromium tests, and build |
 
 Rules live in `eslint.config.js`, `stylelint.config.js`, `.prettierrc.json`, and `backend/pyproject.toml`. The [quality policy](AGENTS.md#quality-policy) explains which findings block checks. Browser settings live in `playwright.config.js`; commands are defined in `package.json` and `backend/api/package.json`.
 
@@ -53,7 +54,7 @@ CI runs [the reusable quality workflow](.github/workflows/quality.yml) before pu
 
 ## Browser checks and coverage
 
-`yarn test:e2e` runs the functional suite on Chromium (Chrome engine), desktop WebKit (Safari engine), and WebKit with iPhone emulation. Run one project with `yarn test:e2e --project=webkit`. Emulation does not replace checking a real iPhone, particularly native passkey prompts.
+`yarn test` uses Chromium for faster local and pre-push checks; coverage is run separately in CI. `yarn test:e2e` runs the functional suite on Chromium (Chrome engine), desktop WebKit (Safari engine), and WebKit with iPhone emulation. Run one project with `yarn test:e2e --project=webkit`. Emulation does not replace checking a real iPhone, particularly native passkey prompts.
 
 Component-focused browser tests use the shared app fixture; they run through the same Playwright command as page flows. Utility unit tests run through `yarn test:unit` and are excluded from coverage measurements.
 
