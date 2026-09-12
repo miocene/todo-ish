@@ -33,8 +33,11 @@ jobs:
           node-version: 22
           cache: yarn
 
-      - name: Enable Yarn
-        run: corepack enable
+      - name: Install Yarn
+        run: |
+          corepack disable yarn
+          npm install --global yarn@1.22.22 --registry=https://registry.npmjs.org
+          yarn --version
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile

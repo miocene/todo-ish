@@ -47,8 +47,11 @@ jobs:
             yarn.lock
             backend/api/yarn.lock
 
-      - name: Enable Yarn
-        run: corepack enable
+      - name: Install Yarn
+        run: |
+          corepack disable yarn
+          npm install --global yarn@1.22.22 --registry=https://registry.npmjs.org
+          yarn --version
 
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -126,8 +129,11 @@ jobs:
             yarn.lock
             backend/api/yarn.lock
 
-      - name: Enable Yarn
-        run: corepack enable
+      - name: Install Yarn
+        run: |
+          corepack disable yarn
+          npm install --global yarn@1.22.22 --registry=https://registry.npmjs.org
+          yarn --version
 
       - name: Install application dependencies
         run: |
