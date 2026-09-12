@@ -35,6 +35,11 @@ main {
 
 /* activity page */
 .activity-day {
+  &:nth-child(n + 10 of .activity-day) {
+    content-visibility: auto;
+    contain-intrinsic-block-size: auto 320px;
+  }
+
   .check {
     display: flex;
     flex: none;

@@ -1,6 +1,6 @@
 import { advisory, test, expect } from "./app-fixture.js";
 
-test("Activity renders a full year of history without initializing resources", async ({
+test("Activity opens from the dropdown with a full year of history and remains responsive", async ({
   page,
   appData,
 }) => {
@@ -12,7 +12,10 @@ test("Activity renders a full year of history without initializing resources", a
       Date.UTC(year, 0, 1 + (index % 365), 12),
     ).toISOString(),
   }));
-  appData.set("todos", { lists: [], history });
+  appData.set("todos", {
+    lists: [{ id: "general", title: "General", color: 1, tasks: [] }],
+    history,
+  });
   appData.set("work-tasks", []);
   appData.set("work-statuses", {});
   appData.set("chores", { tasks: [], occurrenceOrder: [] });
@@ -23,7 +26,12 @@ test("Activity renders a full year of history without initializing resources", a
   page.on("request", (request) => {
     if (request.method() === "PUT") writes.push(request.url());
   });
-  await page.goto("/profile");
+  await page.goto("/todos");
+  await page.getByRole("button", { name: "Profile", exact: true }).click();
+  const menu = page.locator(".jm-header__profile-menu");
+  await menu.getByRole("link", { name: "Activity", exact: true }).click();
+  await expect(page).toHaveURL(/\/profile$/);
+  await expect(menu).not.toBeVisible();
   const cards = page.locator("article.jm-card.activity-day");
   await expect(cards).toHaveCount(365);
   await expect(cards.locator("header time")).toHaveCount(365);
@@ -31,6 +39,15 @@ test("Activity renders a full year of history without initializing resources", a
   await expect(cards.locator('use[href$="#icon-todo"]')).toHaveCount(2000);
   await expect(cards.getByRole("link")).toHaveCount(0);
   expect(writes).toEqual([]);
+  await cards.last().scrollIntoViewIfNeeded();
+  await expect(cards.last().locator("li").last()).toBeVisible();
+  const years = page.getByRole("navigation", { name: "Activity years" });
+  await years
+    .getByRole("link", { name: String(year - 1), exact: true })
+    .click();
+  await expect(page.getByText(`No activity in ${year - 1}.`)).toBeVisible();
+  await years.getByRole("link", { name: String(year), exact: true }).click();
+  await expect(cards).toHaveCount(365);
 });
 
 test("profile shows yearly task activity and newly checked items", async ({
