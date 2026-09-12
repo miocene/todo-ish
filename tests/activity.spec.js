@@ -30,7 +30,8 @@ test(
     await page.getByRole("button", { name: "Profile", exact: true }).click();
     const menu = page.locator(".jm-header__profile-menu");
     await menu.getByRole("link", { name: "Activity", exact: true }).click();
-    await expect(page).toHaveURL(/\/profile$/);
+    // Rendering the 2,000-entry fixture can exceed the default wait on CI WebKit.
+    await expect(page).toHaveURL(/\/profile$/, { timeout: 15_000 });
     await expect(menu).not.toBeVisible();
     const cards = page.locator("article.jm-card.activity-day");
     await expect(cards).toHaveCount(365);
