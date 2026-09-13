@@ -12,10 +12,11 @@ export default {
     modelValue: { type: [String, Number], default: "" },
     multiline: { type: Boolean, default: false },
     placeholder: { type: String, default: "" },
+    suffix: { type: String, default: "" },
     size: {
       type: String,
       default: "m",
-      validator: (value) => ["s", "m"].includes(value),
+      validator: (value) => ["xs", "s", "m"].includes(value),
     },
     type: {
       type: String,
@@ -42,19 +43,12 @@ export default {
 </script>
 
 <template>
-  <div
-    class="jm-input"
-    :class="[`jm-input--${view}`, `jm-input--${size}`, $attrs.class]"
-    :style="$attrs.style"
-  >
-    <label v-if="label" class="jm-input__label" :for="controlId">{{
-      label
-    }}</label>
+  <div :class="['jm-input', view, size, $attrs.class]" :style="$attrs.style">
+    <label v-if="label" class="label" :for="controlId">{{ label }}</label>
     <component
       :is="multiline ? 'textarea' : 'input'"
       v-bind="{ ...$attrs, class: undefined, style: undefined }"
       :id="controlId"
-      class="jm-input__control"
       :type="multiline ? undefined : type"
       :rows="multiline ? 1 : undefined"
       :value="modelValue"
@@ -62,5 +56,6 @@ export default {
       :disabled="disabled"
       @input="$emit('update:modelValue', $event.target.value)"
     />
+    <div v-if="suffix" class="suffix">{{ suffix }}</div>
   </div>
 </template>

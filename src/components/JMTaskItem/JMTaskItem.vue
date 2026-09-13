@@ -95,6 +95,7 @@ export default {
       <div v-if="$slots.details" class="details">
         <slot name="details" />
       </div>
+      <slot />
     </div>
 
     <div v-if="hasActions" class="actions">

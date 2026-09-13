@@ -198,11 +198,26 @@ for (const [path, resource] of [
         .toBe(true);
       await setCompleted(card, path, true);
     }
-    await card
-      .locator(".task-item.completed")
-      .first()
-      .getByRole("button", { name: /^Remove .* from Renamed$/ })
-      .click();
+    if (path === "printing") {
+      await card
+        .locator(".task-item.completed")
+        .first()
+        .getByRole("button", { name: /^Remove .* from Renamed$/ })
+        .click();
+    } else {
+      await card.getByLabel(/^Actions for/).click();
+      await card.getByRole("button", { name: "Edit", exact: true }).click();
+      // The editor puts the completed color last.
+      await modal
+        .getByRole("button", { name: "Remove color 2", exact: true })
+        .click();
+      await modal
+        .getByRole("button", { name: "Save project", exact: true })
+        .click();
+      await expect
+        .poll(() => appData.get(resource).projects[0].tasks.length)
+        .toBe(1);
+    }
     if (path === "cross-stitch") {
       await expect
         .poll(() =>

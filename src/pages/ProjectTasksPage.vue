@@ -180,11 +180,6 @@ export default {
         ? filamentSupplyStatus(this.pageData.projects, this.filamentInventory)
         : new Map();
     },
-    flossSupplyById() {
-      return this.isCrossStitch
-        ? flossSupplyStatus(this.pageData.projects, this.flossInventory)
-        : new Map();
-    },
   },
   watch: {
     pageKey(value) {
@@ -390,7 +385,9 @@ export default {
       this.save();
       this.updateProjectPosition(project);
     },
-    saveCrossesDone(project, task, value) {
+    saveCrossesDone(project, task, { target }) {
+      if (!target.reportValidity()) return;
+      const value = target.valueAsNumber;
       if (task.crossesDone === value) return;
       const wasCompleted = task.completed;
       const previous = {
@@ -643,8 +640,8 @@ export default {
       tag="li"
       class="project-card"
       :class="{
-        'project-card--printing': isPrinting,
-        'project-card--stitching': isCrossStitch,
+        printing: isPrinting,
+        stitching: isCrossStitch,
       }"
       :title="
         project.title ||
@@ -657,35 +654,49 @@ export default {
       :collapsed="completedProjects.has(project.id)"
       @action="handleProjectAction(project, $event)"
     >
-      <template v-for="task in project.tasks" :key="task.id">
-        <JMTaskItem
-          :task-id="task.id"
-          :title="task.title"
-          :completed="task.completed"
-          :editable="false"
-          removable
-          :completable="isPrinting"
-          :remove-label="`Remove ${task.title || 'item'} from ${project.title}`"
-          @remove="removeTask(project, task)"
-          @update:completed="updateCompleted(project, task, $event)"
-        >
-          <template #details>
-            <JMPrintingTaskDetails
-              v-if="isPrinting"
-              readonly
-              :task="task"
-              :supply-by-id="supplyById"
-            />
-            <JMStitchTaskDetails
-              v-else
-              inline
-              :task="task"
-              :supply-by-id="flossSupplyById"
-              @update:crosses-done="saveCrossesDone(project, task, $event)"
-            />
-          </template>
-        </JMTaskItem>
-      </template>
+      <JMTaskItem
+        v-for="task in project.tasks"
+        :key="task.id"
+        :task-id="task.id"
+        :title="task.title"
+        :completed="task.completed"
+        :editable="false"
+        :removable="isPrinting"
+        :completable="isPrinting"
+        :remove-label="`Remove ${task.title || 'item'} from ${project.title}`"
+        @remove="removeTask(project, task)"
+        @update:completed="updateCompleted(project, task, $event)"
+      >
+        <template v-if="isPrinting" #details>
+          <JMPrintingTaskDetails
+            readonly
+            :task="task"
+            :supply-by-id="supplyById"
+          />
+        </template>
+        <template v-if="isCrossStitch">
+          <p v-if="task.completed">{{ task.crosses }} stitches</p>
+          <JMInput
+            v-else
+            :id="`stitch-inline-done-${task.id}`"
+            name="stitch-crosses-done"
+            type="number"
+            size="s"
+            view="ghost"
+            inputmode="numeric"
+            enterkeyhint="done"
+            required
+            min="0"
+            :max="task.crosses"
+            :suffix="`/ ${task.crosses}`"
+            step="1"
+            :aria-label="`Stitches done for ${task.title}`"
+            :model-value="task.crossesDone"
+            @change="saveCrossesDone(project, task, $event)"
+            @keydown.enter.prevent="$event.target.blur()"
+          />
+        </template>
+      </JMTaskItem>
     </JMCard>
   </ul>
 </template>

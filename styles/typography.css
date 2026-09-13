@@ -1,5 +1,6 @@
 :root {
   --font-default: "IBM Plex Sans", "Segoe UI", arial, sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
 
   --color-text-default: light-dark(#333, #333);
   --color-text-secondary: light-dark(rgb(51 51 51 / 52%), rgb(51 51 51 / 52%));

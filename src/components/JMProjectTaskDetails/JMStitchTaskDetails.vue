@@ -18,7 +18,6 @@ export default {
     "update:skeins",
   ],
   props: {
-    inline: { type: Boolean, default: false },
     supplyById: { type: Map, required: true },
     task: { type: Object, required: true },
   },
@@ -50,10 +49,6 @@ export default {
     },
   },
   methods: {
-    saveCrossesDone(event) {
-      if (event.target.reportValidity())
-        this.$emit("update:crosses-done", event.target.valueAsNumber);
-    },
     inputId(field) {
       return `stitch-${field}-${this.task.id}`;
     },
@@ -62,31 +57,7 @@ export default {
 </script>
 
 <template>
-  <template v-if="inline">
-    <p v-if="task.completed">{{ task.crosses }} stitches</p>
-    <div v-else class="stitch-count">
-      <JMInput
-        :id="inputId('inline-done')"
-        name="stitch-crosses-done"
-        type="number"
-        size="s"
-        view="ghost"
-        inputmode="numeric"
-        enterkeyhint="done"
-        required
-        min="0"
-        :max="task.crosses"
-        step="1"
-        :aria-label="`Stitches done for ${task.title}`"
-        :model-value="task.crossesDone"
-        @change="saveCrossesDone"
-        @keydown.enter.prevent="$event.target.blur()"
-      />
-      <span>/ {{ task.crosses }} stitches</span>
-    </div>
-  </template>
   <fieldset
-    v-else
     class="stitch-color__fields"
     :class="{ 'stitch-color__fields--missing': isMissing }"
   >

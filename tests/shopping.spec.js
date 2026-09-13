@@ -272,6 +272,17 @@ test("cross-stitch item deletion retains recorded stitches after reload", async 
   page,
   appData,
 }) => {
+  const data = appData.get("cross-stitch");
+  data.projects[0].tasks.push({
+    id: "red-thread",
+    title: "Red thread",
+    flossId: "dmc321",
+    requiredSkeins: 1,
+    crosses: 50,
+    crossesDone: 0,
+    completed: false,
+  });
+  appData.set("cross-stitch", data);
   await page.goto("/cross-stitch");
   const input = page.getByRole("spinbutton", {
     name: "Stitches done for Black thread",
@@ -284,17 +295,21 @@ test("cross-stitch item deletion retains recorded stitches after reload", async 
     .toBe(100);
   await page.reload();
   await page
-    .getByRole("button", { name: "Expand Stitch project", exact: true })
+    .getByRole("button", { name: "Actions for Stitch project", exact: true })
     .click();
-  await page
-    .getByRole("button", {
-      name: "Remove Black thread from Stitch project",
-      exact: true,
-    })
+  await page.getByRole("button", { name: "Edit", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Edit project" });
+  await dialog
+    .getByRole("button", { name: "Remove color 2", exact: true })
+    .click();
+  await dialog
+    .getByRole("button", { name: "Save project", exact: true })
     .click();
   await expect
-    .poll(() => appData.get("cross-stitch").projects[0].tasks.length)
-    .toBe(0);
+    .poll(() =>
+      appData.get("cross-stitch").projects[0].tasks.map((task) => task.id),
+    )
+    .toEqual(["red-thread"]);
   expect(appData.get("cross-stitch").history).toHaveLength(1);
   await page.goto("/profile");
   await page.reload();

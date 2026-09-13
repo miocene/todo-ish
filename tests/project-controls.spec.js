@@ -62,6 +62,8 @@ test(
       exact: true,
     });
     await expect(card.getByRole("checkbox")).toHaveCount(0);
+    await expect(card.locator(".task-item").getByRole("button")).toHaveCount(0);
+    await expect(card.getByText("/ 100", { exact: true })).toBeVisible();
     await expect(card.getByRole("progressbar")).toHaveCount(1);
     await done.fill("35");
     await done.press("Enter");
