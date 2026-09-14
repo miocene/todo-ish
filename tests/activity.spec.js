@@ -3,7 +3,7 @@ import { advisory, test, expect } from "./app-fixture.js";
 test(
   "Activity opens from the dropdown with a full year of history and remains responsive",
   { tag: "@smoke" },
-  async ({ page, appData }) => {
+  async ({ page, appData, isMobile }) => {
     const year = new Date().getFullYear();
     const history = Array.from({ length: 2000 }, (_, index) => ({
       id: `history-${index}`,
@@ -27,14 +27,20 @@ test(
       if (request.method() === "PUT") writes.push(request.url());
     });
     await page.goto("/todos");
-    await page.getByRole("button", { name: "Profile", exact: true }).click();
+    const activate = (locator) => (isMobile ? locator.tap() : locator.click());
+    const profile = page.getByRole("button", { name: "Profile", exact: true });
+    await activate(profile);
     const menu = page.locator(".jm-header__profile-menu");
-    await menu.getByRole("link", { name: "Activity", exact: true }).click();
+    await activate(menu.getByRole("link", { name: "Activity", exact: true }));
     // Rendering the 2,000-entry fixture can exceed the default wait on CI WebKit.
     await expect(page).toHaveURL(/\/profile$/, { timeout: 15_000 });
     await expect(menu).not.toBeVisible();
     const cards = page.locator("article.jm-card.activity-day");
     await expect(cards).toHaveCount(365);
+    await activate(profile);
+    await expect(menu).toBeVisible();
+    await activate(menu.getByRole("link", { name: "Activity", exact: true }));
+    await expect(menu).not.toBeVisible();
     await expect(cards.locator("header time")).toHaveCount(365);
     await expect(cards.locator("li")).toHaveCount(2000);
     await expect(cards.locator('use[href$="#icon-todo"]')).toHaveCount(2000);

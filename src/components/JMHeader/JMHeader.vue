@@ -21,9 +21,6 @@ export default {
     return { authBusy: false, authMessage: "" };
   },
   methods: {
-    closeProfile() {
-      this.$refs.profileMenu.hidePopover();
-    },
     async addPasskey() {
       this.authBusy = true;
       this.authMessage = "";
@@ -66,17 +63,11 @@ export default {
       view="ghost"
       :popovertarget="profileMenuId"
     />
-    <div
-      :id="profileMenuId"
-      ref="profileMenu"
-      class="jm-popover jm-header__profile-menu"
-      popover
-    >
-      <RouterLink
+    <div :id="profileMenuId" class="jm-popover jm-header__profile-menu" popover>
+      <a
         class="jm-button clear"
-        :to="{ name: 'profile' }"
-        @click="closeProfile"
-        >Activity</RouterLink
+        :href="$router.resolve({ name: 'profile' }).href"
+        >Activity</a
       >
       <JMButton
         text="Add passkey"
