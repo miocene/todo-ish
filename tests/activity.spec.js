@@ -1,62 +1,92 @@
 import { advisory, test, expect } from "./app-fixture.js";
 
-test(
-  "Activity opens from the dropdown with a full year of history and remains responsive",
-  { tag: "@smoke" },
-  async ({ page, appData, isMobile }) => {
-    const year = new Date().getFullYear();
-    const history = Array.from({ length: 2000 }, (_, index) => ({
+function seedActivity(appData, count, days) {
+  const year = new Date().getFullYear();
+  appData.set("todos", {
+    lists: [{ id: "general", title: "General", color: 1, tasks: [] }],
+    history: Array.from({ length: count }, (_, index) => ({
       id: `history-${index}`,
       title: `Completed item ${index}`,
       completedAt: new Date(
-        Date.UTC(year, 0, 1 + (index % 365), 12),
+        Date.UTC(year, 0, 1 + (index % days), 12),
       ).toISOString(),
-    }));
-    appData.set("todos", {
-      lists: [{ id: "general", title: "General", color: 1, tasks: [] }],
-      history,
-    });
-    appData.set("work-tasks", []);
-    appData.set("work-statuses", {});
-    appData.set("chores", { tasks: [], occurrenceOrder: [] });
-    appData.set("shopping", { tasks: [] });
-    appData.set("printing", { projects: [] });
-    appData.set("cross-stitch", { projects: [] });
-    const writes = [];
-    page.on("request", (request) => {
-      if (request.method() === "PUT") writes.push(request.url());
-    });
-    await page.goto("/todos");
+    })),
+  });
+  appData.set("work-tasks", []);
+  appData.set("work-statuses", {});
+  appData.set("chores", { tasks: [], occurrenceOrder: [] });
+  appData.set("shopping", { tasks: [] });
+  appData.set("printing", { projects: [] });
+  appData.set("cross-stitch", { projects: [] });
+  return year;
+}
+
+test(
+  "Activity opens from the dropdown and switches years",
+  { tag: "@smoke" },
+  async ({ page, appData, isMobile }) => {
+    const year = seedActivity(appData, 14, 7);
     const activate = (locator) => (isMobile ? locator.tap() : locator.click());
     const profile = page.getByRole("button", { name: "Profile", exact: true });
-    await activate(profile);
     const menu = page.locator(".jm-header__profile-menu");
-    await activate(menu.getByRole("link", { name: "Activity", exact: true }));
-    await expect(page).toHaveURL(/\/profile$/);
     const cards = page.locator("article.jm-card.activity-day");
-    // A full navigation changes the URL before this large fixture finishes rendering.
-    await expect(cards).toHaveCount(365, { timeout: 15_000 });
-    await expect(menu).not.toBeVisible();
-    await activate(profile);
-    await expect(menu).toBeVisible();
-    await activate(profile);
-    await expect(menu).not.toBeVisible();
+
+    await test.step("Open Activity through the profile dropdown", async () => {
+      await page.goto("/todos");
+      await activate(profile);
+      await activate(menu.getByRole("link", { name: "Activity", exact: true }));
+      await expect(page).toHaveURL(/\/profile$/);
+      await expect(cards).toHaveCount(7);
+      await expect(cards.locator("li")).toHaveCount(14);
+      await expect(menu).not.toBeVisible();
+    });
+
+    await test.step("Reopen and dismiss the dropdown", async () => {
+      await activate(profile);
+      await expect(menu).toBeVisible();
+      await activate(profile);
+      await expect(menu).not.toBeVisible();
+    });
+
+    await test.step("Switch years and restore the activity", async () => {
+      const years = page.getByRole("navigation", { name: "Activity years" });
+      await activate(
+        years.getByRole("link", { name: String(year - 1), exact: true }),
+      );
+      await expect(page.getByText(`No activity in ${year - 1}.`)).toBeVisible();
+      await activate(
+        years.getByRole("link", { name: String(year), exact: true }),
+      );
+      await expect(cards).toHaveCount(7);
+      await expect(cards.locator("li")).toHaveCount(14);
+    });
+  },
+);
+
+test("Activity renders a full year of 2,000 history entries", async ({
+  page,
+  appData,
+}) => {
+  seedActivity(appData, 2000, 365);
+  const writes = [];
+  page.on("request", (request) => {
+    if (request.method() === "PUT") writes.push(request.url());
+  });
+  const cards = page.locator("article.jm-card.activity-day");
+  await test.step("Render every activity day and item", async () => {
+    await page.goto("/profile");
+    await expect(cards).toHaveCount(365);
     await expect(cards.locator("header time")).toHaveCount(365);
     await expect(cards.locator("li")).toHaveCount(2000);
     await expect(cards.locator('use[href$="#icon-todo"]')).toHaveCount(2000);
     await expect(cards.getByRole("link")).toHaveCount(0);
-    expect(writes).toEqual([]);
+  });
+  await test.step("Reach the oldest activity", async () => {
     await cards.last().scrollIntoViewIfNeeded();
     await expect(cards.last().locator("li").last()).toBeVisible();
-    const years = page.getByRole("navigation", { name: "Activity years" });
-    await years
-      .getByRole("link", { name: String(year - 1), exact: true })
-      .click();
-    await expect(page.getByText(`No activity in ${year - 1}.`)).toBeVisible();
-    await years.getByRole("link", { name: String(year), exact: true }).click();
-    await expect(cards).toHaveCount(365);
-  },
-);
+  });
+  expect(writes).toEqual([]);
+});
 
 test("profile shows yearly task activity and newly checked items", async ({
   page,
