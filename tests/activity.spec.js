@@ -32,14 +32,14 @@ test(
     await activate(profile);
     const menu = page.locator(".jm-header__profile-menu");
     await activate(menu.getByRole("link", { name: "Activity", exact: true }));
-    // Rendering the 2,000-entry fixture can exceed the default wait on CI WebKit.
-    await expect(page).toHaveURL(/\/profile$/, { timeout: 15_000 });
-    await expect(menu).not.toBeVisible();
+    await expect(page).toHaveURL(/\/profile$/);
     const cards = page.locator("article.jm-card.activity-day");
-    await expect(cards).toHaveCount(365);
+    // A full navigation changes the URL before this large fixture finishes rendering.
+    await expect(cards).toHaveCount(365, { timeout: 15_000 });
+    await expect(menu).not.toBeVisible();
     await activate(profile);
     await expect(menu).toBeVisible();
-    await activate(menu.getByRole("link", { name: "Activity", exact: true }));
+    await activate(profile);
     await expect(menu).not.toBeVisible();
     await expect(cards.locator("header time")).toHaveCount(365);
     await expect(cards.locator("li")).toHaveCount(2000);
